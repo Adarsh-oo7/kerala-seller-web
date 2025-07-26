@@ -4,7 +4,8 @@ import { useState } from 'react';
 import axios from 'axios';
 
 export default function RegisterSeller() {
-  const [step, setStep] = useState(1); // Step 1: fill form, Step 2: enter OTP
+  const [step, setStep] = useState(1); // Step 1: Registration form, Step 2: OTP input
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: '',
     shopName: '',
@@ -19,25 +20,37 @@ export default function RegisterSeller() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // ✅ Step 1: Send OTP
   const initiateRegistration = async () => {
+    if (!form.phone || !form.password || !form.confirmPassword) {
+      return alert('Please fill all required fields');
+    }
+
     if (form.password !== form.confirmPassword) {
       return alert('Passwords do not match');
     }
 
     try {
-      const res = await axios.post('http://localhost:8000/user/send-otp/', {
+      setLoading(true);
+      await axios.post('http://localhost:8000/user/send-otp/', {
         phone: form.phone,
       });
-      alert('OTP sent to your phone');
-      setStep(2); // Move to OTP step
+      alert('✅ OTP sent to your phone');
+      setStep(2);
     } catch (err) {
-      console.error(err);
-      alert('Failed to send OTP');
+      console.error(err.response?.data || err);
+      alert(err.response?.data?.error || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
     }
   };
 
+  // ✅ Step 2: Complete Registration
   const completeRegistration = async () => {
+    if (!form.otp) return alert('Please enter the OTP');
+
     try {
+      setLoading(true);
       await axios.post('http://localhost:8000/user/register/', {
         name: form.name,
         shop_name: form.shopName,
@@ -46,19 +59,20 @@ export default function RegisterSeller() {
         password: form.password,
         otp: form.otp,
       });
-      alert('Registration successful!');
-      // Optionally redirect or clear form here
+      alert('✅ Registration successful! Redirecting to login...');
+      setTimeout(() => (window.location.href = '/login/seller'), 1000);
     } catch (err) {
-      console.error(err);
-      alert('Invalid OTP or registration failed');
+      console.error(err.response?.data || err);
+      alert(err.response?.data?.error || 'Invalid OTP or registration failed');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: 500 }}>
+    <div style={{ padding: '2rem', maxWidth: 500, margin: '0 auto' }}>
       <h2>Seller Registration</h2>
 
-      {/* Step 1: Form details */}
       {step === 1 && (
         <>
           <input
@@ -76,7 +90,6 @@ export default function RegisterSeller() {
             placeholder="Shop Name"
             value={form.shopName}
             onChange={handleChange}
-            required
           /><br /><br />
 
           <input
@@ -85,7 +98,6 @@ export default function RegisterSeller() {
             placeholder="Email"
             value={form.email}
             onChange={handleChange}
-            required
           /><br /><br />
 
           <input
@@ -115,14 +127,15 @@ export default function RegisterSeller() {
             required
           /><br /><br />
 
-          <button onClick={initiateRegistration}>Register</button>
+          <button disabled={loading} onClick={initiateRegistration}>
+            {loading ? 'Sending OTP...' : 'Register'}
+          </button>
         </>
       )}
 
-      {/* Step 2: OTP input */}
       {step === 2 && (
         <>
-          <p>OTP has been sent to your phone number.</p>
+          <p>✅ OTP has been sent to <strong>{form.phone}</strong>. Please enter it below:</p>
           <input
             type="text"
             name="otp"
@@ -131,7 +144,10 @@ export default function RegisterSeller() {
             onChange={handleChange}
             required
           /><br /><br />
-          <button onClick={completeRegistration}>Confirm & Finish</button>
+
+          <button disabled={loading} onClick={completeRegistration}>
+            {loading ? 'Verifying...' : 'Confirm & Finish'}
+          </button>
         </>
       )}
     </div>
