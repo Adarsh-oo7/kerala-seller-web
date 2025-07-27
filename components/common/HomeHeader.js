@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Menu, Search, ShoppingBag, User, X } from "lucide-react";
 
-export default function Header() {
+export default function HomeHeader() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);

@@ -2,8 +2,13 @@
 
        .header {
            width: 100%;
-           background-color: white;
-           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+           background: rgba(0, 0, 0, 0.3);
+           /* backdrop-filter: blur(4px); */
+           /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
+           position: absolute;
+           z-index: 3;
+           top: 0;
+           left: 0;
        }
 
        .top-header {
@@ -25,14 +30,22 @@
        .search-input {
            width: 100%;
            padding: 8px 40px 8px 16px;
-           border: 1px solid #d1d5db;
+           border: 1px solid white;
            border-radius: 25px;
+           background-color: transparent;
            font-size: 14px;
            outline: none;
        }
 
+       .search-input::placeholder {
+           color: white;
+           opacity: 1;
+           /* make sure it's fully visible */
+       }
+
+
        .search-input:focus {
-           border-color: #10b981;
+           border-color: #d57b7b;
        }
 
        .search-button {
@@ -44,12 +57,13 @@
            border: none;
            padding: 6px;
            cursor: pointer;
+           color: white;
            border-radius: 50%;
        }
 
-       .search-button:hover {
-           background-color: #f3f4f6;
-       }
+       /* .search-button:hover {
+           color: #ffffff;
+       } */
 
        .logo-container {
            flex: 2;
@@ -59,7 +73,7 @@
        }
 
        .logo-image {
-           max-height: 120px;
+           max-height: 80px;
            width: auto;
            height: auto;
        }
@@ -86,13 +100,13 @@
        .brand-name {
            font-size: 18px;
            font-weight: 600;
-           color: #374151;
+           color: white;
            margin-top: -4px;
        }
 
        .tagline {
            font-size: 12px;
-           color: #6b7280;
+           color: white;
            margin-top: -4px;
        }
 
@@ -116,7 +130,7 @@
            padding: 8px;
            cursor: pointer;
            border-radius: 4px;
-           color: #6b7280;
+           color: white;
        }
 
        .icon-button:hover {
@@ -124,9 +138,9 @@
        }
 
        .enquire-button {
-           background-color: #10b981;
+           background-color: transparent;
            color: white;
-           border: none;
+           border: 1px solid white;
            padding: 10px 24px;
            border-radius: 6px;
            font-weight: 500;
@@ -156,7 +170,7 @@
        }
 
        .nav-item {
-           color: #374151;
+           color: white;
            text-decoration: none;
            font-weight: 500;
            font-size: 14px;
@@ -168,7 +182,7 @@
        }
 
        .nav-item.active {
-           color: #10b981;
+           color: white;
        }
 
        .nav-item-with-dropdown {
@@ -344,7 +358,7 @@
            justify-content: center;
            align-items: center;
            padding: 10px;
-           background: #fff;
+           background: transparent;
            border-bottom: 1px solid #ccc;
        }
 
@@ -352,7 +366,7 @@
            width: 70%;
            padding: 8px;
            font-size: 14px;
-           border: 1px solid #ccc;
+           border: 1px solid #ffffff;
            border-radius: 4px;
        }
 
@@ -378,7 +392,7 @@
        .mobile-search-input {
            width: 100%;
            padding: 10px 16px 10px 38px;
-           border: 1px solid #ccc;
+           border: 1px solid #ffffff;
            border-radius: 6px;
            font-size: 14px;
        }
@@ -388,7 +402,7 @@
            top: 50%;
            left: 12px;
            transform: translateY(-50%);
-           color: #777;
+           color: #ffffff;
            pointer-events: none;
        }
 
@@ -458,212 +472,212 @@
        }
 
 
- /* ///////////////////////////////////////////end of header ////////////////////////////////////////////////////////////// */
+       /* ///////////////////////////////////////////end of header ////////////////////////////////////////////////////////////// */
 
 
-  /* ///////////////////////////////////////////BaseHomeHeader ////////////////////////////////////////////////////////////// */
+       /* ///////////////////////////////////////////BaseHomeHeader ////////////////////////////////////////////////////////////// */
 
 
-.BaseHomeHeader {
-  background-color: #2563eb;
-  color: #ffffff;
-  padding: 1rem 1rem;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  align-items: center;
-}
+       .BaseHomeHeader {
+           background-color: #2563eb;
+           color: #ffffff;
+           padding: 1rem 1rem;
+           display: grid;
+           grid-template-columns: 1fr 1fr 1fr;
+           align-items: center;
+       }
 
-@media (min-width: 768px) {
-  .BaseHomeHeader {
-    padding: 1rem 1.5rem;
-  }
-}
+       @media (min-width: 768px) {
+           .BaseHomeHeader {
+               padding: 1rem 1.5rem;
+           }
+       }
 
-.nav-left {
-  display: flex;
-  align-items: center;
-}
+       .nav-left {
+           display: flex;
+           align-items: center;
+       }
 
-.mobileMenuContainer {
-  display: flex;
-  align-items: center;
-}
+       .mobileMenuContainer {
+           display: flex;
+           align-items: center;
+       }
 
-@media (min-width: 768px) {
-  .mobileMenuContainer {
-    display: none;
-  }
-}
+       @media (min-width: 768px) {
+           .mobileMenuContainer {
+               display: none;
+           }
+       }
 
-.desktopNav {
-  display: none;
-  gap: 1.5rem;
-  align-items: center;
-}
+       .desktopNav {
+           display: none;
+           gap: 1.5rem;
+           align-items: center;
+       }
 
-@media (min-width: 768px) {
-  .desktopNav {
-    display: flex;
-  }
-}
+       @media (min-width: 768px) {
+           .desktopNav {
+               display: flex;
+           }
+       }
 
-.navLink {
-  color: #ffffff;
-  font-weight: 500;
-  text-decoration: none;
-  transition: color 0.15s ease-in-out;
-}
+       .navLink {
+           color: #ffffff;
+           font-weight: 500;
+           text-decoration: none;
+           transition: color 0.15s ease-in-out;
+       }
 
-.navLink:hover {
-  color: #e5e7eb;
-}
+       .navLink:hover {
+           color: #e5e7eb;
+       }
 
-.navLinkActive {
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  background-color: #ffffff;
-  color: #2563eb;
-  font-weight: 500;
-  text-decoration: none;
-  transition: background-color 0.15s ease-in-out;
-}
+       .navLinkActive {
+           padding: 0.5rem 1rem;
+           border-radius: 9999px;
+           background-color: #ffffff;
+           color: #2563eb;
+           font-weight: 500;
+           text-decoration: none;
+           transition: background-color 0.15s ease-in-out;
+       }
 
-.navLinkActive:hover {
-  background-color: #f3f4f6;
-}
+       .navLinkActive:hover {
+           background-color: #f3f4f6;
+       }
 
-.logoContainer {
-  grid-column: 2 / 3;
-  display: flex;
-  justify-content: center;
-}
+       .logoContainer {
+           grid-column: 2 / 3;
+           display: flex;
+           justify-content: center;
+       }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #ffffff;
-  text-decoration: none;
-}
+       .logo {
+           display: flex;
+           align-items: center;
+           gap: 0.5rem;
+           font-size: 1.5rem;
+           font-weight: 700;
+           color: #ffffff;
+           text-decoration: none;
+       }
 
-.iconsContainer {
-  grid-column: 3 / 4;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 1rem;
-}
+       .iconsContainer {
+           grid-column: 3 / 4;
+           display: flex;
+           justify-content: flex-end;
+           align-items: center;
+           gap: 1rem;
+       }
 
-.iconButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.375rem;
-  color: #ffffff;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.15s ease-in-out;
-}
+       .iconButton {
+           display: inline-flex;
+           align-items: center;
+           justify-content: center;
+           width: 2.5rem;
+           height: 2.5rem;
+           border-radius: 0.375rem;
+           color: #ffffff;
+           background: none;
+           border: none;
+           cursor: pointer;
+           transition: background-color 0.15s ease-in-out;
+       }
 
-.iconButton:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
+       .iconButton:hover {
+           background-color: rgba(255, 255, 255, 0.1);
+       }
 
-.loginButtonDesktop {
-  display: none;
-}
+       .loginButtonDesktop {
+           display: none;
+       }
 
-@media (min-width: 768px) {
-  .loginButtonDesktop {
-    display: inline-flex;
-  }
-}
+       @media (min-width: 768px) {
+           .loginButtonDesktop {
+               display: inline-flex;
+           }
+       }
 
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
+       .srOnly {
+           position: absolute;
+           width: 1px;
+           height: 1px;
+           overflow: hidden;
+           clip: rect(0, 0, 0, 0);
+           white-space: nowrap;
+           border: 0;
+       }
 
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: -100%;
-  width: 16rem;
-  height: 100vh;
-  background-color: #ffffff;
-  color: #1f2937;
-  padding: 1rem;
-  transition: left 0.3s ease-in-out;
-  z-index: 50;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
-}
+       .sidebar {
+           position: fixed;
+           top: 0;
+           left: -100%;
+           width: 16rem;
+           height: 100vh;
+           background-color: #ffffff;
+           color: #1f2937;
+           padding: 1rem;
+           transition: left 0.3s ease-in-out;
+           z-index: 50;
+           box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+       }
 
-.sidebarOpen {
-  left: 0;
-}
+       .sidebarOpen {
+           left: 0;
+       }
 
-.sidebarContent {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
+       .sidebarContent {
+           display: flex;
+           flex-direction: column;
+           gap: 1rem;
+       }
 
-.sidebarLink {
-  font-size: 1.125rem;
-  font-weight: 500;
-  color: #1f2937;
-  text-decoration: none;
-  transition: color 0.15s ease-in-out;
-}
+       .sidebarLink {
+           font-size: 1.125rem;
+           font-weight: 500;
+           color: #1f2937;
+           text-decoration: none;
+           transition: color 0.15s ease-in-out;
+       }
 
-.sidebarLink:hover {
-  color: #2563eb;
-}
+       .sidebarLink:hover {
+           color: #2563eb;
+       }
 
-.sidebarCloseButton {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #1f2937;
-}
+       .sidebarCloseButton {
+           position: absolute;
+           top: 1rem;
+           right: 1rem;
+           background: none;
+           border: none;
+           cursor: pointer;
+           color: #1f2937;
+       }
 
-.inlineIcon {
-  display: inline-block;
-  margin-right: 0.5rem;
-}
+       .inlineIcon {
+           display: inline-block;
+           margin-right: 0.5rem;
+       }
 
 
-  /* ///////////////////////////////////////////end of BaseHomeHeader ////////////////////////////////////////////////////////////// */
+       /* ///////////////////////////////////////////end of BaseHomeHeader ////////////////////////////////////////////////////////////// */
 
-  /* ///////////////////////////////////////////BaseHomeBanner///////////////////////////////////////////////////////////////////////// */
+       /* ///////////////////////////////////////////BaseHomeBanner///////////////////////////////////////////////////////////////////////// */
 
-.banner-container {
-  width: 100%;
-}
+       .banner-container {
+           width: 100%;
+       }
 
-.banner-image {
-  width: 100%;
-  object-fit: cover;
-  height: auto; 
-}
+       .banner-image {
+           width: 100%;
+           object-fit: cover;
+           height: auto;
+       }
 
-  /* //////////////////////////////////////////end of /BaseHomeBanner///////////////////////////////////////////////////////////////////////// */
-       
+       /* //////////////////////////////////////////end of /BaseHomeBanner///////////////////////////////////////////////////////////////////////// */
 
-/* ///////////////////////////////////////////productcard///////////////////////////////////////////////////////////////////////// */
+
+       /* ///////////////////////////////////////////productcard///////////////////////////////////////////////////////////////////////// */
 
        .product-card {
            background: white;
@@ -1039,7 +1053,7 @@
            padding: 0;
        }
 
-   
+
        .productinner-grid {
            display: grid;
            grid-template-columns: 1fr;
@@ -1106,7 +1120,7 @@
 
        .thumbnail-list .slick-slider {
            max-width: 100%;
-            width: 100% !important;
+           width: 100% !important;
            box-sizing: border-box;
        }
 
@@ -1672,8 +1686,9 @@
 
        .sort-dropdown-content {
            position: absolute;
-           top: 100%;      /* dropdown appears below the button */
-            right: 0;
+           top: 100%;
+           /* dropdown appears below the button */
+           right: 0;
            background-color: #ffffff;
            border: 1px solid #d1d5db;
            border-radius: 6px;
@@ -1848,299 +1863,342 @@
 
 
        .auth-container {
-  position: relative;
-  height: 100vh;
-  width: 100%;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.auth-bg {
-  position: absolute;
-  inset: 0;
-  background-image: url('/assets/images/minimalist-black-interior-with-black-sofa.jpg');
-  background-size: cover;
-  background-position: center;
-  z-index: 0;
-}
+           position: relative;
+           height: 100vh;
+           width: 100%;
+           background-color: #324162;
+           overflow: hidden;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+       }
 
 
-@media (min-width: 768px) {
-  .auth-bg {
-    background-size: 100%; 
-    background-position: center;
-  }
-}
-
-@media (max-width: 767px) {
-  .auth-bg {
-    background-size: cover;
-    background-position: bottom left;
-  }
-}
-
-.otp-msg {
-  color: #ccc;
-  font-size: 13px;
-  margin-bottom: 10px;
-  text-align: left;
-}
+       .auth-bg {
+           position: absolute;
+           top: 60%;
+           left: 50%;
+           width: 100vw;
+           max-width: 1000px;
+           aspect-ratio: 3 / 2;
+           /* maintains a 3:2 ratio */
+           background-image: url('/assets/images/loginbg.png');
+           background-repeat: no-repeat;
+           background-size: contain;
+           background-position: center;
+           transform: translate(-50%, -50%);
+           z-index: 0;
+       }
 
 
-.auth-overlay {
-  position: absolute;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1;
-}
 
-.auth-box {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 400px;
-  padding: 50px 240px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
+       @media (min-width: 768px) {
+           .auth-bg {
+               background-size: 100%;
+               background-position: center;
+           }
+       }
 
-.auth-card {
-  background: #ffffff14;
-  /* backdrop-filter: blur(10px); */
-  border-radius: 12px;
-  padding: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.05);
-}
+       @media (max-width: 767px) {
+           .auth-bg {
+               width: 90vw;
+               aspect-ratio: 3 / 2;
+               background-size: contain;
+           }
+       }
 
-.auth-title {
-  text-align: center;
-  color: #fff;
-  font-size: 22px;
-  font-weight: 300;
-  margin-bottom: 16px;
-}
-
-.auth-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.auth-input {
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-  font-size: 14px;
-}
-
-.auth-input::placeholder {
-  color: #ccc;
-}
-
-.auth-input:focus {
-  outline: none;
-  border-color: #4f9efc;
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.auth-footer {
-  margin-top: 16px;
-  text-align: center;
-}
-
-.forgot-link {
-  text-align: right;
-  margin-bottom: 12px;
-}
-
-.forgot-link a {
-  font-size: 12px;
-  color: #add8ff;
-  text-decoration: none;
-}
-
-.auth-button {
-  width: 100%;
-  padding: 10px;
-  background: linear-gradient(to right, #3b82f6, #2563eb);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: 0.3s ease;
-}
-
-.auth-button:hover {
-  background: linear-gradient(to right, #2563eb, #1d4ed8);
-  transform: scale(1.02);
-}
-
-.signup-text {
-  margin-top: 10px;
-  font-size: 12px;
-  color: #ccc;
-}
-
-.signup-text a {
-  color: #add8ff;
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.auth-footer-text {
-  text-align: center;
-  font-size: 14px;
-  margin-top: 12px;
-  color: #ccc;
-}
-
-.auth-footer-text a {
-  color: #add8ff;
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.auth-footer-text a:hover {
-  color: #ffffff;
-}
+       .otp-msg {
+           color: #ccc;
+           font-size: 13px;
+           margin-bottom: 10px;
+           text-align: left;
+       }
 
 
-@media (max-width: 768px) {
-  .auth-box {
-    max-width: 90%;
-    padding: 12px;
-  }
-}
+       .auth-overlay {
+           position: absolute;
+           inset: 0;
+           background-color: rgba(0, 0, 0, 0.4);
+           z-index: 1;
+       }
+
+       .auth-box {
+           position: relative;
+           z-index: 2;
+           width: 100%;
+           max-width: 400px;
+           padding: 50px 240px;
+           border-radius: 16px;
+           /* background: rgba(255, 255, 255, 0.05); */
+           /* backdrop-filter: blur(4px); */
+           border: 1px solid rgba(255, 255, 255, 0.2);
+       }
+
+       .auth-card {
+           background: #00000082;
+           /* backdrop-filter: blur(10px); */
+           border-radius: 12px;
+           width: 100%;
+           max-width: 400px;
+           z-index: 1;
+           padding: 24px;
+           margin-top: 140px;
+           border: 1px solid rgba(255, 255, 255, 0.1);
+           box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.05);
+       }
+
+       @keyframes floatUpDown {
+           0% {
+               transform: translateY(0);
+           }
+
+           50% {
+               transform: translateY(-10px);
+               /* move up */
+           }
+
+           100% {
+               transform: translateY(0);
+               /* back to original */
+           }
+       }
+
+       .auth-card {
+           animation: floatUpDown 3s ease-in-out infinite;
+       }
 
 
-/*/// ///////////////////////////////////////////////// end of seller Registration //////////////////////////////////////////////////////////////////////////////// */
+       .auth-title {
+           text-align: center;
+           color: #fff;
+           font-size: 22px;
+           font-weight: 300;
+           margin-bottom: 16px;
+       }
 
-/*/// ///////////////////////////////////////////////// seller Login //////////////////////////////////////////////////////////////////////////////// */
+       .auth-input-group {
+           display: flex;
+           flex-direction: column;
+           gap: 12px;
+       }
+
+       .auth-input {
+           padding: 8px 12px;
+           border-radius: 10px;
+           background: rgba(255, 255, 255, 0.1);
+           border: 1px solid rgba(255, 255, 255, 0.2);
+           color: #fff;
+           font-size: 14px;
+       }
+
+       .auth-input::placeholder {
+           color: #ccc;
+       }
+
+       .auth-input:focus {
+           outline: none;
+           border-color: #4f9efc;
+           background: rgba(255, 255, 255, 0.15);
+       }
+
+       .auth-footer {
+           margin-top: 16px;
+           text-align: center;
+       }
+
+       .forgot-link {
+           text-align: right;
+           margin-bottom: 12px;
+       }
+
+       .forgot-link a {
+           font-size: 12px;
+           color: #add8ff;
+           text-decoration: none;
+       }
+
+       .auth-button {
+           width: 100%;
+           padding: 10px;
+           background: linear-gradient(to right, #3b82f6, #2563eb);
+           color: #fff;
+           border: none;
+           border-radius: 10px;
+           font-weight: 500;
+           cursor: pointer;
+           transition: 0.3s ease;
+       }
+
+       .auth-button:hover {
+           background: linear-gradient(to right, #2563eb, #1d4ed8);
+           transform: scale(1.02);
+       }
+
+       .signup-text {
+           margin-top: 10px;
+           font-size: 12px;
+           color: #ccc;
+       }
+
+       .signup-text a {
+           color: #add8ff;
+           font-weight: 500;
+           text-decoration: none;
+       }
+
+       .auth-footer-text {
+           text-align: center;
+           font-size: 14px;
+           margin-top: 12px;
+           color: #ccc;
+       }
+
+       .auth-footer-text a {
+           color: #add8ff;
+           font-weight: 500;
+           text-decoration: none;
+       }
+
+       .auth-footer-text a:hover {
+           color: #ffffff;
+       }
 
 
-.login-container {
-  position: relative;
-  min-height: 100vh;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
-
-.login-bg {
-  position: fixed;
-  width: 100vw;
-  height: 100vh;
-  background-image: url('/assets/images/minimalist-black-interior-with-black-sofa.jpg');
-  background-size: cover;
-  background-position: center;
-  z-index: 0;
-  
-}
-
-@media (min-width: 768px) {
-  .login-bg {
-    background-size: 100%; 
-    background-position: center;
-  }
-}
-
-@media (max-width: 767px) {
-  .login-bg {
-    background-size: cover;
-    background-position: bottom left;
-  }
-}
-
-.login-overlay {
-  position: fixed;
-  width: 100vw;
-  height: 100vh;
-  /* backdrop-filter: blur(0px); */
-  background-color: rgba(0, 0, 0, 0.4);
-  z-index: 1;
-}
-
-.login-box {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 400px;
-  padding: 20px;
-}
-
-.login-card {
-  background-color: rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  backdrop-filter: blur(2px);
-  padding: 30px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-}
-
-.login-title {
-  text-align: center;
-  color: white;
-  margin-bottom: 20px;
-  font-size: 24px;
-}
-
-.login-input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border: none;
-  border-radius: 6px;
-  background-color: rgba(255, 255, 255, 0.15);
-  color: white !important;
-  outline: none;
-}
-.login-input::placeholder {
-  color: #ffffffff; 
-  opacity: 1;     
-}
+       @media (max-width: 768px) {
+           .auth-box {
+               max-width: 80%;
+               padding: 12px;
+           }
+           .auth-card {
+          
+           max-width: 300px;
+           padding: 24px;
+           
+       }
+       }
 
 
-.login-button {
-  width: 100%;
-  padding: 12px;
-  background-color: #222;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-}
+       /*/// ///////////////////////////////////////////////// end of seller Registration //////////////////////////////////////////////////////////////////////////////// */
 
-.login-footer-text {
-  text-align: center;
-  font-size: 13px;
-  margin-top: 12px;
-  color: #ccc;
-}
+       /*/// ///////////////////////////////////////////////// seller Login //////////////////////////////////////////////////////////////////////////////// */
 
-.login-footer-text a {
-  color: #add8ff;
-  font-weight: 500;
-  text-decoration: none;
-}
 
-.login-footer-text a:hover {
-  color: #ffffff;
-}
+       .login-container {
+           position: relative;
+           min-height: 100vh;
+           width: 100%;
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           overflow: hidden;
+       }
 
-.login-error {
-  color: red;
-  font-size: 14px;
-  margin-bottom: 10px;
-}
+       .login-bg {
+           position: fixed;
+           width: 100vw;
+           height: 100vh;
+           background-image: url('/assets/images/minimalist-black-interior-with-black-sofa.jpg');
+           background-size: cover;
+           background-position: center;
+           z-index: 0;
 
-/*/// /////////////////////////////////////////////////end of seller Login //////////////////////////////////////////////////////////////////////////////// */
+       }
+
+       @media (min-width: 768px) {
+           .login-bg {
+               background-size: 100%;
+               background-position: center;
+           }
+       }
+
+       @media (max-width: 767px) {
+           .login-bg {
+               background-size: cover;
+               background-position: bottom left;
+           }
+       }
+
+       .login-overlay {
+           position: fixed;
+           width: 100vw;
+           height: 100vh;
+           /* backdrop-filter: blur(0px); */
+           background-color: rgba(0, 0, 0, 0.4);
+           z-index: 1;
+       }
+
+       .login-box {
+           position: relative;
+           z-index: 2;
+           width: 100%;
+           max-width: 400px;
+           padding: 20px;
+       }
+
+       .login-card {
+           background-color: rgba(255, 255, 255, 0.06);
+           border-radius: 16px;
+           backdrop-filter: blur(2px);
+           padding: 30px;
+           box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+       }
+
+       .login-title {
+           text-align: center;
+           color: white;
+           margin-bottom: 20px;
+           font-size: 24px;
+       }
+
+       .login-input {
+           width: 100%;
+           padding: 10px;
+           margin-bottom: 15px;
+           border: none;
+           border-radius: 6px;
+           background-color: rgba(255, 255, 255, 0.15);
+           color: white !important;
+           outline: none;
+       }
+
+       .login-input::placeholder {
+           color: #ffffffff;
+           opacity: 1;
+       }
+
+
+       .login-button {
+           width: 100%;
+           padding: 12px;
+           background-color: #222;
+           color: white;
+           border: none;
+           border-radius: 6px;
+           cursor: pointer;
+           font-weight: bold;
+       }
+
+       .login-footer-text {
+           text-align: center;
+           font-size: 13px;
+           margin-top: 12px;
+           color: #ccc;
+       }
+
+       .login-footer-text a {
+           color: #add8ff;
+           font-weight: 500;
+           text-decoration: none;
+       }
+
+       .login-footer-text a:hover {
+           color: #ffffff;
+       }
+
+       .login-error {
+           color: red;
+           font-size: 14px;
+           margin-bottom: 10px;
+       }
+
+       /*/// /////////////////////////////////////////////////end of seller Login //////////////////////////////////////////////////////////////////////////////// */

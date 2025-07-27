@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import axios from 'axios';
+import Header from '../../../components/common/Header';
+
+import Footer from '../../../components/common/Footer';
 
 export default function RegisterSeller() {
   const [step, setStep] = useState(1); // Step 1: Registration form, Step 2: OTP input
@@ -70,10 +73,12 @@ export default function RegisterSeller() {
   };
 
   return (
+    <div>
+      <Header/>
     <div className="auth-container">
       <div className="auth-bg" />
-      <div className="auth-overlay" />
-      <div className="auth-box">
+      {/* <div className="auth-overlay" /> */}
+      {/* <div className="auth-box"> */}
         <div className="auth-card">
           <h2 className="auth-title">Register</h2>
 
@@ -168,7 +173,9 @@ export default function RegisterSeller() {
             </div>
           )}
         </div>
-      </div>
+      {/* </div> */}
+    </div>
+    <Footer/>
     </div>
   );
 }
