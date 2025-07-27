@@ -1866,6 +1866,21 @@
   z-index: 0;
 }
 
+
+@media (min-width: 768px) {
+  .auth-bg {
+    background-size: 100%; 
+    background-position: center;
+  }
+}
+
+@media (max-width: 767px) {
+  .auth-bg {
+    background-size: cover;
+    background-position: bottom left;
+  }
+}
+
 .otp-msg {
   color: #ccc;
   font-size: 13px;
@@ -2007,3 +2022,125 @@
 
 
 /*/// ///////////////////////////////////////////////// end of seller Registration //////////////////////////////////////////////////////////////////////////////// */
+
+/*/// ///////////////////////////////////////////////// seller Login //////////////////////////////////////////////////////////////////////////////// */
+
+
+.login-container {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.login-bg {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  background-image: url('/assets/images/minimalist-black-interior-with-black-sofa.jpg');
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+  
+}
+
+@media (min-width: 768px) {
+  .login-bg {
+    background-size: 100%; 
+    background-position: center;
+  }
+}
+
+@media (max-width: 767px) {
+  .login-bg {
+    background-size: cover;
+    background-position: bottom left;
+  }
+}
+
+.login-overlay {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  /* backdrop-filter: blur(0px); */
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1;
+}
+
+.login-box {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+}
+
+.login-card {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  backdrop-filter: blur(2px);
+  padding: 30px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.login-title {
+  text-align: center;
+  color: white;
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+.login-input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: none;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white !important;
+  outline: none;
+}
+.login-input::placeholder {
+  color: #ffffffff; 
+  opacity: 1;     
+}
+
+
+.login-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #222;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.login-footer-text {
+  text-align: center;
+  font-size: 13px;
+  margin-top: 12px;
+  color: #ccc;
+}
+
+.login-footer-text a {
+  color: #add8ff;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.login-footer-text a:hover {
+  color: #ffffff;
+}
+
+.login-error {
+  color: red;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+/*/// /////////////////////////////////////////////////end of seller Login //////////////////////////////////////////////////////////////////////////////// */

@@ -41,57 +41,51 @@ export default function LoginSeller() {
   };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '400px', margin: 'auto' }}>
-      <h2>Seller Login</h2>
+     <div className="login-container">
+      <div className="login-bg" />
+      <div className="login-overlay" />
+      <div className="login-box">
+        <div className="login-card">
+          <h2 className="login-title">Login</h2>
 
-      <input
-        type="text"
-        placeholder="Phone Number"
-        value={phone}
-        onChange={(e) => {
-          setPhone(e.target.value);
-          setError('');
-        }}
-        style={{
-          display: 'block',
-          width: '100%',
-          marginBottom: '15px',
-          padding: '8px',
-        }}
-      />
+          <input
+            type="text"
+            placeholder="Phone Number"
+            value={phone}
+            onChange={(e) => {
+              setPhone(e.target.value);
+              setError('');
+            }}
+            className="login-input"
+          />
 
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => {
-          setPassword(e.target.value);
-          setError('');
-        }}
-        style={{
-          display: 'block',
-          width: '100%',
-          marginBottom: '15px',
-          padding: '8px',
-        }}
-      />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError('');
+            }}
+            className="login-input"
+          />
 
-      {error && <p style={{ color: 'red', marginBottom: '10px' }}>{error}</p>}
+          {error && <p className="login-error">{error}</p>}
 
-      <button
-        onClick={handleLogin}
-        disabled={loading}
-        style={{
-          padding: '10px 20px',
-          width: '100%',
-          backgroundColor: '#333',
-          color: 'white',
-          border: 'none',
-          cursor: 'pointer',
-        }}
-      >
-        {loading ? 'Logging in...' : 'Login'}
-      </button>
+          <button
+            onClick={handleLogin}
+            disabled={loading}
+            className="login-button"
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+
+          <p className="login-footer-text">
+            Don't have an account? <a href="/register/seller">Register</a>
+          </p>
+        </div>
+      </div>
     </div>
+  
   );
 }
