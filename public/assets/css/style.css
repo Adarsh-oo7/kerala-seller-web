@@ -1843,3 +1843,167 @@
 
 
        /*/// ///////////////////////////////////////////////// end of Footer //////////////////////////////////////////////////////////////////////////////// */
+
+       /*/// ///////////////////////////////////////////////// seller Registration//////////////////////////////////////////////////////////////////////////////// */
+
+
+       .auth-container {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('/assets/images/minimalist-black-interior-with-black-sofa.jpg');
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+
+.otp-msg {
+  color: #ccc;
+  font-size: 13px;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+
+.auth-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.auth-box {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 400px;
+  padding: 50px 240px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.auth-card {
+  background: #ffffff14;
+  /* backdrop-filter: blur(10px); */
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.05);
+}
+
+.auth-title {
+  text-align: center;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 300;
+  margin-bottom: 16px;
+}
+
+.auth-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-input {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 14px;
+}
+
+.auth-input::placeholder {
+  color: #ccc;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: #4f9efc;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.auth-footer {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.forgot-link {
+  text-align: right;
+  margin-bottom: 12px;
+}
+
+.forgot-link a {
+  font-size: 12px;
+  color: #add8ff;
+  text-decoration: none;
+}
+
+.auth-button {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.auth-button:hover {
+  background: linear-gradient(to right, #2563eb, #1d4ed8);
+  transform: scale(1.02);
+}
+
+.signup-text {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #ccc;
+}
+
+.signup-text a {
+  color: #add8ff;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.auth-footer-text {
+  text-align: center;
+  font-size: 14px;
+  margin-top: 12px;
+  color: #ccc;
+}
+
+.auth-footer-text a {
+  color: #add8ff;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.auth-footer-text a:hover {
+  color: #ffffff;
+}
+
+
+@media (max-width: 768px) {
+  .auth-box {
+    max-width: 90%;
+    padding: 12px;
+  }
+}
+
+
+/*/// ///////////////////////////////////////////////// end of seller Registration //////////////////////////////////////////////////////////////////////////////// */
