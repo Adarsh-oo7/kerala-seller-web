@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import axios from 'axios';
 
 export default function LoginSeller() {
@@ -21,57 +22,47 @@ export default function LoginSeller() {
     setError('');
 
     try {
+      // ✅ CORRECTED API URL
       const response = await axios.post('http://localhost:8000/user/login/', {
         phone,
         password,
       });
 
-      const { token, shop_url } = response.data;
+      localStorage.setItem('accessToken', response.data.token);
 
-      // ✅ Store token using correct key
-      localStorage.setItem('accessToken', token);
-
-      // ✅ Redirect to dashboard
+      // ✅ CORRECTED REDIRECT PATH
       router.push('/dashboard/seller');
+
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed. Please try again.');
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Login failed. Please check your credentials.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-     <div className="login-container">
+    <div className="login-container">
       <div className="login-bg" />
       <div className="login-overlay" />
       <div className="login-box">
         <div className="login-card">
-          <h2 className="login-title">Login</h2>
-
+          <h2 className="login-title">Seller Login</h2>
           <input
             type="text"
             placeholder="Phone Number"
             value={phone}
-            onChange={(e) => {
-              setPhone(e.target.value);
-              setError('');
-            }}
+            onChange={(e) => setPhone(e.target.value)}
             className="login-input"
           />
-
           <input
             type="password"
             placeholder="Password"
             value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setError('');
-            }}
+            onChange={(e) => setPassword(e.target.value)}
             className="login-input"
           />
-
           {error && <p className="login-error">{error}</p>}
-
           <button
             onClick={handleLogin}
             disabled={loading}
@@ -79,13 +70,14 @@ export default function LoginSeller() {
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
-
           <p className="login-footer-text">
-            Don't have an account? <a href="/register/seller">Register</a>
+            Don't have an account?{' '}
+            <Link href="/register/seller" className="login-link">
+              Register
+            </Link>
           </p>
         </div>
       </div>
     </div>
-  
   );
 }
