@@ -2,34 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useEffect } from 'react';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [sellerName, setSellerName] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
       router.push('/login/seller');
-      return;
     }
-
-    // ✅ CORRECTED API URL for dashboard info
-    axios.get('http://localhost:8000/user/dashboard/', {
-        headers: { Authorization: `Token ${token}` },
-    })
-    .then(response => {
-        setSellerName(response.data.seller.name);
-    })
-    .catch(error => {
-        console.error("Failed to fetch seller data", error);
-        localStorage.removeItem('accessToken');
-        router.push('/login/seller');
-    });
-
   }, [router]);
 
   const handleLogout = () => {
@@ -37,29 +20,45 @@ export default function DashboardLayout({ children }) {
     router.push('/login/seller');
   };
 
+  // ✅ Add the "Overview" link
   const navItems = [
+    { name: 'Overview', href: '/dashboard/seller' },
     { name: 'Products', href: '/dashboard/seller/products' },
-    // Add other links like Orders here later
+    { name: 'Orders', href: '/dashboard/seller/orders' },
+    { name: 'Settings', href: '/dashboard/seller/settings' },
   ];
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <div style={{ width: '250px', background: '#f8f9fa', padding: '20px', borderRight: '1px solid #dee2e6' }}>
-        <div style={{marginBottom: '2rem'}}>
-            <h2 style={{ margin: 0 }}>Seller Panel</h2>
-            {sellerName && <p style={{ margin: '5px 0 0', color: '#6c757d' }}>Welcome, {sellerName}</p>}
-        </div>
+        <h2 style={{ marginBottom: '2rem' }}>Seller Panel</h2>
         <nav>
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            {navItems.map((item) => (
-              <li key={item.name} style={{ marginBottom: '1rem' }}>
-                <Link href={item.href} style={{ textDecoration: 'none', color: pathname.startsWith(item.href) ? '#0d6efd' : '#212529' }}>
-                  {item.name}
-                </Link>
-              </li>
-            ))}
+            {navItems.map((item) => {
+              // Exact match for overview, startsWith for others
+              const isActive = item.href === '/dashboard/seller' 
+                ? pathname === item.href 
+                : pathname.startsWith(item.href);
+
+              return (
+                <li key={item.name} style={{ marginBottom: '1rem' }}>
+                  <Link href={item.href} style={{ 
+                    textDecoration: 'none', 
+                    color: isActive ? '#0d6efd' : '#212529',
+                    fontWeight: isActive ? 'bold' : 'normal'
+                  }}>
+                    {item.name}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
+        <div style={{ position: 'absolute', bottom: '20px', width: '210px' }}>
+            <button onClick={handleLogout} style={{ width: '100%', padding: '10px', border: 'none', backgroundColor: '#dc3545', color: '#fff', cursor: 'pointer', borderRadius: '5px' }}>
+                Logout
+            </button>
+        </div>
       </div>
       <main style={{ flex: 1, padding: '20px', backgroundColor: '#fff' }}>
         {children}
