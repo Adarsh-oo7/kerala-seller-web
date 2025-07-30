@@ -3,12 +3,15 @@
 import { useState } from 'react';
 import axios from 'axios';
 import Header from '../../../components/common/Header';
-
+import { Eye, EyeOff } from 'lucide-react';
 import Footer from '../../../components/common/Footer';
 
 export default function RegisterSeller() {
   const [step, setStep] = useState(1); // Step 1: Registration form, Step 2: OTP input
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [form, setForm] = useState({
     name: '',
     shopName: '',
@@ -74,11 +77,11 @@ export default function RegisterSeller() {
 
   return (
     <div>
-      <Header/>
-    <div className="auth-container">
-      <div className="auth-bg" />
-      {/* <div className="auth-overlay" /> */}
-      {/* <div className="auth-box"> */}
+      <Header />
+      <div className="auth-container">
+        <div className="auth-bg" />
+        {/* <div className="auth-overlay" /> */}
+        {/* <div className="auth-box"> */}
         <div className="auth-card">
           <h2 className="auth-title">Register</h2>
 
@@ -118,24 +121,41 @@ export default function RegisterSeller() {
                 required
                 className="auth-input"
               />
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={form.password}
-                onChange={handleChange}
-                required
-                className="auth-input"
-              />
-              <input
-                type="password"
-                name="confirmPassword"
-                placeholder="Confirm Password"
-                value={form.confirmPassword}
-                onChange={handleChange}
-                required
-                className="auth-input"
-              />
+              {/* Password Field */}
+              <div className="auth-input-icon-wrapper">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  placeholder="Password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                  className="auth-input"
+                />
+                <span className="toggle-eye" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </span>
+              </div>
+
+
+
+              {/* Confirm Password Field */}
+              <div className="auth-input-icon-wrapper">
+  <input
+    type={showConfirmPassword ? 'text' : 'password'}
+    name="confirmPassword"
+    placeholder="Confirm Password"
+    value={form.confirmPassword}
+    onChange={handleChange}
+    required
+    className="auth-input"
+  />
+  <span className="toggle-eye" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+  </span>
+</div>
+
+
 
               <button
                 className="auth-button"
@@ -173,9 +193,9 @@ export default function RegisterSeller() {
             </div>
           )}
         </div>
-      {/* </div> */}
-    </div>
-    <Footer/>
+        {/* </div> */}
+      </div>
+      <Footer />
     </div>
   );
 }

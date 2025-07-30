@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginSeller() {
   const router = useRouter();
@@ -11,6 +12,8 @@ export default function LoginSeller() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
 
   const handleLogin = async () => {
     if (!phone || !password) {
@@ -56,12 +59,18 @@ export default function LoginSeller() {
             className="login-input"
           />
           <input
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="login-input"
           />
+          <span
+            className="toggle-password-icon"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </span>
           {error && <p className="login-error">{error}</p>}
           <button
             onClick={handleLogin}
