@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react';
+import Header from '../../../components/common/Header';
+import Footer from '../../../components/common/Footer';
 
 export default function LoginSeller() {
   const router = useRouter();
@@ -45,9 +47,11 @@ export default function LoginSeller() {
   };
 
   return (
+    <div>
+      <Header/>
     <div className="login-container">
       <div className="login-bg" />
-      <div className="login-overlay" />
+      {/* <div className="login-overlay" /> */}
       <div className="login-box">
         <div className="login-card">
           <h2 className="login-title">Seller Login</h2>
@@ -87,6 +91,8 @@ export default function LoginSeller() {
           </p>
         </div>
       </div>
+    </div>
+    <Footer/>
     </div>
   );
 }

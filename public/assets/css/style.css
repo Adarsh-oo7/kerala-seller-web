@@ -1866,7 +1866,7 @@
            position: relative;
            height: 100vh;
            width: 100%;
-           background-color: #324162;
+           background-color: #364a75;
            overflow: hidden;
            display: flex;
            align-items: center;
@@ -1882,7 +1882,7 @@
            max-width: 1000px;
            aspect-ratio: 3 / 2;
            /* maintains a 3:2 ratio */
-           background-image: url('/assets/images/loginbg.png');
+           background-image: url('/assets/images/sellerregister.png');
            background-repeat: no-repeat;
            background-size: contain;
            background-position: center;
@@ -1963,7 +1963,7 @@
            }
        }
 
-       .auth-card {
+       .auth-card, .login-card{
            animation: floatUpDown 3s ease-in-out infinite;
        }
 
@@ -2112,26 +2112,37 @@
 
        .login-container {
            position: relative;
-           min-height: 100vh;
+           height: 100vh;
            width: 100%;
            display: flex;
+           background-color: #364a75;
            justify-content: center;
            align-items: center;
            overflow: hidden;
        }
+       
 
        .login-bg {
-           position: fixed;
+           position: absolute;
            width: 100vw;
-           height: 100vh;
-           background-image: url('/assets/images/minimalist-black-interior-with-black-sofa.jpg');
-           background-size: cover;
+           max-width: 1000px;
+           top: 60%;
+           left: 50%;
+           background-image: url('/assets/images/sellerlogin.png');
+           aspect-ratio: 3 / 2;
+           background-repeat: no-repeat;
+           background-size: contain;
            background-position: center;
+           transform: translate(-50%, -50%);
            z-index: 0;
 
        }
 
-       @media (min-width: 768px) {
+      
+
+      
+
+         @media (min-width: 768px) {
            .login-bg {
                background-size: 100%;
                background-position: center;
@@ -2140,8 +2151,9 @@
 
        @media (max-width: 767px) {
            .login-bg {
-               background-size: cover;
-               background-position: bottom left;
+               width: 90vw;
+               aspect-ratio: 3 / 2;
+               background-size: contain;
            }
        }
 

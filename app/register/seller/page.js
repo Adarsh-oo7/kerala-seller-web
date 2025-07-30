@@ -141,19 +141,19 @@ export default function RegisterSeller() {
 
               {/* Confirm Password Field */}
               <div className="auth-input-icon-wrapper">
-  <input
-    type={showConfirmPassword ? 'text' : 'password'}
-    name="confirmPassword"
-    placeholder="Confirm Password"
-    value={form.confirmPassword}
-    onChange={handleChange}
-    required
-    className="auth-input"
-  />
-  <span className="toggle-eye" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-  </span>
-</div>
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  placeholder="Confirm Password"
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  className="auth-input"
+                />
+                <span className="toggle-eye" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </span>
+              </div>
 
 
 
