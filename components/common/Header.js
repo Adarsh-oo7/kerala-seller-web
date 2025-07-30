@@ -68,7 +68,7 @@ export default function Header() {
         {/* Logo */}
         <div className="logo-container">
           <a href="/">
-            <img src="/assets/images/HERMES.png" alt="Logo" className="logo-image" />
+            <img src="/assets/images/logoks.png" alt="Logo" className="logo-image" />
           </a>
         </div>
 
