@@ -36,11 +36,11 @@ export default function DashboardLayout({ children }) {
     router.push('/login/seller');
   };
 
-  // ✅ Reorganized navigation into logical sections
   const navSections = [
     {
-      title: 'E-COMMERCE',
+      title: 'SALES & E-COMMERCE',
       items: [
+        { name: 'Billing (POS)', href: '/dashboard/seller/billing' },
         { name: 'Products', href: '/dashboard/seller/products' },
         { name: 'Orders', href: '/dashboard/seller/orders' },
       ]
@@ -59,13 +59,11 @@ export default function DashboardLayout({ children }) {
       <div style={styles.sidebar}>
         <div>
           <h2 style={{ margin: 0 }}>Seller Panel</h2>
-          {/* ✅ Restored the welcome message */}
           {sellerName && <p style={styles.welcomeMessage}>Welcome, {sellerName}</p>}
         </div>
         
         <nav style={styles.nav}>
           <NavItem href="/dashboard/seller" name="Overview" pathname={pathname} />
-
           {navSections.map(section => (
             <div key={section.title} style={{ marginTop: '1.5rem' }}>
               <h3 style={styles.sectionTitle}>{section.title}</h3>
@@ -86,11 +84,11 @@ export default function DashboardLayout({ children }) {
       <main style={styles.mainContent}>
         {children}
       </main>
+      {/* ✅ This closing div was missing */}
     </div>
   );
 }
 
-// Helper component for cleaner navigation links
 function NavItem({ href, name, pathname }) {
     const isActive = href === '/dashboard/seller' ? pathname === href : pathname.startsWith(href);
     return (
