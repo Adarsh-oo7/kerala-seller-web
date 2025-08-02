@@ -40,9 +40,11 @@ export default function DashboardLayout({ children }) {
     {
       title: 'SALES & E-COMMERCE',
       items: [
-        { name: 'Billing (POS)', href: '/dashboard/seller/billing' },
+        // { name: 'Billing (POS)', href: '/dashboard/seller/billing' },
         { name: 'Products', href: '/dashboard/seller/products' },
         { name: 'Orders', href: '/dashboard/seller/orders' },
+              { name: 'Messages', href: '/dashboard/seller/messages' }, // <-- New Link
+
       ]
     },
     {
@@ -64,6 +66,8 @@ export default function DashboardLayout({ children }) {
         
         <nav style={styles.nav}>
           <NavItem href="/dashboard/seller" name="Overview" pathname={pathname} />
+                    <NavItem href="/dashboard/seller/billing" name="shop billing" pathname={pathname} />
+
           {navSections.map(section => (
             <div key={section.title} style={{ marginTop: '1.5rem' }}>
               <h3 style={styles.sectionTitle}>{section.title}</h3>
