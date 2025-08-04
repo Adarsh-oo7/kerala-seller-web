@@ -1,233 +1,134 @@
-
-
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
+import Link from 'next/link';
+import { useCart } from '../../app/context/CartContext';
+import { ShoppingCart, User, Heart, Search, X as CloseIcon, Menu, ChevronRight } from 'lucide-react';
 
-
+// Main Header Component
 export default function Header() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [expandedItem, setExpandedItem] = useState(null)
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { cartItems } = useCart();
+
+  const cartItemCount = cartItems.reduce((count, item) => count + item.quantity, 0);
+
+  // Check login status on the client-side
+  useEffect(() => {
+    const token = localStorage.getItem('buyerAccessToken');
+    setIsLoggedIn(!!token);
+  }, []);
 
   const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen)
-  }
-
-  const toggleExpandItem = (item) => {
-    setExpandedItem(expandedItem === item ? null : item)
-  }
-
-  const toggleMobileSearch = () => {
-    setIsMobileSearchOpen(!isMobileSearchOpen)
-  }
-
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+  
+  // Lock body scroll when mobile menu is open
   useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = "auto"
-    }
+    document.body.style.overflow = isMobileMenuOpen ? "hidden" : "auto";
     return () => {
-      document.body.style.overflow = "auto"
-    }
-  }, [isMobileMenuOpen])
+      document.body.style.overflow = "auto";
+    };
+  }, [isMobileMenuOpen]);
 
   return (
-    <div className="header">
-      {/* Top Header Bar */}
+    <header className="header">
       <div className="top-header">
-        {/* Mobile Menu Button */}
         <button className="mobile-menu-button" onClick={toggleMobileMenu}>
-          <div className="hamburger-line"></div>
-          <div className="hamburger-line"></div>
-          <div className="hamburger-line"></div>
+          <Menu />
         </button>
 
-        {/* Mobile Search Button */}
-        <div className="mobile-only">
-          <button className="mobile-search-button" onClick={toggleMobileSearch}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Desktop Search */}
-        <div className="search-container desktop-only">
-          <input type="text" placeholder="Discover beauty, one search at a time!" className="search-input" />
-          <button className="search-button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Logo */}
         <div className="logo-container">
-          <a href="/">
+          <Link href="/">
             <img src="https://tse2.mm.bing.net/th/id/OIP.NXILvymg8PHUgZW6_b7fegHaHa?pid=Api&P=0&h=220" alt="Logo" className="logo-image" />
-          </a>
+          </Link>
         </div>
 
-        {/* Right Side Icons */}
-        <div className="right-section">
-          <div className="icon-group">
-            <button className="icon-button wishlist-icon-button">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </button>
-            <button className="icon-button">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="9" cy="21" r="1" />
-                <circle cx="20" cy="21" r="1" />
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-              </svg>
-            </button>
-            <button className="icon-button">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </button>
-          </div>
-          <button className="enquire-button">ENQUIRE NOW</button>
-        </div>
+        <HeaderActions cartItemCount={cartItemCount} isLoggedIn={isLoggedIn} />
       </div>
 
-      {/* Mobile Search Bar Centered */}
-      {isMobileSearchOpen && (
-        <div className="mobile-search-container">
-          <div className="mobile-search-wrapper">
-            <input
-              type="text"
-              placeholder="Discover beauty, one search at a time!"
-              className="mobile-search-input"
-            />
-            <svg
-              className="mobile-search-icon"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-          </div>
-        </div>
+      <DesktopNav />
+      
+      <MobileMenu isOpen={isMobileMenuOpen} onClose={toggleMobileMenu} />
+    </header>
+  );
+}
+
+// Sub-component for Desktop Navigation
+const DesktopNav = () => (
+  <div className="navigation desktop-only">
+    <nav className="nav-menu">
+      <Link href="/" className="nav-item">HOME</Link>
+      <Link href="/shop" className="nav-item">SHOP</Link>
+      <Link href="/about" className="nav-item">ABOUT US</Link>
+      <Link href="/contact" className="nav-item">CONTACT US</Link>
+    </nav>
+  </div>
+);
+
+// Sub-component for Header Action Icons
+const HeaderActions = ({ cartItemCount, isLoggedIn }) => (
+  <div className="right-section">
+    <div className="icon-group">
+      <Link href="/cart" className="icon-button" style={{position: 'relative'}}>
+        <ShoppingCart size={22} />
+        {cartItemCount > 0 && (
+          <span className="cart-badge">{cartItemCount}</span>
+        )}
+      </Link>
+
+      {isLoggedIn ? (
+        <Link href="/profile" className="icon-button">
+          <User size={22} />
+        </Link>
+      ) : (
+        <Link href="/login/buyer" className="login-button-header">
+          Login
+        </Link>
       )}
+    </div>
+  </div>
+);
 
+// Sub-component for the Mobile Menu Sidebar
+const MobileMenu = ({ isOpen, onClose }) => {
+  const [expandedItem, setExpandedItem] = useState(null);
 
-      {/* Navigation */}
-      <div className="navigation">
-        <div className="nav-container">
-          <nav className="nav-menu">
-            <a href="#" className="nav-item active">HOME</a>
-            <a href="#" className="nav-item">ABOUT US</a>
-            <div className="nav-item-with-dropdown">
-              <a href="#" className="nav-item">PRODUCTS</a>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="6,9 12,15 18,9" />
-              </svg>
-            </div>
-            <a href="#" className="nav-item">SHOP</a>
-            <a href="#" className="nav-item">SPECIAL OFFER</a>
-            <a href="#" className="nav-item">BLOGS</a>
-            <a href="#" className="nav-item">GALLERY</a>
-            <a href="#" className="nav-item">CONTACT US</a>
-          </nav>
-        </div>
-      </div>
-
-      {/* Mobile Menu Overlay */}
-      <div className={`mobile-menu-overlay ${isMobileMenuOpen ? "open" : ""}`} onClick={toggleMobileMenu}></div>
-
-      {/* Mobile Menu Sidebar */}
-      <div className={`mobile-menu ${isMobileMenuOpen ? "open" : ""}`}>
+  const toggleExpandItem = (item) => {
+    setExpandedItem(expandedItem === item ? null : item);
+  };
+  
+  return (
+    <>
+      <div className={`mobile-menu-overlay ${isOpen ? "open" : ""}`} onClick={onClose}></div>
+      <div className={`mobile-menu ${isOpen ? "open" : ""}`}>
         <div className="mobile-menu-header">
           <div className="mobile-logo">
-            <a href="/">
+            <Link href="/">
               <img src="https://tse2.mm.bing.net/th/id/OIP.NXILvymg8PHUgZW6_b7fegHaHa?pid=Api&P=0&h=220" alt="Logo" className="logo-image" />
-            </a>
+            </Link>
           </div>
-          <button className="close-button" onClick={toggleMobileMenu}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
+          <button className="close-button" onClick={onClose}>
+            <CloseIcon size={20} />
           </button>
         </div>
         <div className="mobile-nav-items">
-          <a href="#" className="mobile-nav-item active">
-            <div className="flex items-center">
-              <span className="chevron-icon">›</span>
-              Home
-            </div>
-          </a>
-          <a href="#" className="mobile-nav-item">
-            <div className="flex items-center">
-              <span className="chevron-icon">›</span>
-              About Us
-            </div>
-          </a>
+          <Link href="/" className="mobile-nav-item"><ChevronRight size={16}/> Home</Link>
+          <Link href="/shop" className="mobile-nav-item"><ChevronRight size={16}/> Shop</Link>
           <div>
             <div className="mobile-nav-item" onClick={() => toggleExpandItem("products")}>
-              <div className="flex items-center">
-                <span className="chevron-icon">›</span>
-                Products
-              </div>
+              <span><ChevronRight size={16}/> Products</span>
               <div className="plus-icon">{expandedItem === "products" ? "−" : "+"}</div>
             </div>
             <div className={`submenu ${expandedItem === "products" ? "expanded" : ""}`}>
-              <a href="#" className="submenu-item">
-                Category 1
-              </a>
-              <a href="#" className="submenu-item">
-                Category 2
-              </a>
-              <a href="#" className="submenu-item">
-                Category 3
-              </a>
+              <Link href="/category/1" className="submenu-item">Category 1</Link>
+              <Link href="/category/2" className="submenu-item">Category 2</Link>
             </div>
           </div>
-          <a href="#" className="mobile-nav-item">
-            <div className="flex items-center">
-              <span className="chevron-icon">›</span>
-              Shop
-            </div>
-          </a>
-          <a href="#" className="mobile-nav-item">
-            <div className="flex items-center">
-              <span className="chevron-icon">›</span>
-              Special Offer
-            </div>
-          </a>
-          <a href="#" className="mobile-nav-item">
-            <div className="flex items-center">
-              <span className="chevron-icon">›</span>
-              Blogs
-            </div>
-          </a>
-          <a href="#" className="mobile-nav-item">
-            <div className="flex items-center">
-              <span className="chevron-icon">›</span>
-              Gallery
-            </div>
-          </a>
-          <a href="#" className="mobile-nav-item">
-            <div className="flex items-center">
-              <span className="chevron-icon">›</span>
-              Contact Us
-            </div>
-          </a>
+          <Link href="/about" className="mobile-nav-item"><ChevronRight size={16}/> About Us</Link>
+          <Link href="/contact" className="mobile-nav-item"><ChevronRight size={16}/> Contact Us</Link>
         </div>
       </div>
-    </div>
-  )
-}
+    </>
+  );
+};
