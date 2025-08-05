@@ -5,7 +5,45 @@ import axios from 'axios';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useCart } from '../../context/CartContext';
+import { ShoppingCart, User } from 'lucide-react';
 
+// --- Store-Specific Header Component ---
+function StoreHeader({ store }) {
+  // ✅ Use getCartBySeller to get the specific cart for this store
+  const { getCartBySeller } = useCart();
+  const cartItems = getCartBySeller(store.seller_phone); // Get cart for THIS seller
+  const cartItemCount = cartItems.reduce((count, item) => count + item.quantity, 0);
+  
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem('buyerAccessToken'));
+  }, []);
+
+  return (
+    <header style={styles.header}>
+      <div style={styles.headerContainer}>
+        <Link href={`/shop/${store.seller_phone}`} style={styles.storeBrand}>
+          <img src={store.logo_url || 'https://placehold.co/60x60/ffffff/6c757d?text=Logo'} alt={`${store.name} logo`} style={styles.headerLogo}/>
+          <span style={styles.headerStoreName}>{store.name}</span>
+        </Link>
+        <div style={styles.headerActions}>
+          {/* ✅ Link to the seller-specific cart page */}
+          <Link href={`/cart/${store.seller_phone}`} style={styles.actionButton}>
+            <ShoppingCart size={20} />
+            {cartItemCount > 0 && <span style={styles.cartBadge}>{cartItemCount}</span>}
+          </Link>
+          {isLoggedIn ? (
+            <Link href="/profile" style={styles.actionButton}><User size={20} /></Link>
+          ) : (
+            <Link href="/login/buyer" style={styles.loginButton}>Login</Link>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// --- Main Storefront Page Component ---
 export default function SellerStorefrontPage() {
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
@@ -28,7 +66,8 @@ export default function SellerStorefrontPage() {
   const handleAddToCart = (e, product) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(product);
+    // ✅ Pass the sellerPhone to the addToCart function
+    addToCart(sellerPhone, product);
   };
 
   if (isLoading) return <p style={{textAlign: 'center', marginTop: '50px'}}>Loading store...</p>;
@@ -36,30 +75,12 @@ export default function SellerStorefrontPage() {
 
   return (
     <div>
-      {/* --- Store Header Section --- */}
-      <div style={styles.storeHeader}>
-        <img 
-          src={store.banner_image_url || 'https://placehold.co/1200x250/e9ecef/6c757d?text=No+Banner'} 
-          alt={`${store.name} banner`} 
-          style={styles.banner} 
-        />
-        <div style={styles.storeInfoContainer}>
-          <div style={styles.storeInfo}>
-            <img 
-              src={store.logo_url || 'https://placehold.co/120x120/ffffff/6c757d?text=Logo'} 
-              alt={`${store.name} logo`} 
-              style={styles.logo} 
-            />
-            <div>
-              <h1 style={styles.storeName}>{store.name}</h1>
-              <p style={styles.storeTagline}>{store.tagline}</p>
-            </div>
-          </div>
-        </div>
-        <p style={styles.storeDescription}>{store.description}</p>
+      <StoreHeader store={store} />
+      
+      <div>
+        <img src={store.banner_image_url || 'https://placehold.co/1200x250/e9ecef/6c757d?text=No+Banner'} alt={`${store.name} banner`} style={styles.banner} />
       </div>
 
-      {/* --- Products Section --- */}
       <div style={styles.container}>
         <h2 style={styles.sectionTitle}>Our Products</h2>
         {products.length > 0 ? (
@@ -74,11 +95,7 @@ export default function SellerStorefrontPage() {
                   </div>
                 </Link>
                 <div style={styles.cardActions}>
-                  <button 
-                    onClick={(e) => handleAddToCart(e, product)} 
-                    style={styles.addToCartButton}
-                    disabled={product.online_stock === 0}
-                  >
+                  <button onClick={(e) => handleAddToCart(e, product)} style={styles.addToCartButton} disabled={product.online_stock === 0}>
                     {product.online_stock > 0 ? 'Add to Cart' : 'Out of Stock'}
                   </button>
                 </div>
@@ -94,19 +111,24 @@ export default function SellerStorefrontPage() {
 }
 
 const styles = {
-    storeHeader: { backgroundColor: '#f8f9fa', paddingBottom: '2rem' },
-    banner: { width: '100%', height: '250px', objectFit: 'cover', backgroundColor: '#e9ecef' },
-    storeInfoContainer: { maxWidth: '1200px', margin: '0 auto', padding: '0 20px' },
-    storeInfo: { display: 'flex', alignItems: 'center', transform: 'translateY(-60px)' },
-    logo: { width: '120px', height: '120px', borderRadius: '50%', border: '4px solid white', backgroundColor: 'white', objectFit: 'cover', marginRight: '20px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' },
-    storeName: { margin: 0, fontSize: '2.5rem', fontWeight: 'bold' },
-    storeTagline: { margin: '5px 0 0', color: '#6c757d', fontSize: '1.1rem' },
-    storeDescription: { maxWidth: '1200px', margin: '-40px auto 0', padding: '0 20px' },
+    // Header Styles
+    header: { backgroundColor: '#fff', borderBottom: '1px solid #e9ecef', padding: '15px 20px', position: 'sticky', top: 0, zIndex: 100 },
+    headerContainer: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    storeBrand: { display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' },
+    headerLogo: { width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', marginRight: '15px' },
+    headerStoreName: { fontSize: '1.5rem', fontWeight: 'bold' },
+    headerActions: { display: 'flex', alignItems: 'center', gap: '15px' },
+    actionButton: { position: 'relative', color: '#212529' },
+    cartBadge: { position: 'absolute', top: '-8px', right: '-8px', backgroundColor: '#dc3545', color: 'white', borderRadius: '50%', width: '18px', height: '18px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center'},
+    loginButton: { padding: '8px 15px', backgroundColor: '#0d6efd', color: 'white', textDecoration: 'none', borderRadius: '5px' },
+    
+    // Page Styles
+    banner: { width: '100%', height: '200px', objectFit: 'cover', backgroundColor: '#e9ecef' },
     container: { maxWidth: '1200px', margin: '0 auto', padding: '40px 20px' },
     sectionTitle: { textAlign: 'center', fontSize: '2.5rem', marginBottom: '2.5rem' },
     grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' },
-    cardLink: { textDecoration: 'none', color: 'inherit' },
     card: { border: '1px solid #e9ecef', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' },
+    cardLink: { textDecoration: 'none', color: 'inherit' },
     image: { width: '100%', height: '200px', objectFit: 'cover', backgroundColor: '#e9ecef' },
     cardContent: { padding: '15px', flexGrow: 1 },
     productName: { margin: '0 0 10px 0', fontSize: '1.1rem', fontWeight: '600' },

@@ -7,59 +7,70 @@ const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState([]);
+  // The cart is now an object: { 'sellerPhone1': [items], 'sellerPhone2': [items] }
+  const [carts, setCarts] = useState({});
 
-  // Load cart from localStorage when the component mounts
   useEffect(() => {
     try {
-      const localCart = localStorage.getItem('cart');
-      if (localCart) {
-        setCartItems(JSON.parse(localCart));
+      const localCarts = localStorage.getItem('multiCarts');
+      if (localCarts) {
+        setCarts(JSON.parse(localCarts));
       }
     } catch (error) {
-      console.error("Failed to parse cart from localStorage", error);
+      console.error("Failed to parse carts from localStorage", error);
     }
   }, []);
 
-  // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cartItems));
-  }, [cartItems]);
+    localStorage.setItem('multiCarts', JSON.stringify(carts));
+  }, [carts]);
 
-  const addToCart = (product, quantity = 1) => {
-    setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
+  const addToCart = (sellerPhone, product, quantity = 1) => {
+    setCarts(prevCarts => {
+      const currentCart = prevCarts[sellerPhone] || [];
+      const existingItem = currentCart.find(item => item.id === product.id);
+
+      let newCart;
       if (existingItem) {
-        return prevItems.map(item =>
+        newCart = currentCart.map(item =>
           item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
         );
+      } else {
+        newCart = [...currentCart, { ...product, quantity }];
       }
-      return [...prevItems, { ...product, quantity }];
+      
+      return { ...prevCarts, [sellerPhone]: newCart };
     });
     alert(`${product.name} added to cart!`);
   };
 
-  const removeFromCart = (productId) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
+  const removeFromCart = (sellerPhone, productId) => {
+    setCarts(prevCarts => {
+      const newCart = (prevCarts[sellerPhone] || []).filter(item => item.id !== productId);
+      return { ...prevCarts, [sellerPhone]: newCart };
+    });
   };
 
-  const updateQuantity = (productId, quantity) => {
+  const updateQuantity = (sellerPhone, productId, quantity) => {
     const newQty = Math.max(1, quantity);
-    setCartItems(prevItems => prevItems.map(item =>
-      item.id === productId ? { ...item, quantity: newQty } : item
-    ));
+    setCarts(prevCarts => {
+      const newCart = (prevCarts[sellerPhone] || []).map(item =>
+        item.id === productId ? { ...item, quantity: newQty } : item
+      );
+      return { ...prevCarts, [sellerPhone]: newCart };
+    });
   };
-
-  const clearCart = () => {
-    setCartItems([]);
+  
+  const getCartBySeller = (sellerPhone) => {
+    return carts[sellerPhone] || [];
   };
 
   const value = {
-    cartItems,
+    carts,
     addToCart,
     removeFromCart,
     updateQuantity,
-    clearCart,
+    getCartBySeller,
   };
 
   return (

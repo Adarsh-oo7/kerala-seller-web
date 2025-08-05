@@ -102,13 +102,15 @@ export default function ProductsPage() {
           {products.length > 0 ? products.map(product => (
             <tr key={product.id}>
               <td style={styles.td}>
+                {/* ✅ START: Improved Text Visibility */}
                 <div style={{display: 'flex', alignItems: 'center'}}>
                     <img src={product.image_url || '/placeholder.png'} alt={product.name} width="60" height="60" style={styles.image} />
                     <div>
-                        <strong>{product.name}</strong><br/>
-                        <small>{product.model_name}</small>
+                        <strong style={{fontSize: '1rem'}}>{product.name}</strong><br/>
+                        <small style={{color: '#6c757d'}}>{product.model_name}</small>
                     </div>
                 </div>
+                {/* ✅ END: Improved Text Visibility */}
               </td>
               <td style={styles.td}>₹{product.price}</td>
               <td style={styles.td}>{product.online_stock} / {product.total_stock}</td>
@@ -129,7 +131,9 @@ export default function ProductsPage() {
   );
 }
 
+
 const styles = {
+    h1: {color: '#333', fontSize: '2rem', marginBottom: '1rem'}, // You already had this style defined
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' },
     buttonPrimary: { padding: '10px 20px', backgroundColor: '#0d6efd', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' },
     buttonSecondary: { padding: '8px 12px', marginRight: '5px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' },

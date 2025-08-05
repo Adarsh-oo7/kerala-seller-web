@@ -1,8 +1,7 @@
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { CartProvider } from './context/CartContext';
-import Header from '../components/common/Header'; // ✅ Import the Header
-import Footer from '../components/common/Footer'; // ✅ Import a Footer (optional)
+// We no longer import Header/Footer here globally
 import './globals.css';
 import Script from 'next/script';
 
@@ -16,11 +15,10 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
         <CartProvider>
-          <Header /> {/* ✅ Add the Header component here */}
+          {/* ✅ Header is removed from here */}
           <main>
             {children}
           </main>
-          {/* <Footer /> You can add a footer here if you have one */}
         </CartProvider>
         <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       </body>
