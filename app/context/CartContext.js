@@ -7,7 +7,6 @@ const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
-  // The cart is now an object: { 'sellerPhone1': [items], 'sellerPhone2': [items] }
   const [carts, setCarts] = useState({});
 
   useEffect(() => {
@@ -29,7 +28,6 @@ export const CartProvider = ({ children }) => {
     setCarts(prevCarts => {
       const currentCart = prevCarts[sellerPhone] || [];
       const existingItem = currentCart.find(item => item.id === product.id);
-
       let newCart;
       if (existingItem) {
         newCart = currentCart.map(item =>
@@ -38,7 +36,6 @@ export const CartProvider = ({ children }) => {
       } else {
         newCart = [...currentCart, { ...product, quantity }];
       }
-      
       return { ...prevCarts, [sellerPhone]: newCart };
     });
     alert(`${product.name} added to cart!`);
@@ -65,17 +62,26 @@ export const CartProvider = ({ children }) => {
     return carts[sellerPhone] || [];
   };
 
+  const clearCartForSeller = (sellerPhone) => {
+    setCarts(prevCarts => {
+        const newCarts = {...prevCarts};
+        delete newCarts[sellerPhone];
+        return newCarts;
+    });
+  };
+
   const value = {
     carts,
     addToCart,
     removeFromCart,
     updateQuantity,
     getCartBySeller,
+    clearCartForSeller,
   };
 
   return (
     <CartContext.Provider value={value}>
       {children}
-    </CartContext.Provider>
+    </CartContext.Provider> 
   );
 };

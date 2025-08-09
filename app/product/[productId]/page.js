@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext'; // ✅ Corrected import with {}
+import WhatsAppButton from '../../../components/common/WhatsAppButton'; // ✅ Import the component
 
 const API_URL = 'http://localhost:8000/user/store/products/';
 const BUYER_PROFILE_URL = 'http://localhost:8000/api/buyer/profile/'; 
@@ -92,6 +93,8 @@ export default function ProductDetailPage() {
           {product.online_stock > 0 ? 'Add to Cart' : 'Out of Stock'}
         </button>
       </div>
+            <WhatsAppButton phoneNumber={product.seller_whatsapp} />
+
     </div>
   );
 }

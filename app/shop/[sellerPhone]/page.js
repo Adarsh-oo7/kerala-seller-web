@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useCart } from '../../context/CartContext';
 import { ShoppingCart, User } from 'lucide-react';
-
+import WhatsAppButton from '../../../components/common/WhatsAppButton';
 // --- Store-Specific Header Component ---
 function StoreHeader({ store }) {
   // ✅ Use getCartBySeller to get the specific cart for this store
@@ -66,7 +66,6 @@ export default function SellerStorefrontPage() {
   const handleAddToCart = (e, product) => {
     e.preventDefault();
     e.stopPropagation();
-    // ✅ Pass the sellerPhone to the addToCart function
     addToCart(sellerPhone, product);
   };
 
@@ -78,7 +77,7 @@ export default function SellerStorefrontPage() {
       <StoreHeader store={store} />
       
       <div>
-        <img src={store.banner_image_url || 'https://placehold.co/1200x250/e9ecef/6c757d?text=No+Banner'} alt={`${store.name} banner`} style={styles.banner} />
+        <img src={store.banner_image_url || '...'} alt={`${store.name} banner`} style={styles.banner} />
       </div>
 
       <div style={styles.container}>
@@ -88,7 +87,7 @@ export default function SellerStorefrontPage() {
             {products.map(product => (
               <div key={product.id} style={styles.card}>
                 <Link href={`/product/${product.id}`} style={styles.cardLink}>
-                  <img src={product.image_url || 'https://placehold.co/400x300/e9ecef/6c757d?text=No+Image'} alt={product.name} style={styles.image} />
+                  <img src={product.image_url || '...'} alt={product.name} style={styles.image} />
                   <div style={styles.cardContent}>
                     <h3 style={styles.productName}>{product.name}</h3>
                     <p style={styles.productPrice}>₹{product.price}</p>
@@ -106,10 +105,12 @@ export default function SellerStorefrontPage() {
           <p style={{textAlign: 'center'}}>This seller has no products available online yet.</p>
         )}
       </div>
+
+      {/* ✅ Add the floating WhatsApp button */}
+      <WhatsAppButton phoneNumber={store.whatsapp_number} />
     </div>
   );
 }
-
 const styles = {
     // Header Styles
     header: { backgroundColor: '#fff', borderBottom: '1px solid #e9ecef', padding: '15px 20px', position: 'sticky', top: 0, zIndex: 100 },
