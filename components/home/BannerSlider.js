@@ -1,41 +1,54 @@
-"use client"
+"use client";
 
-import Slider from "react-slick"
-import "slick-carousel/slick/slick.css"
-import "slick-carousel/slick/slick-theme.css"
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import Image from "next/image";
 
-const images = [
-    "/assets/images/Untitled (887 x 336 px) (887 x 300 px) (7423 x 2810 px).png",
-    "/assets/images/Untitled (887 x 336 px) (887 x 300 px) (7423 x 2810 px).png",
-    "/assets/images/Untitled (887 x 336 px) (887 x 300 px) (7423 x 2810 px).png",
-]
+export default function BannerSlider({ images, autoPlay = false, interval = 4000 }) {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const timeoutRef = useRef(null);
 
-const settings = {
-    dots: true,
-    arrows: false,
-    infinite: true,
-    speed: 500,
-    autoplay: true,
-    autoplaySpeed: 4000,
-    slidesToShow: 1,
-    slidesToScroll: 1,
-    customPaging: () => (
-        <div className="dot"></div>
-    ),
-    dotsClass: "slick-dots custom-dots"
-}
+  const goToNext = useCallback(() => {
+    setCurrentSlide((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  }, [images.length]);
 
-export default function BannerSlider() {
-    return (
-        <div className="banner-slider">
-            <Slider {...settings}>
-                {images.map((src, idx) => (
-                    <div key={idx} className="banner-slide">
-                        <img src={src} alt={`Banner ${idx + 1}`} />
-                    </div>
-                ))}
-            </Slider>
+  const resetTimeout = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+  };
 
-        </div>
-    )
+  useEffect(() => {
+    if (autoPlay) {
+      resetTimeout();
+      timeoutRef.current = setTimeout(goToNext, interval);
+    }
+    return () => resetTimeout();
+  }, [currentSlide, autoPlay, interval, goToNext]);
+
+  if (images.length === 0) {
+    return <div className="carousel-empty">No images to display.</div>;
+  }
+
+  return (
+    <div className="carousel-container">
+      <div
+        className="carousel-track"
+        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+      >
+        {images.map((image, index) => (
+          <div key={index} className="carousel-slide">
+            <Image
+              src={image.src || "/placeholder.svg"}
+              alt={image.alt}
+              width={700}
+              height={300}
+              className="carousel-image"
+              priority={index === currentSlide}
+            />
+          </div>
+        ))}
+      </div>
+
+    </div>
+  );
 }
