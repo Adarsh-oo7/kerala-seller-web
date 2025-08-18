@@ -1,81 +1,126 @@
 "use client";
-
-import React from "react";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import Slider from "react-slick";
+import { ShoppingBag, TShirt, DeviceMobile, Laptop, Plug, Flask } from "phosphor-react";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-const categories = [
-  { id: 1, name: "Top Offers", image: "/assets/images/OJOBBL0.jpg", bgColor: "#c084fc" },
-  { id: 2, name: "Mobiles & Tablets", image: "/assets/images/OJOBBL0.jpg", bgColor: "#f87171" },
-  { id: 3, name: "TVs & Appliances", image: "/assets/images/OJOBBL0.jpg", bgColor: "#9ca3af" },
-  { id: 4, name: "Electronics", image: "/assets/images/OJOBBL0.jpg", bgColor: "#f472b6" },
-  { id: 5, name: "Fashion", image: "/assets/images/OJOBBL0.jpg", bgColor: "#fb923c" },
-  { id: 6, name: "Home & Kitchen", image: "/assets/images/OJOBBL0.jpg", bgColor: "#4ade80" },
-  { id: 7, name: "Beauty & Toys", image: "/assets/images/OJOBBL0.jpg", bgColor: "#f9a8d4" },
-  { id: 8, name: "Furniture", image: "/assets/images/OJOBBL0.jpg", bgColor: "#fde047" },
-  { id: 9, name: "Grocery", image: "/assets/images/OJOBBL0.jpg", bgColor: "#22d3ee" },
-  { id: 10, name: "Grocery", image: "/assets/images/OJOBBL0.jpg", bgColor: "#22d3ee" },
-  { id: 11, name: "Grocery", image: "/assets/images/OJOBBL0.jpg", bgColor: "#22d3ee" },
-  { id: 12, name: "Grocery", image: "/assets/images/OJOBBL0.jpg", bgColor: "#22d3ee" },
-];
+const TopCategory = () => {
+  // Categories with icons from Phosphor
+  const categories = [
+    { id: 1, name: "For You", image: "/assets/images/OJOBBL0.jpg", icon: < ShoppingBag size={32} weight="duotone" color="#facc15" /> },
+    { id: 2, name: "Fashion", image: "/assets/images/OJOBBL0.jpg", icon: <TShirt size={32} weight="duotone" color="#facc15" /> },
+    { id: 3, name: "Mobiles", image: "/assets/images/OJOBBL0.jpg", icon: <DeviceMobile size={32} weight="duotone" color="#facc15" /> },
+    { id: 4, name: "Electronics", image: "/assets/images/OJOBBL0.jpg", icon: <Laptop size={32} weight="duotone" color="#facc15" /> },
+    { id: 5, name: "Appliances", image: "/assets/images/OJOBBL0.jpg", icon: <Plug size={32} weight="duotone" color="#facc15" /> },
+    { id: 6, name: "Beauty", image: "/assets/images/OJOBBL0.jpg", icon: <Flask size={32} weight="duotone" color="#facc15" /> },
+  ];
 
-export default function TopCategory() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkScreen = () => setIsMobile(window.innerWidth <= 768);
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
+    return () => window.removeEventListener("resize", checkScreen);
+  }, []);
+
+  function SampleNextArrow(props) {
+    const { className, onClick } = props;
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`${className} slick-next slick-arrow flex-center rounded-circle bg-white text-xl hover-bg-main-600 hover-text-white transition-1`}
+      >
+        <i className="ph ph-caret-right" />
+      </button>
+    );
+  }
+
+  function SamplePrevArrow(props) {
+    const { className, onClick } = props;
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`${className} slick-prev slick-arrow flex-center rounded-circle bg-white text-xl hover-bg-main-600 hover-text-white transition-1`}
+      >
+        <i className="ph ph-caret-left" />
+      </button>
+    );
+  }
+
   const settings = {
     dots: false,
-    arrows: false,
-    infinite: false,
-    speed: 500,
-    slidesToShow: 8, // desktop default
+    arrows: true,
+    infinite: true,
+    speed: 1000,
+    slidesToShow: 7,
     slidesToScroll: 1,
+    nextArrow: <SampleNextArrow />,
+    prevArrow: <SamplePrevArrow />,
     responsive: [
-      { breakpoint: 1024, settings: { slidesToShow: 6 } }, // tablets
-      { breakpoint: 768, settings: { slidesToShow: 4 } },  // large phones
-      { breakpoint: 480, settings: { slidesToShow: 3 } },  // small phones
+      { breakpoint: 1200, settings: { slidesToShow: 6 } },
+      { breakpoint: 992, settings: { slidesToShow: 5 } },
+      { breakpoint: 768, settings: { slidesToShow: 4 } },
+      { breakpoint: 480, settings: { slidesToShow: 3 } },
     ],
   };
 
-
   return (
-    <section style={{ background: "#FDFFF0", padding: "10px 0" }}>
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <div style={{ width: "90%" }}>
-          <Slider {...settings}>
+    <div className="feature" id="featureSection">
+      <div className="container container-lg">
+        {!isMobile ? (
+          // ✅ Desktop / Tablet view (slider with images)
+          <div className="position-relative arrow-center">
+            <div className="feature-item-wrapper">
+              <Slider {...settings}>
+                {categories.map((category) => (
+                  <div key={category.id} className="feature-item text-center">
+                    <div className="feature-item__thumb">
+                      <Link href={`/category/${category.id}`} className="w-100 h-100 flex-center">
+                        <img
+                          src={category.image}
+                          alt={category.name}
+                          className="category-image"
+                          style={{ borderRadius: "10px" }}
+                        />
+                      </Link>
+                    </div>
+                    <div className="feature-item__content mt-16">
+                      <h6 className="text-md mb-8">
+                        <Link href={`/category/${category.id}`} className="text-inherit">
+                          {category.name}
+                        </Link>
+                      </h6>
+                    </div>
+                  </div>
+                ))}
+              </Slider>
+            </div>
+          </div>
+        ) : (
+          // ✅ Mobile view (scrollable category bar with Phosphor icons)
+          <div className="mobile-category-bar flex justify-center flex-wrap gap-6 py-3">
             {categories.map((category) => (
-              <div key={category.id} style={{ padding: "0 10px", textAlign: "center" }}>
-                <div
-                  style={{
-                    width: "100px",
-                    height: "100px",
-                    maxWidth: "100%",
-                    maxHeight: "100%",
-                    aspectRatio: "1 / 1",
-                    backgroundColor: category.bgColor,
-                    borderRadius: "8px",
-                    overflow: "hidden",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                    marginBottom: "8px",
-                  }}
-                  className="category-card"
-                >
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      transition: "transform 0.2s",
-                    }}
-                  />
+              <Link
+                key={category.id}
+                href={`/category/${category.id}`}
+                className="mobile-category-item flex flex-col items-center text-sm w-[80px]"
+              >
+                <div className="icon-wrapper bg-gray-100 rounded-full p-3 mb-1">
+                  {category.icon}
                 </div>
-                <span style={{ fontSize: "0.75rem", fontWeight: 500 }}>{category.name}</span>
-              </div>
+                <span className="text-center">{category.name}</span>
+              </Link>
             ))}
-          </Slider>
-        </div>
+          </div>
+        )}
       </div>
-
-    </section>
+    </div>
   );
-}
+};
+
+export default TopCategory;
