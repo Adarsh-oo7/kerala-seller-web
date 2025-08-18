@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from 'next/link';
 import { useCart } from '../../app/context/CartContext';
-import { ShoppingCart, User, Menu, X as CloseIcon, ChevronRight } from 'lucide-react';
+import { ShoppingCart, User, Menu, X as CloseIcon, ChevronRight, Search } from 'lucide-react';
+import BottomNav from "/components/common/BottomNav";
 
 // ==============================================================================
 // SUB-COMPONENTS (for better organization)
@@ -20,28 +21,73 @@ const DesktopNav = () => (
   </div>
 );
 
-const HeaderActions = ({ cartItemCount, isLoggedIn }) => (
-  <div className="right-section">
-    <div className="icon-group">
-      <Link href="/cart" className="icon-button" style={{ position: 'relative' }}>
-        <ShoppingCart size={22} />
-        {cartItemCount > 0 && (
-          <span className="cart-badge">{cartItemCount}</span>
-        )}
-      </Link>
+const HeaderActions = ({ cartItemCount, isLoggedIn }) => {
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
-      {isLoggedIn ? (
-        <Link href="/profile" className="icon-button">
-          <User size={22} />
+  return (
+    <div className="right-section">
+      <div className="icon-group">
+
+        {/* 🔍 Search Bar (desktop & tablet) */}
+        <div className="search-container">
+          <input type="text" placeholder="Search..." className="search-input" />
+          <Search size={16} className="search-icon" />
+        </div>
+
+        {/* 🔍 Search Icon (mobile only) */}
+        <button
+          className="search-icon-button"
+          onClick={() => setShowMobileSearch(!showMobileSearch)}
+        >
+          <Search size={20} />
+        </button>
+
+        {/* 🛒 Cart */}
+        <Link href="/cart" className="icon-button" style={{ position: 'relative' }}>
+          <ShoppingCart size={22} />
+          {cartItemCount > 0 && (
+            <span className="cart-badge">{cartItemCount}</span>
+          )}
         </Link>
-      ) : (
-        <Link href="/login/buyer" className="login-button-header">
-          Login
-        </Link>
+
+        {/* 👤 Login / Profile (hidden on mobile) */}
+        <div className="auth-buttons">
+          {isLoggedIn ? (
+            <Link href="/profile" className="icon-button">
+              <User size={22} />
+            </Link>
+          ) : (
+            <Link href="/login/buyer" className="login-button-header">
+              Login
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* 📱 Mobile Search Overlay */}
+      {showMobileSearch && (
+        <div className="mobile-search-overlay">
+          <div className="mobile-search-box">
+            <Search size={18} className="mobile-search-icon" />
+            <input
+              type="text"
+              placeholder="Search..."
+              className="mobile-search-input"
+              autoFocus
+            />
+            <button
+              className="mobile-search-close"
+              onClick={() => setShowMobileSearch(false)}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       )}
     </div>
-  </div>
-);
+  );
+};
+
 
 const MobileMenu = ({ isOpen, onClose }) => {
   const [expandedItem, setExpandedItem] = useState(null);
@@ -55,7 +101,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
       setExpandedItem(null);
     }
   }, [isOpen]);
-  
+
   return (
     <>
       <div className={`mobile-menu-overlay ${isOpen ? "open" : ""}`} onClick={onClose}></div>
@@ -71,11 +117,11 @@ const MobileMenu = ({ isOpen, onClose }) => {
           </button>
         </div>
         <div className="mobile-nav-items">
-          <Link href="/" className="mobile-nav-item" onClick={onClose}><ChevronRight size={16}/> Home</Link>
-          <Link href="/shop" className="mobile-nav-item" onClick={onClose}><ChevronRight size={16}/> Shop</Link>
+          <Link href="/" className="mobile-nav-item" onClick={onClose}><ChevronRight size={16} /> Home</Link>
+          <Link href="/shop" className="mobile-nav-item" onClick={onClose}><ChevronRight size={16} /> Shop</Link>
           <div>
             <div className="mobile-nav-item" onClick={() => toggleExpandItem("products")}>
-              <span><ChevronRight size={16}/> Products</span>
+              <span><ChevronRight size={16} /> Products</span>
               <div className="plus-icon">{expandedItem === "products" ? "−" : "+"}</div>
             </div>
             <div className={`submenu ${expandedItem === "products" ? "expanded" : ""}`}>
@@ -83,8 +129,8 @@ const MobileMenu = ({ isOpen, onClose }) => {
               <Link href="/category/2" className="submenu-item" onClick={onClose}>Category 2</Link>
             </div>
           </div>
-          <Link href="/about" className="mobile-nav-item" onClick={onClose}><ChevronRight size={16}/> About Us</Link>
-          <Link href="/contact" className="mobile-nav-item" onClick={onClose}><ChevronRight size={16}/> Contact Us</Link>
+          <Link href="/about" className="mobile-nav-item" onClick={onClose}><ChevronRight size={16} /> About Us</Link>
+          <Link href="/contact" className="mobile-nav-item" onClick={onClose}><ChevronRight size={16} /> Contact Us</Link>
         </div>
       </div>
     </>
@@ -113,7 +159,7 @@ export default function Header() {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
-  
+
   useEffect(() => {
     document.body.style.overflow = isMobileMenuOpen ? "hidden" : "auto";
     return () => {
@@ -122,6 +168,7 @@ export default function Header() {
   }, [isMobileMenuOpen]);
 
   return (
+    <>
     <header className="header">
       <div className="top-header">
         <button className="mobile-menu-button" onClick={toggleMobileMenu}>
@@ -130,7 +177,7 @@ export default function Header() {
 
         <div className="logo-container">
           <Link href="/">
-            <img src="https://tse2.mm.bing.net/th/id/OIP.NXILvymg8PHUgZW6_b7fegHaHa?pid=Api&P=0&h=220" alt="Logo" className="logo-image" />
+            <img src="/assets/images/logo/KERALA SELLERS transp.png" alt="Logo" className="logo-image" />
           </Link>
         </div>
 
@@ -138,8 +185,10 @@ export default function Header() {
       </div>
 
       <DesktopNav />
-      
+
       <MobileMenu isOpen={isMobileMenuOpen} onClose={toggleMobileMenu} />
     </header>
+    <BottomNav cartItemCount={cartItemCount} isLoggedIn={isLoggedIn} />
+    </>
   );
 }

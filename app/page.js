@@ -8,6 +8,8 @@ import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
 import BannerSlider from "../components/home/BannerSlider";
 import TopCategory from "../components/home/TopCategory";
+import ShopCard from "../components/common/ShopCard";
+
 
 
 const bannerImages = [
@@ -58,25 +60,31 @@ export default function Home() {
     <div className='' style={{ backgroundColor: "#FDFFF0 " }}>
       {/* #FDFFF0 */}
       <Header />
-      <div style={{ width: "100%", margin: 0, padding: 0, marginTop:"20px" }}>
+      <div style={{ width: "100%", margin: 0, padding: 0, marginTop: "20px" }}>
         <TopCategory />
       </div>
 
-      <div style={{ width: "100%", margin: 0, padding: 0, marginTop:"20px" , justifyContent: "center", display:"flex"}}>
+      <div style={{ width: "100%", margin: 0, padding: 0, marginTop: "20px", justifyContent: "center", display: "flex" }}>
 
         <BannerSlider images={bannerImages} autoPlay={true} interval={4000} />
       </div>
 
+
       <div style={styles.container}>
         <h2 style={styles.sectionTitle}>Featured Stores</h2>
         {isLoading ? <p>Loading...</p> : (
-          <div style={styles.storesGrid}>
-            {stores.map(store => (
-              <Link key={store.name} href={`/shop/${store.seller_phone}`} style={styles.storeCardLink}>
-                <div style={styles.storeCard}>
-                  <img src={store.logo_url || 'https://placehold.co/100x100'} alt={`${store.name} logo`} style={styles.storeLogo} />
-                  <h3 style={styles.storeName}>{store.name}</h3>
-                </div>
+          <div className="store-grid">
+            {stores.map((store) => (
+              <Link
+                key={store.name}
+                href={`/shop/${store.seller_phone}`}
+                className="store-card-link"
+              >
+                <ShopCard
+                  src={store.logo_url || "https://placehold.co/300x300"}
+                  alt={`${store.name} logo`}
+                  label={store.name}
+                />
               </Link>
             ))}
           </div>

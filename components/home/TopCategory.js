@@ -26,14 +26,15 @@ export default function TopCategory() {
     arrows: false,
     infinite: false,
     speed: 500,
-    slidesToShow: Math.min(categories.length, 8),
+    slidesToShow: 8, // desktop default
     slidesToScroll: 1,
     responsive: [
-      { breakpoint: 1024, settings: { slidesToShow: Math.min(categories.length, 6) } },
-      { breakpoint: 768, settings: { slidesToShow: Math.min(categories.length, 4) } },
-      { breakpoint: 480, settings: { slidesToShow: Math.min(categories.length, 3) } },
+      { breakpoint: 1024, settings: { slidesToShow: 6 } }, // tablets
+      { breakpoint: 768, settings: { slidesToShow: 4 } },  // large phones
+      { breakpoint: 480, settings: { slidesToShow: 3 } },  // small phones
     ],
   };
+
 
   return (
     <section style={{ background: "#FDFFF0", padding: "10px 0" }}>
