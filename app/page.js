@@ -9,13 +9,17 @@ import Footer from '../components/common/Footer';
 import BannerSlider from "../components/home/BannerSlider";
 import TopCategory from "../components/home/TopCategory";
 import ShopCard from "../components/common/ShopCard";
+import Skeleton from "../components/common/Skeleton";
+
 
 
 
 const bannerImages = [
-  { src: "/assets/images/3.png", alt: "Banner 3" },
-  { src: "/assets/images/3.png", alt: "Banner 3" },
-  { src: "/assets/images/3.png", alt: "Banner 3" },
+  { src: "/assets/images/Banner/5.png", alt: "Banner 5" },
+  { src: "/assets/images/Banner/4.png", alt: "Banner 4" },
+  { src: "/assets/images/Banner/1.png", alt: "Banner 1" },
+  { src: "/assets/images/Banner/2.png", alt: "Banner 2" },
+  { src: "/assets/images/Banner/3.png", alt: "Banner 3" },
 ];
 
 const PRODUCTS_API_URL = 'http://localhost:8000/user/store/products/';
@@ -71,8 +75,19 @@ export default function Home() {
 
 
       <div style={styles.container}>
-        <h2 style={styles.sectionTitle}>Featured Stores</h2>
-        {isLoading ? <p>Loading...</p> : (
+        <h2 className='section-title'>FEATURED STORES</h2>
+        {isLoading ? (
+          <div className="store-grid">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="skeleton-wrapper">
+                <Skeleton width="100%" style={{ paddingTop: "100%" }} />
+
+              </div>
+            ))}
+          </div>
+
+
+        ) : (
           <div className="store-grid">
             {stores.map((store) => (
               <Link
@@ -92,7 +107,7 @@ export default function Home() {
 
         <hr style={styles.hr} />
 
-        <h2 style={styles.sectionTitle}>New Arrivals</h2>
+        <h2 className='section-title'>NEW ARRIVALS</h2>
         {isLoading ? <p>Loading...</p> : (
           <div style={styles.grid}>
             {products.map(product => (

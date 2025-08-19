@@ -28,19 +28,19 @@ export default function BottomNav() {
         href="/"
         className={`bottom-nav-item ${pathname === "/" ? "active" : ""}`}
       >
-        <Home size={24} />
+        <Home size={20} weight="duotone"  />
       </Link>
       <Link
         href="/shop"
         className={`bottom-nav-item ${pathname === "/shop" ? "active" : ""}`}
       >
-        <ShoppingBag size={24} />
+        <ShoppingBag size={20} weight="duotone" />
       </Link>
       <Link
         href="/cart"
         className={`bottom-nav-item cart-icon ${pathname === "/cart" ? "active" : ""}`}
       >
-        <ShoppingCart size={24} />
+        <ShoppingCart size={20} weight="duotone" />
         {cartItemCount > 0 && (
           <span className="cart-badge">{cartItemCount}</span>
         )}
@@ -49,7 +49,7 @@ export default function BottomNav() {
         href="/profile"
         className={`bottom-nav-item ${pathname === "/profile" ? "active" : ""}`}
       >
-        <User size={24} />
+        <User size={20} weight="duotone" />
       </Link>
     </div>
   );

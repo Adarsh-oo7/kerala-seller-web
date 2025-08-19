@@ -11,7 +11,7 @@ import BottomNav from "/components/common/BottomNav";
 // ==============================================================================
 
 const DesktopNav = () => (
-  <div className="navigation desktop-only">
+  <div className="navigation desktop-only" style={{backgroundColor:'#1a4845'}}>
     <nav className="nav-menu">
       <Link href="/" className="nav-item">HOME</Link>
       <Link href="/shop" className="nav-item">SHOP</Link>
@@ -31,7 +31,7 @@ const HeaderActions = ({ cartItemCount, isLoggedIn }) => {
         {/* 🔍 Search Bar (desktop & tablet) */}
         <div className="search-container">
           <input type="text" placeholder="Search..." className="search-input" />
-          <Search size={16} className="search-icon" />
+          <Search size={16} color="#1a4845" className="search-icon" />
         </div>
 
         {/* 🔍 Search Icon (mobile only) */}
@@ -39,12 +39,12 @@ const HeaderActions = ({ cartItemCount, isLoggedIn }) => {
           className="search-icon-button"
           onClick={() => setShowMobileSearch(!showMobileSearch)}
         >
-          <Search size={20} />
+          <Search size={20} color="#1a4845" />
         </button>
 
         {/* 🛒 Cart */}
         <Link href="/cart" className="icon-button" style={{ position: 'relative' }}>
-          <ShoppingCart size={22} />
+          <ShoppingCart size={22} color="#1a4845" />
           {cartItemCount > 0 && (
             <span className="cart-badge">{cartItemCount}</span>
           )}
@@ -68,7 +68,7 @@ const HeaderActions = ({ cartItemCount, isLoggedIn }) => {
       {showMobileSearch && (
         <div className="mobile-search-overlay">
           <div className="mobile-search-box">
-            <Search size={18} className="mobile-search-icon" />
+            <Search size={18} color="#1a4845" className="mobile-search-icon" />
             <input
               type="text"
               placeholder="Search..."
@@ -172,7 +172,7 @@ export default function Header() {
     <header className="header">
       <div className="top-header">
         <button className="mobile-menu-button" onClick={toggleMobileMenu}>
-          <Menu />
+          <Menu strokeWidth={1} color="#1a4845" />
         </button>
 
         <div className="logo-container">

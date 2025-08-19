@@ -2,19 +2,21 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Slider from "react-slick";
-import { ShoppingBag, TShirt, DeviceMobile, Laptop, Plug, Flask } from "phosphor-react";
+import { Dress, TShirt, DeviceMobile,HighHeel, Laptop,BeerBottle, Flask } from "@phosphor-icons/react";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 const TopCategory = () => {
   // Categories with icons from Phosphor
   const categories = [
-    { id: 1, name: "For You", image: "/assets/images/OJOBBL0.jpg", icon: < ShoppingBag size={32} weight="duotone" color="#facc15" /> },
-    { id: 2, name: "Fashion", image: "/assets/images/OJOBBL0.jpg", icon: <TShirt size={32} weight="duotone" color="#facc15" /> },
-    { id: 3, name: "Mobiles", image: "/assets/images/OJOBBL0.jpg", icon: <DeviceMobile size={32} weight="duotone" color="#facc15" /> },
-    { id: 4, name: "Electronics", image: "/assets/images/OJOBBL0.jpg", icon: <Laptop size={32} weight="duotone" color="#facc15" /> },
-    { id: 5, name: "Appliances", image: "/assets/images/OJOBBL0.jpg", icon: <Plug size={32} weight="duotone" color="#facc15" /> },
-    { id: 6, name: "Beauty", image: "/assets/images/OJOBBL0.jpg", icon: <Flask size={32} weight="duotone" color="#facc15" /> },
+    { id: 1, name: "Mens Wear", image: "/assets/images/TopCategory/1.png", icon: <TShirt size={32} weight="duotone" color="#1a4845" /> },
+    { id: 2, name: "Womens Wear", image: "/assets/images/TopCategory/2.png", icon: <Dress size={32} weight="duotone" color="#1a4845" /> },
+    { id: 3, name: "Gadgets", image: "/assets/images/TopCategory/3.png", icon: <DeviceMobile size={32} weight="duotone" color="#1a4845" /> },
+    { id: 4, name: "Footwears", image: "/assets/images/TopCategory/4.png", icon: <HighHeel size={32} weight="duotone" color="#1a4845" /> },
+    { id: 5, name: "Grocery", image: "/assets/images/TopCategory/5.png", icon: <BeerBottle size={32} weight="duotone" color="#1a4845" /> },
+    { id: 6, name: "Beauty", image: "/assets/images/TopCategory/6.png", icon: <Flask size={32} weight="duotone" color="#1a4845" /> },
+    { id: 7, name: "Electronics", image: "/assets/images/TopCategory/7.png", icon: <Laptop size={32} weight="duotone" color="#1a4845" /> },
+
   ];
 
   const [isMobile, setIsMobile] = useState(false);
@@ -54,7 +56,7 @@ const TopCategory = () => {
 
   const settings = {
     dots: false,
-    arrows: true,
+    arrows: false,
     infinite: true,
     speed: 1000,
     slidesToShow: 7,
