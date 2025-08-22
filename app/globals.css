@@ -1,7 +1,7 @@
 /* ==========================================================================
    1. CSS Variables & Theming
    ========================================================================== */
-:root {
+/* :root {
   --background: #ffffff;
   --foreground: #111827;
   --muted-foreground: #6b7280;
@@ -17,7 +17,7 @@
     --muted-foreground: #9ca3af;
     --border-color: #374151;
   }
-}
+} */
 
 /* ==========================================================================
    2. General & Reset Styles
@@ -34,11 +34,4 @@ body {
   overflow-x: hidden;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  /* ✅ Use the Geist font variable from your layout.js */
-  font-family: var(--font-geist-sans), Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+
