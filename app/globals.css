@@ -1,7 +1,7 @@
 /* ==========================================================================
    1. CSS Variables & Theming
    ========================================================================== */
-:root {
+/* :root {
   --background: #ffffff;
   --foreground: #111827;
   --muted-foreground: #6b7280;
@@ -17,12 +17,12 @@
     --muted-foreground: #9ca3af;
     --border-color: #374151;
   }
-}
+} */
 
 /* ==========================================================================
    2. General & Reset Styles
    ========================================================================== */
-* {
+/* * {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
@@ -32,7 +32,7 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
-}
+} */
 
 body {
   color: var(--foreground);
