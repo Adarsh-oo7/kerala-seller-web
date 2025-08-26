@@ -4,239 +4,635 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Header from '../../components/common/Header'; // ✅ Import the Header
-import Footer from '../../components/common/Footer'; // ✅ Import the Footer
+import { 
+  User, 
+  Package, 
+  Edit3, 
+  Shield, 
+  Phone, 
+  MapPin, 
+  Check, 
+  X,
+  LogOut,
+  ChevronRight,
+  Home,
+  Settings
+} from 'lucide-react';
 
-// ==============================================================================
-// CONSTANTS
-// ==============================================================================
 const PROFILE_API = 'http://localhost:8000/api/buyer/profile/';
-const SEND_OTP_API = 'http://localhost:8000/user/buyer/send-otp/';
-const VERIFY_OTP_API = 'http://localhost:8000/user/buyer/verify-otp/';
 
-// ==============================================================================
-// 1. UI SUB-COMPONENTS
-// ==============================================================================
+export default function ProfilePage() {
+  const [buyer, setBuyer] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
-// --- Component for the Profile & Address Form ---
-function ProfileForm({ formData, onFormChange, onProfileUpdate, isSaving }) {
-  return (
-    <form onSubmit={onProfileUpdate}>
-      <div style={styles.formGroup}><label>Full Name</label><input type="text" name="full_name" value={formData.full_name} onChange={onFormChange} style={styles.input} /></div>
-      <div style={styles.formGroup}><label>Address Line 1</label><input type="text" name="address_line_1" value={formData.address_line_1} onChange={onFormChange} style={styles.input} /></div>
-      <div style={styles.formGroup}><label>Address Line 2</label><input type="text" name="address_line_2" value={formData.address_line_2} onChange={onFormChange} style={styles.input} /></div>
-      <div style={styles.formGroup}><label>City</label><input type="text" name="city" value={formData.city} onChange={onFormChange} style={styles.input} /></div>
-      <div style={styles.formGroup}><label>Pincode</label><input type="text" name="pincode" value={formData.pincode} onChange={onFormChange} style={styles.input} /></div>
-      <button type="submit" style={styles.button} disabled={isSaving}>
-        {isSaving ? 'Saving...' : 'Save Profile'}
-      </button>
-    </form>
-  );
-}
+  const getAuthHeaders = useCallback(() => {
+    const token = localStorage.getItem('buyerAccessToken');
+    if (!token) {
+      router.push('/login/buyer');
+      return null;
+    }
+    return { 'Authorization': `Bearer ${token}` };
+  }, [router]);
 
-// --- Component for the Phone Verification Flow ---
-function PhoneVerification({ buyer, formData, onFormChange, otp, onOtpChange, onSendOtp, onVerifyOtp, otpSent }) {
-  if (buyer?.phone_verified) {
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const headers = getAuthHeaders();
+      if (!headers) return;
+      
+      try {
+        const response = await axios.get(PROFILE_API, { headers });
+        setBuyer(response.data);
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+        if (error.response?.status === 401) {
+          localStorage.removeItem('buyerAccessToken');
+          router.push('/login/buyer');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [getAuthHeaders, router]);
+
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      localStorage.removeItem('buyerAccessToken');
+      router.push('/');
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div style={styles.verifiedSection}>
-        <p>✅ Your phone ({buyer.phone_number}) is verified.</p>
+      <div style={styles.loadingContainer}>
+        <div style={styles.spinner}></div>
+        <p>Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (!buyer) {
+    return (
+      <div style={styles.errorContainer}>
+        <p>Could not load profile. Please try logging in again.</p>
+        <Link href="/login/buyer" style={styles.loginButton}>
+          Go to Login
+        </Link>
       </div>
     );
   }
 
   return (
-    <div>
-      <h4>Verify Your Phone Number to Shop</h4>
-      {!otpSent ? (
-        <div style={styles.formGroup}>
-          <label>Phone Number</label>
-          <input type="tel" name="phone_number" value={formData.phone_number} onChange={onFormChange} placeholder="Enter 10-digit phone number" style={styles.input} />
-          <button type="button" onClick={onSendOtp} style={styles.button}>Send OTP</button>
+    <div style={styles.pageContainer}>
+      {/* Header */}
+      <header style={styles.header}>
+        <div style={styles.headerContainer}>
+          <Link href="/" style={styles.backButton}>
+            <Home size={20} />
+            <span style={styles.backText}>Home</span>
+          </Link>
+          <h1 style={styles.headerTitle}>My Account</h1>
+          <button onClick={handleLogout} style={styles.logoutButton}>
+            <LogOut size={18} />
+            <span style={styles.logoutText}>Logout</span>
+          </button>
         </div>
-      ) : (
-        <div style={styles.formGroup}>
-          <p>An OTP has been sent to {formData.phone_number}.</p>
-          <input type="text" value={otp} onChange={onOtpChange} placeholder="Enter 4-digit OTP" style={styles.input} maxLength="4" />
-          <button type="button" onClick={onVerifyOtp} style={styles.button}>Verify</button>
+      </header>
+
+      <div style={styles.container}>
+        <div style={styles.content}>
+          {/* Profile Card */}
+          <div style={styles.profileCard}>
+            <div style={styles.avatarSection}>
+              <div style={styles.avatar}>
+                {buyer.full_name?.charAt(0)?.toUpperCase() || 'U'}
+              </div>
+              <div style={styles.userInfo}>
+                <h2 style={styles.userName}>{buyer.full_name || 'User'}</h2>
+                <p style={styles.userEmail}>{buyer.email || 'No email provided'}</p>
+                <div style={styles.verificationBadge}>
+                  {buyer.phone_verified ? (
+                    <span style={styles.verified}>
+                      <Check size={14} /> Phone Verified
+                    </span>
+                  ) : (
+                    <span style={styles.notVerified}>
+                      <X size={14} /> Phone Not Verified
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Info Cards */}
+          <div style={styles.infoCards}>
+            <div style={styles.infoCard}>
+              <div style={styles.infoIcon}>
+                <Phone size={20} />
+              </div>
+              <div style={styles.infoContent}>
+                <span style={styles.infoLabel}>Phone Number</span>
+                <p style={styles.infoValue}>{buyer.phone_number || 'Not provided'}</p>
+              </div>
+            </div>
+            
+            <div style={styles.infoCard}>
+              <div style={styles.infoIcon}>
+                <MapPin size={20} />
+              </div>
+              <div style={styles.infoContent}>
+                <span style={styles.infoLabel}>Address</span>
+                <p style={styles.infoValue}>
+                  {[buyer.address_line_1, buyer.address_line_2, buyer.city, buyer.pincode]
+                    .filter(Boolean).join(', ') || 'Not provided'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Menu */}
+          <div style={styles.menuSection}>
+            <h3 style={styles.menuTitle}>Account Management</h3>
+            
+            <div style={styles.menuGrid}>
+              <Link href="/profile/edit" style={styles.menuItem}>
+                <div style={styles.menuItemContent}>
+                  <div style={styles.menuIcon}>
+                    <Edit3 size={24} />
+                  </div>
+                  <div style={styles.menuInfo}>
+                    <span style={styles.menuLabel}>Edit Profile</span>
+                    <p style={styles.menuDesc}>Update personal information and address</p>
+                  </div>
+                </div>
+                <ChevronRight size={20} style={styles.chevron} />
+              </Link>
+
+              <Link href="/profile/orders" style={styles.menuItem}>
+                <div style={styles.menuItemContent}>
+                  <div style={styles.menuIcon}>
+                    <Package size={24} />
+                  </div>
+                  <div style={styles.menuInfo}>
+                    <span style={styles.menuLabel}>My Orders</span>
+                    <p style={styles.menuDesc}>Track orders and view purchase history</p>
+                  </div>
+                </div>
+                <ChevronRight size={20} style={styles.chevron} />
+              </Link>
+
+              <Link href="/profile/verification" style={styles.menuItem}>
+                <div style={styles.menuItemContent}>
+                  <div style={styles.menuIcon}>
+                    <Shield size={24} />
+                  </div>
+                  <div style={styles.menuInfo}>
+                    <span style={styles.menuLabel}>Phone Verification</span>
+                    <p style={styles.menuDesc}>
+                      {buyer.phone_verified ? 'Your phone is verified ✓' : 'Verify your phone number'}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight size={20} style={styles.chevron} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Account Summary */}
+          <div style={styles.summaryCard}>
+            <h3 style={styles.summaryTitle}>Account Summary</h3>
+            <div style={styles.summaryGrid}>
+              <div style={styles.summaryItem}>
+                <span style={styles.summaryLabel}>Account Status</span>
+                <span style={styles.summaryValue}>Active</span>
+              </div>
+              <div style={styles.summaryItem}>
+                <span style={styles.summaryLabel}>Member Since</span>
+                <span style={styles.summaryValue}>
+                  {new Date(buyer.date_joined).toLocaleDateString()}
+                </span>
+              </div>
+              <div style={styles.summaryItem}>
+                <span style={styles.summaryLabel}>Verification</span>
+                <span style={styles.summaryValue}>
+                  {buyer.phone_verified ? 'Complete' : 'Pending'}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
+
+      {/* Add CSS for animations */}
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+          .menu-item:hover {
+            transform: none;
+          }
+          
+          .menu-item:active {
+            transform: scale(0.98);
+          }
+        }
+      `}</style>
     </div>
   );
 }
 
-
-// ==============================================================================
-// 2. MAIN PAGE COMPONENT
-// ==============================================================================
-
-export default function ProfilePage() {
-    const [buyer, setBuyer] = useState(null);
-    const [formData, setFormData] = useState({
-        full_name: '', address_line_1: '', address_line_2: '',
-        city: '', pincode: '', phone_number: ''
-    });
-    const [otp, setOtp] = useState('');
-    const [otpSent, setOtpSent] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-    const [error, setError] = useState('');
-    const router = useRouter();
-
-    const getAuthHeaders = useCallback(() => {
-        const token = localStorage.getItem('buyerAccessToken');
-        if (!token) {
-            router.push('/login/buyer');
-            return null;
-        }
-        return { 'Authorization': `Bearer ${token}` };
-    }, [router]);
-
-    const fetchProfile = useCallback(() => {
-        const headers = getAuthHeaders();
-        if (!headers) return;
-        setIsLoading(true);
-        axios.get(PROFILE_API, { headers })
-            .then(res => {
-                setBuyer(res.data);
-                setFormData({
-                    full_name: res.data.full_name || '',
-                    address_line_1: res.data.address_line_1 || '',
-                    address_line_2: res.data.address_line_2 || '',
-                    city: res.data.city || '',
-                    pincode: res.data.pincode || '',
-                    phone_number: res.data.phone_number || ''
-                });
-            })
-            .catch(err => {
-                console.error("Failed to fetch profile:", err);
-                if (err.response?.status === 401) {
-                    localStorage.removeItem('buyerAccessToken');
-                    router.push('/login/buyer');
-                }
-            })
-            .finally(() => setIsLoading(false));
-    }, [getAuthHeaders, router]);
-
-    useEffect(() => { fetchProfile(); }, [fetchProfile]);
-
-    const handleFormChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-    const handleProfileUpdate = async (e) => {
-        e.preventDefault();
-        const headers = getAuthHeaders();
-        if (!headers) return;
-        setIsSaving(true);
-        try {
-            await axios.patch(PROFILE_API, formData, { headers });
-            alert('Profile updated successfully!');
-            fetchProfile();
-        } catch (error) {
-            alert('Failed to update profile.');
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const handleSendOtp = async () => {
-        const headers = getAuthHeaders();
-        if (!headers || !formData.phone_number) return alert("Please enter a phone number.");
-        try {
-            await axios.post(SEND_OTP_API, { phone: formData.phone_number }, { headers });
-            setOtpSent(true);
-        } catch (error) {
-            alert("Failed to send OTP. Please try again.");
-        }
-    };
-
-    const handleVerifyOtp = async () => {
-        const headers = getAuthHeaders();
-        if (!headers || !otp) return alert("Please enter the OTP.");
-        try {
-            await axios.post(VERIFY_OTP_API, { otp }, { headers });
-            alert('Verification successful!');
-            fetchProfile();
-            setOtpSent(false);
-            setOtp('');
-        } catch (error) {
-            alert('Invalid OTP. Please try again.');
-        }
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem('buyerAccessToken');
-        router.push('/');
-    };
-
-    if (isLoading) {
-        return <div style={styles.container}><p style={styles.message}>Loading profile...</p></div>;
-    }
-    
-    if (!buyer) {
-        return (
-            <div style={styles.container}>
-                <div style={styles.card}>
-                    <p style={styles.message}>Could not load profile. Please try logging in again.</p>
-                    <button onClick={() => router.push('/login/buyer')} style={styles.button}>Go to Login</button>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <>
-        <Header/>
-        <div style={styles.container}>
-            <div style={styles.card}>
-                <div style={styles.header}>
-                    <h2>Your Profile</h2>
-                    <button onClick={handleLogout} style={styles.logoutButton}>Logout</button>
-                </div>
-                <p>Manage your personal information and shipping address.</p>
-                
-                <ProfileForm 
-                    formData={formData}
-                    onFormChange={handleFormChange}
-                    onProfileUpdate={handleProfileUpdate}
-                    isSaving={isSaving}
-                />
-                
-                <hr style={styles.hr} />
-
-                <PhoneVerification
-                    buyer={buyer}
-                    formData={formData}
-                    onFormChange={handleFormChange}
-                    otp={otp}
-                    onOtpChange={e => setOtp(e.target.value)}
-                    otpSent={otpSent}
-                    onSendOtp={handleSendOtp}
-                    onVerifyOtp={handleVerifyOtp}
-                />
-
-                <div style={styles.navigation}>
-                    <Link href="/shop" style={styles.link}>← Back to Shop</Link>
-                </div>
-            </div>
-        </div>
-                </>
-
-    );
-}
-
-// ==============================================================================
-// 3. STYLES
-// ==============================================================================
 const styles = {
-    container: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f0f2f5', padding: '20px' },
-    message: { textAlign: 'center', fontSize: '1.1rem', padding: '20px' },
-    card: { backgroundColor: 'white', padding: '40px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '450px', maxWidth: '90%' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' },
-    logoutButton: { padding: '8px 16px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem' },
-    hr: { border: 'none', borderTop: '1px solid #eee', margin: '20px 0' },
-    verifiedSection: { color: 'green', textAlign: 'center', fontSize: '1.1rem' },
-    formGroup: { marginBottom: '15px', textAlign: 'left' },
-    input: { width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '5px', fontSize: '1rem', boxSizing: 'border-box' },
-    button: { width: '100%', padding: '12px', marginTop: '10px', backgroundColor: '#0d6efd', color: 'white', border: 'none', borderRadius: '5px', fontSize: '1rem', cursor: 'pointer', textDecoration: 'none', display: 'inline-block' },
-    navigation: { marginTop: '20px', textAlign: 'center' },
-    link: { color: '#0d6efd', textDecoration: 'none' },
+  pageContainer: {
+    minHeight: '100vh',
+    backgroundColor: '#f8fafc'
+  },
+  
+  // Loading & Error States
+  loadingContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '100vh',
+    gap: '16px',
+    padding: '20px'
+  },
+  spinner: {
+    width: '40px',
+    height: '40px',
+    border: '4px solid #e2e8f0',
+    borderTop: '4px solid #3b82f6',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  },
+  errorContainer: {
+    textAlign: 'center',
+    padding: '60px 20px',
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  loginButton: {
+    display: 'inline-block',
+    padding: '12px 24px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    textDecoration: 'none',
+    borderRadius: '8px',
+    marginTop: '16px',
+    fontWeight: '500'
+  },
+
+  // Header
+  header: {
+    backgroundColor: 'white',
+    borderBottom: '1px solid #e2e8f0',
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+  },
+  headerContainer: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '16px 20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  backButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    color: '#3b82f6',
+    textDecoration: 'none',
+    fontSize: '16px',
+    fontWeight: '500',
+    padding: '8px'
+  },
+  backText: {
+    display: 'none',
+    '@media (min-width: 640px)': {
+      display: 'inline'
+    }
+  },
+  headerTitle: {
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#1e293b',
+    margin: 0,
+    '@media (max-width: 640px)': {
+      fontSize: '18px'
+    }
+  },
+  logoutButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    background: 'none',
+    border: '2px solid #fee2e2',
+    borderRadius: '8px',
+    padding: '8px 12px',
+    color: '#dc2626',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'all 0.2s'
+  },
+  logoutText: {
+    display: 'none',
+    '@media (min-width: 640px)': {
+      display: 'inline'
+    }
+  },
+
+  // Container
+  container: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '20px',
+    '@media (min-width: 768px)': {
+      padding: '40px 20px'
+    }
+  },
+  content: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px',
+    animation: 'fadeIn 0.6s ease-out'
+  },
+
+  // Profile Card
+  profileCard: {
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    padding: '24px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    '@media (min-width: 768px)': {
+      padding: '32px'
+    }
+  },
+  avatarSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '20px',
+    '@media (max-width: 640px)': {
+      gap: '16px'
+    }
+  },
+  avatar: {
+    width: '80px',
+    height: '80px',
+    borderRadius: '50%',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '32px',
+    fontWeight: '700',
+    flexShrink: 0,
+    '@media (max-width: 640px)': {
+      width: '60px',
+      height: '60px',
+      fontSize: '24px'
+    }
+  },
+  userInfo: {
+    flex: 1,
+    minWidth: 0
+  },
+  userName: {
+    fontSize: '28px',
+    fontWeight: '700',
+    color: '#1e293b',
+    margin: '0 0 6px 0',
+    '@media (max-width: 640px)': {
+      fontSize: '20px'
+    }
+  },
+  userEmail: {
+    color: '#64748b',
+    margin: '0 0 12px 0',
+    fontSize: '16px',
+    '@media (max-width: 640px)': {
+      fontSize: '14px'
+    }
+  },
+  verificationBadge: {
+    display: 'inline-block'
+  },
+  verified: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    color: '#059669',
+    fontSize: '14px',
+    fontWeight: '600',
+    '@media (max-width: 640px)': {
+      fontSize: '12px'
+    }
+  },
+  notVerified: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    color: '#dc2626',
+    fontSize: '14px',
+    fontWeight: '600',
+    '@media (max-width: 640px)': {
+      fontSize: '12px'
+    }
+  },
+
+  // Info Cards
+  infoCards: {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gap: '16px',
+    '@media (min-width: 768px)': {
+      gridTemplateColumns: '1fr 1fr',
+      gap: '20px'
+    }
+  },
+  infoCard: {
+    backgroundColor: 'white',
+    padding: '20px',
+    borderRadius: '12px',
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '16px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    transition: 'all 0.2s',
+    '@media (min-width: 768px)': {
+      padding: '24px'
+    }
+  },
+  infoIcon: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '12px',
+    backgroundColor: '#f1f5f9',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#475569',
+    flexShrink: 0
+  },
+  infoContent: {
+    flex: 1,
+    minWidth: 0
+  },
+  infoLabel: {
+    display: 'block',
+    fontSize: '14px',
+    color: '#64748b',
+    fontWeight: '600',
+    marginBottom: '4px'
+  },
+  infoValue: {
+    margin: 0,
+    fontSize: '16px',
+    color: '#1e293b',
+    fontWeight: '500',
+    lineHeight: '1.5'
+  },
+
+  // Menu Section
+  menuSection: {
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    padding: '24px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    '@media (min-width: 768px)': {
+      padding: '32px'
+    }
+  },
+  menuTitle: {
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#1e293b',
+    margin: '0 0 24px 0'
+  },
+  menuGrid: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+  menuItem: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '20px',
+    backgroundColor: '#f8fafc',
+    borderRadius: '12px',
+    textDecoration: 'none',
+    color: 'inherit',
+    transition: 'all 0.2s',
+    border: '2px solid transparent',
+    ':hover': {
+      backgroundColor: '#f1f5f9',
+      transform: 'translateY(-2px)',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      borderColor: '#e2e8f0'
+    }
+  },
+  menuItemContent: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    flex: 1
+  },
+  menuIcon: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '12px',
+    backgroundColor: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#3b82f6',
+    flexShrink: 0,
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+  },
+  menuInfo: {
+    flex: 1,
+    minWidth: 0
+  },
+  menuLabel: {
+    display: 'block',
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: '4px',
+    '@media (max-width: 640px)': {
+      fontSize: '16px'
+    }
+  },
+  menuDesc: {
+    margin: 0,
+    fontSize: '14px',
+    color: '#64748b',
+    lineHeight: '1.4'
+  },
+  chevron: {
+    color: '#94a3b8',
+    flexShrink: 0
+  },
+
+  // Summary Card
+  summaryCard: {
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    padding: '24px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    '@media (min-width: 768px)': {
+      padding: '32px'
+    }
+  },
+  summaryTitle: {
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#1e293b',
+    margin: '0 0 20px 0'
+  },
+  summaryGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gap: '16px',
+    '@media (min-width: 640px)': {
+      gridTemplateColumns: 'repeat(3, 1fr)'
+    }
+  },
+  summaryItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    padding: '16px',
+    backgroundColor: '#f8fafc',
+    borderRadius: '8px'
+  },
+  summaryLabel: {
+    fontSize: '14px',
+    color: '#64748b',
+    fontWeight: '500'
+  },
+  summaryValue: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1e293b'
+  }
 };

@@ -4,10 +4,17 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const CartContext = createContext();
 
-export const useCart = () => useContext(CartContext);
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
+  return context;
+};
 
 export const CartProvider = ({ children }) => {
   const [carts, setCarts] = useState({});
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     try {
@@ -17,12 +24,16 @@ export const CartProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Failed to parse carts from localStorage", error);
+    } finally {
+      setIsLoaded(true);
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('multiCarts', JSON.stringify(carts));
-  }, [carts]);
+    if (isLoaded) {
+      localStorage.setItem('multiCarts', JSON.stringify(carts));
+    }
+  }, [carts, isLoaded]);
 
   const addToCart = (sellerPhone, product, quantity = 1) => {
     setCarts(prevCarts => {
@@ -38,7 +49,6 @@ export const CartProvider = ({ children }) => {
       }
       return { ...prevCarts, [sellerPhone]: newCart };
     });
-    alert(`${product.name} added to cart!`);
   };
 
   const removeFromCart = (sellerPhone, productId) => {
@@ -62,6 +72,12 @@ export const CartProvider = ({ children }) => {
     return carts[sellerPhone] || [];
   };
 
+  // ✅ ADD THIS FUNCTION - This was missing!
+  const getCartTotal = (sellerPhone) => {
+    const cart = carts[sellerPhone] || [];
+    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  };
+
   const clearCartForSeller = (sellerPhone) => {
     setCarts(prevCarts => {
         const newCarts = {...prevCarts};
@@ -76,7 +92,9 @@ export const CartProvider = ({ children }) => {
     removeFromCart,
     updateQuantity,
     getCartBySeller,
+    getCartTotal, // ✅ ADD THIS TO THE VALUE OBJECT
     clearCartForSeller,
+    isLoaded,
   };
 
   return (

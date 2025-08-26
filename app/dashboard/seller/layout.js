@@ -2,49 +2,64 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import DashboardHeader from '../../../components/common/DashboardHeader';
+
+const PROFILE_API_URL = 'http://localhost:8000/user/store/profile/';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [sellerName, setSellerName] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
       router.push('/login/seller');
-      return;
+      return null;
     }
+    return { Authorization: `Token ${token}` };
+  }, [router]);
 
-    axios.get('http://localhost:8000/user/dashboard/', {
-        headers: { Authorization: `Token ${token}` },
-    })
+  useEffect(() => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
+    // This check runs on every dashboard page load to enforce profile completion
+    axios.get(PROFILE_API_URL, { headers })
     .then(response => {
-        setSellerName(response.data.seller.name);
+        setSellerName(response.data.name || 'Seller');
+        const isComplete = response.data.is_profile_complete;
+
+        // If the profile is not complete and the user is not on the settings page,
+        // force them to go there.
+        if (!isComplete && pathname !== '/dashboard/seller/settings') {
+            router.push('/dashboard/seller/settings');
+        } else {
+            setIsLoading(false); // Otherwise, allow the page to render
+        }
     })
     .catch(error => {
-        console.error("Failed to fetch seller data for layout", error);
-        localStorage.removeItem('accessToken');
+        console.error("Failed to fetch seller profile for layout check", error);
         router.push('/login/seller');
     });
 
-  }, [router]);
+  }, [pathname, router, getAuthHeaders]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    router.push('/login/seller');
-  };
+  // Show a loading message while the profile is being verified
+  if (isLoading) {
+    return <p style={{textAlign: 'center', marginTop: '50px'}}>Verifying your profile...</p>;
+  }
 
   const navSections = [
     {
       title: 'SALES & E-COMMERCE',
       items: [
-        // { name: 'Billing (POS)', href: '/dashboard/seller/billing' },
         { name: 'Products', href: '/dashboard/seller/products' },
         { name: 'Orders', href: '/dashboard/seller/orders' },
-              { name: 'Messages', href: '/dashboard/seller/messages' }, // <-- New Link
-
+        { name: 'Notifications', href: '/dashboard/seller/notifications' }, // ✅ Corrected
       ]
     },
     {
@@ -61,12 +76,12 @@ export default function DashboardLayout({ children }) {
       <div style={styles.sidebar}>
         <div>
           <h2 style={{ margin: 0 }}>Seller Panel</h2>
-          {sellerName && <p style={styles.welcomeMessage}>Welcome, {sellerName}</p>}
+          <p style={styles.welcomeMessage}>Welcome, {sellerName}</p>
         </div>
         
         <nav style={styles.nav}>
           <NavItem href="/dashboard/seller" name="Overview" pathname={pathname} />
-                    <NavItem href="/dashboard/seller/billing" name="shop billing" pathname={pathname} />
+          <NavItem href="/dashboard/seller/billing" name="Local Billing" pathname={pathname} />
 
           {navSections.map(section => (
             <div key={section.title} style={{ marginTop: '1.5rem' }}>
@@ -79,16 +94,18 @@ export default function DashboardLayout({ children }) {
         </nav>
         
         <div style={{ marginTop: 'auto' }}>
-            <h3 style={styles.sectionTitle}>ACCOUNT</h3>
-            <NavItem href="/dashboard/seller/settings" name="Settings" pathname={pathname} />
-            <NavItem href="/dashboard/seller/subscription" name="Subscription" pathname={pathname} />
-            <button onClick={handleLogout} style={styles.logoutButton}>Logout</button>
+          <h3 style={styles.sectionTitle}>ACCOUNT</h3>
+          <NavItem href="/dashboard/seller/settings" name="Settings" pathname={pathname} />
+          <NavItem href="/dashboard/seller/subscription" name="Subscription" pathname={pathname} />
         </div>
       </div>
-      <main style={styles.mainContent}>
-        {children}
-      </main>
-      {/* ✅ This closing div was missing */}
+      
+      <div style={styles.mainContentWrapper}>
+        <DashboardHeader sellerName={sellerName} />
+        <main style={styles.mainContent}>
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
@@ -109,6 +126,6 @@ const styles = {
     sectionTitle: { fontSize: '0.8rem', color: '#6c757d', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', padding: '0 15px' },
     navLink: { textDecoration: 'none', color: '#212529', padding: '10px 15px', borderRadius: '5px', display: 'block' },
     activeLink: { backgroundColor: '#e9ecef', fontWeight: 'bold' },
-    logoutButton: { width: '100%', padding: '10px 15px', border: 'none', backgroundColor: '#dc3545', color: '#fff', cursor: 'pointer', borderRadius: '5px', textAlign: 'left', marginTop: '0.5rem', fontSize: '1rem' },
+    mainContentWrapper: { flex: 1, display: 'flex', flexDirection: 'column' },
     mainContent: { flex: 1, padding: '20px', backgroundColor: '#fff', overflowY: 'auto' },
 };
