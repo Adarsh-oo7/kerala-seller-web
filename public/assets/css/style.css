@@ -2473,10 +2473,26 @@ background-color: rgba(26, 72, 69, 0.3);
     width: 100%;
 }
 
+@media (max-width: 1100px) {
+    .store-grid {
+        grid-template-columns: repeat(6, 1fr);
+        /* exactly 3 per row */
+        gap: 16px;
+    }
+}
+
+@media (max-width: 1000px) {
+    .store-grid {
+        grid-template-columns: repeat(5, 1fr);
+        /* exactly 3 per row */
+        gap: 16px;
+    }
+}
+
 /* Medium screens (tablet-ish) */
 @media (max-width: 768px) {
     .store-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         /* exactly 3 per row */
         gap: 16px;
     }
@@ -2536,4 +2552,4 @@ background-color: rgba(26, 72, 69, 0.3);
     /* optional for responsive */
 }
 
-/*/// /////////////////////////////////////////////////eend of Skeleton//////////////////////////////////////////////////////////////////////////////// */
+/*/// /////////////////////////////////////////////////end of Skeleton//////////////////////////////////////////////////////////////////////////////// */

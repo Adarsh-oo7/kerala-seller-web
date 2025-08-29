@@ -10,6 +10,7 @@ import BannerSlider from "../components/home/BannerSlider";
 import TopCategory from "../components/home/TopCategory";
 import ShopCard from "../components/common/ShopCard";
 import Skeleton from "../components/common/Skeleton";
+import ProductCard from "../components/common/ProductCard"
 
 
 
@@ -109,24 +110,27 @@ export default function Home() {
 
         <h2 className='section-title'>NEW ARRIVALS</h2>
         {isLoading ? <p>Loading...</p> : (
-          <div style={styles.grid}>
-            {products.map(product => (
-              <div key={product.id} style={styles.card}>
-                <Link href={`/product/${product.id}`} style={styles.cardLink}>
-                  <img src={product.image_url || 'https://placehold.co/400x300'} alt={product.name} style={styles.image} />
-                  <div style={styles.cardContent}>
-                    <h3 style={styles.productName}>{product.name}</h3>
-                    <p style={styles.productPrice}>₹{product.price}</p>
-                  </div>
-                </Link>
-                <div style={styles.cardActions}>
-                  <button onClick={(e) => handleAddToCart(e, product)} style={styles.addToCartButton} disabled={product.online_stock === 0}>
-                    {product.online_stock > 0 ? 'Add to Cart' : 'Out of Stock'}
-                  </button>
-                </div>
-              </div>
+          <div className="product-grid">
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                title={product.name}
+                price={product.price}
+                primaryImage={product.image_url || "/placeholder.svg"}
+                hoverImage={product.hover_image_url || product.image_url || "/placeholder.svg"}
+                rating={product.rating || 4.5}
+                isWishlisted={product.isWishlisted}
+                onAddToCart={(e) => handleAddToCart(e, product)}
+                onToggleWishlist={() => handleToggleWishlist?.(product)}
+                className={product.online_stock === 0 ? "out-of-stock" : ""}
+              >
+                {/* 👇 You can wrap inside link if you prefer entire card clickable */}
+                <Link href={`/product/${product.id}`} className="card-link-overlay" />
+              </ProductCard>
             ))}
           </div>
+
         )}
       </div>
 
