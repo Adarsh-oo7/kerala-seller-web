@@ -21,7 +21,6 @@ import {
   Grid,
   List,
   Star,
-  ArrowUp,
   Menu,
   X,
   MessageCircle,
@@ -77,52 +76,6 @@ class ErrorBoundary extends React.Component {
     }
     return this.props.children;
   }
-}
-
-// Enhanced WhatsApp Floating Button Component
-function WhatsAppButton({ phoneNumber, storeName }) {
-  const [isVisible, setIsVisible] = useState(false);
-
-  const handleScroll = useCallback(() => {
-    setIsVisible(window.scrollY > 300);
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
-
-  const formatPhoneNumber = (phone) => {
-    if (!phone) return '';
-    const cleanPhone = phone.replace(/\D/g, '');
-    return cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
-  };
-
-  const createWhatsAppUrl = () => {
-    const formattedPhone = formatPhoneNumber(phoneNumber);
-    const message = encodeURIComponent(`Hi! I'm interested in your products from ${storeName}. Can you help me?`);
-    return `https://wa.me/${formattedPhone}?text=${message}`;
-  };
-
-  if (!phoneNumber) return null;
-
-  return React.createElement(
-    'div',
-    { className: `whatsapp-fab ${isVisible ? 'visible' : ''}`, role: 'complementary' },
-    React.createElement(
-      'a',
-      {
-        href: createWhatsAppUrl(),
-        target: '_blank',
-        rel: 'noopener noreferrer',
-        className: 'whatsapp-button',
-        'aria-label': `Contact ${storeName} on WhatsApp`
-      },
-      React.createElement(MessageCircle, { size: 20, fill: 'currentColor', 'aria-hidden': true }),
-      React.createElement('span', { className: 'whatsapp-tooltip' }, 'Chat with us'),
-      React.createElement('div', { className: 'whatsapp-pulse' })
-    )
-  );
 }
 
 // Enhanced Store Banner Component
@@ -749,7 +702,6 @@ export default function EnhancedSellerStorefrontPage() {
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
   const [loadingProducts, setLoadingProducts] = useState({});
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const [filters, setFilters] = useState({
     priceRange: null,
     stockStatus: [],
@@ -760,15 +712,6 @@ export default function EnhancedSellerStorefrontPage() {
   const { sellerPhone } = params;
   const { addToCart } = useCart();
   const abortControllerRef = useRef(null);
-
-  const handleScroll = useCallback(() => {
-    setShowScrollTop(window.scrollY > 400);
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
 
   useEffect(() => {
     const token = localStorage.getItem('buyerAccessToken');
@@ -888,10 +831,6 @@ export default function EnhancedSellerStorefrontPage() {
     setFilters(newFilters);
   }, []);
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   if (isLoading) {
     return React.createElement(
       'div',
@@ -912,7 +851,6 @@ export default function EnhancedSellerStorefrontPage() {
       React.createElement(
         Link,
         { href: '/', className: 'back-button-enhanced' },
-        React.createElement(ArrowUp, { size: 16, 'aria-hidden': true }),
         'Back to Home'
       )
     );
@@ -926,7 +864,6 @@ export default function EnhancedSellerStorefrontPage() {
       { className: 'enhanced-page-container' },
       React.createElement(SHeader, { store, isLoggedIn }),
       React.createElement(EnhancedStoreBanner, { store }),
-      React.createElement(EnhancedStoreInfoSection, { store }),
       React.createElement(EnhancedFilterSection, {
         products,
         onFilterChange: handleFilterChange,
@@ -1011,20 +948,6 @@ export default function EnhancedSellerStorefrontPage() {
               )
             )
       ),
-      React.createElement(WhatsAppButton, {
-        phoneNumber: store.whatsapp_number || store.seller_phone,
-        storeName: store.name
-      }),
-      showScrollTop &&
-        React.createElement(
-          'button',
-          {
-            onClick: scrollToTop,
-            className: 'scroll-to-top-enhanced',
-            'aria-label': 'Scroll to top'
-          },
-          React.createElement(ArrowUp, { size: 18, 'aria-hidden': true })
-        ),
       React.createElement(Footer, null)
     )
   );

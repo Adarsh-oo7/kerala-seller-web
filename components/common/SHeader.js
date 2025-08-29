@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCart } from '../../app/context/CartContext';
 import { usePathname } from "next/navigation";
 import { 
@@ -16,13 +17,11 @@ import {
   Star,
   Home,
   ShoppingBag,
-  ChevronDown,
   Bell,
   Share2,
-  ArrowLeft,
   Zap,
-  MessageCircle,
-  Grid3X3
+  Grid3X3,
+  Info
 } from 'lucide-react';
 import styles from './SHeader.module.css';
 
@@ -33,6 +32,7 @@ function BottomNav({ store }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const { carts } = useCart();
   const pathname = usePathname();
+  const router = useRouter();
 
   // Total cart items across all stores for main navigation
   const totalCartItemCount = Object.values(carts || {})
@@ -72,16 +72,24 @@ function BottomNav({ store }) {
   useEffect(() => {
     if (store) {
       if (pathname === `/shop/${store.seller_phone}`) setActiveIndex(0);
-      else if (pathname.includes('/cart/')) setActiveIndex(2);
-      else if (pathname.includes('/about')) setActiveIndex(3);
+      else if (pathname.includes('/cart/')) setActiveIndex(1);
+      else if (pathname.includes('/about')) setActiveIndex(2);
+      else if (pathname.includes('/profile')) setActiveIndex(3);
       else setActiveIndex(0);
     } else {
       if (pathname === "/") setActiveIndex(0);
-      else if (pathname === "/shop") setActiveIndex(1);
-      else if (pathname === "/cart") setActiveIndex(2);
+      else if (pathname === "/cart") setActiveIndex(1);
+      else if (pathname === "/about") setActiveIndex(2);
       else if (pathname === "/profile") setActiveIndex(3);
     }
   }, [pathname, store]);
+
+  // Handle profile navigation with explicit routing
+  const handleProfileNavigation = (e) => {
+    e.preventDefault();
+    console.log('Navigating to profile page');
+    router.push('/profile');
+  };
 
   const navItems = store ? [
     { 
@@ -91,23 +99,24 @@ function BottomNav({ store }) {
       color: "#D2691E" 
     },
     { 
-      href: `/shop/${store.seller_phone}/products`, 
-      icon: Grid3X3, 
-      label: "Products", 
-      color: "#CD853F" 
-    },
-    { 
       href: `/cart/${store.seller_phone}`, 
       icon: ShoppingCart, 
       label: "Cart", 
-      color: "#DEB887",
+      color: "#CD853F",
       badge: storeCartCount 
     },
     { 
       href: `/shop/${store.seller_phone}/about`, 
-      icon: MessageCircle, 
-      label: "Contact", 
-      color: "#F4A460" 
+      icon: Info, 
+      label: "About", 
+      color: "#DEB887" 
+    },
+    { 
+      href: "/profile", 
+      icon: User, 
+      label: "Profile", 
+      color: "#F4A460",
+      onClick: handleProfileNavigation
     }
   ] : [
     { 
@@ -117,23 +126,24 @@ function BottomNav({ store }) {
       color: "#D2691E" 
     },
     { 
-      href: "/shop", 
-      icon: ShoppingBag, 
-      label: "Shop", 
-      color: "#CD853F" 
-    },
-    { 
       href: "/cart", 
       icon: ShoppingCart, 
       label: "Cart", 
-      color: "#DEB887",
+      color: "#CD853F",
       badge: totalCartItemCount 
+    },
+    { 
+      href: "/about", 
+      icon: Info, 
+      label: "About", 
+      color: "#DEB887" 
     },
     { 
       href: "/profile", 
       icon: User, 
       label: "Profile", 
-      color: "#F4A460" 
+      color: "#F4A460",
+      onClick: handleProfileNavigation
     }
   ];
 
@@ -158,7 +168,12 @@ function BottomNav({ store }) {
             key={item.href}
             href={item.href}
             className={`${styles.bottomNavItem} ${isActive ? styles.active : ""}`}
-            onClick={() => setActiveIndex(index)}
+            onClick={(e) => {
+              setActiveIndex(index);
+              if (item.onClick) {
+                item.onClick(e);
+              }
+            }}
             aria-label={`${item.label}${item.badge ? ` with ${item.badge} items` : ""}`}
           >
             <div className={styles.navIcon} style={{
@@ -197,6 +212,7 @@ export default function SHeader({ store, isLoggedIn = false }) {
   const { carts } = useCart();
   const searchInputRef = useRef(null);
   const searchDesktopRef = useRef(null);
+  const router = useRouter();
 
   // Get cart count for this specific store
   const cartCount = store ? (carts[store.seller_phone] || []).reduce((count, item) => count + item.quantity, 0) : 0;
@@ -278,6 +294,21 @@ export default function SHeader({ store, isLoggedIn = false }) {
     setSearchQuery('');
   };
 
+  // Handle profile click with explicit navigation
+  const handleProfileClick = (e) => {
+    e.preventDefault();
+    console.log('Profile clicked, navigating to /profile');
+    router.push('/profile');
+  };
+
+  // Handle phone click to prevent unwanted WhatsApp redirect
+  const handlePhoneClick = (e) => {
+    e.preventDefault();
+    // Just show the phone number, don't redirect to WhatsApp
+    console.log('Phone number:', store.seller_phone);
+    // Optionally show a modal or copy to clipboard instead
+  };
+
   if (!store) return null;
 
   return (
@@ -287,7 +318,7 @@ export default function SHeader({ store, isLoggedIn = false }) {
         <div className={`${styles.topBar} ${!showPromo || hideTopBar ? styles.hidden : ''}`}>
           <div className={styles.container}>
             <div className={styles.topLeft}>
-              <div className={styles.contactInfo}>
+              <div className={styles.contactInfo} onClick={handlePhoneClick}>
                 <Phone size={12} />
                 <span>{store.seller_phone}</span>
               </div>
@@ -346,15 +377,24 @@ export default function SHeader({ store, isLoggedIn = false }) {
                 <Home size={16} />
                 <span>Home</span>
               </Link>
-              <Link href={`/shop/${store.seller_phone}/products`} className={styles.navLink}>
-                <ShoppingBag size={16} />
-                <span>Products</span>
+              <Link href={`/cart/${store.seller_phone}`} className={styles.navLink}>
+                <ShoppingCart size={16} />
+                <span>Cart</span>
+                {cartCount > 0 && (
+                  <span className={styles.navBadge}>{cartCount}</span>
+                )}
               </Link>
               <Link href={`/shop/${store.seller_phone}/about`} className={styles.navLink}>
-                About
+                <Info size={16} />
+                <span>About</span>
               </Link>
-              <Link href={`/shop/${store.seller_phone}/contact`} className={styles.navLink}>
-                Contact
+              <Link 
+                href="/profile" 
+                className={styles.navLink}
+                onClick={handleProfileClick}
+              >
+                <User size={16} />
+                <span>Profile</span>
               </Link>
             </nav>
 
@@ -400,16 +440,6 @@ export default function SHeader({ store, isLoggedIn = false }) {
                 <Search size={20} />
               </button>
 
-              {/* Quick Actions */}
-              <button className={styles.actionBtn} aria-label="Wishlist">
-                <Heart size={18} />
-                <div className={styles.notificationDot}></div>
-              </button>
-
-              <button className={styles.actionBtn} aria-label="Share store">
-                <Share2 size={18} />
-              </button>
-
               {/* Cart Button for Desktop */}
               <Link 
                 href={`/cart/${store.seller_phone}`} 
@@ -423,7 +453,12 @@ export default function SHeader({ store, isLoggedIn = false }) {
               </Link>
 
               {isLoggedIn ? (
-                <Link href="/profile" className={`${styles.actionBtn} ${styles.profileBtn}`} aria-label="Profile">
+                <Link 
+                  href="/profile" 
+                  className={`${styles.actionBtn} ${styles.profileBtn}`} 
+                  aria-label="Profile"
+                  onClick={handleProfileClick}
+                >
                   <User size={18} />
                 </Link>
               ) : (
@@ -441,7 +476,7 @@ export default function SHeader({ store, isLoggedIn = false }) {
           <div className={styles.container}>
             <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
               <button type="button" onClick={closeMobileSearch} aria-label="Close search">
-                <ArrowLeft size={20} />
+                <CloseIcon size={20} />
               </button>
               <div className={styles.searchInput}>
                 <Search size={16} />
@@ -515,50 +550,37 @@ export default function SHeader({ store, isLoggedIn = false }) {
                 <Home size={20} />
                 <span>Home</span>
               </span>
-              <ChevronDown size={16} className={styles.chevron} />
             </Link>
             
-            <Link href={`/shop/${store.seller_phone}/products`} onClick={() => setIsMobileMenuOpen(false)}>
+            <Link href={`/cart/${store.seller_phone}`} onClick={() => setIsMobileMenuOpen(false)}>
               <span>
-                <ShoppingBag size={20} />
-                <span>Products</span>
+                <ShoppingCart size={20} />
+                <span>Cart</span>
               </span>
-              <ChevronDown size={16} className={styles.chevron} />
+              {cartCount > 0 && (
+                <span className={styles.menuBadge}>{cartCount}</span>
+              )}
             </Link>
             
             <Link href={`/shop/${store.seller_phone}/about`} onClick={() => setIsMobileMenuOpen(false)}>
               <span>
+                <Info size={20} />
+                <span>About</span>
+              </span>
+            </Link>
+            
+            <Link 
+              href="/profile" 
+              onClick={(e) => {
+                handleProfileClick(e);
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              <span>
                 <User size={20} />
-                <span>About Us</span>
+                <span>Profile</span>
               </span>
-              <ChevronDown size={16} className={styles.chevron} />
             </Link>
-            
-            <Link href={`/shop/${store.seller_phone}/contact`} onClick={() => setIsMobileMenuOpen(false)}>
-              <span>
-                <Phone size={20} />
-                <span>Contact</span>
-              </span>
-              <ChevronDown size={16} className={styles.chevron} />
-            </Link>
-            
-            <div className={styles.menuDivider} />
-            
-            <button className={styles.menuItem}>
-              <span>
-                <Heart size={20} />
-                <span>Wishlist</span>
-              </span>
-              <span className={styles.menuBadge}>3</span>
-            </button>
-            
-            <button className={styles.menuItem}>
-              <span>
-                <Bell size={20} />
-                <span>Notifications</span>
-              </span>
-              <span className={styles.menuBadge}>5</span>
-            </button>
             
             {!isLoggedIn && (
               <Link href="/login/buyer" className={styles.menuLogin} onClick={() => setIsMobileMenuOpen(false)}>

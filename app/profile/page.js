@@ -15,7 +15,7 @@ import {
   X,
   LogOut,
   ChevronRight,
-  Home,
+  ArrowLeft,
   Settings
 } from 'lucide-react';
 
@@ -64,6 +64,10 @@ export default function ProfilePage() {
     }
   };
 
+  const handleBackClick = () => {
+    router.back();
+  };
+
   if (isLoading) {
     return (
       <div style={styles.loadingContainer}>
@@ -89,10 +93,10 @@ export default function ProfilePage() {
       {/* Header */}
       <header style={styles.header}>
         <div style={styles.headerContainer}>
-          <Link href="/" style={styles.backButton}>
-            <Home size={20} />
-            <span style={styles.backText}>Home</span>
-          </Link>
+          <button onClick={handleBackClick} style={styles.backButton}>
+            <ArrowLeft size={20} />
+            <span style={styles.backText}>Back</span>
+          </button>
           <h1 style={styles.headerTitle}>My Account</h1>
           <button onClick={handleLogout} style={styles.logoutButton}>
             <LogOut size={18} />
@@ -318,10 +322,16 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
     color: '#3b82f6',
-    textDecoration: 'none',
+    background: 'none',
+    border: 'none',
     fontSize: '16px',
     fontWeight: '500',
-    padding: '8px'
+    padding: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    ':hover': {
+      color: '#2563eb'
+    }
   },
   backText: {
     display: 'none',
