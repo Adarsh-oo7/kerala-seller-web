@@ -345,18 +345,550 @@ export default function ShopPage() {
 }
 
 const styles = {
-  container: { maxWidth: '1200px', margin: '0 auto', padding: '20px' },
-  title: { textAlign: 'center', fontSize: '2.5rem' },
-  subtitle: { textAlign: 'center', color: '#6c757d', marginBottom: '2rem' },
-  searchContainer: { margin: '2rem auto 2rem auto', maxWidth: '600px' },
-  searchInput: { width: '100%', padding: '12px', fontSize: '1rem',color:'#6c757d', border: '1px solid #6c757d', borderRadius: '30px' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' },
-  card: { border: '1px solid #e9ecef', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' },
-  cardLink: { textDecoration: 'none', color: 'inherit' },
-  image: { width: '100%', height: '200px', objectFit: 'cover' },
-  cardContent: { padding: '15px', flexGrow: 1 },
-  productName: { margin: '0 0 10px 0', fontSize: '1.1rem' },
-  productPrice: { margin: 0, fontSize: '1.2rem', fontWeight: 'bold' },
-  cardActions: { padding: '0 15px 15px 15px' },
-  addToCartButton: { width: '100%', padding: '10px', backgroundColor: '#0d6efd', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: '500' },
+  pageContainer: {
+    minHeight: '100vh',
+    backgroundColor: '#f8fafc'
+  },
+  
+  // Loading & Error - Mobile Optimized
+  loadingContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '60vh',
+    gap: '20px',
+    padding: '20px',
+    textAlign: 'center'
+  },
+  spinner: {
+    width: '40px',
+    height: '40px',
+    border: '4px solid #f3f3f3',
+    borderTop: '4px solid #3b82f6',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  },
+  errorContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '60vh',
+    gap: '20px',
+    textAlign: 'center',
+    padding: '20px'
+  },
+  retryButton: {
+    padding: '12px 24px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: '500'
+  },
+
+  // Hero Section - Mobile First
+  heroSection: {
+    background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
+    padding: '40px 20px 30px 20px',
+    textAlign: 'center',
+    color: 'white',
+    '@media (min-width: 768px)': {
+      padding: '60px 20px'
+    }
+  },
+  heroContent: {
+    maxWidth: '600px',
+    margin: '0 auto'
+  },
+  heroTitle: {
+    fontSize: '2rem',
+    fontWeight: '700',
+    marginBottom: '12px',
+    lineHeight: '1.2',
+    '@media (min-width: 768px)': {
+      fontSize: '3rem',
+      marginBottom: '16px'
+    }
+  },
+  heroSubtitle: {
+    fontSize: '1rem',
+    marginBottom: '24px',
+    opacity: 0.9,
+    '@media (min-width: 768px)': {
+      fontSize: '1.2rem',
+      marginBottom: '32px'
+    }
+  },
+
+  // Mobile-First Search
+  searchContainer: {
+    maxWidth: '100%',
+    margin: '0 auto'
+  },
+  searchBox: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center'
+  },
+  searchIcon: {
+    position: 'absolute',
+    left: '16px',
+    color: '#64748b',
+    zIndex: 1
+  },
+  searchInput: {
+    width: '100%',
+    padding: '14px 16px 14px 44px',
+    fontSize: '16px',
+    border: 'none',
+    borderRadius: '12px',
+    outline: 'none',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    backgroundColor: 'white',
+    color: '#1e293b'
+  },
+
+  // Main Container - Mobile Optimized
+  container: { 
+    maxWidth: '1200px', 
+    margin: '0 auto', 
+    padding: '20px 16px',
+    animation: 'fadeIn 0.6s ease-out',
+    '@media (min-width: 768px)': {
+      padding: '40px 20px'
+    }
+  },
+
+  // Mobile Toolbar
+  mobileToolbar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '20px',
+    padding: '0 4px'
+  },
+  toolbarButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '10px 16px',
+    backgroundColor: 'white',
+    border: '2px solid #e5e7eb',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#374151',
+    transition: 'all 0.2s'
+  },
+  viewToggle: {
+    display: 'flex',
+    marginLeft: 'auto',
+    gap: '4px'
+  },
+  viewButton: {
+    padding: '8px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '6px',
+    backgroundColor: 'white',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#64748b'
+  },
+  activeView: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
+    color: 'white'
+  },
+
+  // Mobile Dropdowns
+  mobileDropdown: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 1000,
+    animation: 'fadeIn 0.3s ease-out'
+  },
+  dropdownContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    borderRadius: '16px 16px 0 0',
+    padding: '20px',
+    animation: 'slideUp 0.3s ease-out'
+  },
+  dropdownHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '20px',
+    paddingBottom: '16px',
+    borderBottom: '1px solid #e5e7eb'
+  },
+  closeButton: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '4px',
+    color: '#64748b'
+  },
+  dropdownOption: {
+    display: 'block',
+    width: '100%',
+    padding: '16px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    textAlign: 'left',
+    fontSize: '16px',
+    cursor: 'pointer',
+    borderRadius: '8px',
+    marginBottom: '4px'
+  },
+  activeOption: {
+    backgroundColor: '#eff6ff',
+    color: '#3b82f6',
+    fontWeight: '600'
+  },
+
+  // Mobile Filters Panel
+  mobileFilters: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 1000,
+    animation: 'fadeIn 0.3s ease-out'
+  },
+  filtersContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    borderRadius: '16px 16px 0 0',
+    padding: '20px',
+    maxHeight: '80vh',
+    overflowY: 'auto',
+    animation: 'slideUp 0.3s ease-out'
+  },
+  filtersHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '24px',
+    paddingBottom: '16px',
+    borderBottom: '1px solid #e5e7eb'
+  },
+  filterSection: {
+    marginBottom: '24px'
+  },
+  mobileSelect: {
+    width: '100%',
+    padding: '14px 16px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '8px',
+    fontSize: '16px',
+    outline: 'none',
+    backgroundColor: 'white',
+    marginTop: '8px'
+  },
+  priceInputs: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginTop: '8px'
+  },
+  priceInput: {
+    flex: 1,
+    padding: '14px 16px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '8px',
+    fontSize: '16px',
+    outline: 'none'
+  },
+  priceSeparator: {
+    color: '#64748b',
+    fontWeight: '500'
+  },
+  filterActions: {
+    display: 'flex',
+    gap: '12px',
+    paddingTop: '20px',
+    borderTop: '1px solid #e5e7eb'
+  },
+  clearButton: {
+    flex: 1,
+    padding: '14px',
+    backgroundColor: '#f8fafc',
+    border: '2px solid #e5e7eb',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: '500',
+    color: '#374151'
+  },
+  applyButton: {
+    flex: 1,
+    padding: '14px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: '600'
+  },
+
+  // Results Header
+  resultsHeader: {
+    marginBottom: '20px'
+  },
+  resultsCount: {
+    fontSize: '14px',
+    color: '#64748b',
+    fontWeight: '500'
+  },
+
+  // Mobile Grid Layout
+  mobileGrid: { 
+    display: 'grid', 
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '16px',
+    '@media (min-width: 480px)': {
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '20px'
+    },
+    '@media (min-width: 768px)': {
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: '24px'
+    },
+    '@media (min-width: 1024px)': {
+      gridTemplateColumns: 'repeat(4, 1fr)'
+    }
+  },
+  mobileList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px'
+  },
+
+  // Mobile Product Cards
+  mobileCard: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    transition: 'all 0.2s ease',
+    animation: 'fadeIn 0.6s ease-out'
+  },
+  mobileListCard: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    padding: '16px',
+    display: 'grid',
+    gridTemplateColumns: '80px 1fr',
+    gap: '12px',
+    alignItems: 'center',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    '@media (min-width: 480px)': {
+      gridTemplateColumns: '120px 1fr',
+      gap: '16px'
+    }
+  },
+  cardLink: {
+    textDecoration: 'none',
+    color: 'inherit',
+    display: 'block'
+  },
+
+  // Mobile Images
+  imageContainer: {
+    position: 'relative'
+  },
+  mobileImage: {
+    width: '100%',
+    height: '140px',
+    objectFit: 'cover',
+    backgroundColor: '#f3f4f6',
+    '@media (min-width: 480px)': {
+      height: '160px'
+    }
+  },
+  listImage: {
+    width: '80px',
+    height: '80px',
+    objectFit: 'cover',
+    borderRadius: '8px',
+    '@media (min-width: 480px)': {
+      width: '120px',
+      height: '120px'
+    }
+  },
+  stockBadge: {
+    position: 'absolute',
+    top: '8px',
+    right: '8px',
+    background: '#f59e0b',
+    color: 'white',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    fontSize: '10px',
+    fontWeight: '600'
+  },
+  outOfStockBadge: {
+    position: 'absolute',
+    top: '8px',
+    right: '8px',
+    background: '#ef4444',
+    color: 'white',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    fontSize: '10px',
+    fontWeight: '600'
+  },
+
+  // Mobile Content
+  mobileCardContent: {
+    padding: '12px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px'
+  },
+  mobileProductName: {
+    margin: 0,
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#1e293b',
+    lineHeight: '1.3',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
+  },
+  mobileModelName: {
+    margin: 0,
+    fontSize: '12px',
+    color: '#64748b'
+  },
+
+  // Mobile Price
+  mobilePriceContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    flexWrap: 'wrap'
+  },
+  mobileCurrentPrice: {
+    fontSize: '16px',
+    fontWeight: '700',
+    color: '#059669'
+  },
+  mobileOriginalPrice: {
+    fontSize: '12px',
+    color: '#64748b',
+    textDecoration: 'line-through'
+  },
+  mobileDiscount: {
+    fontSize: '10px',
+    background: '#dcfce7',
+    color: '#166534',
+    padding: '2px 4px',
+    borderRadius: '3px',
+    fontWeight: '600'
+  },
+
+  // Mobile Store & Rating
+  mobileStoreInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '12px',
+    color: '#64748b'
+  },
+  mobileRating: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '3px',
+    fontSize: '12px',
+    color: '#64748b'
+  },
+
+  // Mobile Actions
+  mobileActions: {
+    padding: '0 12px 12px 12px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+  mobileAddToCartButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    width: '100%',
+    padding: '10px 12px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '600',
+    transition: 'all 0.2s'
+  },
+  mobileDisabledButton: {
+    backgroundColor: '#9ca3af',
+    cursor: 'not-allowed'
+  },
+  mobileDeliveryInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
+    fontSize: '11px',
+    color: '#059669'
+  },
+
+  // Mobile Empty State
+  mobileEmptyState: {
+    textAlign: 'center',
+    padding: '60px 20px',
+    color: '#64748b'
+  },
+  clearFiltersButton: {
+    marginTop: '20px',
+    padding: '12px 24px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500'
+  },
+
+  // Mobile Load More
+  mobileLoadMore: {
+    textAlign: 'center',
+    padding: '20px',
+    marginTop: '20px'
+  },
+  loadMoreText: {
+    fontSize: '14px',
+    color: '#64748b'
+  }
+  
 };
