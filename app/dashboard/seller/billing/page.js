@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 
 const PRODUCTS_API_URL = 'http://localhost:8000/user/store/products/';
-const CREATE_ORDER_URL = 'http://localhost:8000/user/orders/create-local-order/';
+const CREATE_ORDER_URL = 'http://localhost:8000/user/orders/create-order/'; 
 
 export default function BillingPage() {
   const [products, setProducts] = useState([]);
@@ -13,15 +13,26 @@ export default function BillingPage() {
   const [customer, setCustomer] = useState({ name: '', phone: '' });
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Fetch all products for the search/selection list
-  useEffect(() => {
+  const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
-    if (!token) return;
+    if (!token) {
+      console.error("Seller is not authenticated.");
+      return null;
+    }
+    return { 'Authorization': `Token ${token}` };
+  }, []);
+  
+  useEffect(() => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
     const url = searchTerm ? `${PRODUCTS_API_URL}?search=${searchTerm}` : PRODUCTS_API_URL;
-    axios.get(url, { headers: { Authorization: `Token ${token}` } })
-      .then(response => setProducts(response.data))
+    axios.get(url, { headers })
+      .then(response => {
+        setProducts(response.data.results || response.data);
+      })
       .catch(error => console.error('Failed to fetch products:', error));
-  }, [searchTerm]);
+  }, [searchTerm, getAuthHeaders]);
 
   const addToBill = (product) => {
     setBillItems(prev => {
@@ -56,7 +67,12 @@ export default function BillingPage() {
       return;
     }
     setIsProcessing(true);
-    const token = localStorage.getItem('accessToken');
+    const headers = getAuthHeaders();
+    if (!headers) {
+        alert("Authentication error. Please log in again.");
+        setIsProcessing(false);
+        return;
+    }
     
     const orderData = {
       customer_name: customer.name || 'Local Customer',
@@ -64,12 +80,23 @@ export default function BillingPage() {
       items: billItems.map(item => ({ id: item.id, quantity: item.quantity })),
     };
 
-    axios.post(CREATE_ORDER_URL, orderData, { headers: { Authorization: `Token ${token}` } })
+    axios.post(CREATE_ORDER_URL, orderData, { headers })
       .then(response => {
         const orderId = response.data.order_id;
-        // Open the printable bill in a new tab
-        window.open(`http://localhost:8000/user/orders/${orderId}/generate-bill/`);
-        // Reset the form
+        const billUrl = `http://localhost:8000/user/orders/${orderId}/generate-bill/`;
+
+        // Fetch the bill content with authentication
+        return axios.get(billUrl, {
+          headers: headers, // Reuse the same auth headers
+          responseType: 'blob',
+        });
+      })
+      .then(response => {
+        // Display the fetched content in a new tab
+        const file = new Blob([response.data], { type: 'text/html' });
+        const fileURL = URL.createObjectURL(file);
+        window.open(fileURL, '_blank');
+        
         setBillItems([]);
         setCustomer({ name: '', phone: '' });
       })
@@ -81,20 +108,18 @@ export default function BillingPage() {
     <div>
       <h1>Local Billing</h1>
       <div style={styles.billingLayout}>
-        {/* Left Side: Product Selection */}
         <div style={styles.productSelection}>
           <h3>Add Products</h3>
           <input type="text" placeholder="Search products..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} style={styles.searchInput}/>
           <div style={styles.productList}>
-            {products.map(product => (
+            {(products || []).map(product => (
               <div key={product.id} onClick={() => addToBill(product)} style={styles.productItem}>
-                {product.name} ({product.model_name}) - ₹{product.price}
+                {product.name} ({product.model_name || ''}) - ₹{product.price}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Right Side: Current Bill */}
         <div style={styles.currentBill}>
           <h3>Current Bill</h3>
           <div style={styles.customerDetails}>
@@ -108,7 +133,7 @@ export default function BillingPage() {
                   <td>{item.name}</td>
                   <td><input type="number" value={item.quantity} onChange={e => updateQuantity(item.id, e.target.value)} style={{width: '50px'}}/></td>
                   <td>₹{(item.price * item.quantity).toFixed(2)}</td>
-                  <td><button onClick={() => removeFromBill(item.id)} style={{color: 'red'}}>×</button></td>
+                  <td><button onClick={() => removeFromBill(item.id)} style={{color: 'red', background: 'none', border: 'none', cursor: 'pointer'}}>×</button></td>
                 </tr>
               ))}
             </tbody>

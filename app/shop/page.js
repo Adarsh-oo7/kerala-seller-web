@@ -17,32 +17,47 @@ const API_URL = 'http://localhost:8000/user/store/products/';
 
 export default function ShopPage() {
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [priceRange, setPriceRange] = useState({ min: '', max: '' });
+  const [sortBy, setSortBy] = useState('name');
+  const [viewMode, setViewMode] = useState('grid');
+  const [error, setError] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showMobileSort, setShowMobileSort] = useState(false);
   const { addToCart } = useCart();
 
-  const fetchProducts = useCallback((searchQuery = '') => {
+  const fetchProducts = useCallback(async () => {
     setIsLoading(true);
-    const url = searchQuery ? `${API_URL}?search=${searchQuery}` : API_URL;
-    axios.get(url)
-      .then(response => {
-        // ✅ START: Robust data handling
-        // This checks if the API returned a paginated response or a simple list.
-        const productData = Array.isArray(response.data.results)
-          ? response.data.results
-          : Array.isArray(response.data)
-            ? response.data
-            : []; // Default to an empty array if the format is unexpected
-        setProducts(productData);
-        // ✅ END: Robust data handling
-      })
-      .catch(error => {
-        console.error("Failed to fetch products:", error);
-        setProducts([]); // Set to empty array on error to prevent crash
-      })
-      .finally(() => setIsLoading(false));
+    setError(null);
+    
+    try {
+      const response = await axios.get(API_URL);
+      
+      let productData = [];
+      if (Array.isArray(response.data.results)) {
+        productData = response.data.results;
+      } else if (Array.isArray(response.data)) {
+        productData = response.data;
+      } else {
+        productData = [];
+      }
+      
+      setProducts(productData);
+      setFilteredProducts(productData);
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+      setError('Failed to load products. Please try again.');
+      setProducts([]);
+      setFilteredProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
+  // Filter and search products
   useEffect(() => {
     const handler = setTimeout(() => {
       fetchProducts(searchTerm);
@@ -53,6 +68,12 @@ export default function ShopPage() {
   const handleAddToCart = (e, product) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    if (product.online_stock <= 0) {
+      alert('This product is out of stock');
+      return;
+    }
+    
     if (product.store && product.store.seller_phone) {
       addToCart(product.store.seller_phone, product);
     } else {
@@ -60,7 +81,55 @@ export default function ShopPage() {
     }
   };
 
-  if (isLoading && products.length === 0) return <p>Loading...</p>;
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const getUniqueCategories = () => {
+    const categories = products.map(product => product.category).filter(Boolean);
+    return [...new Set(categories)];
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setPriceRange({ min: '', max: '' });
+    setSortBy('name');
+  };
+
+  if (isLoading && products.length === 0) {
+    return (
+      <div style={styles.pageContainer}>
+        <Header />
+        <div style={styles.loadingContainer}>
+          <div style={styles.spinner}></div>
+          <p>Loading amazing products for you...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={styles.pageContainer}>
+        <Header />
+        <div style={styles.errorContainer}>
+          <AlertCircle size={48} />
+          <h2>Oops! Something went wrong</h2>
+          <p>{error}</p>
+          <button onClick={fetchProducts} style={styles.retryButton}>
+            Try Again
+          </button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div style={{backgroundColor:'#FDFFF0'}}> 
@@ -72,14 +141,45 @@ export default function ShopPage() {
         <h1 className='section-title'>Discover Everything</h1>
         <p className='section-subtitle'>Discover unique items from sellers across Kerala</p>
 
-        <div style={styles.searchContainer}>
-          <input
-            type="text"
-            placeholder="Search for products..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={styles.searchInput}
-          />
+      <div style={styles.container}>
+        {/* Mobile Toolbar */}
+        <div style={styles.mobileToolbar}>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            style={styles.toolbarButton}
+          >
+            {/* <SlidersHorizontal size={18} /> */}
+            <span>Filters</span>
+          </button>
+          
+          <button
+            onClick={() => setShowMobileSort(!showMobileSort)}
+            style={styles.toolbarButton}
+          >
+            {/* <Filter size={18} /> */}
+            <span>Sort</span>
+          </button>
+          
+          <div style={styles.viewToggle}>
+            <button
+              onClick={() => setViewMode('grid')}
+              style={{
+                ...styles.viewButton,
+                ...(viewMode === 'grid' ? styles.activeView : {})
+              }}
+            >
+              {/* <Grid size={16} /> */}
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              style={{
+                ...styles.viewButton,
+                ...(viewMode === 'list' ? styles.activeView : {})
+              }}
+            >
+              {/* <List size={16} /> */}
+            </button>
+          </div>
         </div>
 
         <FilterBar />
@@ -103,8 +203,143 @@ export default function ShopPage() {
             </ProductCard>
           ))}
         </div>
+
+        {/* Products Grid/List - Mobile Optimized */}
+        {filteredProducts.length > 0 ? (
+          <div style={viewMode === 'grid' ? styles.mobileGrid : styles.mobileList}>
+            {filteredProducts.map(product => (
+              <div key={product.id} style={viewMode === 'grid' ? styles.mobileCard : styles.mobileListCard}>
+                <Link href={`/product/${product.id}`} style={styles.cardLink}>
+                  <div style={styles.imageContainer}>
+                    <img 
+                      src={product.main_image_url || product.image_url || 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image'} 
+                      alt={product.name} 
+                      style={viewMode === 'grid' ? styles.mobileImage : styles.listImage}
+                      onError={(e) => {
+                        e.target.src = 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
+                      }}
+                      loading="lazy"
+                    />
+                    {product.online_stock <= 5 && product.online_stock > 0 && (
+                      <span style={styles.stockBadge}>Only {product.online_stock} left!</span>
+                    )}
+                    {product.online_stock === 0 && (
+                      <span style={styles.outOfStockBadge}>Out of Stock</span>
+                    )}
+                  </div>
+                  
+                  <div style={styles.mobileCardContent}>
+                    <h3 style={styles.mobileProductName}>{product.name}</h3>
+                    {product.model_name && (
+                      <p style={styles.mobileModelName}>{product.model_name}</p>
+                    )}
+                    
+                    <div style={styles.mobilePriceContainer}>
+                      <span style={styles.mobileCurrentPrice}>{formatPrice(product.price)}</span>
+                      {product.mrp && product.mrp > product.price && (
+                        <>
+                          <span style={styles.mobileOriginalPrice}>{formatPrice(product.mrp)}</span>
+                          <span style={styles.mobileDiscount}>
+                            {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% OFF
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Mobile Store Info */}
+                    {product.store && (
+                      <div style={styles.mobileStoreInfo}>
+                        {/* <MapPin size={12} /> */}
+                        <span>{product.store.name}</span>
+                      </div>
+                    )}
+
+                    {/* Mobile Rating */}
+                    {product.average_rating && (
+                      <div style={styles.mobileRating}>
+                        <Star size={12} fill="#ffc107" color="#ffc107" />
+                        <span>{product.average_rating.toFixed(1)}</span>
+                        <span>({product.review_count || 0})</span>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+
+                {/* Mobile Action Button */}
+                <div style={styles.mobileActions}>
+                  <button 
+                    onClick={(e) => handleAddToCart(e, product)} 
+                    style={{
+                      ...styles.mobileAddToCartButton,
+                      ...(product.online_stock === 0 ? styles.mobileDisabledButton : {})
+                    }}
+                    disabled={product.online_stock === 0}
+                  >
+                    {/* <ShoppingCart size={14} /> */}
+                    <span>{product.online_stock > 0 ? 'Add to Cart' : 'Out of Stock'}</span>
+                  </button>
+                  
+                  {product.store?.delivery_available && (
+                    <div style={styles.mobileDeliveryInfo}>
+                      <Truck size={12} />
+                      <span>Free Delivery</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={styles.mobileEmptyState}>
+            <Search size={48} />
+            <h3>No products found</h3>
+            <p>Try different search terms or filters</p>
+            <button onClick={clearAllFilters} style={styles.clearFiltersButton}>
+              Clear All Filters
+            </button>
+          </div>
+        )}
+
+        {/* Mobile Load More (if needed) */}
+        {filteredProducts.length > 0 && (
+          <div style={styles.mobileLoadMore}>
+            <span style={styles.loadMoreText}>
+              Showing all {filteredProducts.length} products
+            </span>
+          </div>
+        )}
       </div>
+
       <Footer />
+
+      {/* CSS Animations & Media Queries */}
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(100%); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+          .card:hover {
+            transform: none;
+          }
+          
+          .card:active {
+            transform: scale(0.98);
+          }
+        }
+      `}</style>
+    </div>
     </div>
   );
 }
