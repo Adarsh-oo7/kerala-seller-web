@@ -1040,5 +1040,4 @@ const styles = {
     fontSize: '14px',
     color: '#64748b'
   }
-  
 };
