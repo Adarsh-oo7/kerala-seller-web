@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useCart } from '../../app/context/CartContext';
 import { usePathname } from "next/navigation";
 import { 
@@ -26,7 +26,7 @@ import {
 import styles from './SHeader.module.css';
 
 // Bottom Navigation Component with Fluid Tan Theme
-function BottomNav({ store }) {
+function BottomNav({ store, sellerPhone }) {
   const [show, setShow] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -34,13 +34,20 @@ function BottomNav({ store }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  // Use sellerPhone parameter as fallback if store data is incomplete
+  const storePhone = sellerPhone || store?.seller_phone;
+
+  console.log('BottomNav - sellerPhone:', sellerPhone);
+  console.log('BottomNav - store?.seller_phone:', store?.seller_phone);
+  console.log('BottomNav - final storePhone:', storePhone);
+
   // Total cart items across all stores for main navigation
   const totalCartItemCount = Object.values(carts || {})
     .flat()
     .reduce((count, item) => count + item.quantity, 0);
 
   // Individual store cart count if store is provided
-  const storeCartCount = store ? (carts[store.seller_phone] || []).reduce((count, item) => count + item.quantity, 0) : 0;
+  const storeCartCount = storePhone ? (carts[storePhone] || []).reduce((count, item) => count + item.quantity, 0) : 0;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -70,8 +77,8 @@ function BottomNav({ store }) {
 
   // Update active index based on current path
   useEffect(() => {
-    if (store) {
-      if (pathname === `/shop/${store.seller_phone}`) setActiveIndex(0);
+    if (storePhone) {
+      if (pathname === `/shop/${storePhone}`) setActiveIndex(0);
       else if (pathname.includes('/cart/')) setActiveIndex(1);
       else if (pathname.includes('/about')) setActiveIndex(2);
       else if (pathname.includes('/profile')) setActiveIndex(3);
@@ -82,7 +89,7 @@ function BottomNav({ store }) {
       else if (pathname === "/about") setActiveIndex(2);
       else if (pathname === "/profile") setActiveIndex(3);
     }
-  }, [pathname, store]);
+  }, [pathname, storePhone]);
 
   // Handle profile navigation with explicit routing
   const handleProfileNavigation = (e) => {
@@ -91,49 +98,28 @@ function BottomNav({ store }) {
     router.push('/profile');
   };
 
-  const navItems = store ? [
+  // Don't render if we don't have a valid storePhone
+  if (!storePhone) {
+    console.warn('BottomNav: No valid storePhone available');
+    return null;
+  }
+
+  const navItems = [
     { 
-      href: `/shop/${store.seller_phone}`, 
+      href: `/shop/${storePhone}`, 
       icon: Home, 
       label: "Home", 
       color: "#D2691E" 
     },
     { 
-      href: `/cart/${store.seller_phone}`, 
+      href: `/cart/${storePhone}`, 
       icon: ShoppingCart, 
       label: "Cart", 
       color: "#CD853F",
       badge: storeCartCount 
     },
     { 
-      href: `/shop/${store.seller_phone}/about`, 
-      icon: Info, 
-      label: "About", 
-      color: "#DEB887" 
-    },
-    { 
-      href: "/profile", 
-      icon: User, 
-      label: "Profile", 
-      color: "#F4A460",
-      onClick: handleProfileNavigation
-    }
-  ] : [
-    { 
-      href: "/", 
-      icon: Home, 
-      label: "Home", 
-      color: "#D2691E" 
-    },
-    { 
-      href: "/cart", 
-      icon: ShoppingCart, 
-      label: "Cart", 
-      color: "#CD853F",
-      badge: totalCartItemCount 
-    },
-    { 
-      href: "/about", 
+      href: `/shop/${storePhone}/about`, 
       icon: Info, 
       label: "About", 
       color: "#DEB887" 
@@ -200,7 +186,7 @@ function BottomNav({ store }) {
   );
 }
 
-export default function SHeader({ store, isLoggedIn = false }) {
+export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -213,9 +199,18 @@ export default function SHeader({ store, isLoggedIn = false }) {
   const searchInputRef = useRef(null);
   const searchDesktopRef = useRef(null);
   const router = useRouter();
+  const params = useParams();
+
+  // Use multiple sources for sellerPhone with priority order
+  const finalSellerPhone = sellerPhone || params?.sellerPhone || store?.seller_phone;
+  
+  console.log('SHeader - sellerPhone prop:', sellerPhone);
+  console.log('SHeader - params?.sellerPhone:', params?.sellerPhone);
+  console.log('SHeader - store?.seller_phone:', store?.seller_phone);
+  console.log('SHeader - final sellerPhone:', finalSellerPhone);
 
   // Get cart count for this specific store
-  const cartCount = store ? (carts[store.seller_phone] || []).reduce((count, item) => count + item.quantity, 0) : 0;
+  const cartCount = finalSellerPhone ? (carts[finalSellerPhone] || []).reduce((count, item) => count + item.quantity, 0) : 0;
 
   useEffect(() => {
     let ticking = false;
@@ -305,11 +300,22 @@ export default function SHeader({ store, isLoggedIn = false }) {
   const handlePhoneClick = (e) => {
     e.preventDefault();
     // Just show the phone number, don't redirect to WhatsApp
-    console.log('Phone number:', store.seller_phone);
+    console.log('Phone number:', finalSellerPhone);
     // Optionally show a modal or copy to clipboard instead
   };
 
-  if (!store) return null;
+  // Don't render header if no seller phone is available
+  if (!finalSellerPhone) {
+    console.warn('SHeader: No valid sellerPhone available');
+    return null;
+  }
+
+  // Use store data if available, otherwise create minimal store object
+  const storeData = store || { 
+    name: 'Store', 
+    seller_phone: finalSellerPhone,
+    tagline: 'Loading...'
+  };
 
   return (
     <>
@@ -320,7 +326,7 @@ export default function SHeader({ store, isLoggedIn = false }) {
             <div className={styles.topLeft}>
               <div className={styles.contactInfo} onClick={handlePhoneClick}>
                 <Phone size={12} />
-                <span>{store.seller_phone}</span>
+                <span>{finalSellerPhone}</span>
               </div>
               <div className={styles.locationInfo}>
                 <MapPin size={12} />
@@ -356,35 +362,35 @@ export default function SHeader({ store, isLoggedIn = false }) {
             {/* Store Branding */}
             <div className={styles.brand}>
               <div className={styles.logo}>
-                {store.logo_url ? (
-                  <img src={store.logo_url} alt={`${store.name} logo`} />
+                {storeData.logo_url ? (
+                  <img src={storeData.logo_url} alt={`${storeData.name} logo`} />
                 ) : (
                   <div className={styles.logoPlaceholder}>
-                    {store.name?.charAt(0)?.toUpperCase() || 'S'}
+                    {storeData.name?.charAt(0)?.toUpperCase() || 'S'}
                   </div>
                 )}
                 <div className={styles.onlineIndicator} aria-label="Store online"></div>
               </div>
               <div className={styles.brandText}>
-                <h1>{store.name}</h1>
-                <p>{store.tagline || "Premium Quality Store"}</p>
+                <h1>{storeData.name}</h1>
+                <p>{storeData.tagline || "Premium Quality Store"}</p>
               </div>
             </div>
 
             {/* Desktop Navigation */}
             <nav className={styles.desktopNav} role="navigation" aria-label="Store navigation">
-              <Link href={`/shop/${store.seller_phone}`} className={styles.navLink}>
+              <Link href={`/shop/${finalSellerPhone}`} className={styles.navLink}>
                 <Home size={16} />
                 <span>Home</span>
               </Link>
-              <Link href={`/cart/${store.seller_phone}`} className={styles.navLink}>
+              <Link href={`/cart/${finalSellerPhone}`} className={styles.navLink}>
                 <ShoppingCart size={16} />
                 <span>Cart</span>
                 {cartCount > 0 && (
                   <span className={styles.navBadge}>{cartCount}</span>
                 )}
               </Link>
-              <Link href={`/shop/${store.seller_phone}/about`} className={styles.navLink}>
+              <Link href={`/shop/${finalSellerPhone}/about`} className={styles.navLink}>
                 <Info size={16} />
                 <span>About</span>
               </Link>
@@ -442,7 +448,7 @@ export default function SHeader({ store, isLoggedIn = false }) {
 
               {/* Cart Button for Desktop */}
               <Link 
-                href={`/cart/${store.seller_phone}`} 
+                href={`/cart/${finalSellerPhone}`} 
                 className={`${styles.cartBtn} ${styles.desktop}`}
                 aria-label={`Cart with ${cartCount} items`}
               >
@@ -504,11 +510,11 @@ export default function SHeader({ store, isLoggedIn = false }) {
         </div>
 
         {/* Promotional Banner */}
-        {store.announcement && showPromo && (
+        {storeData.announcement && showPromo && (
           <div className={styles.promoBanner}>
             <div className={styles.promoContent}>
               <Zap size={14} />
-              <span>{store.announcement}</span>
+              <span>{storeData.announcement}</span>
             </div>
             <button 
               onClick={() => setShowPromo(false)} 
@@ -527,15 +533,15 @@ export default function SHeader({ store, isLoggedIn = false }) {
         <nav className={`${styles.mobileMenu} ${isMobileMenuOpen ? styles.active : ''}`} role="navigation" aria-label="Mobile menu">
           <div className={styles.menuHeader}>
             <div className={styles.menuBrand}>
-              {store.logo_url ? (
-                <img src={store.logo_url} alt={`${store.name} logo`} />
+              {storeData.logo_url ? (
+                <img src={storeData.logo_url} alt={`${storeData.name} logo`} />
               ) : (
                 <div className={styles.menuLogoPlaceholder}>
-                  {store.name?.charAt(0)?.toUpperCase() || 'S'}
+                  {storeData.name?.charAt(0)?.toUpperCase() || 'S'}
                 </div>
               )}
               <div>
-                <span className={styles.menuBrandName}>{store.name}</span>
+                <span className={styles.menuBrandName}>{storeData.name}</span>
                 <span className={styles.menuBrandTagline}>Premium Store</span>
               </div>
             </div>
@@ -545,14 +551,14 @@ export default function SHeader({ store, isLoggedIn = false }) {
           </div>
           
           <div className={styles.menuItems}>
-            <Link href={`/shop/${store.seller_phone}`} onClick={() => setIsMobileMenuOpen(false)}>
+            <Link href={`/shop/${finalSellerPhone}`} onClick={() => setIsMobileMenuOpen(false)}>
               <span>
                 <Home size={20} />
                 <span>Home</span>
               </span>
             </Link>
             
-            <Link href={`/cart/${store.seller_phone}`} onClick={() => setIsMobileMenuOpen(false)}>
+            <Link href={`/cart/${finalSellerPhone}`} onClick={() => setIsMobileMenuOpen(false)}>
               <span>
                 <ShoppingCart size={20} />
                 <span>Cart</span>
@@ -562,7 +568,7 @@ export default function SHeader({ store, isLoggedIn = false }) {
               )}
             </Link>
             
-            <Link href={`/shop/${store.seller_phone}/about`} onClick={() => setIsMobileMenuOpen(false)}>
+            <Link href={`/shop/${finalSellerPhone}/about`} onClick={() => setIsMobileMenuOpen(false)}>
               <span>
                 <Info size={20} />
                 <span>About</span>
@@ -595,7 +601,7 @@ export default function SHeader({ store, isLoggedIn = false }) {
       </div>
 
       {/* Enhanced Bottom Navigation */}
-      <BottomNav store={store} />
+      <BottomNav store={storeData} sellerPhone={finalSellerPhone} />
     </>
   );
 }

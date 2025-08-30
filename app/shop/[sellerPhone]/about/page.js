@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Star, 
   Package, 
@@ -15,7 +16,8 @@ import {
   Store,
   Award,
   Users,
-  Clock
+  Clock,
+  Home
 } from 'lucide-react';
 import SHeader from '../../../../components/common/SHeader';
 
@@ -25,8 +27,15 @@ export default function StoreAboutPage() {
   const [storeData, setStoreData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const { sellerPhone } = useParams();
+  const params = useParams();
   const router = useRouter();
+  
+  // Get sellerPhone from params with proper validation
+  const sellerPhone = params?.sellerPhone;
+
+  // Debug logging
+  console.log('📍 About page params:', params);
+  console.log('📞 Seller phone:', sellerPhone);
 
   useEffect(() => {
     // Check login status
@@ -35,20 +44,70 @@ export default function StoreAboutPage() {
   }, []);
 
   useEffect(() => {
-    if (!sellerPhone) return;
+    if (!sellerPhone) {
+      console.error('❌ No sellerPhone provided');
+      setIsLoading(false);
+      return;
+    }
+    
+    console.log('🔍 Fetching store data for phone:', sellerPhone);
+    
     axios.get(`${API_URL}${sellerPhone}/about/`)
-      .then(response => setStoreData(response.data))
-      .catch(error => console.error("Failed to fetch store about data:", error))
+      .then(response => {
+        console.log('✅ Store data received:', response.data);
+        setStoreData(response.data);
+      })
+      .catch(error => {
+        console.error("❌ Failed to fetch store about data:", error);
+        setStoreData(null);
+      })
       .finally(() => setIsLoading(false));
   }, [sellerPhone]);
+
+  // Navigation handler for going back to store home
+  const handleNavigateToStore = () => {
+    if (sellerPhone) {
+      const storeUrl = `/shop/${sellerPhone}`;
+      console.log('🏠 Navigating to store home:', storeUrl);
+      router.push(storeUrl);
+    } else {
+      console.error('❌ Cannot navigate: sellerPhone is undefined');
+      router.push('/');
+    }
+  };
 
   if (isLoading) {
     return (
       <div style={styles.pageContainer}>
-        <SHeader store={null} isLoggedIn={isLoggedIn} />
+        <SHeader 
+          store={null} 
+          isLoggedIn={isLoggedIn} 
+          sellerPhone={sellerPhone}
+        />
         <div style={styles.loadingContainer}>
           <div style={styles.spinner}></div>
           <p style={styles.loadingText}>Loading store details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sellerPhone) {
+    return (
+      <div style={styles.pageContainer}>
+        <SHeader 
+          store={null} 
+          isLoggedIn={isLoggedIn} 
+          sellerPhone={sellerPhone}
+        />
+        <div style={styles.errorContainer}>
+          <Store size={64} style={styles.errorIcon} />
+          <h2 style={styles.errorTitle}>Invalid Store URL</h2>
+          <p style={styles.errorText}>The store phone number is missing from the URL.</p>
+          <Link href="/" style={styles.backLink}>
+            <ArrowLeft size={16} />
+            Back to Home
+          </Link>
         </div>
       </div>
     );
@@ -62,6 +121,10 @@ export default function StoreAboutPage() {
           <Store size={64} style={styles.errorIcon} />
           <h2 style={styles.errorTitle}>Store Not Found</h2>
           <p style={styles.errorText}>Could not find this store.</p>
+          <Link href={`/shop/${sellerPhone}`} style={styles.backLink}>
+            <ArrowLeft size={16} />
+            Back to Store
+          </Link>
         </div>
       </div>
     );
@@ -69,9 +132,33 @@ export default function StoreAboutPage() {
 
   return (
     <div style={styles.pageContainer}>
-      <SHeader store={storeData} isLoggedIn={isLoggedIn} />
+      <SHeader 
+        store={storeData} 
+        isLoggedIn={isLoggedIn} 
+        sellerPhone={sellerPhone}
+      />
+      
+      {/* Navigation breadcrumb */}
+      <div style={styles.breadcrumbContainer}>
+        <div style={styles.container}>
+          <nav style={styles.breadcrumb}>
+            <Link href={`/shop/${sellerPhone}`} style={styles.breadcrumbLink}>
+              <Home size={16} />
+              Store Home
+            </Link>
+            <span style={styles.breadcrumbSeparator}>/</span>
+            <span style={styles.breadcrumbCurrent}>About</span>
+          </nav>
+        </div>
+      </div>
       
       <div style={styles.container}>
+        {/* Back button */}
+        <button onClick={handleNavigateToStore} style={styles.backButton}>
+          <ArrowLeft size={16} />
+          Back to Store
+        </button>
+
         {/* Store Header */}
         <div style={styles.storeHeader}>
           <div style={styles.logoContainer}>
@@ -108,19 +195,19 @@ export default function StoreAboutPage() {
           <div style={styles.statsGrid}>
             <StatCard 
               icon={<Star size={24} fill="currentColor" />} 
-              value={storeData.stats.overall_rating || "4.5"} 
+              value={storeData.stats?.overall_rating || "4.5"} 
               label="Overall Rating"
               color="#f59e0b"
             />
             <StatCard 
               icon={<CheckCircle size={24} />} 
-              value={storeData.stats.completed_orders || "150+"} 
+              value={storeData.stats?.completed_orders || "150+"} 
               label="Orders Completed"
               color="#10b981"
             />
             <StatCard 
               icon={<Package size={24} />} 
-              value={storeData.stats.products_count || "25"} 
+              value={storeData.stats?.products_count || "25"} 
               label="Products Listed"
               color="#3b82f6"
             />
@@ -199,6 +286,14 @@ export default function StoreAboutPage() {
             )}
           </div>
         </div>
+
+        {/* Quick Actions */}
+        <div style={styles.quickActionsSection}>
+          <Link href={`/shop/${sellerPhone}`} style={styles.primaryButton}>
+            <Package size={16} />
+            View All Products
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -265,6 +360,63 @@ const styles = {
     color: '#64748b',
     fontSize: '16px',
     margin: 0
+  },
+  backLink: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    color: '#3b82f6',
+    textDecoration: 'none',
+    padding: '12px 24px',
+    backgroundColor: '#f1f5f9',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'all 0.2s'
+  },
+
+  // Breadcrumb
+  breadcrumbContainer: {
+    backgroundColor: 'white',
+    borderBottom: '1px solid #e2e8f0',
+    padding: '12px 0'
+  },
+  breadcrumb: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '14px'
+  },
+  breadcrumbLink: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    color: '#3b82f6',
+    textDecoration: 'none',
+    transition: 'color 0.2s'
+  },
+  breadcrumbSeparator: {
+    color: '#94a3b8'
+  },
+  breadcrumbCurrent: {
+    color: '#64748b',
+    fontWeight: '500'
+  },
+
+  // Back button
+  backButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    background: 'none',
+    border: 'none',
+    color: '#3b82f6',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    padding: '8px 0',
+    marginBottom: '16px',
+    transition: 'color 0.2s'
   },
 
   // Main Container
@@ -491,5 +643,26 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500',
     transition: 'all 0.2s'
+  },
+
+  // Quick Actions
+  quickActionsSection: {
+    display: 'flex',
+    justifyContent: 'center',
+    padding: '24px 0'
+  },
+  primaryButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    textDecoration: 'none',
+    padding: '16px 32px',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '600',
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
   }
 };

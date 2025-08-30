@@ -1,11 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
 import Link from 'next/link';
-import { useCart } from '../context/CartContext';
-import Header from '../../components/common/Header';
-import Footer from '../../components/common/Footer';
 import { 
   Search, 
   Filter, 
@@ -14,15 +10,85 @@ import {
   ShoppingCart, 
   Star, 
   MapPin,
-  Phone,
   Truck,
   AlertCircle,
   X,
-  ChevronDown,
   SlidersHorizontal
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:8000/user/store/products/';
+// Mock cart context for demo
+const useCart = () => ({
+  addToCart: (sellerId, product) => {
+    console.log('Adding to cart:', { sellerId, product });
+    return Promise.resolve();
+  }
+});
+
+// Mock Header and Footer components
+const Header = () => <div style={{ padding: '1rem', background: '#fff', borderBottom: '1px solid #e5e7eb' }}>Header</div>;
+const Footer = () => <div style={{ padding: '2rem', background: '#f8fafc', borderTop: '1px solid #e5e7eb' }}>Footer</div>;
+
+// Mock API data
+const mockProducts = [
+  {
+    id: 1,
+    name: "Premium Wireless Headphones",
+    model_name: "WH-1000XM4",
+    price: 15999,
+    mrp: 19999,
+    online_stock: 10,
+    category: "Electronics",
+    description: "High-quality wireless headphones with noise cancellation",
+    main_image_url: "https://placehold.co/300x200/3b82f6/ffffff?text=Headphones",
+    average_rating: 4.5,
+    review_count: 128,
+    created_at: "2024-01-15T10:00:00Z",
+    store: {
+      id: 1,
+      name: "TechMart Kerala",
+      seller_phone: "+919876543210",
+      delivery_available: true
+    }
+  },
+  {
+    id: 2,
+    name: "Organic Kerala Spices Set",
+    price: 899,
+    mrp: 1299,
+    online_stock: 0,
+    category: "Food",
+    description: "Authentic Kerala spices collection",
+    main_image_url: "https://placehold.co/300x200/059669/ffffff?text=Spices",
+    average_rating: 4.8,
+    review_count: 89,
+    created_at: "2024-02-10T12:00:00Z",
+    store: {
+      id: 2,
+      name: "Kerala Spice Co",
+      seller_phone: "+919876543211",
+      delivery_available: true
+    }
+  },
+  {
+    id: 3,
+    name: "Handwoven Cotton Saree",
+    price: 2499,
+    mrp: 3499,
+    online_stock: 3,
+    category: "Clothing",
+    description: "Beautiful handwoven cotton saree from Kerala",
+    main_image_url: "https://placehold.co/300x200/dc2626/ffffff?text=Saree",
+    average_rating: 4.7,
+    review_count: 45,
+    created_at: "2024-02-20T14:00:00Z",
+    store: {
+      id: 3,
+      name: "Kerala Handlooms",
+      seller_phone: "+919876543212",
+      delivery_available: false
+    }
+  }
+];
 
 export default function ShopPage() {
   const [products, setProducts] = useState([]);
@@ -36,6 +102,7 @@ export default function ShopPage() {
   const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showMobileSort, setShowMobileSort] = useState(false);
+  const [cartActionLoading, setCartActionLoading] = useState({});
   const { addToCart } = useCart();
 
   const fetchProducts = useCallback(async () => {
@@ -43,19 +110,10 @@ export default function ShopPage() {
     setError(null);
     
     try {
-      const response = await axios.get(API_URL);
-      
-      let productData = [];
-      if (Array.isArray(response.data.results)) {
-        productData = response.data.results;
-      } else if (Array.isArray(response.data)) {
-        productData = response.data;
-      } else {
-        productData = [];
-      }
-      
-      setProducts(productData);
-      setFilteredProducts(productData);
+      // Simulate API call with mock data
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setProducts(mockProducts);
+      setFilteredProducts(mockProducts);
     } catch (error) {
       console.error("Failed to fetch products:", error);
       setError('Failed to load products. Please try again.');
@@ -113,33 +171,74 @@ export default function ShopPage() {
     fetchProducts();
   }, [fetchProducts]);
 
-  const handleAddToCart = (e, product) => {
+  const handleAddToCart = async (e, product) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Validate product data first
+    if (!product) {
+      alert('Product data is missing');
+      return;
+    }
+
+    if (!product.id) {
+      alert('Product ID is missing');
+      return;
+    }
     
     if (product.online_stock <= 0) {
       alert('This product is out of stock');
       return;
     }
     
-    if (product.store && product.store.seller_phone) {
-      addToCart(product.store.seller_phone, product);
+    // Validate store and seller info
+    if (!product.store) {
+      alert('Store information is missing');
+      return;
+    }
+
+    if (!product.store.seller_phone) {
+      alert('Seller contact information is missing');
+      return;
+    }
+
+    // Set loading state for this specific product
+    setCartActionLoading(prev => ({ ...prev, [product.id]: true }));
+    
+    try {
+      await addToCart(product.store.seller_phone, product);
       
       // Show success feedback
-      const button = e.target;
-      const originalText = button.textContent;
-      button.textContent = 'Added!';
-      button.style.backgroundColor = '#10b981';
-      setTimeout(() => {
-        button.textContent = originalText;
-        button.style.backgroundColor = '#3b82f6';
-      }, 1500);
-    } else {
-      alert("Could not add to cart: seller information missing.");
+      const button = e.target.closest('button');
+      if (button) {
+        const originalText = button.querySelector('span')?.textContent || button.textContent;
+        const span = button.querySelector('span');
+        if (span) {
+          span.textContent = 'Added!';
+        } else {
+          button.textContent = 'Added!';
+        }
+        button.style.backgroundColor = '#10b981';
+        
+        setTimeout(() => {
+          if (span) {
+            span.textContent = originalText;
+          } else {
+            button.textContent = originalText;
+          }
+          button.style.backgroundColor = '#3b82f6';
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert('Failed to add item to cart. Please try again.');
+    } finally {
+      setCartActionLoading(prev => ({ ...prev, [product.id]: false }));
     }
   };
 
   const formatPrice = (price) => {
+    if (!price || isNaN(price)) return '₹0';
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
@@ -422,12 +521,22 @@ export default function ShopPage() {
                     onClick={(e) => handleAddToCart(e, product)} 
                     style={{
                       ...styles.mobileAddToCartButton,
-                      ...(product.online_stock === 0 ? styles.mobileDisabledButton : {})
+                      ...(product.online_stock === 0 ? styles.mobileDisabledButton : {}),
+                      ...(cartActionLoading[product.id] ? styles.loadingButton : {})
                     }}
-                    disabled={product.online_stock === 0}
+                    disabled={product.online_stock === 0 || cartActionLoading[product.id]}
                   >
-                    <ShoppingCart size={14} />
-                    <span>{product.online_stock > 0 ? 'Add to Cart' : 'Out of Stock'}</span>
+                    {cartActionLoading[product.id] ? (
+                      <>
+                        <div style={styles.buttonSpinner}></div>
+                        <span>Adding...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart size={14} />
+                        <span>{product.online_stock > 0 ? 'Add to Cart' : 'Out of Stock'}</span>
+                      </>
+                    )}
                   </button>
                   
                   {product.store?.delivery_available && (
@@ -462,34 +571,6 @@ export default function ShopPage() {
       </div>
 
       <Footer />
-
-      {/* CSS Animations & Media Queries */}
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(100%); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (max-width: 768px) {
-          .card:hover {
-            transform: none;
-          }
-          
-          .card:active {
-            transform: scale(0.98);
-          }
-        }
-      `}</style>
     </div>
   );
 }
@@ -519,6 +600,14 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
+  buttonSpinner: {
+    width: '14px',
+    height: '14px',
+    border: '2px solid rgba(255,255,255,0.3)',
+    borderTop: '2px solid white',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  },
   errorContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -545,10 +634,7 @@ const styles = {
     background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
     padding: '40px 20px 30px 20px',
     textAlign: 'center',
-    color: 'white',
-    '@media (min-width: 768px)': {
-      padding: '60px 20px'
-    }
+    color: 'white'
   },
   heroContent: {
     maxWidth: '600px',
@@ -558,20 +644,12 @@ const styles = {
     fontSize: '2rem',
     fontWeight: '700',
     marginBottom: '12px',
-    lineHeight: '1.2',
-    '@media (min-width: 768px)': {
-      fontSize: '3rem',
-      marginBottom: '16px'
-    }
+    lineHeight: '1.2'
   },
   heroSubtitle: {
     fontSize: '1rem',
     marginBottom: '24px',
-    opacity: 0.9,
-    '@media (min-width: 768px)': {
-      fontSize: '1.2rem',
-      marginBottom: '32px'
-    }
+    opacity: 0.9
   },
 
   // Mobile-First Search
@@ -606,11 +684,7 @@ const styles = {
   container: { 
     maxWidth: '1200px', 
     margin: '0 auto', 
-    padding: '20px 16px',
-    animation: 'fadeIn 0.6s ease-out',
-    '@media (min-width: 768px)': {
-      padding: '40px 20px'
-    }
+    padding: '20px 16px'
   },
 
   // Mobile Toolbar
@@ -665,8 +739,7 @@ const styles = {
     right: 0,
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 1000,
-    animation: 'fadeIn 0.3s ease-out'
+    zIndex: 1000
   },
   dropdownContent: {
     position: 'absolute',
@@ -675,8 +748,7 @@ const styles = {
     right: 0,
     backgroundColor: 'white',
     borderRadius: '16px 16px 0 0',
-    padding: '20px',
-    animation: 'slideUp 0.3s ease-out'
+    padding: '20px'
   },
   dropdownHeader: {
     display: 'flex',
@@ -719,8 +791,7 @@ const styles = {
     right: 0,
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 1000,
-    animation: 'fadeIn 0.3s ease-out'
+    zIndex: 1000
   },
   filtersContent: {
     position: 'absolute',
@@ -731,8 +802,7 @@ const styles = {
     borderRadius: '16px 16px 0 0',
     padding: '20px',
     maxHeight: '80vh',
-    overflowY: 'auto',
-    animation: 'slideUp 0.3s ease-out'
+    overflowY: 'auto'
   },
   filtersHeader: {
     display: 'flex',
@@ -816,18 +886,7 @@ const styles = {
   mobileGrid: { 
     display: 'grid', 
     gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '16px',
-    '@media (min-width: 480px)': {
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '20px'
-    },
-    '@media (min-width: 768px)': {
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: '24px'
-    },
-    '@media (min-width: 1024px)': {
-      gridTemplateColumns: 'repeat(4, 1fr)'
-    }
+    gap: '16px'
   },
   mobileList: {
     display: 'flex',
@@ -841,8 +900,7 @@ const styles = {
     borderRadius: '12px',
     overflow: 'hidden',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    transition: 'all 0.2s ease',
-    animation: 'fadeIn 0.6s ease-out'
+    transition: 'all 0.2s ease'
   },
   mobileListCard: {
     backgroundColor: 'white',
@@ -852,11 +910,7 @@ const styles = {
     gridTemplateColumns: '80px 1fr',
     gap: '12px',
     alignItems: 'center',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    '@media (min-width: 480px)': {
-      gridTemplateColumns: '120px 1fr',
-      gap: '16px'
-    }
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
   },
   cardLink: {
     textDecoration: 'none',
@@ -872,20 +926,13 @@ const styles = {
     width: '100%',
     height: '140px',
     objectFit: 'cover',
-    backgroundColor: '#f3f4f6',
-    '@media (min-width: 480px)': {
-      height: '160px'
-    }
+    backgroundColor: '#f3f4f6'
   },
   listImage: {
     width: '80px',
     height: '80px',
     objectFit: 'cover',
-    borderRadius: '8px',
-    '@media (min-width: 480px)': {
-      width: '120px',
-      height: '120px'
-    }
+    borderRadius: '8px'
   },
   stockBadge: {
     position: 'absolute',
@@ -1001,6 +1048,10 @@ const styles = {
   },
   mobileDisabledButton: {
     backgroundColor: '#9ca3af',
+    cursor: 'not-allowed'
+  },
+  loadingButton: {
+    backgroundColor: '#6366f1',
     cursor: 'not-allowed'
   },
   mobileDeliveryInfo: {

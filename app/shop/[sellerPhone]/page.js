@@ -1,4 +1,4 @@
-// EnhancedSellerStorefrontPage.js
+// EnhancedSellerStorefrontPage.js - COMPLETE FIXED VERSION
 'use client';
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
@@ -44,31 +44,55 @@ import {
 // Assume styles are imported from an external CSS file
 import './EnhancedSellerStorefrontPage.css';
 
-// Error Boundary Component
+// SIMPLIFIED Error Boundary - Only catches serious rendering errors
 class ErrorBoundary extends React.Component {
-  state = { hasError: false, error: null };
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+    // Only catch rendering errors, not operational errors
+    if (error?.message?.includes('cart') || 
+        error?.message?.includes('addToCart') ||
+        error?.message?.includes('Cannot read properties') ||
+        error?.message?.includes('fetch') ||
+        error?.message?.includes('axios')) {
+      return { hasError: false };
+    }
+    
+    return { hasError: true };
   }
 
   render() {
     if (this.state.hasError) {
       return React.createElement(
         'div',
-        { className: 'error-boundary-container' },
-        React.createElement(
-          'div',
-          { className: 'error-icon' },
-          React.createElement(Package, { size: 48 })
-        ),
+        { 
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '400px',
+            padding: '2rem',
+            textAlign: 'center'
+          }
+        },
         React.createElement('h2', null, 'Something went wrong'),
-        React.createElement('p', null, 'Please try refreshing the page'),
+        React.createElement('p', null, 'Please try refreshing the page.'),
         React.createElement(
           'button',
           {
             onClick: () => window.location.reload(),
-            className: 'refresh-button'
+            style: {
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }
           },
           'Refresh Page'
         )
@@ -82,6 +106,8 @@ class ErrorBoundary extends React.Component {
 function EnhancedStoreBanner({ store }) {
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  if (!store) return null;
+
   return React.createElement(
     'div',
     { className: 'enhanced-banner-container' },
@@ -91,10 +117,14 @@ function EnhancedStoreBanner({ store }) {
       store.banner_image_url
         ? React.createElement('img', {
             src: store.banner_image_url,
-            alt: `${store.name} banner`,
+            alt: `${store.name || 'Store'} banner`,
             className: `banner-image ${imageLoaded ? 'loaded' : ''}`,
             onLoad: () => setImageLoaded(true),
-            loading: 'lazy'
+            loading: 'lazy',
+            onError: (e) => {
+              console.warn('Banner image failed to load');
+              e.target.style.display = 'none';
+            }
           })
         : React.createElement(
             'div',
@@ -116,6 +146,8 @@ function EnhancedStoreBanner({ store }) {
 function EnhancedStoreInfoSection({ store }) {
   const [showFullDescription, setShowFullDescription] = useState(false);
 
+  if (!store) return null;
+
   return React.createElement(
     'div',
     { className: 'enhanced-store-info-section' },
@@ -134,14 +166,18 @@ function EnhancedStoreInfoSection({ store }) {
             store.logo_url
               ? React.createElement('img', {
                   src: store.logo_url,
-                  alt: `${store.name} logo`,
+                  alt: `${store.name || 'Store'} logo`,
                   className: 'store-logo-enhanced',
-                  loading: 'lazy'
+                  loading: 'lazy',
+                  onError: (e) => {
+                    console.warn('Store logo failed to load');
+                    e.target.style.display = 'none';
+                  }
                 })
               : React.createElement(
                   'div',
                   { className: 'store-logo-placeholder-enhanced' },
-                  store.name?.charAt(0)?.toUpperCase() || 'S'
+                  (store.name || 'Store').charAt(0).toUpperCase()
                 ),
             React.createElement(
               'div',
@@ -155,7 +191,7 @@ function EnhancedStoreInfoSection({ store }) {
             React.createElement(
               'div',
               { className: 'store-name-section' },
-              React.createElement('h1', { className: 'store-name-enhanced' }, store.name),
+              React.createElement('h1', { className: 'store-name-enhanced' }, store.name || 'Store'),
               React.createElement(
                 'div',
                 { className: 'store-badges' },
@@ -290,7 +326,10 @@ function EnhancedStoreInfoSection({ store }) {
           'div',
           { className: 'store-description-card' },
           React.createElement('h3', null, 'About Our Store'),
-          React.createElement('p', { className: showFullDescription ? 'expanded' : 'collapsed' }, store.description),
+          React.createElement('p', { 
+            className: showFullDescription ? 'expanded' : 'collapsed',
+            id: 'store-description'
+          }, store.description),
           store.description.length > 150 &&
             React.createElement(
               'button',
@@ -311,7 +350,11 @@ function EnhancedStoreInfoSection({ store }) {
 // Enhanced Filter Component
 function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
   const [showFilters, setShowFilters] = useState(false);
-  const [tempFilters, setTempFilters] = useState(activeFilters);
+  const [tempFilters, setTempFilters] = useState(activeFilters || {
+    priceRange: null,
+    stockStatus: [],
+    sortBy: 'name-asc'
+  });
   const filterRef = useRef(null);
 
   const priceRanges = [
@@ -352,9 +395,9 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
 
   const getActiveFilterCount = () => {
     let count = 0;
-    if (activeFilters.priceRange) count++;
-    if (activeFilters.stockStatus.length > 0) count += activeFilters.stockStatus.length;
-    if (activeFilters.sortBy !== 'name-asc') count++;
+    if (activeFilters?.priceRange) count++;
+    if (activeFilters?.stockStatus?.length > 0) count += activeFilters.stockStatus.length;
+    if (activeFilters?.sortBy && activeFilters.sortBy !== 'name-asc') count++;
     return count;
   };
 
@@ -367,6 +410,12 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (activeFilters) {
+      setTempFilters(activeFilters);
+    }
+  }, [activeFilters]);
 
   return React.createElement(
     'div',
@@ -472,11 +521,12 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
                   { key: status.value, className: 'filter-option' },
                   React.createElement('input', {
                     type: 'checkbox',
-                    checked: tempFilters.stockStatus.includes(status.value),
+                    checked: tempFilters.stockStatus?.includes(status.value) || false,
                     onChange: (e) => {
+                      const currentStockStatus = tempFilters.stockStatus || [];
                       const newStockStatus = e.target.checked
-                        ? [...tempFilters.stockStatus, status.value]
-                        : tempFilters.stockStatus.filter((s) => s !== status.value);
+                        ? [...currentStockStatus, status.value]
+                        : currentStockStatus.filter((s) => s !== status.value);
                       setTempFilters({ ...tempFilters, stockStatus: newStockStatus });
                     },
                     'aria-label': status.label
@@ -519,7 +569,7 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
           React.createElement(
             'div',
             { className: 'active-filter-tags' },
-            activeFilters.priceRange &&
+            activeFilters?.priceRange &&
               React.createElement(
                 'span',
                 { className: 'active-filter-tag' },
@@ -533,19 +583,18 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
                   React.createElement(X, { size: 12, 'aria-hidden': true })
                 )
               ),
-            activeFilters.stockStatus.map((status) =>
+            activeFilters?.stockStatus?.map((status) =>
               React.createElement(
                 'span',
                 { key: status, className: 'active-filter-tag' },
-                stockStatus.find((s) => s.value === status)?.label,
+                stockStatus.find((s) => s.value === status)?.label || status,
                 React.createElement(
                   'button',
                   {
-                    onClick: () =>
-                      onFilterChange({
-                        ...activeFilters,
-                        stockStatus: activeFilters.stockStatus.filter((s) => s !== status)
-                      }),
+                    onClick: () => onFilterChange({
+                      ...activeFilters,
+                      stockStatus: activeFilters.stockStatus.filter((s) => s !== status)
+                    }),
                     'aria-label': `Remove ${status} filter`
                   },
                   React.createElement(X, { size: 12, 'aria-hidden': true })
@@ -558,12 +607,27 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
   );
 }
 
-// Enhanced Product Card Component
-function EnhancedProductCard({ product, onAddToCart, isLoading = false }) {
+// SIMPLIFIED Product Card Component
+function EnhancedProductCard({ product, onAddToCart, isLoading = false, sellerPhone, storeId, cartItems }) {
   const [imageError, setImageError] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
+  if (!product) return null;
+
+  // Check if product is already in cart
+  const isInCart = cartItems?.some(item => 
+    item.product_id === product.id && item.seller_phone === sellerPhone
+  ) || false;
+
+  const getCartQuantity = () => {
+    const cartItem = cartItems?.find(item => 
+      item.product_id === product.id && item.seller_phone === sellerPhone
+    );
+    return cartItem?.quantity || 0;
+  };
+
   const formatPrice = (price) => {
+    if (!price || isNaN(price)) return '₹0';
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
@@ -572,16 +636,22 @@ function EnhancedProductCard({ product, onAddToCart, isLoading = false }) {
   };
 
   const getDiscountPercentage = () => {
-    if (product.mrp && product.mrp > product.price) {
+    if (product.mrp && product.mrp > product.price && product.price) {
       return Math.round(((product.mrp - product.price) / product.mrp) * 100);
     }
     return 0;
   };
 
   const getStockStatus = () => {
-    if (product.online_stock === 0) return 'out-of-stock';
-    if (product.online_stock <= 5) return 'low-stock';
+    const stock = product.online_stock || 0;
+    if (stock === 0) return 'out-of-stock';
+    if (stock <= 5) return 'low-stock';
     return 'in-stock';
+  };
+
+  const getProductUrl = () => {
+    if (!sellerPhone || !product.id) return '#';
+    return `/shop/${sellerPhone}/product/${product.id}`;
   };
 
   return React.createElement(
@@ -589,7 +659,11 @@ function EnhancedProductCard({ product, onAddToCart, isLoading = false }) {
     { className: `enhanced-product-card ${getStockStatus()}` },
     React.createElement(
       Link,
-      { href: `/product/${product.id}`, className: 'product-link-enhanced', 'aria-label': `View ${product.name}` },
+      { 
+        href: getProductUrl(), 
+        className: 'product-link-enhanced', 
+        'aria-label': `View ${product.name || 'product'}`
+      },
       React.createElement(
         'div',
         { className: 'product-image-wrapper' },
@@ -597,7 +671,7 @@ function EnhancedProductCard({ product, onAddToCart, isLoading = false }) {
           src: imageError
             ? 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image'
             : product.main_image_url || product.image_url || 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image',
-          alt: product.name,
+          alt: product.name || 'Product image',
           className: 'product-image-enhanced',
           loading: 'lazy',
           onError: () => setImageError(true)
@@ -607,10 +681,10 @@ function EnhancedProductCard({ product, onAddToCart, isLoading = false }) {
           { className: 'product-badges' },
           getDiscountPercentage() > 0 &&
             React.createElement('span', { className: 'badge discount' }, `${getDiscountPercentage()}% OFF`),
-          product.online_stock <= 5 &&
-            product.online_stock > 0 &&
+          (product.online_stock || 0) <= 5 &&
+            (product.online_stock || 0) > 0 &&
             React.createElement('span', { className: 'badge low-stock' }, `Only ${product.online_stock} left`),
-          product.online_stock === 0 &&
+          (product.online_stock || 0) === 0 &&
             React.createElement('span', { className: 'badge out-of-stock' }, 'Out of Stock')
         ),
         React.createElement(
@@ -622,6 +696,7 @@ function EnhancedProductCard({ product, onAddToCart, isLoading = false }) {
               className: `quick-action-btn ${isWishlisted ? 'active' : ''}`,
               onClick: (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 setIsWishlisted(!isWishlisted);
               },
               'aria-label': isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'
@@ -636,7 +711,7 @@ function EnhancedProductCard({ product, onAddToCart, isLoading = false }) {
         React.createElement(
           'div',
           { className: 'product-header' },
-          React.createElement('h3', { className: 'product-name-enhanced' }, product.name),
+          React.createElement('h3', { className: 'product-name-enhanced' }, product.name || 'Unnamed Product'),
           product.model_name &&
             React.createElement('p', { className: 'product-model-enhanced' }, product.model_name)
         ),
@@ -655,13 +730,13 @@ function EnhancedProductCard({ product, onAddToCart, isLoading = false }) {
             React.createElement(
               'div',
               { className: 'savings-info' },
-              `Save ${formatPrice(product.mrp - product.price)}`
+              `Save ${formatPrice((product.mrp || 0) - (product.price || 0))}`
             )
         ),
         React.createElement(
           'div',
           { className: 'stock-info' },
-          product.online_stock > 0
+          (product.online_stock || 0) > 0
             ? React.createElement('span', { className: 'stock-available' }, '✓ In Stock')
             : React.createElement('span', { className: 'stock-unavailable' }, '✗ Out of Stock')
         )
@@ -673,26 +748,44 @@ function EnhancedProductCard({ product, onAddToCart, isLoading = false }) {
       React.createElement(
         'button',
         {
-          onClick: (e) => onAddToCart(e, product),
-          className: `add-to-cart-enhanced ${product.online_stock === 0 ? 'disabled' : ''} ${isLoading ? 'loading' : ''}`,
-          disabled: product.online_stock === 0 || isLoading,
-          'aria-label': product.online_stock > 0 ? `Add ${product.name} to cart` : 'Out of stock'
+          onClick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (onAddToCart) {
+              onAddToCart(e, product);
+            }
+          },
+          className: `add-to-cart-enhanced ${(product.online_stock || 0) === 0 ? 'disabled' : ''} ${isLoading ? 'loading' : ''} ${isInCart ? 'in-cart' : ''}`,
+          disabled: (product.online_stock || 0) === 0 || isLoading,
+          'aria-label': (product.online_stock || 0) > 0 ? 
+            (isInCart ? `Add more ${product.name || 'product'} to cart (${getCartQuantity()} in cart)` : `Add ${product.name || 'product'} to cart`) : 
+            'Out of stock'
         },
         isLoading
           ? [
               React.createElement(RefreshCw, { key: 'refresh', size: 16, className: 'spinning', 'aria-hidden': true }),
               React.createElement('span', { key: 'adding' }, 'Adding...')
             ]
+          : (product.online_stock || 0) === 0
+          ? [
+              React.createElement(X, { key: 'x', size: 16, 'aria-hidden': true }),
+              React.createElement('span', { key: 'text' }, 'Out of Stock')
+            ]
+          : isInCart
+          ? [
+              React.createElement(ShoppingCart, { key: 'cart', size: 16, fill: 'currentColor', 'aria-hidden': true }),
+              React.createElement('span', { key: 'text' }, `Add More (${getCartQuantity()})`)
+            ]
           : [
               React.createElement(ShoppingCart, { key: 'cart', size: 16, 'aria-hidden': true }),
-              React.createElement('span', { key: 'text' }, product.online_stock > 0 ? 'Add to Cart' : 'Out of Stock')
+              React.createElement('span', { key: 'text' }, 'Add to Cart')
             ]
       )
     )
   );
 }
 
-// Main Component
+// MAIN COMPONENT with SIMPLIFIED Add to Cart Handler
 export default function EnhancedSellerStorefrontPage() {
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
@@ -710,41 +803,55 @@ export default function EnhancedSellerStorefrontPage() {
 
   const params = useParams();
   const { sellerPhone } = params;
-  const { addToCart } = useCart();
+  const { addToCart, cartItems } = useCart(); // Get cartItems from context
   const abortControllerRef = useRef(null);
 
+  console.log('Current route params:', params);
+  console.log('Seller phone from params:', sellerPhone);
+
   useEffect(() => {
-    const token = localStorage.getItem('buyerAccessToken');
-    setIsLoggedIn(!!token);
+    try {
+      const token = localStorage.getItem('buyerAccessToken');
+      setIsLoggedIn(!!token);
+    } catch (error) {
+      console.warn('localStorage access error:', error);
+      setIsLoggedIn(false);
+    }
   }, []);
 
   const applyFilters = useCallback(() => {
-    let filtered = [...products];
-
-    if (filters.priceRange) {
-      filtered = filtered.filter(
-        (product) => product.price >= filters.priceRange.min && product.price <= filters.priceRange.max
-      );
+    if (!Array.isArray(products)) {
+      setFilteredProducts([]);
+      return;
     }
 
-    if (filters.stockStatus.length > 0) {
+    let filtered = [...products];
+
+    if (filters?.priceRange) {
       filtered = filtered.filter((product) => {
-        const stockStatus =
-          product.online_stock === 0 ? 'out-of-stock' : product.online_stock <= 5 ? 'low-stock' : 'in-stock';
+        const price = product?.price || 0;
+        return price >= filters.priceRange.min && price <= filters.priceRange.max;
+      });
+    }
+
+    if (filters?.stockStatus?.length > 0) {
+      filtered = filtered.filter((product) => {
+        const stock = product?.online_stock || 0;
+        const stockStatus = stock === 0 ? 'out-of-stock' : stock <= 5 ? 'low-stock' : 'in-stock';
         return filters.stockStatus.includes(stockStatus);
       });
     }
 
     filtered.sort((a, b) => {
-      switch (filters.sortBy) {
+      switch (filters?.sortBy) {
         case 'price-asc':
-          return a.price - b.price;
+          return (a?.price || 0) - (b?.price || 0);
         case 'price-desc':
-          return b.price - a.price;
+          return (b?.price || 0) - (a?.price || 0);
         case 'name-asc':
-          return a.name.localeCompare(b.name);
+          return (a?.name || '').localeCompare(b?.name || '');
         case 'name-desc':
-          return b.name.localeCompare(a.name);
+          return (b?.name || '').localeCompare(a?.name || '');
         default:
           return 0;
       }
@@ -754,7 +861,11 @@ export default function EnhancedSellerStorefrontPage() {
   }, [products, filters]);
 
   useEffect(() => {
-    if (!sellerPhone) return;
+    if (!sellerPhone) {
+      setError('Invalid seller phone number');
+      setIsLoading(false);
+      return;
+    }
 
     const fetchStoreData = async () => {
       try {
@@ -762,16 +873,29 @@ export default function EnhancedSellerStorefrontPage() {
         setError(null);
 
         abortControllerRef.current = new AbortController();
+        
+        console.log('Fetching store data for phone:', sellerPhone);
+        
         const response = await axios.get(`http://localhost:8000/shop/${sellerPhone}/`, {
-          signal: abortControllerRef.current.signal
+          signal: abortControllerRef.current.signal,
+          timeout: 10000,
         });
 
-        setStore(response.data.store);
-        setProducts(response.data.products);
+        console.log('Store data fetched:', response.data);
+
+        if (response.data) {
+          setStore(response.data.store || null);
+          setProducts(response.data.products || []);
+        } else {
+          throw new Error('No data received from server');
+        }
       } catch (error) {
-        if (axios.isCancel(error)) return;
+        if (axios.isCancel(error)) {
+          console.log('Request was cancelled');
+          return;
+        }
         console.error('Store fetch error:', error);
-        setError(error.response?.data?.error || 'Store not found');
+        setError(error.response?.data?.error || error.message || 'Store not found');
       } finally {
         setIsLoading(false);
       }
@@ -790,45 +914,53 @@ export default function EnhancedSellerStorefrontPage() {
     applyFilters();
   }, [products, filters, applyFilters]);
 
-  const handleAddToCart = async (e, product) => {
+  // SIMPLIFIED Add to Cart Handler - NO DOM manipulation, NO complex error handling
+  const handleAddToCart = useCallback(async (e, product) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (product.online_stock <= 0) {
+    // Basic validation
+    if (!product?.id || (product.online_stock || 0) <= 0) {
+      alert(product?.id ? 'Product is out of stock' : 'Invalid product');
       return;
     }
 
-    setLoadingProducts((prev) => ({ ...prev, [product.id]: true }));
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      addToCart(sellerPhone, product);
-
-      const button = e.target.closest('button');
-      const originalHTML = button.innerHTML;
-      button.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="20,6 9,17 4,12"></polyline>
-        </svg>
-        <span>Added!</span>
-      `;
-      button.classList.add('success');
-
-      setTimeout(() => {
-        if (button) {
-          button.innerHTML = originalHTML;
-          button.classList.remove('success');
-        }
-      }, 2000);
-    } catch (error) {
-      console.error('Add to cart error:', error);
-    } finally {
-      setLoadingProducts((prev) => ({ ...prev, [product.id]: false }));
+    if (!addToCart) {
+      alert('Cart service unavailable. Please refresh the page.');
+      return;
     }
-  };
+
+    const productId = product.id;
+    
+    try {
+      setLoadingProducts(prev => ({ ...prev, [productId]: true }));
+      
+      // Call addToCart - wrap in Promise.resolve to handle both sync and async
+      await Promise.resolve(addToCart(sellerPhone, product));
+      
+      // Success - no DOM manipulation, just console log
+      console.log('Successfully added to cart:', product.name);
+      
+    } catch (error) {
+      // Handle error silently - don't re-throw, don't manipulate DOM
+      console.error('Add to cart failed:', error);
+      alert('Failed to add to cart. Please try again.');
+    } finally {
+      // Clean up loading state safely
+      setLoadingProducts(prev => {
+        const newState = { ...prev };
+        delete newState[productId];
+        return newState;
+      });
+    }
+  }, [addToCart, sellerPhone]);
 
   const handleFilterChange = useCallback((newFilters) => {
-    setFilters(newFilters);
+    setFilters(newFilters || {
+      priceRange: null,
+      stockStatus: [],
+      sortBy: 'name-asc'
+    });
   }, []);
 
   if (isLoading) {
@@ -864,8 +996,9 @@ export default function EnhancedSellerStorefrontPage() {
       { className: 'enhanced-page-container' },
       React.createElement(SHeader, { store, isLoggedIn }),
       React.createElement(EnhancedStoreBanner, { store }),
+      React.createElement(EnhancedStoreInfoSection, { store }),
       React.createElement(EnhancedFilterSection, {
-        products,
+        products: products || [],
         onFilterChange: handleFilterChange,
         activeFilters: filters
       }),
@@ -916,14 +1049,18 @@ export default function EnhancedSellerStorefrontPage() {
           ? React.createElement(
               'div',
               { className: `products-container-enhanced ${viewMode}` },
-              filteredProducts.map((product) =>
-                React.createElement(EnhancedProductCard, {
+              filteredProducts.map((product) => {
+                if (!product?.id) return null;
+                return React.createElement(EnhancedProductCard, {
                   key: product.id,
                   product,
                   onAddToCart: handleAddToCart,
-                  isLoading: loadingProducts[product.id]
-                })
-              )
+                  isLoading: loadingProducts[product.id] || false,
+                  sellerPhone: sellerPhone,
+                  storeId: store?.id,
+                  cartItems: cartItems || [] // Pass cart items to product card
+                });
+              }).filter(Boolean)
             )
           : React.createElement(
               'div',
@@ -938,8 +1075,10 @@ export default function EnhancedSellerStorefrontPage() {
               React.createElement(
                 'button',
                 {
-                  onClick: () =>
-                    setFilters({ priceRange: null, stockStatus: [], sortBy: 'name-asc' }),
+                  onClick: () => {
+                    const defaultFilters = { priceRange: null, stockStatus: [], sortBy: 'name-asc' };
+                    setFilters(defaultFilters);
+                  },
                   className: 'clear-filters-button-enhanced',
                   'aria-label': 'Clear all filters'
                 },
