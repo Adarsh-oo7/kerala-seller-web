@@ -60,12 +60,75 @@ export default function ProfilePage() {
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
       localStorage.removeItem('buyerAccessToken');
+      sessionStorage.removeItem('cameFromLogin');
+      sessionStorage.removeItem('preLoginPath');
       router.push('/');
     }
   };
 
   const handleBackClick = () => {
-    router.back();
+    // Method 1: Check if there's a stored pre-login path
+    const preLoginPath = sessionStorage.getItem('preLoginPath');
+    
+    if (preLoginPath) {
+        sessionStorage.removeItem('preLoginPath');
+        sessionStorage.removeItem('cameFromLogin');
+        
+        // Navigate to the stored path
+        try {
+            const url = new URL(preLoginPath);
+            router.push(url.pathname + url.search);
+        } catch {
+            // If it's not a valid URL, treat it as a path
+            router.push(preLoginPath);
+        }
+        return;
+    }
+    
+    // Method 2: Check if we came directly from login
+    const cameFromLogin = sessionStorage.getItem('cameFromLogin');
+    
+    if (cameFromLogin === 'true') {
+        sessionStorage.removeItem('cameFromLogin');
+        
+        // Try to go back 2 steps to skip the login redirect
+        if (window.history.length > 2) {
+            window.history.go(-2);
+        } else {
+            router.push('/');
+        }
+        return;
+    }
+    
+    // Method 3: Analyze the referrer
+    const referrer = document.referrer;
+    const currentHost = window.location.origin;
+    
+    if (referrer && 
+        referrer.startsWith(currentHost) && 
+        !referrer.includes('/login') && 
+        !referrer.includes('/register') &&
+        !referrer.includes('/profile')) {
+        
+        try {
+            const url = new URL(referrer);
+            router.push(url.pathname + url.search);
+        } catch {
+            router.back();
+        }
+        return;
+    }
+    
+    // Method 4: Default smart back
+    try {
+        if (window.history.length > 1) {
+            router.back();
+        } else {
+            router.push('/');
+        }
+    } catch {
+        router.push('/');
+    }
   };
 
   if (isLoading) {

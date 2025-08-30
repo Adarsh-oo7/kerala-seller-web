@@ -58,16 +58,48 @@ export default function BuyerLoginPage() {
     const router = useRouter();
 
     useEffect(() => {
-        // If a user is already logged in, redirect them to their profile
+        // Store the referrer information when the login page loads
+        const referrer = document.referrer;
+        const currentHost = window.location.origin;
+        
+        // Only store referrer if it's from the same domain and not a login/register page
+        if (referrer && 
+            referrer.startsWith(currentHost) && 
+            !referrer.includes('/login') && 
+            !referrer.includes('/register') &&
+            !referrer.includes('/profile')) {
+            sessionStorage.setItem('preLoginPath', referrer);
+        }
+
+        // If a user is already logged in, handle redirect properly
         const token = localStorage.getItem('buyerAccessToken');
         if (token) {
-            router.push('/profile');
+            // Check for URL redirect parameter first
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectTo = urlParams.get('redirect');
+            
+            if (redirectTo) {
+                router.push(decodeURIComponent(redirectTo));
+            } else {
+                router.push('/profile');
+            }
         }
     }, [router]);
 
     const handleLoginSuccess = (token) => {
         localStorage.setItem('buyerAccessToken', token);
-        router.push('/profile');
+        
+        // Check for URL redirect parameter first
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectTo = urlParams.get('redirect');
+        
+        if (redirectTo) {
+            router.push(decodeURIComponent(redirectTo));
+        } else {
+            // Mark that user is coming from login
+            sessionStorage.setItem('cameFromLogin', 'true');
+            router.push('/profile');
+        }
     };
     
     const handleGoogleSuccess = async (credentialResponse) => {
