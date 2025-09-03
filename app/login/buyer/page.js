@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import axios from 'axios';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import { ArrowLeft } from 'lucide-react';
@@ -11,7 +11,7 @@ import { ArrowLeft } from 'lucide-react';
 // ==============================================================================
 // CONSTANTS
 // ==============================================================================
-const GOOGLE_CLIENT_ID = "108580007778-ctbmb96tl44p2bj91k5l128glba9bb3m.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "108580007778-ctbmb96tl44p2bj91k5l128glba9bb3m.apps.googleusercontent.com"; // Replace with your actual ID
 const GOOGLE_LOGIN_API = 'http://localhost:8000/user/buyer/login/google/';
 const EMAIL_LOGIN_API = 'http://localhost:8000/user/buyer/login/';
 
@@ -58,26 +58,10 @@ function EmailLoginForm({ onLoginSuccess }) {
 export default function BuyerLoginPage() {
     const router = useRouter();
 
-    useEffect(() => {
-        // Check if user is already logged in
-        const token = localStorage.getItem('buyerAccessToken');
-        if (token) {
-            // Check for URL redirect parameter first
-            const urlParams = new URLSearchParams(window.location.search);
-            const redirectTo = urlParams.get('redirect');
-            
-            if (redirectTo) {
-                router.replace(decodeURIComponent(redirectTo));
-            } else {
-                router.replace('/profile');
-            }
-        }
-    }, [router]);
-
-    const handleLoginSuccess = (token) => {
+    const handleLoginSuccess = useCallback((token) => {
         localStorage.setItem('buyerAccessToken', token);
         
-        // Check for URL redirect parameter first
+        // Check for a redirect URL first
         const urlParams = new URLSearchParams(window.location.search);
         const redirectTo = urlParams.get('redirect');
         
@@ -86,8 +70,16 @@ export default function BuyerLoginPage() {
         } else {
             router.push('/profile');
         }
-    };
+    }, [router]);
     
+    useEffect(() => {
+        // If a buyer is already logged in, redirect them
+        const token = localStorage.getItem('buyerAccessToken');
+        if (token) {
+            handleLoginSuccess(token); // Use the same redirect logic
+        }
+    }, [router, handleLoginSuccess]);
+
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
             const decodedToken = jwtDecode(credentialResponse.credential);
@@ -104,21 +96,10 @@ export default function BuyerLoginPage() {
     };
 
     const handleBackClick = () => {
-        // Check if user came from within the app (and not from login/register pages)
-        const referrer = document.referrer;
-        const currentHost = window.location.origin;
-        
-        // If there's a valid internal referrer that's not a login/register page
-        if (referrer && 
-            referrer.startsWith(currentHost) && 
-            !referrer.includes('/login') && 
-            !referrer.includes('/register') &&
-            !referrer.includes('/auth')) {
-            
-            // Use browser's back button for smooth navigation
-            window.history.back();
+        // Go back to the previous page if possible, otherwise go to home
+        if (window.history.length > 1) {
+            router.back();
         } else {
-            // Default to home page for external referrers or login pages
             router.push('/');
         }
     };
@@ -126,7 +107,6 @@ export default function BuyerLoginPage() {
     return (
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
             <div style={styles.pageContainer}>
-                {/* Header with Back Button */}
                 <header style={styles.header}>
                     <div style={styles.headerContainer}>
                         <button onClick={handleBackClick} style={styles.backButton}>
@@ -140,7 +120,7 @@ export default function BuyerLoginPage() {
 
                 <div style={styles.container}>
                     <div style={styles.card}>
-                        <h2 style={styles.cardTitle}>Sign in to Your Account</h2>
+                        <h2 style={styles.cardTitle}>Welcome Back!</h2>
                         
                         <EmailLoginForm onLoginSuccess={handleLoginSuccess} />
                         
@@ -163,151 +143,21 @@ export default function BuyerLoginPage() {
 }
 
 const styles = {
-    pageContainer: {
-        minHeight: '100vh',
-        backgroundColor: '#f0f2f5'
-    },
-    
-    // Loading state
-    loadingContainer: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        gap: '16px'
-    },
-    spinner: {
-        width: '32px',
-        height: '32px',
-        border: '3px solid #e2e8f0',
-        borderTop: '3px solid #3b82f6',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite'
-    },
-    
-    // Header
-    header: {
-        backgroundColor: 'white',
-        borderBottom: '1px solid #e2e8f0',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-    },
-    headerContainer: {
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '16px 20px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-    },
-    backButton: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        color: '#3b82f6',
-        background: 'none',
-        border: 'none',
-        fontSize: '16px',
-        fontWeight: '500',
-        padding: '8px',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        borderRadius: '6px'
-    },
-    backText: {
-        '@media (max-width: 640px)': {
-            display: 'none'
-        }
-    },
-    headerTitle: {
-        fontSize: '20px',
-        fontWeight: '700',
-        color: '#1e293b',
-        margin: 0
-    },
-    headerSpacer: {
-        width: '60px'
-    },
-    
-    // Main container
-    container: { 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: 'calc(100vh - 80px)',
-        padding: '20px'
-    },
-    card: { 
-        backgroundColor: 'white', 
-        padding: '40px', 
-        borderRadius: '16px', 
-        boxShadow: '0 8px 25px rgba(0,0,0,0.1)', 
-        width: '100%',
-        maxWidth: '400px',
-        textAlign: 'center'
-    },
-    cardTitle: {
-        fontSize: '24px',
-        fontWeight: '700',
-        color: '#1e293b',
-        marginBottom: '32px',
-        marginTop: 0
-    },
-    input: { 
-        width: '100%', 
-        padding: '14px', 
-        marginBottom: '16px', 
-        border: '2px solid #e2e8f0', 
-        borderRadius: '8px', 
-        boxSizing: 'border-box',
-        fontSize: '16px',
-        transition: 'border-color 0.2s',
-        outline: 'none'
-    },
-    button: { 
-        width: '100%', 
-        padding: '14px', 
-        border: 'none', 
-        borderRadius: '8px', 
-        backgroundColor: '#3b82f6', 
-        color: 'white', 
-        cursor: 'pointer', 
-        fontSize: '16px',
-        fontWeight: '600',
-        transition: 'background-color 0.2s',
-        marginBottom: '16px'
-    },
-    divider: { 
-        margin: '24px 0', 
-        color: '#64748b', 
-        textTransform: 'uppercase', 
-        fontSize: '12px',
-        fontWeight: '600',
-        position: 'relative'
-    },
-    googleButtonWrapper: { 
-        display: 'flex', 
-        justifyContent: 'center',
-        marginBottom: '24px'
-    },
-    footerLinks: { 
-        marginTop: '24px', 
-        fontSize: '14px',
-        color: '#64748b'
-    },
-    link: { 
-        color: '#3b82f6', 
-        textDecoration: 'none',
-        fontWeight: '500',
-        transition: 'color 0.2s'
-    },
-    error: { 
-        color: '#dc2626', 
-        marginTop: '12px', 
-        fontSize: '14px',
-        backgroundColor: '#fef2f2',
-        padding: '12px',
-        borderRadius: '6px',
-        border: '1px solid #fecaca'
-    }
+    pageContainer: { minHeight: '100vh', backgroundColor: '#f0f2f5' },
+    header: { backgroundColor: 'white', borderBottom: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' },
+    headerContainer: { maxWidth: '1200px', margin: '0 auto', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+    backButton: { display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6', background: 'none', border: 'none', fontSize: '16px', fontWeight: '500', padding: '8px', cursor: 'pointer', borderRadius: '6px' },
+    backText: { '@media (maxWidth: 640px)': { display: 'none' } },
+    headerTitle: { fontSize: '20px', fontWeight: '700', color: '#1e293b', margin: 0 },
+    headerSpacer: { width: '60px' },
+    container: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 80px)', padding: '20px' },
+    card: { backgroundColor: 'white', padding: '40px', borderRadius: '16px', boxShadow: '0 8px 25px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px', textAlign: 'center' },
+    cardTitle: { fontSize: '24px', fontWeight: '700', color: '#1e293b', marginBottom: '32px', marginTop: 0 },
+    input: { width: '100%', padding: '14px', marginBottom: '16px', border: '2px solid #e2e8f0', borderRadius: '8px', boxSizing: 'border-box', fontSize: '16px' },
+    button: { width: '100%', padding: '14px', border: 'none', borderRadius: '8px', backgroundColor: '#3b82f6', color: 'white', cursor: 'pointer', fontSize: '16px', fontWeight: '600', marginBottom: '16px' },
+    divider: { margin: '24px 0', color: '#64748b', textTransform: 'uppercase', fontSize: '12px', fontWeight: '600' },
+    googleButtonWrapper: { display: 'flex', justifyContent: 'center', marginBottom: '24px' },
+    footerLinks: { marginTop: '24px', fontSize: '14px', color: '#64748b' },
+    link: { color: '#3b82f6', textDecoration: 'none', fontWeight: '500' },
+    error: { color: '#dc2626', marginTop: '12px', fontSize: '14px', backgroundColor: '#fef2f2', padding: '12px', borderRadius: '6px', border: '1px solid #fecaca' }
 };

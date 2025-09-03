@@ -67,67 +67,56 @@ export default function ProfilePage() {
   };
 
   const handleBackClick = () => {
-    // Method 1: Check if there's a stored pre-login path
+    // Check if we have a stored path from before login
     const preLoginPath = sessionStorage.getItem('preLoginPath');
     
-    if (preLoginPath) {
-        sessionStorage.removeItem('preLoginPath');
-        sessionStorage.removeItem('cameFromLogin');
-        
-        // Navigate to the stored path
-        try {
-            const url = new URL(preLoginPath);
-            router.push(url.pathname + url.search);
-        } catch {
-            // If it's not a valid URL, treat it as a path
-            router.push(preLoginPath);
-        }
+    if (preLoginPath && preLoginPath !== '/profile') {
+      // Clear the stored path and navigate to it
+      sessionStorage.removeItem('preLoginPath');
+      sessionStorage.removeItem('cameFromLogin');
+      
+      // Ensure we're navigating to a valid path
+      if (preLoginPath.startsWith('/') && !preLoginPath.includes('/login') && !preLoginPath.includes('/register')) {
+        router.push(preLoginPath);
         return;
+      }
     }
     
-    // Method 2: Check if we came directly from login
+    // Check if we came directly from login
     const cameFromLogin = sessionStorage.getItem('cameFromLogin');
-    
     if (cameFromLogin === 'true') {
-        sessionStorage.removeItem('cameFromLogin');
-        
-        // Try to go back 2 steps to skip the login redirect
-        if (window.history.length > 2) {
-            window.history.go(-2);
-        } else {
-            router.push('/');
-        }
-        return;
+      sessionStorage.removeItem('cameFromLogin');
+      // Go to home page since we came directly from login
+      router.push('/');
+      return;
     }
     
-    // Method 3: Analyze the referrer
-    const referrer = document.referrer;
-    const currentHost = window.location.origin;
-    
-    if (referrer && 
-        referrer.startsWith(currentHost) && 
-        !referrer.includes('/login') && 
-        !referrer.includes('/register') &&
-        !referrer.includes('/profile')) {
-        
-        try {
-            const url = new URL(referrer);
-            router.push(url.pathname + url.search);
-        } catch {
-            router.back();
-        }
-        return;
-    }
-    
-    // Method 4: Default smart back
+    // Try browser back, but with fallback
     try {
-        if (window.history.length > 1) {
-            router.back();
+      // Check if we have history to go back to
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        const referrer = document.referrer;
+        const currentOrigin = window.location.origin;
+        
+        // If referrer exists and is from our site (but not login/register pages), use browser back
+        if (referrer && 
+            referrer.startsWith(currentOrigin) && 
+            !referrer.includes('/login') && 
+            !referrer.includes('/register') &&
+            !referrer.includes('/profile')) {
+          router.back();
         } else {
-            router.push('/');
+          // Otherwise go to home
+          router.push('/');
         }
-    } catch {
+      } else {
+        // No history, go to home
         router.push('/');
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Fallback to home page
+      router.push('/');
     }
   };
 

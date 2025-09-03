@@ -15,7 +15,7 @@ export default function DashboardLayout({ children }) {
   const [sellerName, setSellerName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   
-  // ✅ State for notification counts
+  // State for notification counts
   const [notificationCounts, setNotificationCounts] = useState({
     orders: 0,
     notifications: 0
@@ -57,7 +57,9 @@ export default function DashboardLayout({ children }) {
             setIsLoading(false);
         }
     }).catch(error => {
-        console.error("Failed to fetch layout data", error);
+        console.error("Authentication failed, removing token.", error);
+        // This is the crucial fix for the infinite loop
+        localStorage.removeItem('accessToken');
         router.push('/login/seller');
     });
 
@@ -118,7 +120,7 @@ export default function DashboardLayout({ children }) {
   );
 }
 
-// ✅ Updated NavItem to display an indicator
+// Updated NavItem to display an indicator
 function NavItem({ href, name, pathname, count = 0 }) {
     const isActive = href === '/dashboard/seller' ? pathname === href : pathname.startsWith(href);
     return (
