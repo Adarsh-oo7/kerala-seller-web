@@ -3,21 +3,39 @@
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, Star, Package, Calendar, AlertCircle, Loader } from 'lucide-react';
+import { 
+  CheckCircle, 
+  Star, 
+  Package, 
+  Calendar, 
+  AlertCircle, 
+  Loader, 
+  CreditCard,
+  RefreshCw,
+  Crown,
+  Zap,
+  Shield
+} from 'lucide-react';
 
-const PLANS_API_URL = 'http://localhost:8000/api/subscriptions/plans/';
-const CURRENT_SUB_API_URL = 'http://localhost:8000/api/subscriptions/current/';
-const CREATE_ORDER_API = 'http://localhost:8000/api/subscriptions/create-order/';
-const VERIFY_PAYMENT_API = 'http://localhost:8000/api/subscriptions/verify-payment/';
-const RAZORPAY_KEY_ID = 'rzp_test_RClyCqWG0I7Frn';
+// ✅ Using environment variables for API URLs
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const PLANS_API_URL = `${API_BASE_URL}/api/subscriptions/plans/`;
+const CURRENT_SUB_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
+const CREATE_ORDER_API = `${API_BASE_URL}/api/subscriptions/create-order/`;
+const VERIFY_PAYMENT_API = `${API_BASE_URL}/api/subscriptions/verify-payment/`;
 
-// --- Sub-component for displaying the current plan ---
-function CurrentPlanCard({ subscription, isLoading, error }) {
+// ✅ Using environment variable for Razorpay Key
+const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RClyCqWG0I7Frn';
+
+// Enhanced Current Plan Card Component
+function CurrentPlanCard({ subscription, isLoading, error, onRefresh }) {
     if (isLoading) {
         return (
             <div style={{...styles.card, ...styles.loadingCard}}>
-                <Loader className="animate-spin mx-auto mb-2" size={24} />
-                <p>Loading subscription details...</p>
+                <div style={styles.loadingContent}>
+                    <div style={styles.spinner}></div>
+                    <p>Loading subscription details...</p>
+                </div>
             </div>
         );
     }
@@ -25,9 +43,13 @@ function CurrentPlanCard({ subscription, isLoading, error }) {
     if (error) {
         return (
             <div style={{...styles.card, ...styles.errorCard}}>
-                <AlertCircle size={24} style={{color: '#dc3545', marginBottom: '1rem'}} />
-                <h2>Unable to load subscription</h2>
-                <p>{error}</p>
+                <AlertCircle size={32} style={{color: '#dc3545', marginBottom: '16px'}} />
+                <h2 style={styles.errorTitle}>Unable to load subscription</h2>
+                <p style={styles.errorText}>{error}</p>
+                <button onClick={onRefresh} style={styles.retryButton}>
+                    <RefreshCw size={16} />
+                    Try Again
+                </button>
             </div>
         );
     }
@@ -35,23 +57,39 @@ function CurrentPlanCard({ subscription, isLoading, error }) {
     if (!subscription || !subscription.is_active) {
         return (
             <div style={{...styles.card, ...styles.noPlanCard}}>
+                <Crown size={32} style={{color: '#f59e0b', marginBottom: '16px'}} />
                 <h2>No Active Plan</h2>
-                <p>Choose a plan below to start selling online.</p>
+                <p>Choose a plan below to unlock the full potential of your online store.</p>
             </div>
         );
     }
     
     const remainingDays = subscription.days_remaining || Math.ceil((new Date(subscription.end_date) - new Date()) / (1000 * 60 * 60 * 24));
+    const isExpiringSoon = remainingDays <= 7;
     
     return (
-        <div style={{...styles.card, ...styles.currentPlanCard}}>
-            <h2 style={styles.currentPlanTitle}>Your Current Plan</h2>
-            <p style={styles.currentPlanName}>{subscription.plan.name}</p>
+        <div style={{
+            ...styles.card, 
+            ...styles.currentPlanCard,
+            ...(isExpiringSoon ? styles.expiringCard : {})
+        }}>
+            <div style={styles.currentPlanHeader}>
+                <div>
+                    <h2 style={styles.currentPlanTitle}>Your Current Plan</h2>
+                    <p style={styles.currentPlanName}>{subscription.plan.name}</p>
+                </div>
+                <div style={styles.planIcon}>
+                    <Shield size={24} color="#4f46e5" />
+                </div>
+            </div>
+            
             <div style={styles.currentPlanDetails}>
                 <div style={styles.detailItem}>
                     <Calendar size={20} />
-                    <span>
-                        {remainingDays > 0 ? `${remainingDays} days remaining` : 'Expires today'}
+                    <span style={isExpiringSoon ? styles.expiringText : {}}>
+                        {remainingDays > 0 
+                            ? `${remainingDays} days remaining` 
+                            : 'Expires today'}
                     </span>
                 </div>
                 <div style={styles.detailItem}>
@@ -64,6 +102,13 @@ function CurrentPlanCard({ subscription, isLoading, error }) {
                     </span>
                 </div>
             </div>
+            
+            {isExpiringSoon && (
+                <div style={styles.expiringWarning}>
+                    <AlertCircle size={16} />
+                    <span>Your plan expires soon. Renew to continue selling online.</span>
+                </div>
+            )}
         </div>
     );
 }
@@ -76,6 +121,7 @@ export default function SubscriptionPage() {
     const [subscriptionError, setSubscriptionError] = useState(null);
     const [isProcessing, setIsProcessing] = useState(null);
     const [billingCycle, setBillingCycle] = useState('monthly');
+    const [error, setError] = useState('');
     const router = useRouter();
 
     const getAuthHeaders = useCallback(() => {
@@ -87,48 +133,65 @@ export default function SubscriptionPage() {
         return { Authorization: `Token ${token}` };
     }, [router]);
 
+    const loadSubscriptionData = useCallback(async () => {
+        setSubscriptionLoading(true);
+        setSubscriptionError(null);
+        
+        const headers = getAuthHeaders();
+        if (!headers) return;
+        
+        try {
+            const subResponse = await axios.get(CURRENT_SUB_API_URL, { headers });
+            console.log('Current subscription:', subResponse.data);
+            setCurrentSubscription(subResponse.data);
+        } catch (subErr) {
+            console.log('No active subscription found');
+            setCurrentSubscription(null);
+            if (subErr.response?.status !== 404 && subErr.response?.status !== 401) {
+                setSubscriptionError('Failed to load subscription data');
+            }
+        } finally {
+            setSubscriptionLoading(false);
+        }
+    }, [getAuthHeaders]);
+
+    const loadPlansData = useCallback(async () => {
+        try {
+            console.log('Fetching plans from:', PLANS_API_URL);
+            const plansResponse = await axios.get(PLANS_API_URL);
+            const plansData = plansResponse.data.results || plansResponse.data || [];
+            console.log('Plans loaded:', plansData);
+            setPlans(plansData);
+        } catch (err) {
+            console.error('Failed to load plans:', err);
+            setError('Failed to load subscription plans. Please refresh the page.');
+        }
+    }, []);
+
     // Load plans and subscription data
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
-            setSubscriptionLoading(true);
-            setSubscriptionError(null);
+            setError('');
             
-            try {
-                // Load plans (public endpoint)
-                const plansResponse = await axios.get(PLANS_API_URL);
-                setPlans(plansResponse.data.results || plansResponse.data);
-                
-                // Load current subscription (authenticated endpoint)
-                const headers = getAuthHeaders();
-                if (headers) {
-                    try {
-                        const subResponse = await axios.get(CURRENT_SUB_API_URL, { headers });
-                        setCurrentSubscription(subResponse.data);
-                    } catch (subErr) {
-                        console.log('No active subscription found');
-                        setCurrentSubscription(null);
-                        if (subErr.response?.status !== 404) {
-                            setSubscriptionError('Failed to load subscription data');
-                        }
-                    }
-                }
-                
-            } catch (err) {
-                console.error('Failed to load data:', err);
-                if (err.response?.status !== 404) {
-                    setSubscriptionError('Failed to load subscription data');
-                }
-            } finally {
-                setIsLoading(false);
-                setSubscriptionLoading(false);
-            }
+            await Promise.all([
+                loadPlansData(),
+                loadSubscriptionData()
+            ]);
+            
+            setIsLoading(false);
         };
         
         loadData();
-    }, [getAuthHeaders]);
+    }, [loadPlansData, loadSubscriptionData]);
 
     const handleChoosePlan = async (planId, planName) => {
+        // Check if Razorpay is loaded
+        if (!window.Razorpay) {
+            alert('Payment system is not available. Please refresh the page and try again.');
+            return;
+        }
+
         setIsProcessing(planId);
         const headers = getAuthHeaders();
         if (!headers) {
@@ -137,12 +200,15 @@ export default function SubscriptionPage() {
         }
 
         try {
+            console.log('Creating order for plan:', planId, 'billing cycle:', billingCycle);
+            
             // Create order
             const orderResponse = await axios.post(CREATE_ORDER_API, {
                 plan_id: planId,
                 billing_cycle: billingCycle 
             }, { headers });
 
+            console.log('Order created:', orderResponse.data);
             const { order_id, amount } = orderResponse.data;
 
             // Initialize Razorpay
@@ -150,9 +216,11 @@ export default function SubscriptionPage() {
                 key: RAZORPAY_KEY_ID,
                 amount,
                 order_id,
-                name: `Kerala Sellers - ${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'} Plan`,
-                description: `Payment for ${planName}`,
+                name: 'Kerala Sellers',
+                description: `${planName} - ${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'} Plan`,
                 handler: async function (response) {
+                    console.log('Payment successful:', response);
+                    
                     const verificationData = {
                         razorpay_payment_id: response.razorpay_payment_id,
                         razorpay_order_id: response.razorpay_order_id,
@@ -163,29 +231,52 @@ export default function SubscriptionPage() {
                     
                     try {
                         await axios.post(VERIFY_PAYMENT_API, verificationData, { headers });
-                        alert('Subscription activated successfully!');
-                        window.location.reload();
+                        setError('');
+                        alert('🎉 Subscription activated successfully! Welcome to Kerala Sellers!');
+                        
+                        // Refresh subscription data
+                        await loadSubscriptionData();
+                        
                     } catch (error) {
                         console.error('Payment verification failed:', error);
-                        alert("Payment verification failed. Please contact support.");
+                        const errorMessage = error.response?.data?.message || 
+                                           error.response?.data?.error ||
+                                           'Payment verification failed. Please contact support.';
+                        alert(`❌ ${errorMessage}`);
                     } finally {
                         setIsProcessing(null);
                     }
                 },
                 modal: { 
-                    ondismiss: () => setIsProcessing(null) 
+                    ondismiss: () => {
+                        console.log('Payment modal dismissed');
+                        setIsProcessing(null);
+                    }
                 },
                 theme: {
-                    color: '#0d6efd'
+                    color: '#3b82f6'
+                },
+                prefill: {
+                    name: currentSubscription?.user?.name || '',
+                    email: currentSubscription?.user?.email || ''
                 }
             };
 
             const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+                console.error('Payment failed:', response.error);
+                alert(`❌ Payment failed: ${response.error.description}`);
+                setIsProcessing(null);
+            });
+            
             rzp.open();
 
         } catch (error) {
             console.error('Subscription error:', error);
-            alert("Failed to process subscription. Please try again.");
+            const errorMessage = error.response?.data?.message || 
+                               error.response?.data?.error ||
+                               'Failed to process subscription. Please try again.';
+            alert(`❌ ${errorMessage}`);
             setIsProcessing(null);
         }
     };
@@ -193,7 +284,7 @@ export default function SubscriptionPage() {
     if (isLoading) {
         return (
             <div style={styles.loadingContainer}>
-                <Loader className="animate-spin" size={48} />
+                <div style={styles.spinner}></div>
                 <p style={styles.loadingText}>Loading subscription plans...</p>
             </div>
         );
@@ -201,9 +292,26 @@ export default function SubscriptionPage() {
 
     return (
         <div style={styles.container}>
-            <h1 style={styles.title}>Your Subscription</h1>
-            <p style={styles.subtitle}>Manage your plan and explore upgrade options.</p>
-            
+            {/* Header */}
+            <div style={styles.header}>
+                <h1 style={styles.title}>Your Subscription</h1>
+                <p style={styles.subtitle}>
+                    Manage your plan and unlock premium features for your online store
+                </p>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+                <div style={styles.errorAlert}>
+                    <AlertCircle size={16} />
+                    <span>{error}</span>
+                    <button onClick={() => setError('')} style={styles.closeAlert}>
+                        ×
+                    </button>
+                </div>
+            )}
+
+            {/* Billing Cycle Toggle */}
             <div style={styles.toggleContainer}>
                 <button 
                     onClick={() => setBillingCycle('monthly')}
@@ -215,20 +323,25 @@ export default function SubscriptionPage() {
                     onClick={() => setBillingCycle('yearly')}
                     style={billingCycle === 'yearly' ? styles.activeToggle : styles.toggleButton}
                 >
-                    Yearly (Save 10%)
+                    <span>Yearly</span>
+                    <span style={styles.savingsBadge}>Save 10%</span>
                 </button>
             </div>
             
+            {/* Current Plan Card */}
             <CurrentPlanCard 
                 subscription={currentSubscription} 
                 isLoading={subscriptionLoading}
                 error={subscriptionError}
+                onRefresh={loadSubscriptionData}
             />
             
+            {/* Plans Grid */}
             <div style={styles.planGrid}>
                 {plans.map(plan => {
                     const yearlyPrice = plan.yearly_price || (plan.price * 12 * 0.90);
-                    const isCurrentPlan = currentSubscription?.plan?.id === plan.id;
+                    const displayPrice = billingCycle === 'yearly' ? yearlyPrice : plan.price;
+                    const isCurrentPlan = currentSubscription?.plan?.id === plan.id && currentSubscription?.is_active;
                     const isPopular = plan.name === 'Professional' || plan.name === 'Pro';
                     
                     return (
@@ -244,44 +357,62 @@ export default function SubscriptionPage() {
                                 </div>
                             )}
                             
-                            <h2 style={styles.planName}>{plan.name}</h2>
-                            <p style={styles.price}>
-                                ₹{parseInt(billingCycle === 'yearly' ? yearlyPrice : plan.price)}
-                                <span style={styles.duration}>
-                                    /{billingCycle === 'yearly' ? 'year' : 'month'}
-                                </span>
-                            </p>
-                            {billingCycle === 'yearly' && (
-                                <p style={styles.savings}>
-                                    Billed as ₹{parseInt(yearlyPrice)} annually
-                                    <br />
-                                    <span style={styles.savingsAmount}>
-                                        Save ₹{parseInt((plan.price * 12) - yearlyPrice)}
+                            <div style={styles.planHeader}>
+                                <h2 style={styles.planName}>{plan.name}</h2>
+                                <div style={styles.priceContainer}>
+                                    <span style={styles.price}>
+                                        ₹{Math.round(displayPrice).toLocaleString('en-IN')}
                                     </span>
-                                </p>
-                            )}
+                                    <span style={styles.duration}>
+                                        /{billingCycle === 'yearly' ? 'year' : 'month'}
+                                    </span>
+                                </div>
+                                
+                                {billingCycle === 'yearly' && (
+                                    <div style={styles.savings}>
+                                        <p>Billed as ₹{Math.round(yearlyPrice).toLocaleString('en-IN')} annually</p>
+                                        <p style={styles.savingsAmount}>
+                                            Save ₹{Math.round((plan.price * 12) - yearlyPrice).toLocaleString('en-IN')} per year
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
                             
-                            <ul style={styles.featureList}>
-                                <li>
-                                    <CheckCircle size={16} style={styles.checkIcon} /> 
-                                    {plan.product_limit 
-                                        ? `${plan.product_limit} Online Products` 
-                                        : 'Unlimited Online Products'
-                                    }
-                                </li>
-                                <li>
-                                    <CheckCircle size={16} style={styles.checkIcon} /> 
-                                    Unlimited Products for Stock
-                                </li>
-                                <li>
-                                    <CheckCircle size={16} style={styles.checkIcon} /> 
-                                    Your Own Professional Storefront
-                                </li>
-                                <li>
-                                    <CheckCircle size={16} style={styles.checkIcon} /> 
-                                    24/7 Customer Support
-                                </li>
-                            </ul>
+                            <div style={styles.featuresContainer}>
+                                <ul style={styles.featureList}>
+                                    <li style={styles.featureItem}>
+                                        <CheckCircle size={16} style={styles.checkIcon} /> 
+                                        <span>
+                                            {plan.product_limit 
+                                                ? `${plan.product_limit} Online Products` 
+                                                : 'Unlimited Online Products'
+                                            }
+                                        </span>
+                                    </li>
+                                    <li style={styles.featureItem}>
+                                        <CheckCircle size={16} style={styles.checkIcon} /> 
+                                        <span>Unlimited Products for Stock Management</span>
+                                    </li>
+                                    <li style={styles.featureItem}>
+                                        <CheckCircle size={16} style={styles.checkIcon} /> 
+                                        <span>Professional Storefront</span>
+                                    </li>
+                                    <li style={styles.featureItem}>
+                                        <CheckCircle size={16} style={styles.checkIcon} /> 
+                                        <span>WhatsApp Integration</span>
+                                    </li>
+                                    <li style={styles.featureItem}>
+                                        <CheckCircle size={16} style={styles.checkIcon} /> 
+                                        <span>24/7 Customer Support</span>
+                                    </li>
+                                    {isPopular && (
+                                        <li style={styles.featureItem}>
+                                            <Zap size={16} style={{...styles.checkIcon, color: '#f59e0b'}} /> 
+                                            <span>Priority Support</span>
+                                        </li>
+                                    )}
+                                </ul>
+                            </div>
                             
                             <button 
                                 style={{
@@ -294,244 +425,471 @@ export default function SubscriptionPage() {
                                 disabled={isProcessing === plan.id || isCurrentPlan}
                             >
                                 {isProcessing === plan.id ? (
-                                    <>
-                                        <Loader size={16} className="animate-spin" style={{marginRight: '8px'}} />
+                                    <div style={styles.buttonContent}>
+                                        <div style={styles.buttonSpinner}></div>
                                         Processing...
-                                    </>
+                                    </div>
                                 ) : isCurrentPlan ? (
-                                    'Current Plan'
+                                    <div style={styles.buttonContent}>
+                                        <CheckCircle size={16} />
+                                        Current Plan
+                                    </div>
                                 ) : (
-                                    'Choose Plan'
+                                    <div style={styles.buttonContent}>
+                                        <CreditCard size={16} />
+                                        Choose Plan
+                                    </div>
                                 )}
                             </button>
                         </div>
                     );
                 })}
             </div>
+
+            {/* Load Razorpay Script */}
+            <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+            {/* CSS Animations */}
+            <style jsx>{`
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.7; }
+                }
+            `}</style>
         </div>
     );
 }
 
 const styles = {
     container: { 
-        padding: '2rem',
+        padding: '24px',
         maxWidth: '1200px',
         margin: '0 auto',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        animation: 'fadeIn 0.6s ease-out'
     },
+    
+    // Loading
     loadingContainer: {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '400px',
-        gap: '1rem'
+        gap: '20px'
     },
+    
+    spinner: {
+        width: '32px',
+        height: '32px',
+        border: '3px solid #f3f3f3',
+        borderTop: '3px solid #3b82f6',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite'
+    },
+    
+    buttonSpinner: {
+        width: '16px',
+        height: '16px',
+        border: '2px solid rgba(255,255,255,0.3)',
+        borderTop: '2px solid white',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite'
+    },
+    
     loadingText: {
-        fontSize: '1.1rem',
-        color: '#6c757d'
+        fontSize: '16px',
+        color: '#6b7280'
     },
+    
+    // Header
+    header: {
+        textAlign: 'center',
+        marginBottom: '32px'
+    },
+    
     title: { 
-        textAlign: 'center', 
-        marginBottom: '1rem', 
         fontSize: '2.5rem',
-        fontWeight: 'bold',
-        color: '#212529'
+        fontWeight: '700',
+        color: '#1f2937',
+        marginBottom: '12px'
     },
+    
     subtitle: { 
-        textAlign: 'center', 
-        color: '#6c757d', 
-        marginBottom: '2rem', 
-        fontSize: '1.2rem' 
+        color: '#6b7280', 
+        fontSize: '18px',
+        maxWidth: '600px',
+        margin: '0 auto'
     },
+    
+    // Error Alert
+    errorAlert: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '16px 20px',
+        backgroundColor: '#fef2f2',
+        border: '1px solid #ef4444',
+        borderRadius: '12px',
+        color: '#991b1b',
+        marginBottom: '24px'
+    },
+    
+    closeAlert: {
+        marginLeft: 'auto',
+        background: 'none',
+        border: 'none',
+        color: 'inherit',
+        cursor: 'pointer',
+        fontSize: '18px',
+        padding: '4px 8px'
+    },
+    
+    // Toggle
     toggleContainer: { 
         display: 'flex', 
         justifyContent: 'center', 
-        marginBottom: '2rem', 
-        backgroundColor: '#f8f9fa', 
+        marginBottom: '32px', 
+        backgroundColor: '#f3f4f6', 
         padding: '6px', 
-        borderRadius: '10px', 
+        borderRadius: '12px', 
         width: 'fit-content', 
-        margin: '0 auto 2rem auto',
-        border: '1px solid #e9ecef'
+        margin: '0 auto 32px auto',
+        border: '1px solid #e5e7eb'
     },
+    
     toggleButton: { 
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
         padding: '12px 24px', 
         border: 'none', 
         background: 'transparent', 
         cursor: 'pointer', 
-        fontSize: '1rem', 
+        fontSize: '14px', 
         fontWeight: '500',
-        borderRadius: '6px',
-        transition: 'all 0.2s'
+        borderRadius: '8px',
+        transition: 'all 0.2s',
+        color: '#6b7280'
     },
+    
     activeToggle: { 
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
         padding: '12px 24px', 
         border: 'none', 
         backgroundColor: 'white', 
-        borderRadius: '6px', 
+        borderRadius: '8px', 
         cursor: 'pointer', 
-        fontSize: '1rem', 
-        fontWeight: 'bold', 
+        fontSize: '14px', 
+        fontWeight: '600', 
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        color: '#0d6efd'
+        color: '#3b82f6'
     },
-    planGrid: { 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
-        gap: '30px', 
-        alignItems: 'stretch'
+    
+    savingsBadge: {
+        padding: '2px 6px',
+        backgroundColor: '#10b981',
+        color: 'white',
+        borderRadius: '4px',
+        fontSize: '11px',
+        fontWeight: '600'
     },
+    
+    // Cards
     card: { 
-        border: '1px solid #e9ecef', 
+        border: '1px solid #e5e7eb', 
         borderRadius: '16px', 
         padding: '32px', 
-        textAlign: 'center', 
         backgroundColor: '#fff', 
-        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         position: 'relative',
         transition: 'all 0.3s ease'
     },
+    
+    // Current Plan Card Styles
     loadingCard: {
-        backgroundColor: '#f8f9fa',
-        border: '1px solid #e9ecef',
-        maxWidth: '800px',
-        margin: '0 auto 3rem auto'
-    },
-    errorCard: {
-        backgroundColor: '#fff5f5',
-        border: '2px solid #feb2b2',
         textAlign: 'center',
         maxWidth: '800px',
-        margin: '0 auto 3rem auto'
+        margin: '0 auto 48px auto'
     },
+    
+    loadingContent: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '16px',
+        color: '#6b7280'
+    },
+    
+    errorCard: {
+        backgroundColor: '#fef2f2',
+        border: '2px solid #ef4444',
+        textAlign: 'center',
+        maxWidth: '800px',
+        margin: '0 auto 48px auto'
+    },
+    
+    errorTitle: {
+        fontSize: '18px',
+        fontWeight: '600',
+        color: '#991b1b',
+        margin: '0 0 8px 0'
+    },
+    
+    errorText: {
+        color: '#991b1b',
+        marginBottom: '16px'
+    },
+    
+    retryButton: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '8px 16px',
+        backgroundColor: '#ef4444',
+        color: 'white',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: '500'
+    },
+    
     currentPlanCard: { 
-        backgroundColor: '#eef2ff', 
-        border: '2px solid #4f46e5', 
-        textAlign: 'left', 
+        backgroundColor: '#eff6ff', 
+        border: '2px solid #3b82f6', 
         maxWidth: '800px', 
-        margin: '0 auto 3rem auto' 
+        margin: '0 auto 48px auto'
     },
+    
+    expiringCard: {
+        backgroundColor: '#fef3c7',
+        border: '2px solid #f59e0b'
+    },
+    
     noPlanCard: { 
-        backgroundColor: '#fffbeb', 
+        backgroundColor: '#fefce8', 
         border: '2px solid #f59e0b', 
         textAlign: 'center', 
         maxWidth: '800px', 
-        margin: '0 auto 3rem auto' 
+        margin: '0 auto 48px auto',
+        color: '#92400e'
     },
+    
+    currentPlanHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: '24px'
+    },
+    
+    planIcon: {
+        width: '48px',
+        height: '48px',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    
+    currentPlanTitle: { 
+        fontSize: '16px', 
+        fontWeight: '500',
+        color: '#6b7280',
+        margin: '0 0 8px 0'
+    },
+    
+    currentPlanName: { 
+        fontSize: '24px', 
+        fontWeight: '700', 
+        color: '#1f2937', 
+        margin: 0
+    },
+    
+    currentPlanDetails: { 
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px'
+    },
+    
+    detailItem: { 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '12px', 
+        fontSize: '14px',
+        color: '#374151'
+    },
+    
+    expiringText: {
+        color: '#dc2626',
+        fontWeight: '600'
+    },
+    
+    expiringWarning: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        marginTop: '16px',
+        padding: '12px 16px',
+        backgroundColor: '#fef3c7',
+        border: '1px solid #f59e0b',
+        borderRadius: '8px',
+        color: '#92400e',
+        fontSize: '14px'
+    },
+    
+    // Plan Cards
+    planGrid: { 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', 
+        gap: '32px', 
+        alignItems: 'stretch'
+    },
+    
     currentPlanHighlight: {
-        border: '2px solid #4f46e5',
-        transform: 'scale(1.02)'
+        border: '2px solid #3b82f6',
+        transform: 'scale(1.02)',
+        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)'
     },
+    
     popularCard: {
-        border: '2px solid #0d6efd'
+        border: '2px solid #3b82f6',
+        transform: 'scale(1.05)',
+        zIndex: 1
     },
+    
     popularBadge: {
         position: 'absolute',
         top: '-12px',
         left: '50%',
         transform: 'translateX(-50%)',
-        backgroundColor: '#0d6efd',
+        backgroundColor: '#3b82f6',
         color: 'white',
-        padding: '6px 16px',
+        padding: '8px 16px',
         borderRadius: '20px',
-        fontSize: '0.875rem',
-        fontWeight: 'bold',
+        fontSize: '12px',
+        fontWeight: '600',
         display: 'flex',
         alignItems: 'center',
-        gap: '4px'
+        gap: '6px',
+        boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
     },
-    currentPlanTitle: { 
-        fontSize: '1.2rem', 
-        fontWeight: 'bold',
-        marginBottom: '0.5rem'
+    
+    planHeader: {
+        textAlign: 'center',
+        marginBottom: '32px'
     },
-    currentPlanName: { 
-        fontSize: '1.8rem', 
-        fontWeight: 'bold', 
-        color: '#4f46e5', 
-        margin: '0.5rem 0 1rem 0' 
-    },
-    currentPlanDetails: { 
-        display: 'flex', 
-        gap: '20px',
-        flexWrap: 'wrap'
-    },
-    detailItem: { 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '8px', 
-        fontSize: '1rem' 
-    },
+    
     planName: { 
-        fontSize: '1.5rem', 
-        marginBottom: '1rem',
-        fontWeight: 'bold'
+        fontSize: '20px', 
+        margin: '0 0 16px 0',
+        fontWeight: '700',
+        color: '#1f2937'
     },
+    
+    priceContainer: {
+        marginBottom: '16px'
+    },
+    
     price: { 
-        fontSize: '3rem', 
-        fontWeight: 'bold', 
-        marginBottom: '0.5rem',
-        color: '#212529'
+        fontSize: '36px', 
+        fontWeight: '700',
+        color: '#1f2937'
     },
+    
     duration: { 
-        fontSize: '1rem', 
-        color: '#6c757d', 
-        fontWeight: 'normal' 
+        fontSize: '16px', 
+        color: '#6b7280', 
+        fontWeight: '500'
     },
+    
     savings: { 
-        color: '#6c757d', 
-        fontSize: '0.9rem', 
-        marginBottom: '1.5rem',
+        color: '#6b7280', 
+        fontSize: '14px',
         lineHeight: '1.4'
     },
+    
     savingsAmount: {
-        color: '#28a745',
-        fontWeight: 'bold'
+        color: '#10b981',
+        fontWeight: '600'
     },
+    
+    featuresContainer: {
+        marginBottom: '32px'
+    },
+    
     featureList: { 
         listStyle: 'none', 
         padding: 0, 
-        margin: '0 0 2rem 0', 
-        textAlign: 'left', 
+        margin: 0,
         display: 'flex', 
         flexDirection: 'column', 
-        gap: '12px' 
+        gap: '12px'
     },
+    
+    featureItem: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px'
+    },
+    
     checkIcon: {
-        color: '#28a745',
-        marginRight: '8px',
+        color: '#10b981',
         flexShrink: 0
     },
+    
+    // Buttons
     button: { 
         width: '100%', 
         padding: '16px 24px', 
-        border: '2px solid #0d6efd', 
-        borderRadius: '10px', 
+        border: '2px solid #3b82f6', 
+        borderRadius: '12px', 
         backgroundColor: 'white', 
-        color: '#0d6efd', 
+        color: '#3b82f6', 
         cursor: 'pointer', 
-        fontSize: '1rem', 
-        fontWeight: 'bold',
+        fontSize: '16px', 
+        fontWeight: '600',
         transition: 'all 0.2s',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'center'
+    },
+    
+    buttonContent: {
+        display: 'flex',
+        alignItems: 'center',
         gap: '8px'
     },
+    
     popularButton: {
-        backgroundColor: '#0d6efd',
+        backgroundColor: '#3b82f6',
         color: 'white'
     },
+    
     currentPlanButton: {
-        backgroundColor: '#e9ecef',
-        border: '2px solid #6c757d',
-        color: '#6c757d',
+        backgroundColor: '#f3f4f6',
+        border: '2px solid #d1d5db',
+        color: '#6b7280',
         cursor: 'not-allowed'
     },
+    
     processingButton: {
-        backgroundColor: '#f8f9fa',
-        border: '2px solid #6c757d',
-        color: '#6c757d'
+        backgroundColor: '#f9fafb',
+        border: '2px solid #d1d5db',
+        color: '#6b7280',
+        cursor: 'not-allowed'
     }
 };

@@ -17,15 +17,24 @@ import {
   Award,
   Users,
   Clock,
-  Home
+  Home,
+  RefreshCw,
+  AlertCircle,
+  Mail,
+  Globe,
+  Calendar,
+  TrendingUp
 } from 'lucide-react';
 import SHeader from '../../../../components/common/SHeader';
 
-const API_URL = 'http://localhost:8000/user/store/';
+// ✅ Using environment variables for API URLs
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = `${API_BASE_URL}/user/store/`;
 
 export default function StoreAboutPage() {
   const [storeData, setStoreData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const params = useParams();
   const router = useRouter();
@@ -43,25 +52,40 @@ export default function StoreAboutPage() {
     setIsLoggedIn(!!token);
   }, []);
 
-  useEffect(() => {
+  const fetchStoreData = async () => {
     if (!sellerPhone) {
       console.error('❌ No sellerPhone provided');
+      setError('Invalid store URL - phone number is missing');
       setIsLoading(false);
       return;
     }
     
-    console.log('🔍 Fetching store data for phone:', sellerPhone);
+    setIsLoading(true);
+    setError('');
     
-    axios.get(`${API_URL}${sellerPhone}/about/`)
-      .then(response => {
-        console.log('✅ Store data received:', response.data);
-        setStoreData(response.data);
-      })
-      .catch(error => {
-        console.error("❌ Failed to fetch store about data:", error);
-        setStoreData(null);
-      })
-      .finally(() => setIsLoading(false));
+    try {
+      console.log('🔍 Fetching store data for phone:', sellerPhone);
+      const response = await axios.get(`${API_URL}${sellerPhone}/about/`);
+      
+      console.log('✅ Store data received:', response.data);
+      setStoreData(response.data);
+    } catch (error) {
+      console.error("❌ Failed to fetch store about data:", error);
+      if (error.response?.status === 404) {
+        setError('Store not found. This store may no longer exist.');
+      } else if (error.response?.status >= 500) {
+        setError('Server error. Please try again later.');
+      } else {
+        setError('Failed to load store information. Please try again.');
+      }
+      setStoreData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStoreData();
   }, [sellerPhone]);
 
   // Navigation handler for going back to store home
@@ -74,6 +98,24 @@ export default function StoreAboutPage() {
       console.error('❌ Cannot navigate: sellerPhone is undefined');
       router.push('/');
     }
+  };
+
+  const formatJoinDate = (dateString) => {
+    if (!dateString) return 'Recently joined';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', { 
+      year: 'numeric', 
+      month: 'long' 
+    });
+  };
+
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return '';
+    const phoneStr = phone.toString();
+    if (phoneStr.length === 10) {
+      return `+91 ${phoneStr.slice(0, 5)} ${phoneStr.slice(5)}`;
+    }
+    return phoneStr;
   };
 
   if (isLoading) {
@@ -113,14 +155,37 @@ export default function StoreAboutPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div style={styles.pageContainer}>
+        <SHeader store={null} isLoggedIn={isLoggedIn} sellerPhone={sellerPhone} />
+        <div style={styles.errorContainer}>
+          <AlertCircle size={64} style={styles.errorIcon} />
+          <h2 style={styles.errorTitle}>Something went wrong</h2>
+          <p style={styles.errorText}>{error}</p>
+          <div style={styles.errorActions}>
+            <button onClick={fetchStoreData} style={styles.retryButton}>
+              <RefreshCw size={16} />
+              Try Again
+            </button>
+            <Link href={`/shop/${sellerPhone}`} style={styles.backLink}>
+              <ArrowLeft size={16} />
+              Back to Store
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!storeData) {
     return (
       <div style={styles.pageContainer}>
-        <SHeader store={null} isLoggedIn={isLoggedIn} />
+        <SHeader store={null} isLoggedIn={isLoggedIn} sellerPhone={sellerPhone} />
         <div style={styles.errorContainer}>
           <Store size={64} style={styles.errorIcon} />
           <h2 style={styles.errorTitle}>Store Not Found</h2>
-          <p style={styles.errorText}>Could not find this store.</p>
+          <p style={styles.errorText}>Could not find this store. It may have been removed or the URL is incorrect.</p>
           <Link href={`/shop/${sellerPhone}`} style={styles.backLink}>
             <ArrowLeft size={16} />
             Back to Store
@@ -163,13 +228,18 @@ export default function StoreAboutPage() {
         <div style={styles.storeHeader}>
           <div style={styles.logoContainer}>
             <img 
-              src={storeData.logo_url || 'https://placehold.co/150x150/3b82f6/ffffff?text=Store'} 
+              src={storeData.logo_url || `https://via.placeholder.com/150x150/3b82f6/ffffff?text=${encodeURIComponent(storeData.name?.charAt(0) || 'S')}`} 
               alt={`${storeData.name} logo`} 
-              style={styles.logo} 
+              style={styles.logo}
+              onError={(e) => {
+                e.target.src = `https://via.placeholder.com/150x150/3b82f6/ffffff?text=${encodeURIComponent(storeData.name?.charAt(0) || 'S')}`;
+              }}
             />
-            <div style={styles.verifiedBadge}>
-              <Award size={16} />
-            </div>
+            {storeData.verification_status === 'verified' && (
+              <div style={styles.verifiedBadge}>
+                <Award size={16} />
+              </div>
+            )}
           </div>
           <div style={styles.storeInfo}>
             <h1 style={styles.storeName}>{storeData.name}</h1>
@@ -177,14 +247,22 @@ export default function StoreAboutPage() {
               <p style={styles.tagline}>{storeData.tagline}</p>
             )}
             <div style={styles.badges}>
-              <span style={styles.badge}>
-                <Clock size={12} />
-                Verified Store
-              </span>
+              {storeData.verification_status === 'verified' && (
+                <span style={styles.badge}>
+                  <CheckCircle size={12} />
+                  Verified Store
+                </span>
+              )}
               <span style={styles.badge}>
                 <Users size={12} />
                 Trusted Seller
               </span>
+              {storeData.date_joined && (
+                <span style={styles.badge}>
+                  <Calendar size={12} />
+                  Since {formatJoinDate(storeData.date_joined)}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -195,22 +273,70 @@ export default function StoreAboutPage() {
           <div style={styles.statsGrid}>
             <StatCard 
               icon={<Star size={24} fill="currentColor" />} 
-              value={storeData.stats?.overall_rating || "4.5"} 
-              label="Overall Rating"
+              value={storeData.average_rating ? Number(storeData.average_rating).toFixed(1) : "New"} 
+              label="Store Rating"
               color="#f59e0b"
             />
             <StatCard 
               icon={<CheckCircle size={24} />} 
-              value={storeData.stats?.completed_orders || "150+"} 
+              value={storeData.stats?.completed_orders || storeData.orders_completed || "0"} 
               label="Orders Completed"
               color="#10b981"
             />
             <StatCard 
               icon={<Package size={24} />} 
-              value={storeData.stats?.products_count || "25"} 
-              label="Products Listed"
+              value={storeData.stats?.products_count || storeData.products_count || "0"} 
+              label="Products Available"
               color="#3b82f6"
             />
+            <StatCard 
+              icon={<TrendingUp size={24} />} 
+              value={storeData.stats?.monthly_growth || "Growing"} 
+              label="Monthly Growth"
+              color="#8b5cf6"
+            />
+          </div>
+        </div>
+
+        {/* Business Information */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>Business Information</h2>
+          <div style={styles.card}>
+            <div style={styles.businessGrid}>
+              {storeData.gst_number && (
+                <div style={styles.businessItem}>
+                  <div style={styles.businessIcon}>
+                    <Award size={20} />
+                  </div>
+                  <div>
+                    <span style={styles.businessLabel}>GST Number</span>
+                    <p style={styles.businessValue}>{storeData.gst_number}</p>
+                  </div>
+                </div>
+              )}
+              {storeData.business_license && (
+                <div style={styles.businessItem}>
+                  <div style={styles.businessIcon}>
+                    <CheckCircle size={20} />
+                  </div>
+                  <div>
+                    <span style={styles.businessLabel}>Business License</span>
+                    <p style={styles.businessValue}>{storeData.business_license}</p>
+                  </div>
+                </div>
+              )}
+              {storeData.owner_name && (
+                <div style={styles.businessItem}>
+                  <div style={styles.businessIcon}>
+                    <Users size={20} />
+                  </div>
+                  <div>
+                    <span style={styles.businessLabel}>Owner</span>
+                    <p style={styles.businessValue}>{storeData.owner_name}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -219,7 +345,7 @@ export default function StoreAboutPage() {
           <h2 style={styles.sectionTitle}>About Our Store</h2>
           <div style={styles.card}>
             <p style={styles.description}>
-              {storeData.description || 'Welcome to our store! We are committed to providing you with the best products and exceptional customer service. Our team works hard to ensure quality and satisfaction with every purchase.'}
+              {storeData.description || `Welcome to ${storeData.name}! We are committed to providing you with the best products and exceptional customer service. Our team works hard to ensure quality and satisfaction with every purchase.`}
             </p>
           </div>
         </div>
@@ -229,30 +355,81 @@ export default function StoreAboutPage() {
           <h2 style={styles.sectionTitle}>Contact & Location</h2>
           <div style={styles.card}>
             <div style={styles.contactGrid}>
-              <div style={styles.contactItem}>
-                <div style={styles.contactIcon}>
-                  <MapPin size={20} />
+              {(storeData.business_address || storeData.address) && (
+                <div style={styles.contactItem}>
+                  <div style={styles.contactIcon}>
+                    <MapPin size={20} />
+                  </div>
+                  <div style={styles.contactInfo}>
+                    <span style={styles.contactLabel}>Business Address</span>
+                    <p style={styles.contactValue}>
+                      {storeData.business_address || storeData.address}
+                    </p>
+                  </div>
                 </div>
-                <div style={styles.contactInfo}>
-                  <span style={styles.contactLabel}>Address</span>
-                  <p style={styles.contactValue}>
-                    {storeData.address || 'Kerala, India'}
-                  </p>
-                </div>
-              </div>
+              )}
               
               <div style={styles.contactItem}>
                 <div style={styles.contactIcon}>
                   <Phone size={20} />
                 </div>
                 <div style={styles.contactInfo}>
-                  <span style={styles.contactLabel}>Phone</span>
+                  <span style={styles.contactLabel}>Phone Number</span>
                   <p style={styles.contactValue}>
-                    {storeData.phone || sellerPhone}
+                    {formatPhoneNumber(storeData.whatsapp_number || storeData.phone || sellerPhone)}
                   </p>
                 </div>
               </div>
+
+              {storeData.email && (
+                <div style={styles.contactItem}>
+                  <div style={styles.contactIcon}>
+                    <Mail size={20} />
+                  </div>
+                  <div style={styles.contactInfo}>
+                    <span style={styles.contactLabel}>Email</span>
+                    <p style={styles.contactValue}>{storeData.email}</p>
+                  </div>
+                </div>
+              )}
+
+              {storeData.website && (
+                <div style={styles.contactItem}>
+                  <div style={styles.contactIcon}>
+                    <Globe size={20} />
+                  </div>
+                  <div style={styles.contactInfo}>
+                    <span style={styles.contactLabel}>Website</span>
+                    <p style={styles.contactValue}>
+                      <a href={storeData.website} target="_blank" rel="noopener noreferrer" style={styles.websiteLink}>
+                        {storeData.website}
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
+            
+            {/* Delivery Information */}
+            {(storeData.delivery_time_local || storeData.delivery_time_national) && (
+              <div style={styles.deliverySection}>
+                <h3 style={styles.deliveryTitle}>Delivery Information</h3>
+                <div style={styles.deliveryGrid}>
+                  {storeData.delivery_time_local && (
+                    <div style={styles.deliveryItem}>
+                      <Clock size={16} />
+                      <span>Local: {storeData.delivery_time_local}</span>
+                    </div>
+                  )}
+                  {storeData.delivery_time_national && (
+                    <div style={styles.deliveryItem}>
+                      <Clock size={16} />
+                      <span>National: {storeData.delivery_time_national}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             
             {/* Social Links */}
             {(storeData.instagram_link || storeData.facebook_link) && (
@@ -295,6 +472,19 @@ export default function StoreAboutPage() {
           </Link>
         </div>
       </div>
+
+      {/* CSS Animations */}
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -324,43 +514,74 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '60vh',
-    gap: '16px'
+    gap: '20px'
   },
+  
   spinner: {
-    width: '40px',
-    height: '40px',
-    border: '4px solid #e2e8f0',
-    borderTop: '4px solid #3b82f6',
+    width: '32px',
+    height: '32px',
+    border: '3px solid #f3f3f3',
+    borderTop: '3px solid #3b82f6',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
+  
   loadingText: {
-    color: '#64748b',
+    color: '#6b7280',
     fontSize: '16px'
   },
+  
   errorContainer: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '60vh',
-    gap: '16px',
-    textAlign: 'center'
+    gap: '20px',
+    textAlign: 'center',
+    padding: '40px'
   },
+  
   errorIcon: {
-    color: '#94a3b8'
+    color: '#ef4444'
   },
+  
   errorTitle: {
     fontSize: '24px',
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#1f2937',
     margin: 0
   },
+  
   errorText: {
-    color: '#64748b',
+    color: '#6b7280',
     fontSize: '16px',
-    margin: 0
+    margin: 0,
+    maxWidth: '400px'
   },
+  
+  errorActions: {
+    display: 'flex',
+    gap: '12px',
+    flexWrap: 'wrap',
+    justifyContent: 'center'
+  },
+  
+  retryButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 24px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'all 0.2s'
+  },
+  
   backLink: {
     display: 'flex',
     alignItems: 'center',
@@ -378,15 +599,17 @@ const styles = {
   // Breadcrumb
   breadcrumbContainer: {
     backgroundColor: 'white',
-    borderBottom: '1px solid #e2e8f0',
+    borderBottom: '1px solid #e5e7eb',
     padding: '12px 0'
   },
+  
   breadcrumb: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
     fontSize: '14px'
   },
+  
   breadcrumbLink: {
     display: 'flex',
     alignItems: 'center',
@@ -395,11 +618,13 @@ const styles = {
     textDecoration: 'none',
     transition: 'color 0.2s'
   },
+  
   breadcrumbSeparator: {
-    color: '#94a3b8'
+    color: '#9ca3af'
   },
+  
   breadcrumbCurrent: {
-    color: '#64748b',
+    color: '#6b7280',
     fontWeight: '500'
   },
 
@@ -423,10 +648,11 @@ const styles = {
   container: {
     maxWidth: '900px',
     margin: '0 auto',
-    padding: '20px',
+    padding: '24px 20px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '32px'
+    gap: '32px',
+    animation: 'fadeIn 0.6s ease-out'
   },
 
   // Store Header
@@ -434,31 +660,26 @@ const styles = {
     backgroundColor: 'white',
     borderRadius: '16px',
     padding: '32px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    border: '1px solid #e5e7eb',
     display: 'flex',
     alignItems: 'center',
-    gap: '24px',
-    '@media (max-width: 640px)': {
-      flexDirection: 'column',
-      textAlign: 'center',
-      padding: '24px'
-    }
+    gap: '24px'
   },
+  
   logoContainer: {
     position: 'relative',
     flexShrink: 0
   },
+  
   logo: {
     width: '120px',
     height: '120px',
     borderRadius: '20px',
     objectFit: 'cover',
-    border: '4px solid #f1f5f9',
-    '@media (max-width: 640px)': {
-      width: '100px',
-      height: '100px'
-    }
+    border: '3px solid #f1f5f9'
   },
+  
   verifiedBadge: {
     position: 'absolute',
     bottom: '-8px',
@@ -473,41 +694,41 @@ const styles = {
     justifyContent: 'center',
     border: '3px solid white'
   },
+  
   storeInfo: {
     flex: 1
   },
+  
   storeName: {
     fontSize: '32px',
     fontWeight: '700',
-    color: '#1e293b',
-    margin: '0 0 8px 0',
-    '@media (max-width: 640px)': {
-      fontSize: '24px'
-    }
+    color: '#1f2937',
+    margin: '0 0 8px 0'
   },
+  
   tagline: {
     fontSize: '18px',
-    color: '#64748b',
+    color: '#6b7280',
     margin: '0 0 16px 0',
     lineHeight: '1.5'
   },
+  
   badges: {
     display: 'flex',
     gap: '12px',
-    '@media (max-width: 640px)': {
-      justifyContent: 'center'
-    }
+    flexWrap: 'wrap'
   },
+  
   badge: {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
     backgroundColor: '#f1f5f9',
-    color: '#475569',
+    color: '#6b7280',
     padding: '6px 12px',
     borderRadius: '20px',
-    fontSize: '14px',
-    fontWeight: '500'
+    fontSize: '12px',
+    fontWeight: '600'
   },
 
   // Sections
@@ -516,17 +737,20 @@ const styles = {
     flexDirection: 'column',
     gap: '16px'
   },
+  
   sectionTitle: {
     fontSize: '24px',
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#1f2937',
     margin: 0
   },
+  
   card: {
     backgroundColor: 'white',
     borderRadius: '16px',
     padding: '24px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    border: '1px solid #e5e7eb'
   },
 
   // Stats Section
@@ -535,33 +759,79 @@ const styles = {
     flexDirection: 'column',
     gap: '16px'
   },
+  
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '20px'
   },
+  
   statCard: {
     backgroundColor: 'white',
     padding: '24px',
     borderRadius: '16px',
     textAlign: 'center',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-    transition: 'transform 0.2s, box-shadow 0.2s'
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    border: '1px solid #e5e7eb',
+    transition: 'all 0.2s'
   },
+  
   statIcon: {
     marginBottom: '12px',
     display: 'flex',
     justifyContent: 'center'
   },
+  
   statValue: {
-    fontSize: '2.5rem',
-    fontWeight: 'bold',
-    color: '#1e293b',
+    fontSize: '2rem',
+    fontWeight: '700',
+    color: '#1f2937',
     marginBottom: '4px'
   },
+  
   statLabel: {
-    fontSize: '0.9rem',
-    color: '#64748b',
+    fontSize: '14px',
+    color: '#6b7280',
+    fontWeight: '500'
+  },
+
+  // Business Information
+  businessGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gap: '20px'
+  },
+  
+  businessItem: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '16px'
+  },
+  
+  businessIcon: {
+    width: '40px',
+    height: '40px',
+    borderRadius: '10px',
+    backgroundColor: '#f1f5f9',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#3b82f6',
+    flexShrink: 0
+  },
+  
+  businessLabel: {
+    display: 'block',
+    fontSize: '14px',
+    color: '#6b7280',
+    fontWeight: '600',
+    marginBottom: '4px'
+  },
+  
+  businessValue: {
+    margin: 0,
+    fontSize: '16px',
+    color: '#1f2937',
     fontWeight: '500'
   },
 
@@ -578,16 +848,15 @@ const styles = {
     display: 'grid',
     gridTemplateColumns: '1fr',
     gap: '20px',
-    marginBottom: '24px',
-    '@media (min-width: 640px)': {
-      gridTemplateColumns: '1fr 1fr'
-    }
+    marginBottom: '24px'
   },
+  
   contactItem: {
     display: 'flex',
     alignItems: 'flex-start',
     gap: '16px'
   },
+  
   contactIcon: {
     width: '48px',
     height: '48px',
@@ -599,38 +868,78 @@ const styles = {
     color: '#3b82f6',
     flexShrink: 0
   },
+  
   contactInfo: {
     flex: 1
   },
+  
   contactLabel: {
     display: 'block',
     fontSize: '14px',
-    color: '#64748b',
+    color: '#6b7280',
     fontWeight: '600',
     marginBottom: '4px'
   },
+  
   contactValue: {
     margin: 0,
     fontSize: '16px',
-    color: '#1e293b',
+    color: '#1f2937',
     fontWeight: '500'
+  },
+  
+  websiteLink: {
+    color: '#3b82f6',
+    textDecoration: 'none'
+  },
+
+  // Delivery Section
+  deliverySection: {
+    borderTop: '1px solid #e5e7eb',
+    paddingTop: '24px',
+    marginBottom: '24px'
+  },
+  
+  deliveryTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#1f2937',
+    margin: '0 0 16px 0'
+  },
+  
+  deliveryGrid: {
+    display: 'flex',
+    gap: '20px',
+    flexWrap: 'wrap'
+  },
+  
+  deliveryItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '14px',
+    color: '#374151'
   },
 
   // Social Section
   socialSection: {
-    borderTop: '1px solid #e2e8f0',
+    borderTop: '1px solid #e5e7eb',
     paddingTop: '24px'
   },
+  
   socialTitle: {
     fontSize: '18px',
     fontWeight: '600',
-    color: '#1e293b',
+    color: '#1f2937',
     margin: '0 0 16px 0'
   },
+  
   socialLinks: {
     display: 'flex',
-    gap: '16px'
+    gap: '16px',
+    flexWrap: 'wrap'
   },
+  
   socialLink: {
     display: 'flex',
     alignItems: 'center',
@@ -651,6 +960,7 @@ const styles = {
     justifyContent: 'center',
     padding: '24px 0'
   },
+  
   primaryButton: {
     display: 'flex',
     alignItems: 'center',

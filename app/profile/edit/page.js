@@ -4,9 +4,23 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, User, Phone, MapPin, AlertCircle } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Save, 
+  User, 
+  Phone, 
+  MapPin, 
+  AlertCircle, 
+  CheckCircle,
+  RefreshCw,
+  X,
+  Eye,
+  EyeOff
+} from 'lucide-react';
 
-const PROFILE_API = 'http://localhost:8000/api/buyer/profile/';
+// ✅ Using environment variables for API URLs
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 
 export default function EditProfilePage() {
   const [formData, setFormData] = useState({
@@ -17,9 +31,13 @@ export default function EditProfilePage() {
     pincode: '', 
     phone_number: ''
   });
+  const [originalData, setOriginalData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState('');
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const router = useRouter();
 
   const getAuthHeaders = useCallback(() => {
@@ -31,48 +49,85 @@ export default function EditProfilePage() {
     return { 'Authorization': `Bearer ${token}` };
   }, [router]);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const headers = getAuthHeaders();
-      if (!headers) return;
+  const fetchProfile = useCallback(async () => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+    
+    setIsLoading(true);
+    try {
+      console.log('Fetching profile from:', PROFILE_API);
+      const response = await axios.get(PROFILE_API, { headers });
       
-      try {
-        const response = await axios.get(PROFILE_API, { headers });
-        const data = response.data;
-        setFormData({
-          full_name: data.full_name || '',
-          address_line_1: data.address_line_1 || '',
-          address_line_2: data.address_line_2 || '',
-          city: data.city || '',
-          pincode: data.pincode || '',
-          phone_number: data.phone_number || ''
-        });
-      } catch (error) {
-        console.error("Failed to fetch profile:", error);
-        if (error.response?.status === 401) {
-          router.push('/login/buyer');
-        }
-      } finally {
-        setIsLoading(false);
+      console.log('Profile data received:', response.data);
+      const data = response.data;
+      const profileData = {
+        full_name: data.full_name || '',
+        address_line_1: data.address_line_1 || '',
+        address_line_2: data.address_line_2 || '',
+        city: data.city || '',
+        pincode: data.pincode || '',
+        phone_number: data.phone_number || ''
+      };
+      
+      setFormData(profileData);
+      setOriginalData(profileData);
+      setHasChanges(false);
+      
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+      if (error.response?.status === 401) {
+        router.push('/login/buyer');
+      } else {
+        setErrors({ general: 'Failed to load profile. Please refresh the page.' });
       }
-    };
-
-    fetchProfile();
+    } finally {
+      setIsLoading(false);
+    }
   }, [getAuthHeaders, router]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  // Check for unsaved changes
+  useEffect(() => {
+    const hasDataChanged = Object.keys(formData).some(
+      key => formData[key] !== originalData[key]
+    );
+    setHasChanges(hasDataChanged);
+  }, [formData, originalData]);
 
   const validateForm = () => {
     const newErrors = {};
 
+    // Required fields
     if (!formData.full_name.trim()) {
       newErrors.full_name = 'Full name is required';
+    } else if (formData.full_name.trim().length < 2) {
+      newErrors.full_name = 'Full name must be at least 2 characters';
     }
 
-    if (formData.phone_number && !/^[6-9]\d{9}$/.test(formData.phone_number.trim())) {
-      newErrors.phone_number = 'Please enter a valid 10-digit phone number';
+    // Phone validation
+    if (formData.phone_number && formData.phone_number.trim()) {
+      const phoneRegex = /^[6-9]\d{9}$/;
+      if (!phoneRegex.test(formData.phone_number.trim())) {
+        newErrors.phone_number = 'Please enter a valid 10-digit mobile number starting with 6-9';
+      }
     }
 
-    if (formData.pincode && !/^\d{6}$/.test(formData.pincode.trim())) {
-      newErrors.pincode = 'Please enter a valid 6-digit pincode';
+    // Pincode validation
+    if (formData.pincode && formData.pincode.trim()) {
+      const pincodeRegex = /^\d{6}$/;
+      if (!pincodeRegex.test(formData.pincode.trim())) {
+        newErrors.pincode = 'Please enter a valid 6-digit pincode';
+      }
+    }
+
+    // City validation
+    if (formData.city && formData.city.trim()) {
+      if (formData.city.trim().length < 2) {
+        newErrors.city = 'City name must be at least 2 characters';
+      }
     }
 
     setErrors(newErrors);
@@ -81,8 +136,20 @@ export default function EditProfilePage() {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear specific field error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+    
+    // Clear general error
+    if (errors.general) {
+      setErrors(prev => ({ ...prev, general: '' }));
+    }
+    
+    // Clear success message
+    if (successMessage) {
+      setSuccessMessage('');
     }
   };
 
@@ -90,64 +157,168 @@ export default function EditProfilePage() {
     e.preventDefault();
     
     if (!validateForm()) return;
+    if (!hasChanges) {
+      setSuccessMessage('No changes to save.');
+      return;
+    }
 
     const headers = getAuthHeaders();
     if (!headers) return;
     
     setIsSaving(true);
+    setErrors({});
+    
     try {
+      console.log('Updating profile with data:', formData);
       await axios.patch(PROFILE_API, formData, { headers });
-      alert('Profile updated successfully!');
-      router.push('/profile');
+      
+      setOriginalData(formData);
+      setHasChanges(false);
+      setSuccessMessage('Profile updated successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
     } catch (error) {
-      alert('Failed to update profile. Please try again.');
+      console.error('Profile update failed:', error);
+      if (error.response?.status === 400) {
+        // Handle validation errors from server
+        const serverErrors = error.response.data;
+        setErrors({ general: serverErrors.message || 'Please check your input and try again.' });
+      } else {
+        setErrors({ general: 'Failed to update profile. Please try again.' });
+      }
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleCancel = () => {
+    if (hasChanges) {
+      setShowUnsavedWarning(true);
+    } else {
+      router.push('/profile');
+    }
+  };
+
+  const confirmCancel = () => {
+    setFormData(originalData);
+    setHasChanges(false);
+    setShowUnsavedWarning(false);
+    router.push('/profile');
+  };
+
+  const handleReset = () => {
+    setFormData(originalData);
+    setErrors({});
+    setSuccessMessage('');
+    setHasChanges(false);
   };
 
   if (isLoading) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p>Loading profile...</p>
+        <p>Loading your profile...</p>
       </div>
     );
   }
 
   return (
     <div style={styles.pageContainer}>
+      {/* Unsaved Changes Warning Modal */}
+      {showUnsavedWarning && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContent}>
+            <div style={styles.modalHeader}>
+              <h3>Unsaved Changes</h3>
+              <button 
+                onClick={() => setShowUnsavedWarning(false)} 
+                style={styles.closeButton}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <p>You have unsaved changes. Are you sure you want to leave without saving?</p>
+            <div style={styles.modalActions}>
+              <button 
+                onClick={() => setShowUnsavedWarning(false)} 
+                style={styles.stayButton}
+              >
+                Stay and Edit
+              </button>
+              <button 
+                onClick={confirmCancel} 
+                style={styles.leaveButton}
+              >
+                Leave Without Saving
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header style={styles.header}>
         <div style={styles.headerContainer}>
-          <Link href="/profile" style={styles.backButton}>
+          <button onClick={handleCancel} style={styles.backButton}>
             <ArrowLeft size={20} />
             <span style={styles.backText}>Back to Profile</span>
-          </Link>
+          </button>
           <h1 style={styles.headerTitle}>Edit Profile</h1>
-          <div style={styles.headerSpacer}></div>
+          <div style={styles.headerActions}>
+            {hasChanges && (
+              <button onClick={handleReset} style={styles.resetButton}>
+                <RefreshCw size={16} />
+                Reset
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
       <div style={styles.container}>
         <div style={styles.formWrapper}>
+          {/* Success Message */}
+          {successMessage && (
+            <div style={styles.successAlert}>
+              <CheckCircle size={16} />
+              <span>{successMessage}</span>
+            </div>
+          )}
+
+          {/* General Error Message */}
+          {errors.general && (
+            <div style={styles.errorAlert}>
+              <AlertCircle size={16} />
+              <span>{errors.general}</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} style={styles.form}>
             {/* Personal Information Section */}
             <div style={styles.section}>
               <div style={styles.sectionHeader}>
-                <User size={24} />
+                <User size={24} color="#3b82f6" />
                 <h3 style={styles.sectionTitle}>Personal Information</h3>
               </div>
               
               <div style={styles.formGrid}>
                 <div style={styles.inputGroup}>
-                  <label style={styles.label}>Full Name *</label>
+                  <label style={styles.label}>
+                    Full Name *
+                    <span style={styles.required}>Required</span>
+                  </label>
                   <input
                     type="text"
                     value={formData.full_name}
                     onChange={(e) => handleInputChange('full_name', e.target.value)}
-                    style={{...styles.input, ...(errors.full_name ? styles.inputError : {})}}
+                    style={{
+                      ...styles.input, 
+                      ...(errors.full_name ? styles.inputError : {})
+                    }}
                     placeholder="Enter your full name"
+                    maxLength={100}
                   />
                   {errors.full_name && (
                     <div style={styles.errorMessage}>
@@ -159,14 +330,23 @@ export default function EditProfilePage() {
 
                 <div style={styles.inputGroup}>
                   <label style={styles.label}>Phone Number</label>
-                  <input
-                    type="tel"
-                    value={formData.phone_number}
-                    onChange={(e) => handleInputChange('phone_number', e.target.value)}
-                    style={{...styles.input, ...(errors.phone_number ? styles.inputError : {})}}
-                    placeholder="Enter 10-digit mobile number"
-                    maxLength={10}
-                  />
+                  <div style={styles.phoneInputContainer}>
+                    <span style={styles.phonePrefix}>+91</span>
+                    <input
+                      type="tel"
+                      value={formData.phone_number}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        handleInputChange('phone_number', value);
+                      }}
+                      style={{
+                        ...styles.phoneInput, 
+                        ...(errors.phone_number ? styles.inputError : {})
+                      }}
+                      placeholder="Enter 10-digit mobile number"
+                      maxLength={10}
+                    />
+                  </div>
                   {errors.phone_number && (
                     <div style={styles.errorMessage}>
                       <AlertCircle size={14} />
@@ -180,7 +360,7 @@ export default function EditProfilePage() {
             {/* Address Section */}
             <div style={styles.section}>
               <div style={styles.sectionHeader}>
-                <MapPin size={24} />
+                <MapPin size={24} color="#10b981" />
                 <h3 style={styles.sectionTitle}>Address Information</h3>
               </div>
               
@@ -193,6 +373,7 @@ export default function EditProfilePage() {
                     onChange={(e) => handleInputChange('address_line_1', e.target.value)}
                     style={styles.input}
                     placeholder="House number, street name"
+                    maxLength={100}
                   />
                 </div>
 
@@ -204,6 +385,7 @@ export default function EditProfilePage() {
                     onChange={(e) => handleInputChange('address_line_2', e.target.value)}
                     style={styles.input}
                     placeholder="Area, landmark"
+                    maxLength={100}
                   />
                 </div>
 
@@ -213,9 +395,19 @@ export default function EditProfilePage() {
                     type="text"
                     value={formData.city}
                     onChange={(e) => handleInputChange('city', e.target.value)}
-                    style={styles.input}
+                    style={{
+                      ...styles.input, 
+                      ...(errors.city ? styles.inputError : {})
+                    }}
                     placeholder="Enter city name"
+                    maxLength={50}
                   />
+                  {errors.city && (
+                    <div style={styles.errorMessage}>
+                      <AlertCircle size={14} />
+                      <span>{errors.city}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div style={styles.inputGroup}>
@@ -223,8 +415,14 @@ export default function EditProfilePage() {
                   <input
                     type="text"
                     value={formData.pincode}
-                    onChange={(e) => handleInputChange('pincode', e.target.value)}
-                    style={{...styles.input, ...(errors.pincode ? styles.inputError : {})}}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      handleInputChange('pincode', value);
+                    }}
+                    style={{
+                      ...styles.input, 
+                      ...(errors.pincode ? styles.inputError : {})
+                    }}
                     placeholder="Enter 6-digit pincode"
                     maxLength={6}
                   />
@@ -240,16 +438,32 @@ export default function EditProfilePage() {
 
             {/* Action Buttons */}
             <div style={styles.actions}>
-              <Link href="/profile" style={styles.cancelButton}>
+              <button 
+                type="button" 
+                onClick={handleCancel} 
+                style={styles.cancelButton}
+              >
                 Cancel
-              </Link>
+              </button>
               <button 
                 type="submit" 
-                disabled={isSaving}
-                style={{...styles.saveButton, ...(isSaving ? styles.disabledButton : {})}}
+                disabled={isSaving || !hasChanges}
+                style={{
+                  ...styles.saveButton, 
+                  ...(isSaving || !hasChanges ? styles.disabledButton : {})
+                }}
               >
-                <Save size={18} />
-                <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+                {isSaving ? (
+                  <>
+                    <div style={styles.buttonSpinner}></div>
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    <span>Save Changes</span>
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -266,6 +480,11 @@ export default function EditProfilePage() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
         }
       `}</style>
     </div>
@@ -285,27 +504,105 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
-    gap: '16px',
+    gap: '20px',
     padding: '20px'
   },
+  
   spinner: {
-    width: '40px',
-    height: '40px',
-    border: '4px solid #e2e8f0',
-    borderTop: '4px solid #3b82f6',
+    width: '32px',
+    height: '32px',
+    border: '3px solid #f3f3f3',
+    borderTop: '3px solid #3b82f6',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
+  },
+  
+  buttonSpinner: {
+    width: '16px',
+    height: '16px',
+    border: '2px solid rgba(255,255,255,0.3)',
+    borderTop: '2px solid white',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  },
+
+  // Modal
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '20px'
+  },
+  
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    padding: '24px',
+    maxWidth: '400px',
+    width: '100%',
+    animation: 'slideIn 0.2s ease-out'
+  },
+  
+  modalHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '16px'
+  },
+  
+  closeButton: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#6b7280',
+    padding: '4px'
+  },
+  
+  modalActions: {
+    display: 'flex',
+    gap: '12px',
+    marginTop: '24px'
+  },
+  
+  stayButton: {
+    flex: 1,
+    padding: '10px 16px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: '500'
+  },
+  
+  leaveButton: {
+    flex: 1,
+    padding: '10px 16px',
+    backgroundColor: '#ef4444',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: '500'
   },
 
   // Header
   header: {
     backgroundColor: 'white',
-    borderBottom: '1px solid #e2e8f0',
+    borderBottom: '1px solid #e5e7eb',
     position: 'sticky',
     top: 0,
     zIndex: 100,
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
+  
   headerContainer: {
     maxWidth: '1200px',
     margin: '0 auto',
@@ -314,52 +611,93 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between'
   },
+  
   backButton: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
     color: '#3b82f6',
-    textDecoration: 'none',
+    background: 'none',
+    border: 'none',
     fontSize: '16px',
     fontWeight: '500',
-    padding: '8px'
+    padding: '8px',
+    cursor: 'pointer',
+    borderRadius: '6px',
+    transition: 'all 0.2s'
   },
+  
   backText: {
     display: 'none',
     '@media (min-width: 640px)': {
       display: 'inline'
     }
   },
+  
   headerTitle: {
     fontSize: '20px',
     fontWeight: '700',
-    color: '#1e293b',
-    margin: 0,
-    '@media (max-width: 640px)': {
-      fontSize: '18px'
-    }
+    color: '#1f2937',
+    margin: 0
   },
-  headerSpacer: {
-    width: '120px',
-    '@media (max-width: 640px)': {
-      width: '40px'
-    }
+  
+  headerActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
+  
+  resetButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 12px',
+    backgroundColor: '#f3f4f6',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    color: '#6b7280',
+    transition: 'all 0.2s'
   },
 
   // Container
   container: {
     maxWidth: '800px',
     margin: '0 auto',
-    padding: '20px',
-    '@media (min-width: 768px)': {
-      padding: '40px 20px'
-    }
+    padding: '24px 20px'
+  },
+
+  // Alerts
+  successAlert: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '16px 20px',
+    backgroundColor: '#ecfdf5',
+    border: '1px solid #10b981',
+    borderRadius: '12px',
+    color: '#065f46',
+    marginBottom: '24px'
+  },
+  
+  errorAlert: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '16px 20px',
+    backgroundColor: '#fef2f2',
+    border: '1px solid #ef4444',
+    borderRadius: '12px',
+    color: '#991b1b',
+    marginBottom: '24px'
   },
 
   // Form
   formWrapper: {
     animation: 'fadeIn 0.6s ease-out'
   },
+  
   form: {
     display: 'flex',
     flexDirection: 'column',
@@ -370,24 +708,24 @@ const styles = {
   section: {
     backgroundColor: 'white',
     borderRadius: '16px',
-    padding: '24px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-    '@media (min-width: 768px)': {
-      padding: '32px'
-    }
+    padding: '32px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    border: '1px solid #e5e7eb'
   },
+  
   sectionHeader: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
     marginBottom: '24px',
     paddingBottom: '16px',
-    borderBottom: '1px solid #e2e8f0'
+    borderBottom: '1px solid #f3f4f6'
   },
+  
   sectionTitle: {
     fontSize: '20px',
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#1f2937',
     margin: 0
   },
 
@@ -395,7 +733,7 @@ const styles = {
   formGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr',
-    gap: '20px',
+    gap: '24px',
     '@media (min-width: 640px)': {
       gridTemplateColumns: 'repeat(2, 1fr)'
     }
@@ -407,12 +745,23 @@ const styles = {
     flexDirection: 'column',
     gap: '8px'
   },
+  
   label: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
     fontSize: '14px',
     fontWeight: '600',
     color: '#374151',
-    marginBottom: '2px'
+    marginBottom: '6px'
   },
+  
+  required: {
+    fontSize: '12px',
+    color: '#ef4444',
+    fontWeight: '400'
+  },
+  
   input: {
     width: '100%',
     padding: '14px 16px',
@@ -422,15 +771,40 @@ const styles = {
     outline: 'none',
     transition: 'all 0.2s',
     backgroundColor: 'white',
-    boxSizing: 'border-box',
-    ':focus': {
-      borderColor: '#3b82f6',
-      boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)'
-    }
+    boxSizing: 'border-box'
   },
+  
+  phoneInputContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    border: '2px solid #e5e7eb',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    transition: 'all 0.2s'
+  },
+  
+  phonePrefix: {
+    padding: '14px 12px',
+    backgroundColor: '#f8fafc',
+    border: 'none',
+    fontSize: '16px',
+    color: '#374151',
+    fontWeight: '500'
+  },
+  
+  phoneInput: {
+    flex: 1,
+    padding: '14px 16px',
+    border: 'none',
+    fontSize: '16px',
+    outline: 'none',
+    backgroundColor: 'white'
+  },
+  
   inputError: {
     borderColor: '#ef4444'
   },
+  
   errorMessage: {
     display: 'flex',
     alignItems: 'center',
@@ -445,31 +819,26 @@ const styles = {
     display: 'flex',
     gap: '16px',
     justifyContent: 'flex-end',
-    paddingTop: '24px',
-    borderTop: '1px solid #e2e8f0',
-    '@media (max-width: 640px)': {
-      flexDirection: 'column-reverse'
-    }
+    paddingTop: '32px',
+    borderTop: '2px solid #f3f4f6'
   },
+  
   cancelButton: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: '14px 24px',
     backgroundColor: 'white',
-    border: '2px solid #e2e8f0',
+    border: '2px solid #e5e7eb',
     borderRadius: '12px',
-    color: '#475569',
-    textDecoration: 'none',
+    color: '#6b7280',
     fontSize: '16px',
     fontWeight: '600',
+    cursor: 'pointer',
     transition: 'all 0.2s',
-    minWidth: '120px',
-    ':hover': {
-      backgroundColor: '#f8fafc',
-      borderColor: '#cbd5e1'
-    }
+    minWidth: '120px'
   },
+  
   saveButton: {
     display: 'flex',
     alignItems: 'center',
@@ -484,16 +853,12 @@ const styles = {
     fontSize: '16px',
     fontWeight: '600',
     transition: 'all 0.2s',
-    minWidth: '140px',
-    ':hover': {
-      backgroundColor: '#059669'
-    }
+    minWidth: '140px'
   },
+  
   disabledButton: {
     backgroundColor: '#9ca3af',
     cursor: 'not-allowed',
-    ':hover': {
-      backgroundColor: '#9ca3af'
-    }
+    opacity: 0.7
   }
 };
