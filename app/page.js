@@ -11,18 +11,41 @@ import TopCategory from "../components/home/TopCategory";
 import ProductCard from "../components/common/ProductCard";
 import ProductFilters from "../components/products/ProductFilters";
 import Skeleton from "../components/common/Skeleton";
-import { Search, X } from 'lucide-react';
+import { Search, X, Filter, Grid, AlertCircle, Package } from 'lucide-react';
 
 const bannerImages = [
-  { src: "/assets/images/Banner/5.png", alt: "Banner 5" },
-  { src: "/assets/images/Banner/4.png", alt: "Banner 4" },
-  { src: "/assets/images/Banner/1.png", alt: "Banner 1" },
-  { src: "/assets/images/Banner/2.png", alt: "Banner 2" },
-  { src: "/assets/images/Banner/3.png", alt: "Banner 3" },
+  { src: "/assets/images/Banner/5.png", alt: "Kerala Sellers - Local Products" },
+  { src: "/assets/images/Banner/4.png", alt: "Quality Products from Kerala" },
+  { src: "/assets/images/Banner/1.png", alt: "Shop Local, Support Kerala" },
+  { src: "/assets/images/Banner/2.png", alt: "Zero Commission Platform" },
+  { src: "/assets/images/Banner/3.png", alt: "Trusted Kerala Sellers" },
 ];
 
-const PRODUCTS_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL + '/user/store/products/' || 'http://localhost:8000/user/store/products/';
-const CATEGORIES_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL + '/api/categories/' || 'http://localhost:8000/api/categories/';
+// ✅ Enhanced environment variable handling
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  
+  console.log('Environment check:', {
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NODE_ENV: process.env.NODE_ENV
+  });
+  
+  if (envUrl && envUrl !== 'undefined') {
+    return envUrl;
+  }
+  
+  // Fallback based on environment
+  return process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:8000' 
+    : 'https://api.keralasellers.in';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
+const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
+
+console.log('API URLs configured:', { API_BASE_URL, PRODUCTS_API_URL, CATEGORIES_API_URL });
 
 // Custom hook for media queries
 function useMediaQuery(query) {
@@ -71,6 +94,7 @@ export default function Home() {
   const [totalProducts, setTotalProducts] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [error, setError] = useState('');
   
   const { addToCart } = useCart();
 
@@ -95,15 +119,20 @@ export default function Home() {
 
   const fetchCategories = useCallback(async () => {
     try {
+      console.log('Fetching categories from:', CATEGORIES_API_URL);
       const response = await axios.get(CATEGORIES_API_URL);
-      setCategories(response.data.results || response.data);
+      console.log('Categories response:', response.data);
+      setCategories(response.data.results || response.data || []);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
+      setError('Failed to load categories');
     }
   }, []);
 
   const fetchProducts = useCallback(async (page = 1, appliedFilters = filters) => {
     setIsLoading(true);
+    setError('');
+    
     try {
       let url = `${PRODUCTS_API_URL}?page=${page}`;
       
@@ -115,32 +144,71 @@ export default function Home() {
         url += `&search=${encodeURIComponent(appliedFilters.search)}`;
       }
       
+      console.log('Fetching products from:', url);
       const response = await axios.get(url);
       const data = response.data;
+      console.log('Products API response:', data);
       
-      let productList = data.results || data;
-      setTotalPages(Math.ceil((data.count || productList.length) / 20));
-      setTotalProducts(data.count || productList.length);
+      let productList = [];
+      
+      // ✅ Enhanced response structure handling
+      if (Array.isArray(data.results)) {
+        productList = data.results;
+      } else if (Array.isArray(data.data)) {
+        productList = data.data;
+      } else if (Array.isArray(data)) {
+        productList = data;
+      } else if (data.products && Array.isArray(data.products)) {
+        productList = data.products;
+      } else {
+        console.warn('Unexpected API response structure:', data);
+        productList = [];
+      }
+      
+      console.log('Processed product list:', productList.length, 'products');
+      
+      // Set pagination info
+      const count = data.count || data.total || productList.length;
+      setTotalPages(Math.ceil(count / (data.page_size || 20)));
+      setTotalProducts(count);
       
       // Apply client-side filters
-      productList = applyClientFilters(productList, appliedFilters);
+      const filteredList = applyClientFilters(productList, appliedFilters);
       
       if (page === 1) {
-        setProducts(productList);
-        setFilteredProducts(productList);
+        setProducts(filteredList);
+        setFilteredProducts(filteredList);
       } else {
-        setProducts(prev => [...prev, ...productList]);
-        setFilteredProducts(prev => [...prev, ...productList]);
+        setProducts(prev => [...prev, ...filteredList]);
+        setFilteredProducts(prev => [...prev, ...filteredList]);
       }
       
     } catch (error) {
       console.error("Failed to fetch products:", error);
+      if (error.response) {
+        setError(`Server error: ${error.response.status} - ${error.response.statusText}`);
+      } else if (error.request) {
+        setError('Network error: Unable to connect to server');
+      } else {
+        setError('Failed to load products. Please try again.');
+      }
+      
+      // Set empty arrays to prevent crashes
+      if (page === 1) {
+        setProducts([]);
+        setFilteredProducts([]);
+      }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [filters]);
 
   const applyClientFilters = (productList, appliedFilters) => {
+    if (!Array.isArray(productList)) {
+      console.warn('Product list is not an array:', productList);
+      return [];
+    }
+    
     let filtered = [...productList];
 
     // Price filter
@@ -164,17 +232,17 @@ export default function Home() {
     // Stock filter
     if (appliedFilters.inStock) {
       filtered = filtered.filter(product => 
-        product.online_stock > 0
+        (product.online_stock || 0) > 0
       );
     }
 
     // Sort products
     switch (appliedFilters.sortBy) {
       case 'price_low':
-        filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
+        filtered.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
         break;
       case 'price_high':
-        filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
+        filtered.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
         break;
       case 'rating':
         filtered.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
@@ -188,17 +256,17 @@ export default function Home() {
     return filtered;
   };
 
-  // Responsive grid columns calculation
+  // ✅ Improved responsive grid
   const gridColumns = useMemo(() => {
     if (isMobile) return 'repeat(2, 1fr)';
-    if (isTablet) return 'repeat(4, 1fr)';
-    return 'repeat(6, 1fr)';
+    if (isTablet) return 'repeat(3, 1fr)';
+    return 'repeat(4, 1fr)';
   }, [isMobile, isTablet]);
 
   const gridGap = useMemo(() => {
-    if (isMobile) return '16px';
-    if (isTablet) return '20px';
-    return '24px';
+    if (isMobile) return '10px';
+    if (isTablet) return '15px';
+    return '20px';
   }, [isMobile, isTablet]);
 
   // Effect for debounced search
@@ -217,9 +285,9 @@ export default function Home() {
   useEffect(() => {
     fetchCategories();
     fetchProducts(1);
-  }, []);
+  }, [fetchCategories, fetchProducts]);
 
-  // Handle search input changes (no timeout needed - using debounce hook)
+  // Handle search input changes
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -267,27 +335,43 @@ export default function Home() {
   const handleAddToCart = (e, product) => {
     e.preventDefault();
     e.stopPropagation();
-    if (product.store && product.store.seller_phone) {
-      addToCart(product.store.seller_phone, product);
+    
+    // Check if product has required data
+    if (!product) {
+      alert("Product information is missing.");
+      return;
+    }
+    
+    // ✅ Enhanced seller phone detection
+    const sellerPhone = product.store?.seller_phone || 
+                       product.seller_phone || 
+                       product.store?.phone ||
+                       product.phone;
+    
+    if (sellerPhone) {
+      addToCart(sellerPhone, product);
       
       // Show success feedback
       const button = e.target.closest('button');
       if (button) {
         const originalText = button.textContent;
+        const originalBg = button.style.backgroundColor;
         button.textContent = 'Added!';
         button.style.backgroundColor = '#10b981';
         setTimeout(() => {
           button.textContent = originalText;
-          button.style.backgroundColor = '#007bff';
+          button.style.backgroundColor = originalBg;
         }, 1500);
       }
     } else {
       alert("Could not add to cart: seller information is missing.");
+      console.log('Product data:', product);
     }
   };
 
   const handleToggleWishlist = (productId) => {
     console.log('Toggle wishlist for product:', productId);
+    // TODO: Implement wishlist functionality
   };
 
   const loadMoreProducts = () => {
@@ -296,6 +380,13 @@ export default function Home() {
       setCurrentPage(nextPage);
       fetchProducts(nextPage);
     }
+  };
+
+  // Retry function for error state
+  const handleRetry = () => {
+    setError('');
+    fetchCategories();
+    fetchProducts(1);
   };
 
   // Dynamic styles based on media queries
@@ -314,18 +405,20 @@ export default function Home() {
   };
 
   return (
-    <div style={{ backgroundColor: "#FDFFF0" }}>
+    <div style={{ backgroundColor: "#FDFFF0", minHeight: '100vh' }}>
       <Header />
       
-      {/* Reduced height TopCategory */}
+      {/* Top Category Section */}
       <div style={dynamicStyles.topCategorySection}>
         <TopCategory onCategoryClick={handleCategoryClick} />
       </div>
 
+      {/* Banner Section */}
       <div style={dynamicStyles.bannerSection}>
         <BannerSlider images={bannerImages} autoPlay={true} interval={4000} />
       </div>
 
+      {/* Main Content */}
       <div style={dynamicStyles.container} data-products-section>
         {/* Search Bar Section */}
         <div style={dynamicStyles.searchSection}>
@@ -371,10 +464,25 @@ export default function Home() {
               onClick={() => setShowFilters(!showFilters)}
               style={dynamicStyles.filterToggle}
             >
-              🔍 Filters {showFilters ? '▲' : '▼'}
+              <Filter size={16} />
+              Filters {showFilters ? '▲' : '▼'}
             </button>
           </div>
         </div>
+
+        {/* Error State */}
+        {error && (
+          <div style={dynamicStyles.errorContainer}>
+            <AlertCircle size={24} />
+            <div>
+              <h3>Something went wrong</h3>
+              <p>{error}</p>
+              <button onClick={handleRetry} style={dynamicStyles.retryButton}>
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Filters Section */}
         {showFilters && (
@@ -400,45 +508,51 @@ export default function Home() {
           </div>
         ) : (
           <>
-            <div style={dynamicStyles.productsGrid}>
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  title={product.name}
-                  price={product.price}
-                  mrp={product.mrp}
-                  rating={product.average_rating}
-                  reviewCount={product.review_count}
-                  primaryImage={product.main_image_url || "/placeholder.svg"}
-                  hoverImage={product.sub_images?.[0]?.image_url || product.main_image_url || "/placeholder.svg"}
-                  onlineStock={product.online_stock}
-                  storeName={product.store?.name}
-                  modelName={product.model_name}
-                  isWishlisted={product.isWishlisted || false}
-                  onAddToCart={(e) => handleAddToCart(e, product)}
-                  onToggleWishlist={() => handleToggleWishlist(product.id)}
-                  className={product.online_stock === 0 ? "out-of-stock" : ""}
-                />
-              ))}
-            </div>
-
-            {/* Load More Button */}
-            {currentPage < totalPages && (
-              <div style={dynamicStyles.loadMoreContainer}>
-                <button 
-                  onClick={loadMoreProducts}
-                  disabled={isLoading}
-                  style={dynamicStyles.loadMoreButton}
-                >
-                  {isLoading ? 'Loading...' : 'Load More Products'}
-                </button>
+            {filteredProducts.length > 0 ? (
+              <div style={dynamicStyles.productsGrid}>
+                {filteredProducts.map((product, index) => {
+                  return (
+                    <ProductCard
+                      key={`product-${product.id}-${index}`}
+                      id={product.id}
+                      title={product.name || 'Product Name'}
+                      price={product.price || 0}
+                      mrp={product.mrp || null}
+                      rating={product.average_rating || 0}
+                      reviewCount={product.review_count || 0}
+                      primaryImage={
+                        product.main_image_url || 
+                        product.image_url || 
+                        product.images?.[0]?.url ||
+                        "/placeholder.svg"
+                      }
+                      hoverImage={
+                        product.sub_images?.[0]?.image_url || 
+                        product.images?.[1]?.url || 
+                        product.main_image_url || 
+                        product.image_url || 
+                        "/placeholder.svg"
+                      }
+                      onlineStock={product.online_stock || 0}
+                      storeName={
+                        product.store?.name || 
+                        product.seller_name || 
+                        product.shop_name ||
+                        'Store'
+                      }
+                      modelName={product.model_name || ''}
+                      isWishlisted={product.isWishlisted || false}
+                      onAddToCart={(e) => handleAddToCart(e, product)}
+                      onToggleWishlist={() => handleToggleWishlist(product.id)}
+                      className={product.online_stock === 0 ? "out-of-stock" : ""}
+                    />
+                  );
+                })}
               </div>
-            )}
-
-            {/* No Products Message */}
-            {filteredProducts.length === 0 && !isLoading && (
+            ) : (
+              /* No Products Message */
               <div style={dynamicStyles.noProducts}>
+                <Package size={48} />
                 <h3>No products found</h3>
                 <p>Try adjusting your filters or search terms</p>
                 <button 
@@ -460,16 +574,42 @@ export default function Home() {
                 </button>
               </div>
             )}
+
+            {/* Load More Button */}
+            {currentPage < totalPages && filteredProducts.length > 0 && (
+              <div style={dynamicStyles.loadMoreContainer}>
+                <button 
+                  onClick={loadMoreProducts}
+                  disabled={isLoading}
+                  style={dynamicStyles.loadMoreButton}
+                >
+                  {isLoading ? 'Loading...' : 'Load More Products'}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
 
       <Footer />
+
+      {/* CSS Animations */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+      `}</style>
     </div>
   );
 }
 
-// Static styles (without media queries to avoid warnings)
+// Static styles (enhanced for better product display)
 const styles = {
   topCategorySection: {
     width: "100%", 
@@ -490,7 +630,8 @@ const styles = {
   container: { 
     maxWidth: '1200px', 
     margin: '0 auto', 
-    padding: '15px'
+    padding: '15px',
+    animation: 'fadeIn 0.6s ease-out'
   },
   
   searchSection: {
@@ -565,15 +706,17 @@ const styles = {
   sectionTitle: { 
     fontSize: '1.8rem',
     margin: 0,
-    fontWeight: '700'
+    fontWeight: '700',
+    color: '#1e293b'
   },
   
   productCount: {
     fontSize: '14px',
-    color: '#666',
-    backgroundColor: '#f0f0f0',
+    color: '#6b7280',
+    backgroundColor: '#f3f4f6',
     padding: '4px 8px',
-    borderRadius: '12px'
+    borderRadius: '12px',
+    fontWeight: '500'
   },
   
   searchIndicator: {
@@ -601,13 +744,40 @@ const styles = {
   
   filterToggle: {
     padding: '8px 16px',
-    backgroundColor: '#0d6efd',
+    backgroundColor: '#3b82f6',
     color: 'white',
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
     fontSize: '14px',
-    fontWeight: '500'
+    fontWeight: '500',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    transition: 'background-color 0.2s'
+  },
+  
+  errorContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '20px',
+    backgroundColor: '#fef2f2',
+    border: '1px solid #fecaca',
+    borderRadius: '8px',
+    marginBottom: '20px',
+    color: '#991b1b'
+  },
+  
+  retryButton: {
+    padding: '8px 16px',
+    backgroundColor: '#dc2626',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    marginTop: '8px'
   },
   
   // Base grid (dynamically updated with responsive columns)
@@ -635,7 +805,7 @@ const styles = {
   
   loadMoreButton: {
     padding: '12px 30px',
-    backgroundColor: '#0d6efd',
+    backgroundColor: '#3b82f6',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
@@ -650,16 +820,22 @@ const styles = {
     padding: '60px 20px',
     backgroundColor: '#f8f9fa',
     borderRadius: '12px',
-    marginTop: '20px'
+    marginTop: '20px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '16px',
+    color: '#6b7280'
   },
   
   clearFiltersButton: {
     padding: '10px 20px',
-    backgroundColor: '#28a745',
+    backgroundColor: '#059669',
     color: 'white',
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
-    marginTop: '15px'
+    fontSize: '14px',
+    fontWeight: '500'
   }
 };

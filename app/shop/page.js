@@ -20,7 +20,27 @@ import {
   SlidersHorizontal
 } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL + '/user/store/shops/' || 'http://localhost:8000/user/store/shops/';
+// ✅ Enhanced environment variable handling
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  
+  console.log('Shop API Environment check:', {
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    resolved: envUrl || 'http://localhost:8000'
+  });
+  
+  if (envUrl && envUrl !== 'undefined') {
+    return envUrl;
+  }
+  
+  return 'http://localhost:8000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+const API_URL = `${API_BASE_URL}/user/store/shops/`;
+
+console.log('Shop API URL configured:', API_URL);
 
 function useMediaQuery(query) {
   const [matches, setMatches] = useState(false);
@@ -59,6 +79,7 @@ export default function ShopPage() {
     setError(null);
     
     try {
+      console.log('Fetching shops from:', API_URL);
       const response = await axios.get(API_URL);
       
       let shopData = [];
@@ -67,18 +88,25 @@ export default function ShopPage() {
       } else if (Array.isArray(response.data)) {
         shopData = response.data;
       } else {
+        console.warn('Unexpected shop API response structure:', response.data);
         shopData = [];
       }
       
       // ✅ DEBUG: Log shop data structure
-      console.log('🔍 Shop data structure:', shopData[0]);
-      console.log('🔍 Available fields:', shopData[0] ? Object.keys(shopData[0]) : 'No data');
+      console.log('🔍 Shop data structure:', shopData.length > 0 ? shopData[0] : 'No data');
+      console.log('🔍 Available fields:', shopData.length > 0 ? Object.keys(shopData[0]) : 'No data');
       
       setShops(shopData);
       setFilteredShops(shopData);
     } catch (error) {
       console.error("Failed to fetch shops:", error);
-      setError('Failed to load shops. Please try again.');
+      if (error.response) {
+        setError(`Server error: ${error.response.status} - ${error.response.statusText}`);
+      } else if (error.request) {
+        setError('Network error: Unable to connect to server. Make sure your backend is running.');
+      } else {
+        setError('Failed to load shops. Please try again.');
+      }
       setShops([]);
       setFilteredShops([]);
     } finally {
@@ -93,7 +121,8 @@ export default function ShopPage() {
       filtered = filtered.filter(shop =>
         shop.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shop.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        shop.tagline?.toLowerCase().includes(searchTerm.toLowerCase())
+        shop.tagline?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shop.category?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -105,6 +134,8 @@ export default function ShopPage() {
           return new Date(b.created_at || 0) - new Date(a.created_at || 0);
         case 'rating':
           return (b.average_rating || 0) - (a.average_rating || 0);
+        case 'products':
+          return (b.products_count || 0) - (a.products_count || 0);
         default:
           return 0;
       }
@@ -172,6 +203,14 @@ export default function ShopPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={styles.searchInput}
               />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  style={styles.clearSearchButton}
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -184,7 +223,7 @@ export default function ShopPage() {
             onClick={() => setShowMobileSort(!showMobileSort)}
             style={styles.toolbarButton}
           >
-            <Filter size={18} />
+            <SlidersHorizontal size={18} />
             <span>Sort</span>
           </button>
           
@@ -223,7 +262,8 @@ export default function ShopPage() {
               {[
                 { value: 'name', label: 'Name A-Z' },
                 { value: 'newest', label: 'Newest First' },
-                { value: 'rating', label: 'Highest Rated' }
+                { value: 'rating', label: 'Highest Rated' },
+                { value: 'products', label: 'Most Products' }
               ].map(option => (
                 <button
                   key={option.value}
@@ -248,110 +288,117 @@ export default function ShopPage() {
           <span style={styles.resultsCount}>
             {filteredShops.length} shop{filteredShops.length !== 1 ? 's' : ''} found
           </span>
+          {searchTerm && (
+            <span style={styles.searchIndicator}>
+              for "{searchTerm}"
+            </span>
+          )}
         </div>
 
-        {/* ✅ FIXED: Mobile-optimized Grid with correct field mapping */}
+        {/* ✅ ENHANCED: Mobile-optimized Grid with better field mapping */}
         {filteredShops.length > 0 ? (
-          <div style={styles.shopsContainer}>
-            {filteredShops.map(shop => {
-              // ✅ FIXED: Check multiple possible field names for seller phone
-              const sellerPhone = shop.seller_phone || shop.seller?.phone || shop.phone;
+          <div style={{
+            ...styles.shopsContainer,
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 
+                               isTablet ? 'repeat(3, 1fr)' : 
+                               'repeat(4, 1fr)'
+          }}>
+            {filteredShops.map((shop, index) => {
+              // ✅ Enhanced seller phone detection with multiple fallbacks
+              const sellerPhone = shop.seller_phone || 
+                                 shop.seller?.phone || 
+                                 shop.phone ||
+                                 shop.contact_phone ||
+                                 shop.whatsapp_number;
               
               return (
-                <div key={shop.id} style={styles.shopCard}>
-                  {/* ✅ FIXED: Use correct field name and ensure valid phone */}
-                  {sellerPhone ? (
-                    <Link 
-                      href={`/shop/${sellerPhone}`} 
-                      style={styles.cardLink}
-                    >
-                      {/* ✅ Round Shop Logo */}
-                      <div style={styles.logoContainer}>
-                        <img 
-                          src={shop.logo_url || shop.logo || 'https://placehold.co/60x60/e9ecef/6c757d?text=Shop'} 
-                          alt={shop.name} 
-                          style={styles.shopLogo}
-                          onError={(e) => {
-                            e.target.src = 'https://placehold.co/60x60/e9ecef/6c757d?text=Shop';
-                          }}
-                          loading="lazy"
-                        />
-                      </div>
-                      
-                      <div style={styles.shopCardContent}>
-                        <h3 style={styles.shopName}>{shop.name}</h3>
-                        
-                        {shop.tagline && (
-                          <p style={styles.shopTagline}>{shop.tagline}</p>
-                        )}
-                        
-                        {shop.description && (
-                          <p style={styles.shopDescription}>
-                            {shop.description.length > 50 
-                              ? shop.description.substring(0, 50) + '...' 
-                              : shop.description}
-                          </p>
-                        )}
+                <div key={`shop-${shop.id}-${index}`} style={styles.shopCard}>
+                  {/* ✅ Logo and basic info always shown */}
+                  <div style={styles.logoContainer}>
+                    <img 
+                      src={
+                        shop.logo_url || 
+                        shop.logo || 
+                        shop.image ||
+                        'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' + encodeURIComponent(shop.name?.charAt(0) || 'S')
+                      }
+                      alt={shop.name || 'Shop'} 
+                      style={styles.shopLogo}
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' + 
+                                      encodeURIComponent(shop.name?.charAt(0) || 'S');
+                      }}
+                      loading="lazy"
+                    />
+                  </div>
+                  
+                  <div style={styles.shopCardContent}>
+                    <h3 style={styles.shopName}>{shop.name || 'Shop Name'}</h3>
+                    
+                    {shop.tagline && (
+                      <p style={styles.shopTagline}>{shop.tagline}</p>
+                    )}
+                    
+                    {shop.description && (
+                      <p style={styles.shopDescription}>
+                        {shop.description.length > 50 
+                          ? shop.description.substring(0, 50) + '...' 
+                          : shop.description}
+                      </p>
+                    )}
 
-                        {/* Compact Shop Info */}
-                        <div style={styles.shopInfoContainer}>
-                          {(shop.seller_address || shop.seller?.address) && (
-                            <div style={styles.shopInfoItem}>
-                              <MapPin size={10} />
-                              <span>{(shop.seller_address || shop.seller?.address).length > 15 
-                                ? (shop.seller_address || shop.seller?.address).substring(0, 15) + '...' 
-                                : (shop.seller_address || shop.seller?.address)}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {shop.products_count && (
-                            <div style={styles.shopInfoItem}>
-                              <Store size={10} />
-                              <span>{shop.products_count} Products</span>
-                            </div>
-                          )}
-
-                          {shop.average_rating && shop.average_rating > 0 && (
-                            <div style={styles.shopInfoItem}>
-                              <Star size={10} fill="#ffc107" color="#ffc107" />
-                              <span>{shop.average_rating.toFixed(1)}</span>
-                            </div>
-                          )}
+                    {/* Compact Shop Info */}
+                    <div style={styles.shopInfoContainer}>
+                      {(shop.seller_address || shop.seller?.address || shop.address) && (
+                        <div style={styles.shopInfoItem}>
+                          <MapPin size={12} />
+                          <span>
+                            {(() => {
+                              const address = shop.seller_address || shop.seller?.address || shop.address;
+                              return address.length > 20 
+                                ? address.substring(0, 20) + '...' 
+                                : address;
+                            })()}
+                          </span>
                         </div>
-                      </div>
-                    </Link>
-                  ) : (
-                    <div style={styles.cardLink}>
-                      {/* Same content but not clickable when no phone */}
-                      <div style={styles.logoContainer}>
-                        <img 
-                          src={shop.logo_url || shop.logo || 'https://placehold.co/60x60/e9ecef/6c757d?text=Shop'} 
-                          alt={shop.name} 
-                          style={styles.shopLogo}
-                          loading="lazy"
-                        />
-                      </div>
+                      )}
                       
-                      <div style={styles.shopCardContent}>
-                        <h3 style={styles.shopName}>{shop.name}</h3>
-                        <p style={styles.shopDescription}>Contact info not available</p>
-                      </div>
+                      {(shop.products_count || shop.product_count) && (
+                        <div style={styles.shopInfoItem}>
+                          <Store size={12} />
+                          <span>{shop.products_count || shop.product_count} Products</span>
+                        </div>
+                      )}
+
+                      {shop.average_rating && shop.average_rating > 0 && (
+                        <div style={styles.shopInfoItem}>
+                          <Star size={12} fill="#ffc107" color="#ffc107" />
+                          <span>{Number(shop.average_rating).toFixed(1)}</span>
+                        </div>
+                      )}
+
+                      {sellerPhone && (
+                        <div style={styles.shopInfoItem}>
+                          <Phone size={12} />
+                          <span>{sellerPhone.substring(0, 4)}****{sellerPhone.substring(8)}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
 
                   {/* Action Button */}
                   <div style={styles.shopActions}>
                     {sellerPhone ? (
-                      <Link href={`/shop/${sellerPhone}`}>
+                      <Link href={`/shop/${sellerPhone}`} style={styles.linkButton}>
                         <button style={styles.viewShopButton}>
-                          <Store size={12} />
+                          <Store size={14} />
                           <span>View Shop</span>
                         </button>
                       </Link>
                     ) : (
                       <button style={styles.disabledButton} disabled>
-                        <span>Shop Unavailable</span>
+                        <AlertCircle size={14} />
+                        <span>Contact Info Missing</span>
                       </button>
                     )}
                   </div>
@@ -363,9 +410,13 @@ export default function ShopPage() {
           <div style={styles.emptyState}>
             <Search size={48} />
             <h3>No shops found</h3>
-            <p>Try different search terms</p>
+            <p>
+              {searchTerm 
+                ? `No shops match "${searchTerm}". Try different search terms.`
+                : "No shops available at the moment."}
+            </p>
             <button onClick={clearAllFilters} style={styles.clearFiltersButton}>
-              Clear Search
+              {searchTerm ? 'Clear Search' : 'Refresh'}
             </button>
           </div>
         )}
@@ -394,7 +445,7 @@ export default function ShopPage() {
   );
 }
 
-// ✅ STYLES: Same as your existing styles
+// ✅ ENHANCED: Improved styles with better mobile optimization
 const styles = {
   pageContainer: {
     minHeight: '100vh',
@@ -429,7 +480,8 @@ const styles = {
     minHeight: '60vh',
     gap: '20px',
     textAlign: 'center',
-    padding: '20px'
+    padding: '20px',
+    color: '#ef4444'
   },
   
   retryButton: {
@@ -486,9 +538,22 @@ const styles = {
     zIndex: 1
   },
   
+  clearSearchButton: {
+    position: 'absolute',
+    right: '16px',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#64748b',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '4px'
+  },
+  
   searchInput: {
     width: '100%',
-    padding: '14px 16px 14px 44px',
+    padding: '14px 48px 14px 44px',
     fontSize: '16px',
     border: 'none',
     borderRadius: '12px',
@@ -611,7 +676,11 @@ const styles = {
   },
 
   resultsHeader: {
-    marginBottom: '20px'
+    marginBottom: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap'
   },
   
   resultsCount: {
@@ -620,18 +689,25 @@ const styles = {
     fontWeight: '500'
   },
 
-  // ✅ FIXED: 2 cards per row on mobile
+  searchIndicator: {
+    fontSize: '14px',
+    color: '#3b82f6',
+    backgroundColor: '#eff6ff',
+    padding: '4px 8px',
+    borderRadius: '12px',
+    fontWeight: '500'
+  },
+
+  // ✅ Responsive grid that adapts to screen size
   shopsContainer: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',  // 2 cards per row on mobile
-    gap: '12px',
+    gap: '16px',
     marginBottom: '40px'
   },
 
-  // ✅ Mobile-Optimized Shop Card
+  // ✅ Enhanced Mobile-Optimized Shop Card
   shopCard: {
     width: '100%',
-    minHeight: '260px',
     backgroundColor: 'white',
     borderRadius: '12px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
@@ -639,73 +715,67 @@ const styles = {
     transition: 'all 0.3s ease',
     display: 'flex',
     flexDirection: 'column',
-    animation: 'fadeIn 0.6s ease-out'
-  },
-
-  cardLink: {
-    textDecoration: 'none',
-    color: 'inherit',
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column'
+    animation: 'fadeIn 0.6s ease-out',
+    border: '1px solid #e5e7eb',
+    ':hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
+    }
   },
 
   logoContainer: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: '12px',
+    padding: '16px',
     backgroundColor: '#f8fafc'
   },
 
-  // ✅ Perfect Round Shop Logo
+  // ✅ Perfect Round Shop Logo with better sizing
   shopLogo: {
-    width: '60px',
-    height: '60px',
+    width: '80px',
+    height: '80px',
     borderRadius: '50%',
     objectFit: 'cover',
-    border: '2px solid white',
-    boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+    border: '3px solid white',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
   },
 
   shopCardContent: {
-    padding: '10px',
+    padding: '16px',
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'space-between'
+    textAlign: 'center'
   },
 
   shopName: {
-    margin: '0 0 4px 0',
-    fontSize: '13px',
+    margin: '0 0 8px 0',
+    fontSize: '16px',
     fontWeight: '700',
     color: '#1e293b',
-    textAlign: 'center',
     lineHeight: '1.2'
   },
 
   shopTagline: {
-    margin: '0 0 6px 0',
-    fontSize: '10px',
+    margin: '0 0 8px 0',
+    fontSize: '12px',
     color: '#3b82f6',
-    fontWeight: '500',
-    textAlign: 'center'
+    fontWeight: '500'
   },
 
   shopDescription: {
-    margin: '0 0 8px 0',
-    fontSize: '10px',
+    margin: '0 0 12px 0',
+    fontSize: '12px',
     color: '#64748b',
-    lineHeight: '1.3',
-    textAlign: 'center',
+    lineHeight: '1.4',
     flex: 1
   },
 
   shopInfoContainer: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '3px',
+    gap: '6px',
     marginTop: 'auto'
   },
 
@@ -713,30 +783,35 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '3px',
-    fontSize: '9px',
+    gap: '4px',
+    fontSize: '11px',
     color: '#64748b'
   },
 
   shopActions: {
-    padding: '8px',
+    padding: '12px',
     borderTop: '1px solid #e5e7eb',
     backgroundColor: '#f8fafc'
+  },
+
+  linkButton: {
+    textDecoration: 'none',
+    display: 'block'
   },
 
   viewShopButton: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '4px',
+    gap: '6px',
     width: '100%',
-    padding: '6px 8px',
+    padding: '10px 12px',
     backgroundColor: '#3b82f6',
     color: 'white',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: '8px',
     cursor: 'pointer',
-    fontSize: '10px',
+    fontSize: '12px',
     fontWeight: '600',
     transition: 'all 0.2s'
   },
@@ -745,13 +820,14 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: '6px',
     width: '100%',
-    padding: '6px 8px',
+    padding: '10px 12px',
     backgroundColor: '#9ca3af',
     color: 'white',
     border: 'none',
-    borderRadius: '6px',
-    fontSize: '10px',
+    borderRadius: '8px',
+    fontSize: '12px',
     fontWeight: '500',
     cursor: 'not-allowed'
   },
