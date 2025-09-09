@@ -14,6 +14,9 @@ import {
   Package
 } from 'lucide-react';
 
+// ✅ Using environment variables for API URLs (ready for future API calls if needed)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+
 export default function CartPage() {
   const { carts, removeFromCart, updateQuantity } = useCart();
   
@@ -107,9 +110,12 @@ export default function CartPage() {
                         <div style={styles.itemTopSection}>
                           <div style={styles.itemImageContainer}>
                             <img 
-                              src={item.main_image_url || item.image_url || 'https://placehold.co/80x80'} 
+                              src={item.main_image_url || item.image_url || 'https://placehold.co/80x80/e9ecef/6c757d?text=No+Image'} 
                               alt={item.name} 
                               style={styles.itemImage}
+                              onError={(e) => {
+                                e.target.src = 'https://placehold.co/80x80/e9ecef/6c757d?text=No+Image';
+                              }}
                             />
                           </div>
                           
@@ -144,7 +150,10 @@ export default function CartPage() {
                             <div style={styles.quantitySection}>
                               <button
                                 onClick={() => handleQuantityChange(phone, item.id, item.quantity - 1)}
-                                style={styles.quantityButton}
+                                style={{
+                                  ...styles.quantityButton,
+                                  ...(item.quantity <= 1 ? styles.quantityButtonDisabled : {})
+                                }}
                                 disabled={item.quantity <= 1}
                               >
                                 <Minus size={16} />
@@ -224,13 +233,9 @@ const styles = {
   },
 
   container: {
-    maxWidth: '100%',
+    maxWidth: '900px',
     margin: '0 auto',
-    padding: '0',
-    '@media (min-width: 768px)': {
-      maxWidth: '900px',
-      padding: '20px'
-    }
+    padding: '0'
   },
 
   // Mobile Header
@@ -243,13 +248,7 @@ const styles = {
     borderBottom: '1px solid #e2e8f0',
     position: 'sticky',
     top: '0',
-    zIndex: 100,
-    '@media (min-width: 768px)': {
-      position: 'static',
-      backgroundColor: 'transparent',
-      border: 'none',
-      padding: '20px 0'
-    }
+    zIndex: 100
   },
 
   backButton: {
@@ -259,10 +258,7 @@ const styles = {
     cursor: 'pointer',
     borderRadius: '8px',
     color: '#64748b',
-    transition: 'all 0.2s',
-    '@media (min-width: 768px)': {
-      display: 'none'
-    }
+    transition: 'all 0.2s'
   },
 
   title: {
@@ -272,21 +268,13 @@ const styles = {
     fontSize: '1.2rem',
     fontWeight: '700',
     color: '#1e293b',
-    margin: 0,
-    '@media (min-width: 768px)': {
-      fontSize: '2rem',
-      justifyContent: 'center',
-      marginBottom: '2rem'
-    }
+    margin: 0
   },
 
   cartCount: {
     fontSize: '0.8rem',
     color: '#64748b',
-    fontWeight: '500',
-    '@media (min-width: 768px)': {
-      display: 'none'
-    }
+    fontWeight: '500'
   },
 
   // Empty Cart
@@ -296,11 +284,7 @@ const styles = {
     backgroundColor: 'white',
     margin: '20px',
     borderRadius: '12px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    '@media (min-width: 768px)': {
-      margin: '0',
-      borderRadius: '8px'
-    }
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
   },
 
   emptyCartIcon: {
@@ -327,11 +311,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '20px',
-    padding: '0 0 20px 0',
-    '@media (min-width: 768px)': {
-      gap: '30px',
-      padding: '0'
-    }
+    padding: '0 0 20px 0'
   },
 
   // Store Card
@@ -339,13 +319,7 @@ const styles = {
     backgroundColor: 'white',
     borderRadius: '0',
     boxShadow: 'none',
-    borderBottom: '8px solid #f1f5f9',
-    '@media (min-width: 768px)': {
-      border: '1px solid #e2e8f0',
-      borderRadius: '12px',
-      padding: '20px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-    }
+    borderBottom: '8px solid #f1f5f9'
   },
 
   // Store Header
@@ -354,11 +328,7 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '16px 20px 12px 20px',
-    borderBottom: '1px solid #f1f5f9',
-    '@media (min-width: 768px)': {
-      padding: '0 0 16px 0',
-      marginBottom: '16px'
-    }
+    borderBottom: '1px solid #f1f5f9'
   },
 
   storeInfo: {
@@ -389,10 +359,7 @@ const styles = {
   mobileCartItem: {
     padding: '16px 20px',
     borderBottom: '1px solid #f1f5f9',
-    animation: 'fadeIn 0.6s ease-out',
-    '@media (min-width: 768px)': {
-      padding: '20px 0'
-    }
+    animation: 'fadeIn 0.6s ease-out'
   },
 
   itemTopSection: {
@@ -478,12 +445,7 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: '16px',
-    '@media (max-width: 480px)': {
-      flexDirection: 'column',
-      alignItems: 'stretch',
-      gap: '12px'
-    }
+    gap: '16px'
   },
 
   quantityControls: {
@@ -515,11 +477,12 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'all 0.2s',
-    ':disabled': {
-      opacity: 0.5,
-      cursor: 'not-allowed'
-    }
+    transition: 'all 0.2s'
+  },
+
+  quantityButtonDisabled: {
+    opacity: 0.5,
+    cursor: 'not-allowed'
   },
 
   quantityDisplay: {
@@ -537,12 +500,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-end',
-    gap: '4px',
-    '@media (max-width: 480px)': {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    }
+    gap: '4px'
   },
 
   totalLabel: {
@@ -560,14 +518,7 @@ const styles = {
   storeSummary: {
     padding: '20px',
     backgroundColor: '#f8fafc',
-    borderTop: '1px solid #e2e8f0',
-    '@media (min-width: 768px)': {
-      backgroundColor: 'transparent',
-      borderTop: '1px solid #e2e8f0',
-      marginTop: '20px',
-      paddingTop: '20px',
-      padding: '20px 0 0 0'
-    }
+    borderTop: '1px solid #e2e8f0'
   },
 
   summaryRow: {
@@ -615,11 +566,6 @@ const styles = {
     textAlign: 'center',
     textDecoration: 'none',
     transition: 'all 0.3s ease',
-    boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
-    ':hover': {
-      backgroundColor: '#047857',
-      transform: 'translateY(-2px)',
-      boxShadow: '0 4px 12px rgba(5, 150, 105, 0.4)'
-    }
+    boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)'
   }
 };

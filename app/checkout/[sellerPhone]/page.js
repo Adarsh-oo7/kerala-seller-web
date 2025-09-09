@@ -9,12 +9,16 @@ import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
 import { ShoppingCart, CreditCard, User, Phone, Home, Truck, MapPin, AlertCircle, Wallet, Landmark } from 'lucide-react';
 
-const PROFILE_API = 'http://localhost:8000/api/buyer/profile/';
-const CREATE_ORDER_API = 'http://localhost:8000/user/orders/create-order/'; 
-const STORE_API_URL = 'http://localhost:8000/shop/';
-const CREATE_PAYMENT_ORDER_API = 'http://localhost:8000/user/orders/create-payment-order/';
-const VERIFY_PAYMENT_API = 'http://localhost:8000/user/orders/verify-product-payment/'; // New API endpoint
-const RAZORPAY_KEY_ID = 'rzp_test_RClyCqWG0I7Frn'; // Your actual Razorpay Key ID
+// ✅ Using environment variables for API URLs
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
+const CREATE_ORDER_API = `${API_BASE_URL}/user/orders/create-order/`; 
+const STORE_API_URL = `${API_BASE_URL}/shop/`;
+const CREATE_PAYMENT_ORDER_API = `${API_BASE_URL}/user/orders/create-payment-order/`;
+const VERIFY_PAYMENT_API = `${API_BASE_URL}/user/orders/verify-product-payment/`;
+
+// ✅ Environment variable for Razorpay Key
+const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RClyCqWG0I7Frn';
 
 export default function CheckoutPage() {
     const [buyerProfile, setBuyerProfile] = useState(null);
@@ -123,7 +127,7 @@ export default function CheckoutPage() {
         };
 
         if (selectedPaymentMethod === 'COD') {
-            // For COD, create order directly as before
+            // For COD, create order directly
             try {
                 const response = await axios.post(CREATE_ORDER_API, orderData, { headers });
                 clearCartForSeller(sellerPhone);
@@ -134,10 +138,17 @@ export default function CheckoutPage() {
                 setIsSubmitting(false);
             }
         } else if (selectedPaymentMethod === 'ONLINE') {
-            // For online payments, use the new verification flow
+            // For online payments, use the verification flow
             try {
                 const paymentOrderRes = await axios.post(CREATE_PAYMENT_ORDER_API, { amount: calculateTotal() }, { headers });
                 const { order_id, amount } = paymentOrderRes.data;
+                
+                // ✅ Check if Razorpay is available
+                if (typeof window === 'undefined' || !window.Razorpay) {
+                    alert('Payment service is not available. Please try again later.');
+                    setIsSubmitting(false);
+                    return;
+                }
                 
                 const options = {
                     key: RAZORPAY_KEY_ID,
@@ -170,9 +181,9 @@ export default function CheckoutPage() {
                         }
                     },
                     prefill: { 
-                        name: buyerProfile.full_name, 
-                        email: buyerProfile.email, 
-                        contact: buyerProfile.phone_number 
+                        name: buyerProfile?.full_name || '', 
+                        email: buyerProfile?.email || '', 
+                        contact: buyerProfile?.phone_number || ''
                     },
                     modal: { 
                         ondismiss: () => {
@@ -202,11 +213,20 @@ export default function CheckoutPage() {
     };
 
     if (isLoading) {
-        return <p style={{textAlign: 'center', marginTop: '50px'}}>Loading checkout...</p>;
+        return (
+            <div>
+                <Header />
+                <div style={styles.loadingContainer}>
+                    <div style={styles.spinner}></div>
+                    <p>Loading checkout...</p>
+                </div>
+                <Footer />
+            </div>
+        );
     }
 
     return (
-        <div>
+        <div style={styles.pageContainer}>
             <Header />
             <div style={styles.container}>
                 <h1 style={styles.title}>Checkout</h1>
@@ -228,25 +248,69 @@ export default function CheckoutPage() {
                         <div style={styles.checkoutLayout}>
                             <div style={styles.formSection}>
                                 <h2 style={styles.sectionTitle}><Truck size={20} /> Shipping Information</h2>
+                                
                                 {/* Shipping Form Inputs */}
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}><User size={16} /> Full Name *</label>
-                                    <input type="text" value={shippingInfo.name} onChange={e => handleInputChange('name', e.target.value)} style={{...styles.input, ...(errors.name && styles.inputError)}} />
+                                    <input 
+                                        type="text" 
+                                        value={shippingInfo.name} 
+                                        onChange={e => handleInputChange('name', e.target.value)} 
+                                        style={{...styles.input, ...(errors.name && styles.inputError)}} 
+                                        placeholder="Enter your full name"
+                                    />
                                     {errors.name && <span style={styles.errorText}>{errors.name}</span>}
                                 </div>
+
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}><Phone size={16} /> Phone Number *</label>
-                                    <input type="tel" value={shippingInfo.phone} onChange={e => handleInputChange('phone', e.target.value)} style={{...styles.input, ...(errors.phone && styles.inputError)}} />
+                                    <input 
+                                        type="tel" 
+                                        value={shippingInfo.phone} 
+                                        onChange={e => handleInputChange('phone', e.target.value)} 
+                                        style={{...styles.input, ...(errors.phone && styles.inputError)}} 
+                                        placeholder="Enter 10-digit phone number"
+                                        maxLength={10}
+                                    />
                                     {errors.phone && <span style={styles.errorText}>{errors.phone}</span>}
                                 </div>
+
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}><Home size={16} /> Address *</label>
-                                    <textarea value={shippingInfo.address} onChange={e => handleInputChange('address', e.target.value)} style={{...styles.textarea, ...(errors.address && styles.inputError)}} rows={3} />
+                                    <textarea 
+                                        value={shippingInfo.address} 
+                                        onChange={e => handleInputChange('address', e.target.value)} 
+                                        style={{...styles.textarea, ...(errors.address && styles.inputError)}} 
+                                        rows={3}
+                                        placeholder="Enter your full address"
+                                    />
                                     {errors.address && <span style={styles.errorText}>{errors.address}</span>}
                                 </div>
+
                                 <div style={styles.formRow}>
-                                    <div style={styles.formGroup}><label style={styles.label}><MapPin size={16} /> City *</label><input type="text" value={shippingInfo.city} onChange={e => handleInputChange('city', e.target.value)} style={{...styles.input, ...(errors.city && styles.inputError)}} />{errors.city && <span style={styles.errorText}>{errors.city}</span>}</div>
-                                    <div style={styles.formGroup}><label style={styles.label}>Pincode *</label><input type="text" value={shippingInfo.pincode} onChange={e => handleInputChange('pincode', e.target.value)} style={{...styles.input, ...(errors.pincode && styles.inputError)}} maxLength={6} />{errors.pincode && <span style={styles.errorText}>{errors.pincode}</span>}</div>
+                                    <div style={styles.formGroup}>
+                                        <label style={styles.label}><MapPin size={16} /> City *</label>
+                                        <input 
+                                            type="text" 
+                                            value={shippingInfo.city} 
+                                            onChange={e => handleInputChange('city', e.target.value)} 
+                                            style={{...styles.input, ...(errors.city && styles.inputError)}} 
+                                            placeholder="Enter city"
+                                        />
+                                        {errors.city && <span style={styles.errorText}>{errors.city}</span>}
+                                    </div>
+                                    <div style={styles.formGroup}>
+                                        <label style={styles.label}>Pincode *</label>
+                                        <input 
+                                            type="text" 
+                                            value={shippingInfo.pincode} 
+                                            onChange={e => handleInputChange('pincode', e.target.value)} 
+                                            style={{...styles.input, ...(errors.pincode && styles.inputError)}} 
+                                            maxLength={6}
+                                            placeholder="6-digit pincode"
+                                        />
+                                        {errors.pincode && <span style={styles.errorText}>{errors.pincode}</span>}
+                                    </div>
                                 </div>
 
                                 <hr style={styles.hr} />
@@ -271,12 +335,46 @@ export default function CheckoutPage() {
                                     )}
                                 </div>
                             </div>
+
                             <div style={styles.summarySection}>
                                 <h2 style={styles.sectionTitle}><ShoppingCart size={20} /> Order Summary</h2>
-                                {cartItems.map(item => <div key={item.id} style={styles.summaryItem}><span>{item.quantity} x {item.name}</span><span>₹{(item.price * item.quantity).toFixed(2)}</span></div>)}
+                                
+                                <div style={styles.orderItems}>
+                                    {cartItems.map(item => (
+                                        <div key={item.id} style={styles.summaryItem}>
+                                            <div style={styles.itemDetails}>
+                                                <span style={styles.itemName}>{item.name}</span>
+                                                <span style={styles.itemQuantity}>Qty: {item.quantity}</span>
+                                            </div>
+                                            <span style={styles.itemPrice}>₹{(item.price * item.quantity).toFixed(2)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
                                 <hr style={styles.divider} />
-                                <div style={{...styles.summaryRow, ...styles.totalRow}}><strong>Total Amount:</strong><strong>₹{calculateTotal().toFixed(2)}</strong></div>
-                                <button onClick={handlePlaceOrder} disabled={isSubmitting || cartItems.length === 0} style={{...styles.checkoutButton, ...(isSubmitting && styles.disabledButton)}}>
+                                
+                                <div style={styles.summaryRow}>
+                                    <span>Subtotal</span>
+                                    <span>₹{calculateTotal().toFixed(2)}</span>
+                                </div>
+                                
+                                <div style={styles.summaryRow}>
+                                    <span>Shipping</span>
+                                    <span style={styles.freeShipping}>Free</span>
+                                </div>
+                                
+                                <hr style={styles.divider} />
+                                
+                                <div style={{...styles.summaryRow, ...styles.totalRow}}>
+                                    <strong>Total Amount:</strong>
+                                    <strong>₹{calculateTotal().toFixed(2)}</strong>
+                                </div>
+                                
+                                <button 
+                                    onClick={handlePlaceOrder} 
+                                    disabled={isSubmitting || cartItems.length === 0} 
+                                    style={{...styles.checkoutButton, ...(isSubmitting && styles.disabledButton)}}
+                                >
                                     {isSubmitting ? 'Processing...' : (selectedPaymentMethod === 'ONLINE' ? 'Proceed to Pay' : 'Place Order')}
                                 </button>
                             </div>
@@ -285,37 +383,311 @@ export default function CheckoutPage() {
                 )}
             </div>
             <Footer />
+
+            {/* CSS Animations */}
+            <style jsx>{`
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
         </div>
     );
 }
 
 const styles = {
-    container: { maxWidth: '1000px', margin: '0 auto', padding: '20px' },
-    title: { textAlign: 'center', marginBottom: '0.5rem', fontSize: '2.5rem' },
-    subtitle: { textAlign: 'center', color: '#6c757d', marginTop: 0, marginBottom: '2rem' },
-    checkoutLayout: { display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '30px', alignItems: 'start' },
-    formSection: { backgroundColor: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
-    summarySection: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', position: 'sticky', top: '20px' },
-    sectionTitle: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '24px', color: '#212529' },
-    formGroup: { marginBottom: '20px' },
-    formRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' },
-    label: { display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500', marginBottom: '8px', color: '#374151', fontSize: '0.9rem' },
-    input: { width: '100%', padding: '12px 16px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '1rem' },
-    textarea: { width: '100%', padding: '12px 16px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '1rem', resize: 'vertical', fontFamily: 'inherit' },
-    inputError: { borderColor: '#ef4444' },
-    errorText: { color: '#ef4444', fontSize: '0.85rem', marginTop: '4px', display: 'block' },
-    summaryItem: { display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f3f4f6' },
-    divider: { border: 'none', borderTop: '1px solid #e5e7eb', margin: '8px 0' },
-    hr: { border: 'none', borderTop: '1px solid #e5e7eb', margin: '30px 0' },
-    summaryRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', fontSize: '1rem' },
-    totalRow: { fontSize: '1.2rem', fontWeight: 'bold', color: '#111827', paddingTop: '12px' },
-    paymentOptions: { display: 'flex', flexDirection: 'column', gap: '15px' },
-    paymentOption: { padding: '15px', border: '2px solid #e5e7eb', borderRadius: '8px', cursor: 'pointer', background: 'none', textAlign: 'left', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '10px' },
-    paymentOptionSelected: { padding: '15px', border: '2px solid #0d6efd', borderRadius: '8px', cursor: 'pointer', background: '#eef2ff', textAlign: 'left', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '10px', color: '#0d6efd', fontWeight: 'bold' },
-    checkoutButton: { width: '100%', padding: '16px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: '600', cursor: 'pointer' },
-    disabledButton: { backgroundColor: '#9ca3af', cursor: 'not-allowed' },
-    noticeCard: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '20px', maxWidth: '800px', margin: '20px auto' },
-    noticeTitle: { margin: '0 0 8px 0' },
-    noticeText: { margin: '0 0 16px 0', color: '#64748b' },
-    noticeButton: { display: 'inline-block', padding: '10px 20px', backgroundColor: '#0d6efd', color: 'white', textDecoration: 'none', borderRadius: '8px', fontWeight: '500' },
+    pageContainer: {
+        minHeight: '100vh',
+        backgroundColor: '#f8fafc'
+    },
+    
+    container: { 
+        maxWidth: '1000px', 
+        margin: '0 auto', 
+        padding: '20px',
+        animation: 'fadeIn 0.6s ease-out'
+    },
+    
+    loadingContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '400px',
+        gap: '20px'
+    },
+    
+    spinner: {
+        width: '40px',
+        height: '40px',
+        border: '4px solid #f3f3f3',
+        borderTop: '4px solid #3b82f6',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite'
+    },
+    
+    title: { 
+        textAlign: 'center', 
+        marginBottom: '0.5rem', 
+        fontSize: '2.5rem',
+        fontWeight: '700',
+        color: '#1e293b'
+    },
+    
+    subtitle: { 
+        textAlign: 'center', 
+        color: '#6c757d', 
+        marginTop: 0, 
+        marginBottom: '2rem',
+        fontSize: '1.1rem'
+    },
+    
+    checkoutLayout: { 
+        display: 'grid', 
+        gridTemplateColumns: '1.5fr 1fr', 
+        gap: '30px', 
+        alignItems: 'start'
+    },
+    
+    formSection: { 
+        backgroundColor: 'white', 
+        borderRadius: '12px', 
+        padding: '30px', 
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
+    },
+    
+    summarySection: { 
+        backgroundColor: 'white', 
+        borderRadius: '12px', 
+        padding: '24px', 
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)', 
+        position: 'sticky', 
+        top: '20px' 
+    },
+    
+    sectionTitle: { 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '8px', 
+        fontSize: '1.3rem', 
+        fontWeight: 'bold', 
+        marginBottom: '24px', 
+        color: '#212529' 
+    },
+    
+    formGroup: { 
+        marginBottom: '20px' 
+    },
+    
+    formRow: { 
+        display: 'grid', 
+        gridTemplateColumns: '1fr 1fr', 
+        gap: '20px' 
+    },
+    
+    label: { 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '6px', 
+        fontWeight: '500', 
+        marginBottom: '8px', 
+        color: '#374151', 
+        fontSize: '0.9rem' 
+    },
+    
+    input: { 
+        width: '100%', 
+        padding: '12px 16px', 
+        border: '2px solid #e5e7eb', 
+        borderRadius: '8px', 
+        fontSize: '1rem',
+        transition: 'border-color 0.2s',
+        outline: 'none'
+    },
+    
+    textarea: { 
+        width: '100%', 
+        padding: '12px 16px', 
+        border: '2px solid #e5e7eb', 
+        borderRadius: '8px', 
+        fontSize: '1rem', 
+        resize: 'vertical', 
+        fontFamily: 'inherit',
+        transition: 'border-color 0.2s',
+        outline: 'none'
+    },
+    
+    inputError: { 
+        borderColor: '#ef4444' 
+    },
+    
+    errorText: { 
+        color: '#ef4444', 
+        fontSize: '0.85rem', 
+        marginTop: '4px', 
+        display: 'block' 
+    },
+    
+    orderItems: {
+        marginBottom: '16px'
+    },
+    
+    summaryItem: { 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-start',
+        padding: '12px 0', 
+        borderBottom: '1px solid #f3f4f6' 
+    },
+    
+    itemDetails: {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px'
+    },
+    
+    itemName: {
+        fontSize: '0.9rem',
+        fontWeight: '500',
+        color: '#374151'
+    },
+    
+    itemQuantity: {
+        fontSize: '0.8rem',
+        color: '#6b7280'
+    },
+    
+    itemPrice: {
+        fontWeight: '600',
+        color: '#1f2937'
+    },
+    
+    divider: { 
+        border: 'none', 
+        borderTop: '1px solid #e5e7eb', 
+        margin: '8px 0' 
+    },
+    
+    hr: { 
+        border: 'none', 
+        borderTop: '1px solid #e5e7eb', 
+        margin: '30px 0' 
+    },
+    
+    summaryRow: { 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        padding: '8px 0', 
+        fontSize: '1rem' 
+    },
+    
+    freeShipping: {
+        color: '#059669',
+        fontWeight: '600'
+    },
+    
+    totalRow: { 
+        fontSize: '1.2rem', 
+        fontWeight: 'bold', 
+        color: '#111827', 
+        paddingTop: '12px',
+        borderTop: '2px solid #e5e7eb',
+        marginTop: '8px'
+    },
+    
+    paymentOptions: { 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '15px' 
+    },
+    
+    paymentOption: { 
+        padding: '15px', 
+        border: '2px solid #e5e7eb', 
+        borderRadius: '8px', 
+        cursor: 'pointer', 
+        background: 'none', 
+        textAlign: 'left', 
+        fontSize: '1rem', 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '10px',
+        transition: 'all 0.2s'
+    },
+    
+    paymentOptionSelected: { 
+        padding: '15px', 
+        border: '2px solid #0d6efd', 
+        borderRadius: '8px', 
+        cursor: 'pointer', 
+        background: '#eef2ff', 
+        textAlign: 'left', 
+        fontSize: '1rem', 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '10px', 
+        color: '#0d6efd', 
+        fontWeight: 'bold' 
+    },
+    
+    checkoutButton: { 
+        width: '100%', 
+        padding: '16px', 
+        backgroundColor: '#28a745', 
+        color: 'white', 
+        border: 'none', 
+        borderRadius: '8px', 
+        fontSize: '1.1rem', 
+        fontWeight: '600', 
+        cursor: 'pointer',
+        marginTop: '20px',
+        transition: 'all 0.2s'
+    },
+    
+    disabledButton: { 
+        backgroundColor: '#9ca3af', 
+        cursor: 'not-allowed' 
+    },
+    
+    noticeCard: { 
+        backgroundColor: 'white', 
+        borderRadius: '12px', 
+        padding: '24px', 
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)', 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '20px', 
+        maxWidth: '800px', 
+        margin: '20px auto',
+        border: '1px solid #f59e0b'
+    },
+    
+    noticeTitle: { 
+        margin: '0 0 8px 0',
+        color: '#92400e',
+        fontSize: '1.2rem'
+    },
+    
+    noticeText: { 
+        margin: '0 0 16px 0', 
+        color: '#64748b' 
+    },
+    
+    noticeButton: { 
+        display: 'inline-block', 
+        padding: '10px 20px', 
+        backgroundColor: '#0d6efd', 
+        color: 'white', 
+        textDecoration: 'none', 
+        borderRadius: '8px', 
+        fontWeight: '500',
+        transition: 'background-color 0.2s'
+    }
 };

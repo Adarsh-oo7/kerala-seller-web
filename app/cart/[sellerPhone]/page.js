@@ -9,6 +9,10 @@ import SHeader from '../../../components/common/SHeader';
 import Footer from '../../../components/common/Footer';
 import { ShoppingCart, Minus, Plus, Trash2, ArrowLeft, Store, Package, Heart } from 'lucide-react';
 
+// ✅ Using environment variables for API URLs
+const STORE_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL + '/user/store/' || 'http://localhost:8000/user/store/';
+const SHOP_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL + '/shop/' || 'http://localhost:8000/shop/';
+
 export default function SellerCartPage() {
     const [store, setStore] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -29,14 +33,44 @@ export default function SellerCartPage() {
         setIsLoggedIn(!!token);
     }, []);
 
-    // Fetch store details to display the store name
+    // ✅ Updated: Fetch store details using environment variable
     useEffect(() => {
         if (!sellerPhone) return;
         setIsLoading(true);
-        axios.get(`http://localhost:8000/shop/${sellerPhone}/`)
-            .then(response => setStore(response.data.store))
-            .catch(error => console.error('Failed to fetch store details:', error))
-            .finally(() => setIsLoading(false));
+        
+        // Try multiple API endpoints for flexibility
+        const fetchStore = async () => {
+            try {
+                // First try the user/store endpoint
+                let response;
+                try {
+                    response = await axios.get(`${STORE_API_URL}${sellerPhone}/`);
+                } catch (error) {
+                    // Fallback to shop endpoint if user/store fails
+                    response = await axios.get(`${SHOP_API_URL}${sellerPhone}/`);
+                }
+                
+                // Handle different response structures
+                if (response.data.store) {
+                    setStore(response.data.store);
+                } else if (response.data.name) {
+                    setStore(response.data);
+                } else {
+                    setStore(response.data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch store details:', error);
+                // Set a fallback store object to prevent crashes
+                setStore({
+                    name: 'Store',
+                    seller_phone: sellerPhone
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        fetchStore();
     }, [sellerPhone]);
 
     const handleQuantityChange = async (productId, newQuantity) => {
@@ -259,6 +293,7 @@ export default function SellerCartPage() {
     );
 }
 
+// ✅ Updated styles with mobile responsiveness using JavaScript media queries
 const styles = {
     pageContainer: {
         minHeight: '100vh',
@@ -317,13 +352,15 @@ const styles = {
         alignItems: 'flex-start',
         marginBottom: '32px',
         paddingBottom: '20px',
-        borderBottom: '1px solid #e9ecef'
+        borderBottom: '1px solid #e9ecef',
+        flexWrap: 'wrap',
+        gap: '16px'
     },
     headerContent: {
         flex: 1
     },
     title: { 
-        fontSize: '2.5rem',
+        fontSize: '2rem',
         fontWeight: 'bold',
         margin: '0 0 8px 0',
         display: 'flex',
@@ -337,7 +374,7 @@ const styles = {
     subtitle: { 
         color: '#6c757d', 
         margin: 0,
-        fontSize: '1.1rem'
+        fontSize: '1rem'
     },
     clearButton: {
         background: 'transparent',
@@ -386,11 +423,7 @@ const styles = {
         display: 'grid', 
         gridTemplateColumns: '1fr 380px', 
         gap: '32px',
-        alignItems: 'start',
-        '@media (max-width: 768px)': {
-            gridTemplateColumns: '1fr',
-            gap: '24px'
-        }
+        alignItems: 'start'
     },
     cartItems: { 
         backgroundColor: 'white', 

@@ -6,11 +6,13 @@ import { useParams, useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
 import WhatsAppButton from '../../../components/common/WhatsAppButton';
 import Header from '../../../components/common/Header';
-import { Star } from 'lucide-react';
+import Footer from '../../../components/common/Footer';
+import { Star, ShoppingCart, Heart, Share2, Truck, Shield } from 'lucide-react';
 
-// ✅ Correct API URLs based on your Django setup
-const API_URL = 'http://localhost:8000/api/products/';
-const BUYER_PROFILE_URL = 'http://localhost:8000/api/buyer/profile/'; 
+// ✅ Using environment variables for API URLs
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const API_URL = `${API_BASE_URL}/api/products/`;
+const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;
 
 // Enhanced Review Form Component
 function ReviewForm({ productId, onReviewSubmitted }) {
@@ -23,7 +25,6 @@ function ReviewForm({ productId, onReviewSubmitted }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // Validation
         if (comment.trim().length < 10) {
             setError('Review must be at least 10 characters long');
             return;
@@ -47,12 +48,10 @@ function ReviewForm({ productId, onReviewSubmitted }) {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             
-            // Reset form
             setComment('');
             setRating(5);
             setSuccess('Review submitted successfully!');
             
-            // Refresh reviews
             setTimeout(() => {
                 onReviewSubmitted();
                 setSuccess('');
@@ -68,7 +67,7 @@ function ReviewForm({ productId, onReviewSubmitted }) {
     
     return (
         <div style={styles.reviewForm}>
-            <h4>Write Your Review</h4>
+            <h4 style={styles.reviewFormTitle}>Write Your Review</h4>
             
             {error && <div style={styles.errorMessage}>{error}</div>}
             {success && <div style={styles.successMessage}>{success}</div>}
@@ -114,7 +113,14 @@ function ReviewForm({ productId, onReviewSubmitted }) {
                         ...(isSubmitting || comment.trim().length < 10 ? styles.disabledButton : {})
                     }}
                 >
-                    {isSubmitting ? 'Submitting Review...' : 'Submit Review'}
+                    {isSubmitting ? (
+                        <span style={styles.buttonContent}>
+                            <div style={styles.spinner}></div>
+                            Submitting Review...
+                        </span>
+                    ) : (
+                        'Submit Review'
+                    )}
                 </button>
             </form>
         </div>
@@ -123,7 +129,6 @@ function ReviewForm({ productId, onReviewSubmitted }) {
 
 // Enhanced Star Rating Component
 function StarRating({ rating = 0, reviewCount = 0, showCount = true }) {
-    const totalStars = 5;
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 >= 0.5;
 
@@ -183,12 +188,12 @@ export default function ProductDetailPage() {
     const [buyerStatus, setBuyerStatus] = useState({ isLoggedIn: false, isVerified: false });
     const [canReview, setCanReview] = useState(false);
     const [reviewsLoading, setReviewsLoading] = useState(false);
+    const [addingToCart, setAddingToCart] = useState(false);
     
     const { productId } = useParams();
     const router = useRouter();
     const { addToCart } = useCart();
 
-    // Fetch product and reviews data
     const fetchPageData = async () => {
         if (!productId) {
             setError('No product ID provided');
@@ -202,20 +207,15 @@ export default function ProductDetailPage() {
             
             console.log('Fetching product from:', `${API_URL}${productId}/`);
             
-            // Fetch product details
             const productResponse = await axios.get(`${API_URL}${productId}/`);
             console.log('Product response:', productResponse.data);
             setProduct(productResponse.data);
 
-            // Fetch reviews
             await fetchReviews();
-
-            // Check if user can review
             await checkReviewPermission();
 
         } catch (err) {
             console.error('Failed to fetch product:', err);
-            console.error('Error response:', err.response);
             
             if (err.response?.status === 404) {
                 setError('Product not found');
@@ -231,13 +231,10 @@ export default function ProductDetailPage() {
         }
     };
 
-    // Separate function to fetch reviews
     const fetchReviews = async () => {
         try {
             setReviewsLoading(true);
-            console.log('Fetching reviews from:', `${API_URL}${productId}/reviews/`);
             const reviewsResponse = await axios.get(`${API_URL}${productId}/reviews/`);
-            console.log('Reviews response:', reviewsResponse.data);
             setReviews(reviewsResponse.data.results || reviewsResponse.data || []);
         } catch (reviewError) {
             console.log('Reviews fetch failed:', reviewError.message);
@@ -247,7 +244,6 @@ export default function ProductDetailPage() {
         }
     };
 
-    // Check if user can review
     const checkReviewPermission = async () => {
         const token = localStorage.getItem('buyerAccessToken');
         if (token) {
@@ -264,7 +260,6 @@ export default function ProductDetailPage() {
         }
     };
 
-    // Check buyer status
     useEffect(() => {
         const token = localStorage.getItem('buyerAccessToken');
         if (token) {
@@ -280,18 +275,16 @@ export default function ProductDetailPage() {
         }
     }, []);
 
-    // Fetch initial data
     useEffect(() => {
         fetchPageData();
     }, [productId]);
 
-    // Handle review submission callback
     const handleReviewSubmitted = () => {
         fetchReviews();
-        fetchPageData(); // Refresh product to update average rating
+        fetchPageData();
     };
 
-    const handleAddToCart = () => {
+    const handleAddToCart = async () => {
         if (!product) return;
 
         if (!buyerStatus.isLoggedIn) {
@@ -304,30 +297,47 @@ export default function ProductDetailPage() {
             return;
         }
         
-        if (product.store && product.store.seller_phone) {
-            addToCart(product.store.seller_phone, product);
-            alert('Product added to cart successfully!');
-        } else {
-            alert("Cannot add to cart, seller information is missing.");
+        setAddingToCart(true);
+        
+        try {
+            if (product.store && product.store.seller_phone) {
+                addToCart(product.store.seller_phone, product);
+                
+                // Show success feedback
+                const button = document.querySelector('[data-add-to-cart]');
+                if (button) {
+                    const originalText = button.textContent;
+                    button.textContent = 'Added to Cart!';
+                    button.style.backgroundColor = '#28a745';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.backgroundColor = '#3b82f6';
+                    }, 2000);
+                }
+            } else {
+                alert("Cannot add to cart, seller information is missing.");
+            }
+        } finally {
+            setAddingToCart(false);
         }
     };
 
-    // Loading state
     if (isLoading) {
         return (
-            <div>
+            <div style={styles.pageContainer}>
                 <Header />
                 <div style={styles.loadingContainer}>
+                    <div style={styles.spinner}></div>
                     <p>Loading product details...</p>
                 </div>
+                <Footer />
             </div>
         );
     }
 
-    // Error state
     if (error) {
         return (
-            <div>
+            <div style={styles.pageContainer}>
                 <Header />
                 <div style={styles.errorContainer}>
                     <h2>Error Loading Product</h2>
@@ -336,75 +346,116 @@ export default function ProductDetailPage() {
                         Try Again
                     </button>
                 </div>
+                <Footer />
             </div>
         );
     }
 
-    // No product found state
     if (!product) {
         return (
-            <div>
+            <div style={styles.pageContainer}>
                 <Header />
                 <div style={styles.errorContainer}>
                     <p>Product not found.</p>
                 </div>
+                <Footer />
             </div>
         );
     }
 
     return (
-        <div>
+        <div style={styles.pageContainer}>
             <Header />
             
             {/* Product Details Section */}
             <div style={styles.container}>
-                <div style={styles.imageContainer}>
-                    <img 
-                        src={product.main_image_url || 'https://placehold.co/400x400?text=No+Image'} 
-                        alt={product.name} 
-                        style={styles.image}
-                        onError={(e) => {
-                            e.target.src = 'https://placehold.co/400x400?text=No+Image';
-                        }}
-                    />
-                </div>
-                
-                <div style={styles.detailsContainer}>
-                    <h1 style={styles.name}>{product.name}</h1>
-                    {product.model_name && <p style={styles.model}>Model: {product.model_name}</p>}
-                    
-                    <StarRating 
-                        rating={product.average_rating || 0} 
-                        reviewCount={product.review_count || 0} 
-                    />
-
-                    {product.description && <p style={styles.description}>{product.description}</p>}
-                    
-                    <div style={styles.priceContainer}>
-                        <span style={styles.price}>₹{product.price}</span>
-                        {product.mrp && product.mrp > product.price && (
-                            <span style={styles.mrp}>MRP: ₹{product.mrp}</span>
-                        )}
+                <div style={styles.productLayout}>
+                    <div style={styles.imageContainer}>
+                        <img 
+                            src={product.main_image_url || 'https://placehold.co/400x400?text=No+Image'} 
+                            alt={product.name} 
+                            style={styles.image}
+                            onError={(e) => {
+                                e.target.src = 'https://placehold.co/400x400?text=No+Image';
+                            }}
+                        />
                     </div>
                     
-                    <p style={styles.stock}>
-                        {product.online_stock > 0 
-                            ? `✓ ${product.online_stock} available` 
-                            : '✗ Out of Stock'
-                        }
-                    </p>
-                    
-                    <button 
-                        style={{
-                            ...styles.addToCartButton,
-                            backgroundColor: product.online_stock === 0 ? '#ccc' : '#0d6efd',
-                            cursor: product.online_stock === 0 ? 'not-allowed' : 'pointer'
-                        }} 
-                        disabled={product.online_stock === 0}
-                        onClick={handleAddToCart}
-                    >
-                        {product.online_stock > 0 ? 'Add to Cart' : 'Out of Stock'}
-                    </button>
+                    <div style={styles.detailsContainer}>
+                        <h1 style={styles.name}>{product.name}</h1>
+                        {product.model_name && <p style={styles.model}>Model: {product.model_name}</p>}
+                        
+                        <StarRating 
+                            rating={product.average_rating || 0} 
+                            reviewCount={product.review_count || 0} 
+                        />
+
+                        {product.description && <p style={styles.description}>{product.description}</p>}
+                        
+                        <div style={styles.priceContainer}>
+                            <span style={styles.price}>₹{product.price}</span>
+                            {product.mrp && product.mrp > product.price && (
+                                <span style={styles.mrp}>MRP: ₹{product.mrp}</span>
+                            )}
+                        </div>
+                        
+                        <div style={styles.stockContainer}>
+                            <p style={styles.stock}>
+                                {product.online_stock > 0 
+                                    ? `✓ ${product.online_stock} available` 
+                                    : '✗ Out of Stock'
+                                }
+                            </p>
+                        </div>
+
+                        {/* Features */}
+                        <div style={styles.features}>
+                            <div style={styles.feature}>
+                                <Truck size={16} />
+                                <span>Free Delivery</span>
+                            </div>
+                            <div style={styles.feature}>
+                                <Shield size={16} />
+                                <span>Secure Payment</span>
+                            </div>
+                        </div>
+                        
+                        <div style={styles.actionButtons}>
+                            <button 
+                                style={{
+                                    ...styles.addToCartButton,
+                                    backgroundColor: product.online_stock === 0 ? '#6c757d' : (addingToCart ? '#28a745' : '#3b82f6'),
+                                    cursor: product.online_stock === 0 ? 'not-allowed' : 'pointer'
+                                }} 
+                                disabled={product.online_stock === 0 || addingToCart}
+                                onClick={handleAddToCart}
+                                data-add-to-cart
+                            >
+                                <span style={styles.buttonContent}>
+                                    {addingToCart ? (
+                                        <>
+                                            <div style={styles.spinner}></div>
+                                            Adding...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ShoppingCart size={18} />
+                                            {product.online_stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+                                        </>
+                                    )}
+                                </span>
+                            </button>
+
+                            <div style={styles.secondaryActions}>
+                                <button style={styles.secondaryButton}>
+                                    <Heart size={16} />
+                                </button>
+                                <button style={styles.secondaryButton}>
+                                    <Share2 size={16} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -420,7 +471,6 @@ export default function ProductDetailPage() {
                     </div>
                 </div>
                 
-                {/* Review Form - Show only if user can review */}
                 {buyerStatus.isLoggedIn ? (
                     canReview ? (
                         <ReviewForm 
@@ -440,12 +490,14 @@ export default function ProductDetailPage() {
                     </div>
                 )}
                 
-                {/* Reviews List */}
                 <div style={styles.reviewsList}>
                     <h3>All Reviews ({reviews.length})</h3>
                     
                     {reviewsLoading ? (
-                        <p style={styles.loadingText}>Loading reviews...</p>
+                        <div style={styles.loadingText}>
+                            <div style={styles.spinner}></div>
+                            <span>Loading reviews...</span>
+                        </div>
                     ) : reviews.length > 0 ? (
                         <div style={styles.reviewsContainer}>
                             {reviews.map(review => (
@@ -463,245 +515,394 @@ export default function ProductDetailPage() {
             {product.store?.whatsapp_number && (
                 <WhatsAppButton phoneNumber={product.store.whatsapp_number} />
             )}
+
+            <Footer />
+
+            {/* CSS Animations */}
+            <style jsx>{`
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.7; }
+                }
+            `}</style>
         </div>
     );
 }
 
 // Enhanced Styles
 const styles = {
-    loadingContainer: {
-        textAlign: 'center',
-        padding: '50px',
-        fontSize: '18px'
+    pageContainer: {
+        minHeight: '100vh',
+        backgroundColor: '#f8fafc'
     },
+    
+    loadingContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '60vh',
+        gap: '20px'
+    },
+    
+    spinner: {
+        width: '20px',
+        height: '20px',
+        border: '2px solid #f3f3f3',
+        borderTop: '2px solid #3b82f6',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite'
+    },
+    
     errorContainer: {
         textAlign: 'center',
-        padding: '50px',
+        padding: '60px 20px',
         color: '#dc3545'
     },
+    
     errorText: {
         color: '#dc3545',
-        marginBottom: '20px'
+        marginBottom: '20px',
+        fontSize: '1.1rem'
     },
+    
     retryButton: {
-        padding: '10px 20px',
-        backgroundColor: '#0d6efd',
+        padding: '12px 24px',
+        backgroundColor: '#3b82f6',
         color: 'white',
         border: 'none',
-        borderRadius: '5px',
-        cursor: 'pointer'
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '1rem',
+        fontWeight: '500'
     },
+    
     container: { 
-        display: 'flex', 
         maxWidth: '1200px', 
-        margin: '40px auto', 
-        padding: '20px', 
+        margin: '0 auto', 
+        padding: '20px',
+        animation: 'fadeIn 0.6s ease-out'
+    },
+    
+    productLayout: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
         gap: '40px',
-        flexWrap: 'wrap'
+        marginBottom: '40px'
     },
+    
     imageContainer: { 
-        flex: 1,
-        minWidth: '300px'
+        display: 'flex',
+        justifyContent: 'center'
     },
+    
     image: { 
         width: '100%', 
-        maxWidth: '400px',
-        height: '400px',
+        maxWidth: '500px',
+        height: '500px',
         objectFit: 'cover',
-        borderRadius: '8px',
-        border: '1px solid #e9ecef'
+        borderRadius: '12px',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
     },
+    
     detailsContainer: { 
-        flex: 1,
-        minWidth: '300px'
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px'
     },
+    
     name: { 
-        fontSize: '2.5rem', 
-        margin: '0 0 10px 0',
-        color: '#333'
+        fontSize: '2rem', 
+        margin: 0,
+        color: '#1f2937',
+        fontWeight: '700',
+        lineHeight: '1.2'
     },
+    
     model: { 
-        color: '#666', 
-        margin: '0 0 15px 0'
+        color: '#6b7280', 
+        margin: 0,
+        fontSize: '1.1rem'
     },
+    
     starContainer: { 
         display: 'flex', 
         alignItems: 'center', 
-        gap: '8px', 
-        margin: '15px 0',
+        gap: '8px',
         flexWrap: 'wrap'
     },
+    
     stars: {
         display: 'flex',
         gap: '2px'
     },
+    
     ratingDisplay: {
         fontSize: '0.9rem',
-        color: '#666',
+        color: '#6b7280',
         fontWeight: '500'
     },
+    
     reviewCount: { 
-        color: '#6c757d', 
+        color: '#6b7280', 
         fontSize: '0.9rem' 
     },
+    
     description: { 
         lineHeight: '1.6',
-        margin: '20px 0',
-        color: '#555'
+        margin: 0,
+        color: '#374151',
+        fontSize: '1rem'
     },
+    
     priceContainer: { 
         display: 'flex', 
         alignItems: 'baseline', 
-        gap: '15px', 
-        margin: '25px 0',
+        gap: '15px',
         flexWrap: 'wrap'
     },
+    
     price: { 
-        fontSize: '2.5rem', 
-        fontWeight: 'bold',
-        color: '#28a745'
+        fontSize: '2rem', 
+        fontWeight: '700',
+        color: '#059669'
     },
+    
     mrp: { 
         textDecoration: 'line-through', 
-        color: '#999',
-        fontSize: '1.5rem'
+        color: '#9ca3af',
+        fontSize: '1.2rem'
     },
+    
+    stockContainer: {
+        margin: '10px 0'
+    },
+    
     stock: { 
-        fontWeight: 'bold',
-        margin: '15px 0',
-        fontSize: '1.1rem'
+        fontWeight: '600',
+        margin: 0,
+        fontSize: '1rem',
+        color: '#374151'
     },
+    
+    features: {
+        display: 'flex',
+        gap: '20px',
+        flexWrap: 'wrap'
+    },
+    
+    feature: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        color: '#059669',
+        fontSize: '0.9rem',
+        fontWeight: '500'
+    },
+    
+    actionButtons: {
+        display: 'flex',
+        gap: '12px',
+        alignItems: 'center'
+    },
+    
     addToCartButton: { 
-        width: '100%', 
-        padding: '15px', 
-        backgroundColor: '#0d6efd', 
+        flex: 1,
+        padding: '16px 24px', 
+        backgroundColor: '#3b82f6', 
         color: 'white', 
         border: 'none', 
         borderRadius: '8px', 
         fontSize: '1.1rem', 
         fontWeight: '600',
         cursor: 'pointer',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    
+    buttonContent: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+    },
+    
+    secondaryActions: {
+        display: 'flex',
+        gap: '8px'
+    },
+    
+    secondaryButton: {
+        width: '48px',
+        height: '48px',
+        backgroundColor: 'white',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#6b7280',
+        transition: 'all 0.2s ease'
     },
     
     // Reviews Section Styles
     reviewsSection: { 
         maxWidth: '1200px', 
-        margin: '60px auto', 
-        padding: '40px 20px', 
-        borderTop: '2px solid #e9ecef',
-        backgroundColor: '#f8f9fa'
+        margin: '0 auto', 
+        padding: '40px 20px',
+        backgroundColor: 'white',
+        borderRadius: '12px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
     },
+    
     reviewsHeader: {
         marginBottom: '30px',
         textAlign: 'center'
     },
+    
     reviewsSummary: {
         marginTop: '15px'
     },
+    
     loginPrompt: {
-        backgroundColor: '#fff',
+        backgroundColor: '#f8fafc',
         padding: '20px',
         borderRadius: '8px',
         textAlign: 'center',
         margin: '20px 0',
-        border: '1px solid #e9ecef'
+        border: '1px solid #e5e7eb'
     },
+    
     loginLink: {
-        color: '#0d6efd',
+        color: '#3b82f6',
         textDecoration: 'none',
         fontWeight: '600'
     },
+    
     cannotReviewMessage: {
-        backgroundColor: '#fff3cd',
-        color: '#856404',
+        backgroundColor: '#fef3c7',
+        color: '#92400e',
         padding: '15px',
         borderRadius: '8px',
         margin: '20px 0',
-        border: '1px solid #ffeaa7'
+        border: '1px solid #fbbf24'
     },
     
     // Review Form Styles
     reviewForm: { 
-        backgroundColor: '#ffffff',
-        border: '1px solid #e9ecef', 
+        backgroundColor: '#f8fafc',
+        border: '1px solid #e5e7eb', 
         borderRadius: '12px', 
         padding: '30px', 
-        margin: '30px 0',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        margin: '30px 0'
     },
+    
+    reviewFormTitle: {
+        fontSize: '1.2rem',
+        fontWeight: '600',
+        color: '#1f2937',
+        marginBottom: '20px'
+    },
+    
     errorMessage: {
-        color: '#dc3545',
-        backgroundColor: '#f8d7da',
+        color: '#dc2626',
+        backgroundColor: '#fef2f2',
         padding: '12px',
-        borderRadius: '4px',
+        borderRadius: '8px',
         marginBottom: '15px',
-        border: '1px solid #f5c6cb'
+        border: '1px solid #fecaca'
     },
+    
     successMessage: {
-        color: '#155724',
-        backgroundColor: '#d4edda',
+        color: '#065f46',
+        backgroundColor: '#ecfdf5',
         padding: '12px',
-        borderRadius: '4px',
+        borderRadius: '8px',
         marginBottom: '15px',
-        border: '1px solid #c3e6cb'
+        border: '1px solid #a7f3d0'
     },
+    
     ratingSection: {
         marginBottom: '20px'
     },
+    
     label: {
         display: 'block',
         fontWeight: '600',
         marginBottom: '8px',
-        color: '#333'
+        color: '#374151'
     },
+    
     starRatingInput: { 
         display: 'flex', 
         alignItems: 'center',
         gap: '5px',
         marginTop: '8px'
     },
+    
     starButton: {
         cursor: 'pointer',
-        transition: 'transform 0.2s',
+        transition: 'transform 0.2s'
     },
+    
     ratingText: {
         marginLeft: '10px',
-        color: '#666',
+        color: '#6b7280',
         fontSize: '0.9rem'
     },
+    
     commentSection: {
         marginBottom: '20px'
     },
+    
     textarea: { 
         width: '100%', 
         minHeight: '100px', 
         padding: '12px', 
-        border: '1px solid #e9ecef', 
+        border: '1px solid #d1d5db', 
         borderRadius: '8px',
         resize: 'vertical',
         fontFamily: 'inherit',
         fontSize: '1rem',
-        lineHeight: '1.5'
+        lineHeight: '1.5',
+        outline: 'none',
+        transition: 'border-color 0.2s'
     },
+    
     charCount: {
-        color: '#6c757d',
+        color: '#6b7280',
         fontSize: '0.8rem',
-        marginTop: '5px'
+        marginTop: '5px',
+        display: 'block'
     },
+    
     submitButton: { 
         padding: '12px 30px', 
         border: 'none', 
         borderRadius: '8px', 
-        backgroundColor: '#28a745', 
+        backgroundColor: '#059669', 
         color: 'white', 
         cursor: 'pointer',
         fontSize: '1rem',
         fontWeight: '600',
         transition: 'all 0.3s ease'
     },
+    
     disabledButton: {
-        backgroundColor: '#6c757d',
+        backgroundColor: '#9ca3af',
         cursor: 'not-allowed'
     },
     
@@ -709,19 +910,21 @@ const styles = {
     reviewsList: {
         marginTop: '40px'
     },
+    
     reviewsContainer: {
         display: 'flex',
         flexDirection: 'column',
         gap: '20px',
         marginTop: '20px'
     },
+    
     reviewItem: {
-        backgroundColor: '#ffffff',
-        border: '1px solid #e9ecef',
+        backgroundColor: '#f8fafc',
+        border: '1px solid #e5e7eb',
         borderRadius: '12px',
-        padding: '25px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+        padding: '25px'
     },
+    
     reviewHeader: {
         display: 'flex',
         justifyContent: 'space-between',
@@ -730,34 +933,42 @@ const styles = {
         flexWrap: 'wrap',
         gap: '10px'
     },
+    
     reviewerName: {
         margin: '8px 0 0 0',
         fontSize: '1rem',
         fontWeight: '600',
-        color: '#333'
+        color: '#1f2937'
     },
+    
     reviewDate: {
         fontSize: '0.85rem',
-        color: '#6c757d'
+        color: '#6b7280'
     },
+    
     reviewComment: {
         margin: 0,
         lineHeight: '1.6',
-        color: '#333',
+        color: '#374151',
         fontSize: '1rem'
     },
+    
     noReviews: {
         textAlign: 'center',
         padding: '40px',
-        color: '#666',
+        color: '#6b7280',
         fontStyle: 'italic',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f8fafc',
         borderRadius: '8px',
-        border: '1px solid #e9ecef'
+        border: '1px solid #e5e7eb'
     },
+    
     loadingText: {
-        textAlign: 'center',
-        color: '#666',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '10px',
+        color: '#6b7280',
         padding: '20px'
     }
 };
