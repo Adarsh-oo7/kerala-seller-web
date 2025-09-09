@@ -11,9 +11,12 @@ import { ArrowLeft } from 'lucide-react';
 // ==============================================================================
 // CONSTANTS
 // ==============================================================================
-const GOOGLE_CLIENT_ID = "108580007778-ctbmb96tl44p2bj91k5l128glba9bb3m.apps.googleusercontent.com"; // Replace with your actual ID
-const GOOGLE_LOGIN_API = 'http://localhost:8000/user/buyer/login/google/';
-const EMAIL_LOGIN_API = 'http://localhost:8000/user/buyer/login/';
+// const GOOGLE_CLIENT_ID = "108580007778-ctbmb96tl44p2bj91k5l128glba9bb3m.apps.googleusercontent.com"; // Replace with your actual ID
+// const GOOGLE_LOGIN_API = 'http://localhost:8000/user/buyer/login/google/';
+// const EMAIL_LOGIN_API = 'http://localhost:8000/user/buyer/login/';
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+const GOOGLE_LOGIN_API = `${process.env.NEXT_PUBLIC_API_URL}/user/buyer/login/google/`;
+const EMAIL_LOGIN_API = `${process.env.NEXT_PUBLIC_API_URL}/user/buyer/login/`;
 
 // ==============================================================================
 // SUB-COMPONENTS
