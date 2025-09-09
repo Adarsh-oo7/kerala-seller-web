@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import Header from '../../../components/common/Header';
@@ -12,7 +12,8 @@ import { Phone, Lock, Eye, EyeOff, User, ArrowLeft, AlertCircle, Store } from 'l
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 const LOGIN_API_URL = `${API_BASE_URL}/user/login/`;
 
-export default function LoginSellerPage() {
+// ✅ Extract the component that uses useSearchParams
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect');
@@ -25,7 +26,6 @@ export default function LoginSellerPage() {
   const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
-    // If a seller is already logged in, redirect them to the dashboard
     const token = localStorage.getItem('accessToken');
     if (token) {
       const redirectUrl = redirect || '/dashboard/seller';
@@ -52,7 +52,6 @@ export default function LoginSellerPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
     
-    // Client-side validation
     if (!phone || !password) {
       setError('Phone number and password are required.');
       return;
@@ -75,10 +74,9 @@ export default function LoginSellerPage() {
       const response = await axios.post(LOGIN_API_URL, { 
         phone, 
         password,
-        user_type: 'seller' // Specify user type if needed
+        user_type: 'seller'
       });
       
-      // Store token
       if (rememberMe) {
         localStorage.setItem('accessToken', response.data.token);
         localStorage.setItem('rememberSeller', 'true');
@@ -87,12 +85,10 @@ export default function LoginSellerPage() {
         localStorage.setItem('accessToken', response.data.token);
       }
       
-      // Store user info if available
       if (response.data.user) {
         localStorage.setItem('sellerInfo', JSON.stringify(response.data.user));
       }
       
-      // Redirect to intended page or dashboard
       const redirectUrl = redirect || '/dashboard/seller';
       router.push(redirectUrl);
       
@@ -109,136 +105,158 @@ export default function LoginSellerPage() {
   };
 
   return (
+    <div style={styles.card}>
+      {/* Header */}
+      <div style={styles.header}>
+        <div style={styles.iconContainer}>
+          <Store size={32} color="#3b82f6" />
+        </div>
+        <h1 style={styles.title}>Seller Login</h1>
+        <p style={styles.subtitle}>
+          Welcome back! Sign in to manage your store and products.
+        </p>
+      </div>
+
+      {/* Login Form */}
+      <form onSubmit={handleLogin} style={styles.form}>
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>
+            <Phone size={16} />
+            Phone Number
+          </label>
+          <input
+            type="tel"
+            placeholder="Enter 10-digit phone number"
+            value={phone}
+            onChange={handlePhoneChange}
+            style={{
+              ...styles.input,
+              ...(error && !validatePhone(phone) && phone ? styles.inputError : {})
+            }}
+            maxLength={10}
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>
+            <Lock size={16} />
+            Password
+          </label>
+          <div style={styles.passwordContainer}>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              value={password}
+              onChange={handlePasswordChange}
+              style={{
+                ...styles.passwordInput,
+                ...(error && password.length < 6 && password ? styles.inputError : {})
+              }}
+              required
+              disabled={loading}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={styles.eyeButton}
+              disabled={loading}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Remember Me */}
+        <div style={styles.checkboxContainer}>
+          <label style={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              style={styles.checkbox}
+              disabled={loading}
+            />
+            <span>Remember me</span>
+          </label>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div style={styles.errorContainer}>
+            <AlertCircle size={16} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Login Button */}
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            ...styles.button,
+            ...(loading ? styles.buttonLoading : {})
+          }}
+        >
+          {loading ? (
+            <span style={styles.buttonContent}>
+              <div style={styles.spinner}></div>
+              Logging in...
+            </span>
+          ) : (
+            <span style={styles.buttonContent}>
+              <User size={18} />
+              Login to Dashboard
+            </span>
+          )}
+        </button>
+      </form>
+
+      {/* Footer Links */}
+      <div style={styles.footerLinks}>
+        <Link href="/forgot-password/seller" style={styles.link}>
+          Forgot Password?
+        </Link>
+        <span style={styles.divider}>|</span>
+        <Link href="/register/seller" style={styles.link}>
+          Create Account
+        </Link>
+      </div>
+
+      {/* Back to Home */}
+      <div style={styles.backSection}>
+        <Link href="/" style={styles.backLink}>
+          <ArrowLeft size={16} />
+          Back to Home
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ✅ Loading component for Suspense fallback
+function LoginLoading() {
+  return (
+    <div style={styles.card}>
+      <div style={styles.loadingContainer}>
+        <div style={styles.spinner}></div>
+        <p>Loading login form...</p>
+      </div>
+    </div>
+  );
+}
+
+// ✅ Main component with Suspense wrapper
+export default function LoginSellerPage() {
+  return (
     <div style={styles.pageContainer}>
       <Header />
       <div style={styles.container}>
-        <div style={styles.card}>
-          {/* Header */}
-          <div style={styles.header}>
-            <div style={styles.iconContainer}>
-              <Store size={32} color="#3b82f6" />
-            </div>
-            <h1 style={styles.title}>Seller Login</h1>
-            <p style={styles.subtitle}>
-              Welcome back! Sign in to manage your store and products.
-            </p>
-          </div>
-
-          {/* Login Form */}
-          <form onSubmit={handleLogin} style={styles.form}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>
-                <Phone size={16} />
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                placeholder="Enter 10-digit phone number"
-                value={phone}
-                onChange={handlePhoneChange}
-                style={{
-                  ...styles.input,
-                  ...(error && !validatePhone(phone) && phone ? styles.inputError : {})
-                }}
-                maxLength={10}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>
-                <Lock size={16} />
-                Password
-              </label>
-              <div style={styles.passwordContainer}>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={handlePasswordChange}
-                  style={{
-                    ...styles.passwordInput,
-                    ...(error && password.length < 6 && password ? styles.inputError : {})
-                  }}
-                  required
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={styles.eyeButton}
-                  disabled={loading}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Remember Me */}
-            <div style={styles.checkboxContainer}>
-              <label style={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  style={styles.checkbox}
-                  disabled={loading}
-                />
-                <span>Remember me</span>
-              </label>
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div style={styles.errorContainer}>
-                <AlertCircle size={16} />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* Login Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                ...styles.button,
-                ...(loading ? styles.buttonLoading : {})
-              }}
-            >
-              {loading ? (
-                <span style={styles.buttonContent}>
-                  <div style={styles.spinner}></div>
-                  Logging in...
-                </span>
-              ) : (
-                <span style={styles.buttonContent}>
-                  <User size={18} />
-                  Login to Dashboard
-                </span>
-              )}
-            </button>
-          </form>
-
-          {/* Footer Links */}
-          <div style={styles.footerLinks}>
-            <Link href="/forgot-password/seller" style={styles.link}>
-              Forgot Password?
-            </Link>
-            <span style={styles.divider}>|</span>
-            <Link href="/register/seller" style={styles.link}>
-              Create Account
-            </Link>
-          </div>
-
-          {/* Back to Home */}
-          <div style={styles.backSection}>
-            <Link href="/" style={styles.backLink}>
-              <ArrowLeft size={16} />
-              Back to Home
-            </Link>
-          </div>
-        </div>
+        {/* ✅ Wrap the component that uses useSearchParams in Suspense */}
+        <Suspense fallback={<LoginLoading />}>
+          <LoginForm />
+        </Suspense>
 
         {/* Features Section */}
         <div style={styles.featuresSection}>
@@ -275,6 +293,10 @@ export default function LoginSellerPage() {
   );
 }
 
+// Add the missing import at the top
+import { useSearchParams } from 'next/navigation';
+
+// ✅ All your existing styles remain the same
 const styles = {
   pageContainer: {
     minHeight: '100vh',
@@ -300,6 +322,15 @@ const styles = {
     maxWidth: '420px',
     border: '1px solid #e5e7eb',
     animation: 'fadeIn 0.6s ease-out'
+  },
+  
+  loadingContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '200px',
+    gap: '16px'
   },
   
   header: {
@@ -461,8 +492,8 @@ const styles = {
   spinner: {
     width: '16px',
     height: '16px',
-    border: '2px solid rgba(255, 255, 255, 0.3)',
-    borderTop: '2px solid #ffffff',
+    border: '2px solid #f3f3f3',
+    borderTop: '2px solid #3b82f6',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
