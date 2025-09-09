@@ -11,161 +11,124 @@ import {
   Filter, 
   Grid, 
   List, 
-  ShoppingCart, 
-  Star, 
   MapPin,
   Phone,
-  Truck,
+  Star,
+  Store,
   AlertCircle,
   X,
-  ChevronDown,
   SlidersHorizontal
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:8000/user/store/products/';
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL + '/user/store/shops/' || 'http://localhost:8000/user/store/shops/';
+
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+    
+    const listener = () => setMatches(media.matches);
+    media.addEventListener('change', listener);
+    
+    return () => media.removeEventListener('change', listener);
+  }, [matches, query]);
+
+  return matches;
+}
 
 export default function ShopPage() {
-  const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [shops, setShops] = useState([]);
+  const [filteredShops, setFilteredShops] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [sortBy, setSortBy] = useState('name');
   const [viewMode, setViewMode] = useState('grid');
   const [error, setError] = useState(null);
-  const [showFilters, setShowFilters] = useState(false);
   const [showMobileSort, setShowMobileSort] = useState(false);
-  const { addToCart } = useCart();
 
-  const fetchProducts = useCallback(async () => {
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1023px)');
+
+  const fetchShops = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
     try {
       const response = await axios.get(API_URL);
       
-      let productData = [];
+      let shopData = [];
       if (Array.isArray(response.data.results)) {
-        productData = response.data.results;
+        shopData = response.data.results;
       } else if (Array.isArray(response.data)) {
-        productData = response.data;
+        shopData = response.data;
       } else {
-        productData = [];
+        shopData = [];
       }
       
-      setProducts(productData);
-      setFilteredProducts(productData);
+      // ✅ DEBUG: Log shop data structure
+      console.log('🔍 Shop data structure:', shopData[0]);
+      console.log('🔍 Available fields:', shopData[0] ? Object.keys(shopData[0]) : 'No data');
+      
+      setShops(shopData);
+      setFilteredShops(shopData);
     } catch (error) {
-      console.error("Failed to fetch products:", error);
-      setError('Failed to load products. Please try again.');
-      setProducts([]);
-      setFilteredProducts([]);
+      console.error("Failed to fetch shops:", error);
+      setError('Failed to load shops. Please try again.');
+      setShops([]);
+      setFilteredShops([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Filter and search products
   useEffect(() => {
-    let filtered = [...products];
+    let filtered = [...shops];
 
     if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.store?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(shop =>
+        shop.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shop.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shop.tagline?.toLowerCase().includes(searchTerm.toLowerCase())
       );
-    }
-
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(product =>
-        product.category?.toLowerCase() === selectedCategory.toLowerCase()
-      );
-    }
-
-    if (priceRange.min) {
-      filtered = filtered.filter(product => product.price >= parseFloat(priceRange.min));
-    }
-    if (priceRange.max) {
-      filtered = filtered.filter(product => product.price <= parseFloat(priceRange.max));
     }
 
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'price-low':
-          return a.price - b.price;
-        case 'price-high':
-          return b.price - a.price;
         case 'name':
           return (a.name || '').localeCompare(b.name || '');
         case 'newest':
           return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        case 'rating':
+          return (b.average_rating || 0) - (a.average_rating || 0);
         default:
           return 0;
       }
     });
 
-    setFilteredProducts(filtered);
-  }, [products, searchTerm, selectedCategory, priceRange, sortBy]);
+    setFilteredShops(filtered);
+  }, [shops, searchTerm, sortBy]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-
-  const handleAddToCart = (e, product) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (product.online_stock <= 0) {
-      alert('This product is out of stock');
-      return;
-    }
-    
-    if (product.store && product.store.seller_phone) {
-      addToCart(product.store.seller_phone, product);
-      
-      // Show success feedback
-      const button = e.target;
-      const originalText = button.textContent;
-      button.textContent = 'Added!';
-      button.style.backgroundColor = '#10b981';
-      setTimeout(() => {
-        button.textContent = originalText;
-        button.style.backgroundColor = '#3b82f6';
-      }, 1500);
-    } else {
-      alert("Could not add to cart: seller information missing.");
-    }
-  };
-
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
-
-  const getUniqueCategories = () => {
-    const categories = products.map(product => product.category).filter(Boolean);
-    return [...new Set(categories)];
-  };
+    fetchShops();
+  }, [fetchShops]);
 
   const clearAllFilters = () => {
     setSearchTerm('');
-    setSelectedCategory('all');
-    setPriceRange({ min: '', max: '' });
     setSortBy('name');
   };
 
-  if (isLoading && products.length === 0) {
+  if (isLoading && shops.length === 0) {
     return (
       <div style={styles.pageContainer}>
         <Header />
         <div style={styles.loadingContainer}>
           <div style={styles.spinner}></div>
-          <p>Loading amazing products for you...</p>
+          <p>Loading amazing shops for you...</p>
         </div>
         <Footer />
       </div>
@@ -180,7 +143,7 @@ export default function ShopPage() {
           <AlertCircle size={48} />
           <h2>Oops! Something went wrong</h2>
           <p>{error}</p>
-          <button onClick={fetchProducts} style={styles.retryButton}>
+          <button onClick={fetchShops} style={styles.retryButton}>
             Try Again
           </button>
         </div>
@@ -193,19 +156,18 @@ export default function ShopPage() {
     <div style={styles.pageContainer}>
       <Header />
       
-      {/* Mobile-First Hero Section */}
+      {/* Hero Section */}
       <div style={styles.heroSection}>
         <div style={styles.heroContent}>
-          <h1 style={styles.heroTitle}>Discover Amazing Products</h1>
+          <h1 style={styles.heroTitle}>Discover Local Shops</h1>
           <p style={styles.heroSubtitle}>Shop from trusted sellers across Kerala</p>
           
-          {/* Enhanced Mobile Search */}
           <div style={styles.searchContainer}>
             <div style={styles.searchBox}>
               <Search size={18} style={styles.searchIcon} />
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder="Search shops..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={styles.searchInput}
@@ -218,14 +180,6 @@ export default function ShopPage() {
       <div style={styles.container}>
         {/* Mobile Toolbar */}
         <div style={styles.mobileToolbar}>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            style={styles.toolbarButton}
-          >
-            <SlidersHorizontal size={18} />
-            <span>Filters</span>
-          </button>
-          
           <button
             onClick={() => setShowMobileSort(!showMobileSort)}
             style={styles.toolbarButton}
@@ -268,9 +222,8 @@ export default function ShopPage() {
               </div>
               {[
                 { value: 'name', label: 'Name A-Z' },
-                { value: 'price-low', label: 'Price: Low to High' },
-                { value: 'price-high', label: 'Price: High to Low' },
-                { value: 'newest', label: 'Newest First' }
+                { value: 'newest', label: 'Newest First' },
+                { value: 'rating', label: 'Highest Rated' }
               ].map(option => (
                 <button
                   key={option.value}
@@ -290,180 +243,137 @@ export default function ShopPage() {
           </div>
         )}
 
-        {/* Mobile Filters Panel */}
-        {showFilters && (
-          <div style={styles.mobileFilters}>
-            <div style={styles.filtersContent}>
-              <div style={styles.filtersHeader}>
-                <h3>Filters</h3>
-                <button onClick={() => setShowFilters(false)} style={styles.closeButton}>
-                  <X size={20} />
-                </button>
-              </div>
-              
-              <div style={styles.filterSection}>
-                <h4>Category</h4>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  style={styles.mobileSelect}
-                >
-                  <option value="all">All Categories</option>
-                  {getUniqueCategories().map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div style={styles.filterSection}>
-                <h4>Price Range</h4>
-                <div style={styles.priceInputs}>
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    value={priceRange.min}
-                    onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
-                    style={styles.priceInput}
-                  />
-                  <span style={styles.priceSeparator}>-</span>
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    value={priceRange.max}
-                    onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
-                    style={styles.priceInput}
-                  />
-                </div>
-              </div>
-              
-              <div style={styles.filterActions}>
-                <button onClick={clearAllFilters} style={styles.clearButton}>
-                  Clear All
-                </button>
-                <button onClick={() => setShowFilters(false)} style={styles.applyButton}>
-                  Apply Filters
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Results Count */}
         <div style={styles.resultsHeader}>
           <span style={styles.resultsCount}>
-            {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
+            {filteredShops.length} shop{filteredShops.length !== 1 ? 's' : ''} found
           </span>
         </div>
 
-        {/* Products Grid/List - Mobile Optimized */}
-        {filteredProducts.length > 0 ? (
-          <div style={viewMode === 'grid' ? styles.mobileGrid : styles.mobileList}>
-            {filteredProducts.map(product => (
-              <div key={product.id} style={viewMode === 'grid' ? styles.mobileCard : styles.mobileListCard}>
-                <Link href={`/product/${product.id}`} style={styles.cardLink}>
-                  <div style={styles.imageContainer}>
-                    <img 
-                      src={product.main_image_url || product.image_url || 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image'} 
-                      alt={product.name} 
-                      style={viewMode === 'grid' ? styles.mobileImage : styles.listImage}
-                      onError={(e) => {
-                        e.target.src = 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
-                      }}
-                      loading="lazy"
-                    />
-                    {product.online_stock <= 5 && product.online_stock > 0 && (
-                      <span style={styles.stockBadge}>Only {product.online_stock} left!</span>
-                    )}
-                    {product.online_stock === 0 && (
-                      <span style={styles.outOfStockBadge}>Out of Stock</span>
-                    )}
-                  </div>
-                  
-                  <div style={styles.mobileCardContent}>
-                    <h3 style={styles.mobileProductName}>{product.name}</h3>
-                    {product.model_name && (
-                      <p style={styles.mobileModelName}>{product.model_name}</p>
-                    )}
-                    
-                    <div style={styles.mobilePriceContainer}>
-                      <span style={styles.mobileCurrentPrice}>{formatPrice(product.price)}</span>
-                      {product.mrp && product.mrp > product.price && (
-                        <>
-                          <span style={styles.mobileOriginalPrice}>{formatPrice(product.mrp)}</span>
-                          <span style={styles.mobileDiscount}>
-                            {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% OFF
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Mobile Store Info */}
-                    {product.store && (
-                      <div style={styles.mobileStoreInfo}>
-                        <MapPin size={12} />
-                        <span>{product.store.name}</span>
+        {/* ✅ FIXED: Mobile-optimized Grid with correct field mapping */}
+        {filteredShops.length > 0 ? (
+          <div style={styles.shopsContainer}>
+            {filteredShops.map(shop => {
+              // ✅ FIXED: Check multiple possible field names for seller phone
+              const sellerPhone = shop.seller_phone || shop.seller?.phone || shop.phone;
+              
+              return (
+                <div key={shop.id} style={styles.shopCard}>
+                  {/* ✅ FIXED: Use correct field name and ensure valid phone */}
+                  {sellerPhone ? (
+                    <Link 
+                      href={`/shop/${sellerPhone}`} 
+                      style={styles.cardLink}
+                    >
+                      {/* ✅ Round Shop Logo */}
+                      <div style={styles.logoContainer}>
+                        <img 
+                          src={shop.logo_url || shop.logo || 'https://placehold.co/60x60/e9ecef/6c757d?text=Shop'} 
+                          alt={shop.name} 
+                          style={styles.shopLogo}
+                          onError={(e) => {
+                            e.target.src = 'https://placehold.co/60x60/e9ecef/6c757d?text=Shop';
+                          }}
+                          loading="lazy"
+                        />
                       </div>
-                    )}
+                      
+                      <div style={styles.shopCardContent}>
+                        <h3 style={styles.shopName}>{shop.name}</h3>
+                        
+                        {shop.tagline && (
+                          <p style={styles.shopTagline}>{shop.tagline}</p>
+                        )}
+                        
+                        {shop.description && (
+                          <p style={styles.shopDescription}>
+                            {shop.description.length > 50 
+                              ? shop.description.substring(0, 50) + '...' 
+                              : shop.description}
+                          </p>
+                        )}
 
-                    {/* Mobile Rating */}
-                    {product.average_rating && (
-                      <div style={styles.mobileRating}>
-                        <Star size={12} fill="#ffc107" color="#ffc107" />
-                        <span>{product.average_rating.toFixed(1)}</span>
-                        <span>({product.review_count || 0})</span>
+                        {/* Compact Shop Info */}
+                        <div style={styles.shopInfoContainer}>
+                          {(shop.seller_address || shop.seller?.address) && (
+                            <div style={styles.shopInfoItem}>
+                              <MapPin size={10} />
+                              <span>{(shop.seller_address || shop.seller?.address).length > 15 
+                                ? (shop.seller_address || shop.seller?.address).substring(0, 15) + '...' 
+                                : (shop.seller_address || shop.seller?.address)}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {shop.products_count && (
+                            <div style={styles.shopInfoItem}>
+                              <Store size={10} />
+                              <span>{shop.products_count} Products</span>
+                            </div>
+                          )}
+
+                          {shop.average_rating && shop.average_rating > 0 && (
+                            <div style={styles.shopInfoItem}>
+                              <Star size={10} fill="#ffc107" color="#ffc107" />
+                              <span>{shop.average_rating.toFixed(1)}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </Link>
-
-                {/* Mobile Action Button */}
-                <div style={styles.mobileActions}>
-                  <button 
-                    onClick={(e) => handleAddToCart(e, product)} 
-                    style={{
-                      ...styles.mobileAddToCartButton,
-                      ...(product.online_stock === 0 ? styles.mobileDisabledButton : {})
-                    }}
-                    disabled={product.online_stock === 0}
-                  >
-                    <ShoppingCart size={14} />
-                    <span>{product.online_stock > 0 ? 'Add to Cart' : 'Out of Stock'}</span>
-                  </button>
-                  
-                  {product.store?.delivery_available && (
-                    <div style={styles.mobileDeliveryInfo}>
-                      <Truck size={12} />
-                      <span>Free Delivery</span>
+                    </Link>
+                  ) : (
+                    <div style={styles.cardLink}>
+                      {/* Same content but not clickable when no phone */}
+                      <div style={styles.logoContainer}>
+                        <img 
+                          src={shop.logo_url || shop.logo || 'https://placehold.co/60x60/e9ecef/6c757d?text=Shop'} 
+                          alt={shop.name} 
+                          style={styles.shopLogo}
+                          loading="lazy"
+                        />
+                      </div>
+                      
+                      <div style={styles.shopCardContent}>
+                        <h3 style={styles.shopName}>{shop.name}</h3>
+                        <p style={styles.shopDescription}>Contact info not available</p>
+                      </div>
                     </div>
                   )}
+
+                  {/* Action Button */}
+                  <div style={styles.shopActions}>
+                    {sellerPhone ? (
+                      <Link href={`/shop/${sellerPhone}`}>
+                        <button style={styles.viewShopButton}>
+                          <Store size={12} />
+                          <span>View Shop</span>
+                        </button>
+                      </Link>
+                    ) : (
+                      <button style={styles.disabledButton} disabled>
+                        <span>Shop Unavailable</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
-          <div style={styles.mobileEmptyState}>
+          <div style={styles.emptyState}>
             <Search size={48} />
-            <h3>No products found</h3>
-            <p>Try different search terms or filters</p>
+            <h3>No shops found</h3>
+            <p>Try different search terms</p>
             <button onClick={clearAllFilters} style={styles.clearFiltersButton}>
-              Clear All Filters
+              Clear Search
             </button>
-          </div>
-        )}
-
-        {/* Mobile Load More (if needed) */}
-        {filteredProducts.length > 0 && (
-          <div style={styles.mobileLoadMore}>
-            <span style={styles.loadMoreText}>
-              Showing all {filteredProducts.length} products
-            </span>
           </div>
         )}
       </div>
 
       <Footer />
 
-      {/* CSS Animations & Media Queries */}
+      {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -479,28 +389,18 @@ export default function ShopPage() {
           from { opacity: 0; transform: translateY(100%); }
           to { opacity: 1; transform: translateY(0); }
         }
-
-        @media (max-width: 768px) {
-          .card:hover {
-            transform: none;
-          }
-          
-          .card:active {
-            transform: scale(0.98);
-          }
-        }
       `}</style>
     </div>
   );
 }
 
+// ✅ STYLES: Same as your existing styles
 const styles = {
   pageContainer: {
     minHeight: '100vh',
     backgroundColor: '#f8fafc'
   },
   
-  // Loading & Error - Mobile Optimized
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -511,6 +411,7 @@ const styles = {
     padding: '20px',
     textAlign: 'center'
   },
+  
   spinner: {
     width: '40px',
     height: '40px',
@@ -519,6 +420,7 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
+  
   errorContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -529,6 +431,7 @@ const styles = {
     textAlign: 'center',
     padding: '20px'
   },
+  
   retryButton: {
     padding: '12px 24px',
     backgroundColor: '#3b82f6',
@@ -540,56 +443,49 @@ const styles = {
     fontWeight: '500'
   },
 
-  // Hero Section - Mobile First
   heroSection: {
     background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
     padding: '40px 20px 30px 20px',
     textAlign: 'center',
-    color: 'white',
-    '@media (min-width: 768px)': {
-      padding: '60px 20px'
-    }
+    color: 'white'
   },
+  
   heroContent: {
     maxWidth: '600px',
     margin: '0 auto'
   },
+  
   heroTitle: {
     fontSize: '2rem',
     fontWeight: '700',
     marginBottom: '12px',
-    lineHeight: '1.2',
-    '@media (min-width: 768px)': {
-      fontSize: '3rem',
-      marginBottom: '16px'
-    }
+    lineHeight: '1.2'
   },
+  
   heroSubtitle: {
     fontSize: '1rem',
     marginBottom: '24px',
-    opacity: 0.9,
-    '@media (min-width: 768px)': {
-      fontSize: '1.2rem',
-      marginBottom: '32px'
-    }
+    opacity: 0.9
   },
 
-  // Mobile-First Search
   searchContainer: {
     maxWidth: '100%',
     margin: '0 auto'
   },
+  
   searchBox: {
     position: 'relative',
     display: 'flex',
     alignItems: 'center'
   },
+  
   searchIcon: {
     position: 'absolute',
     left: '16px',
     color: '#64748b',
     zIndex: 1
   },
+  
   searchInput: {
     width: '100%',
     padding: '14px 16px 14px 44px',
@@ -602,18 +498,13 @@ const styles = {
     color: '#1e293b'
   },
 
-  // Main Container - Mobile Optimized
   container: { 
     maxWidth: '1200px', 
     margin: '0 auto', 
     padding: '20px 16px',
-    animation: 'fadeIn 0.6s ease-out',
-    '@media (min-width: 768px)': {
-      padding: '40px 20px'
-    }
+    animation: 'fadeIn 0.6s ease-out'
   },
 
-  // Mobile Toolbar
   mobileToolbar: {
     display: 'flex',
     alignItems: 'center',
@@ -621,6 +512,7 @@ const styles = {
     marginBottom: '20px',
     padding: '0 4px'
   },
+  
   toolbarButton: {
     display: 'flex',
     alignItems: 'center',
@@ -635,11 +527,13 @@ const styles = {
     color: '#374151',
     transition: 'all 0.2s'
   },
+  
   viewToggle: {
     display: 'flex',
     marginLeft: 'auto',
     gap: '4px'
   },
+  
   viewButton: {
     padding: '8px',
     border: '2px solid #e5e7eb',
@@ -651,13 +545,13 @@ const styles = {
     justifyContent: 'center',
     color: '#64748b'
   },
+  
   activeView: {
     backgroundColor: '#3b82f6',
     borderColor: '#3b82f6',
     color: 'white'
   },
 
-  // Mobile Dropdowns
   mobileDropdown: {
     position: 'fixed',
     top: 0,
@@ -668,6 +562,7 @@ const styles = {
     zIndex: 1000,
     animation: 'fadeIn 0.3s ease-out'
   },
+  
   dropdownContent: {
     position: 'absolute',
     bottom: 0,
@@ -678,6 +573,7 @@ const styles = {
     padding: '20px',
     animation: 'slideUp 0.3s ease-out'
   },
+  
   dropdownHeader: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -686,6 +582,7 @@ const styles = {
     paddingBottom: '16px',
     borderBottom: '1px solid #e5e7eb'
   },
+  
   closeButton: {
     background: 'none',
     border: 'none',
@@ -693,6 +590,7 @@ const styles = {
     padding: '4px',
     color: '#64748b'
   },
+  
   dropdownOption: {
     display: 'block',
     width: '100%',
@@ -705,319 +603,165 @@ const styles = {
     borderRadius: '8px',
     marginBottom: '4px'
   },
+  
   activeOption: {
     backgroundColor: '#eff6ff',
     color: '#3b82f6',
     fontWeight: '600'
   },
 
-  // Mobile Filters Panel
-  mobileFilters: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 1000,
-    animation: 'fadeIn 0.3s ease-out'
-  },
-  filtersContent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    borderRadius: '16px 16px 0 0',
-    padding: '20px',
-    maxHeight: '80vh',
-    overflowY: 'auto',
-    animation: 'slideUp 0.3s ease-out'
-  },
-  filtersHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '24px',
-    paddingBottom: '16px',
-    borderBottom: '1px solid #e5e7eb'
-  },
-  filterSection: {
-    marginBottom: '24px'
-  },
-  mobileSelect: {
-    width: '100%',
-    padding: '14px 16px',
-    border: '2px solid #e5e7eb',
-    borderRadius: '8px',
-    fontSize: '16px',
-    outline: 'none',
-    backgroundColor: 'white',
-    marginTop: '8px'
-  },
-  priceInputs: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginTop: '8px'
-  },
-  priceInput: {
-    flex: 1,
-    padding: '14px 16px',
-    border: '2px solid #e5e7eb',
-    borderRadius: '8px',
-    fontSize: '16px',
-    outline: 'none'
-  },
-  priceSeparator: {
-    color: '#64748b',
-    fontWeight: '500'
-  },
-  filterActions: {
-    display: 'flex',
-    gap: '12px',
-    paddingTop: '20px',
-    borderTop: '1px solid #e5e7eb'
-  },
-  clearButton: {
-    flex: 1,
-    padding: '14px',
-    backgroundColor: '#f8fafc',
-    border: '2px solid #e5e7eb',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '16px',
-    fontWeight: '500',
-    color: '#374151'
-  },
-  applyButton: {
-    flex: 1,
-    padding: '14px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '16px',
-    fontWeight: '600'
-  },
-
-  // Results Header
   resultsHeader: {
     marginBottom: '20px'
   },
+  
   resultsCount: {
     fontSize: '14px',
     color: '#64748b',
     fontWeight: '500'
   },
 
-  // Mobile Grid Layout
-  mobileGrid: { 
-    display: 'grid', 
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '16px',
-    '@media (min-width: 480px)': {
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '20px'
-    },
-    '@media (min-width: 768px)': {
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: '24px'
-    },
-    '@media (min-width: 1024px)': {
-      gridTemplateColumns: 'repeat(4, 1fr)'
-    }
-  },
-  mobileList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px'
+  // ✅ FIXED: 2 cards per row on mobile
+  shopsContainer: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',  // 2 cards per row on mobile
+    gap: '12px',
+    marginBottom: '40px'
   },
 
-  // Mobile Product Cards
-  mobileCard: {
+  // ✅ Mobile-Optimized Shop Card
+  shopCard: {
+    width: '100%',
+    minHeight: '260px',
     backgroundColor: 'white',
     borderRadius: '12px',
-    overflow: 'hidden',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    transition: 'all 0.2s ease',
+    overflow: 'hidden',
+    transition: 'all 0.3s ease',
+    display: 'flex',
+    flexDirection: 'column',
     animation: 'fadeIn 0.6s ease-out'
   },
-  mobileListCard: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '16px',
-    display: 'grid',
-    gridTemplateColumns: '80px 1fr',
-    gap: '12px',
-    alignItems: 'center',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    '@media (min-width: 480px)': {
-      gridTemplateColumns: '120px 1fr',
-      gap: '16px'
-    }
-  },
+
   cardLink: {
     textDecoration: 'none',
     color: 'inherit',
-    display: 'block'
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column'
   },
 
-  // Mobile Images
-  imageContainer: {
-    position: 'relative'
-  },
-  mobileImage: {
-    width: '100%',
-    height: '140px',
-    objectFit: 'cover',
-    backgroundColor: '#f3f4f6',
-    '@media (min-width: 480px)': {
-      height: '160px'
-    }
-  },
-  listImage: {
-    width: '80px',
-    height: '80px',
-    objectFit: 'cover',
-    borderRadius: '8px',
-    '@media (min-width: 480px)': {
-      width: '120px',
-      height: '120px'
-    }
-  },
-  stockBadge: {
-    position: 'absolute',
-    top: '8px',
-    right: '8px',
-    background: '#f59e0b',
-    color: 'white',
-    padding: '2px 6px',
-    borderRadius: '4px',
-    fontSize: '10px',
-    fontWeight: '600'
-  },
-  outOfStockBadge: {
-    position: 'absolute',
-    top: '8px',
-    right: '8px',
-    background: '#ef4444',
-    color: 'white',
-    padding: '2px 6px',
-    borderRadius: '4px',
-    fontSize: '10px',
-    fontWeight: '600'
-  },
-
-  // Mobile Content
-  mobileCardContent: {
+  logoContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: '12px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px'
-  },
-  mobileProductName: {
-    margin: 0,
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#1e293b',
-    lineHeight: '1.3',
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden'
-  },
-  mobileModelName: {
-    margin: 0,
-    fontSize: '12px',
-    color: '#64748b'
+    backgroundColor: '#f8fafc'
   },
 
-  // Mobile Price
-  mobilePriceContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    flexWrap: 'wrap'
+  // ✅ Perfect Round Shop Logo
+  shopLogo: {
+    width: '60px',
+    height: '60px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    border: '2px solid white',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
   },
-  mobileCurrentPrice: {
-    fontSize: '16px',
+
+  shopCardContent: {
+    padding: '10px',
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between'
+  },
+
+  shopName: {
+    margin: '0 0 4px 0',
+    fontSize: '13px',
     fontWeight: '700',
-    color: '#059669'
+    color: '#1e293b',
+    textAlign: 'center',
+    lineHeight: '1.2'
   },
-  mobileOriginalPrice: {
-    fontSize: '12px',
-    color: '#64748b',
-    textDecoration: 'line-through'
-  },
-  mobileDiscount: {
+
+  shopTagline: {
+    margin: '0 0 6px 0',
     fontSize: '10px',
-    background: '#dcfce7',
-    color: '#166534',
-    padding: '2px 4px',
-    borderRadius: '3px',
-    fontWeight: '600'
+    color: '#3b82f6',
+    fontWeight: '500',
+    textAlign: 'center'
   },
 
-  // Mobile Store & Rating
-  mobileStoreInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    fontSize: '12px',
-    color: '#64748b'
-  },
-  mobileRating: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '3px',
-    fontSize: '12px',
-    color: '#64748b'
+  shopDescription: {
+    margin: '0 0 8px 0',
+    fontSize: '10px',
+    color: '#64748b',
+    lineHeight: '1.3',
+    textAlign: 'center',
+    flex: 1
   },
 
-  // Mobile Actions
-  mobileActions: {
-    padding: '0 12px 12px 12px',
+  shopInfoContainer: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px'
+    gap: '3px',
+    marginTop: 'auto'
   },
-  mobileAddToCartButton: {
+
+  shopInfoItem: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '6px',
+    gap: '3px',
+    fontSize: '9px',
+    color: '#64748b'
+  },
+
+  shopActions: {
+    padding: '8px',
+    borderTop: '1px solid #e5e7eb',
+    backgroundColor: '#f8fafc'
+  },
+
+  viewShopButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
     width: '100%',
-    padding: '10px 12px',
+    padding: '6px 8px',
     backgroundColor: '#3b82f6',
     color: 'white',
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
-    fontSize: '13px',
+    fontSize: '10px',
     fontWeight: '600',
     transition: 'all 0.2s'
   },
-  mobileDisabledButton: {
-    backgroundColor: '#9ca3af',
-    cursor: 'not-allowed'
-  },
-  mobileDeliveryInfo: {
+
+  disabledButton: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '4px',
-    fontSize: '11px',
-    color: '#059669'
+    width: '100%',
+    padding: '6px 8px',
+    backgroundColor: '#9ca3af',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '10px',
+    fontWeight: '500',
+    cursor: 'not-allowed'
   },
 
-  // Mobile Empty State
-  mobileEmptyState: {
+  emptyState: {
     textAlign: 'center',
     padding: '60px 20px',
     color: '#64748b'
   },
+
   clearFiltersButton: {
     marginTop: '20px',
     padding: '12px 24px',
@@ -1028,16 +772,5 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500'
-  },
-
-  // Mobile Load More
-  mobileLoadMore: {
-    textAlign: 'center',
-    padding: '20px',
-    marginTop: '20px'
-  },
-  loadMoreText: {
-    fontSize: '14px',
-    color: '#64748b'
   }
 };

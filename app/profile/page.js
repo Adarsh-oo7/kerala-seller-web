@@ -16,14 +16,17 @@ import {
   LogOut,
   ChevronRight,
   ArrowLeft,
-  Settings
+  Settings,
+  Heart
 } from 'lucide-react';
 
 const PROFILE_API = 'http://localhost:8000/api/buyer/profile/';
+const WISHLIST_API = 'http://localhost:8000/api/wishlist/'; // ✅ Updated API endpoint
 
 export default function ProfilePage() {
   const [buyer, setBuyer] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const router = useRouter();
 
   const getAuthHeaders = useCallback(() => {
@@ -43,6 +46,26 @@ export default function ProfilePage() {
       try {
         const response = await axios.get(PROFILE_API, { headers });
         setBuyer(response.data);
+        
+        // ✅ Fetch wishlist count from correct Django API
+        try {
+          const wishlistResponse = await axios.get(WISHLIST_API, { headers });
+          // Count items in the wishlist
+          const wishlistData = wishlistResponse.data;
+          if (wishlistData && wishlistData.items) {
+            setWishlistCount(wishlistData.items.length);
+          } else if (Array.isArray(wishlistData)) {
+            setWishlistCount(wishlistData.length);
+          } else {
+            setWishlistCount(0);
+          }
+        } catch (wishlistError) {
+          console.log("Wishlist API error:", wishlistError);
+          // Fallback to localStorage wishlist count
+          const localWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+          setWishlistCount(localWishlist.length);
+        }
+        
       } catch (error) {
         console.error("Failed to fetch profile:", error);
         if (error.response?.status === 401) {
@@ -67,38 +90,30 @@ export default function ProfilePage() {
   };
 
   const handleBackClick = () => {
-    // Check if we have a stored path from before login
     const preLoginPath = sessionStorage.getItem('preLoginPath');
     
     if (preLoginPath && preLoginPath !== '/profile') {
-      // Clear the stored path and navigate to it
       sessionStorage.removeItem('preLoginPath');
       sessionStorage.removeItem('cameFromLogin');
       
-      // Ensure we're navigating to a valid path
       if (preLoginPath.startsWith('/') && !preLoginPath.includes('/login') && !preLoginPath.includes('/register')) {
         router.push(preLoginPath);
         return;
       }
     }
     
-    // Check if we came directly from login
     const cameFromLogin = sessionStorage.getItem('cameFromLogin');
     if (cameFromLogin === 'true') {
       sessionStorage.removeItem('cameFromLogin');
-      // Go to home page since we came directly from login
       router.push('/');
       return;
     }
     
-    // Try browser back, but with fallback
     try {
-      // Check if we have history to go back to
       if (typeof window !== 'undefined' && window.history.length > 1) {
         const referrer = document.referrer;
         const currentOrigin = window.location.origin;
         
-        // If referrer exists and is from our site (but not login/register pages), use browser back
         if (referrer && 
             referrer.startsWith(currentOrigin) && 
             !referrer.includes('/login') && 
@@ -106,16 +121,13 @@ export default function ProfilePage() {
             !referrer.includes('/profile')) {
           router.back();
         } else {
-          // Otherwise go to home
           router.push('/');
         }
       } else {
-        // No history, go to home
         router.push('/');
       }
     } catch (error) {
       console.error('Navigation error:', error);
-      // Fallback to home page
       router.push('/');
     }
   };
@@ -240,6 +252,25 @@ export default function ProfilePage() {
                 <ChevronRight size={20} style={styles.chevron} />
               </Link>
 
+              {/* ✅ Updated Wishlist Menu Item */}
+              <Link href="/profile/wishlist" style={styles.menuItem}>
+                <div style={styles.menuItemContent}>
+                  <div style={{...styles.menuIcon, color: '#dc2626'}}>
+                    <Heart size={24} />
+                  </div>
+                  <div style={styles.menuInfo}>
+                    <span style={styles.menuLabel}>My Wishlist</span>
+                    <p style={styles.menuDesc}>
+                      {wishlistCount > 0 
+                        ? `${wishlistCount} item${wishlistCount !== 1 ? 's' : ''} saved for later`
+                        : 'Save products for later'
+                      }
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight size={20} style={styles.chevron} />
+              </Link>
+
               <Link href="/profile/verification" style={styles.menuItem}>
                 <div style={styles.menuItemContent}>
                   <div style={styles.menuIcon}>
@@ -272,9 +303,9 @@ export default function ProfilePage() {
                 </span>
               </div>
               <div style={styles.summaryItem}>
-                <span style={styles.summaryLabel}>Verification</span>
-                <span style={styles.summaryValue}>
-                  {buyer.phone_verified ? 'Complete' : 'Pending'}
+                <span style={styles.summaryLabel}>Wishlist Items</span>
+                <span style={{...styles.summaryValue, color: '#dc2626'}}>
+                  {wishlistCount} {wishlistCount === 1 ? 'item' : 'items'}
                 </span>
               </div>
             </div>
@@ -282,7 +313,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Add CSS for animations */}
+      {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -308,13 +339,13 @@ export default function ProfilePage() {
   );
 }
 
+// Keep all existing styles the same
 const styles = {
   pageContainer: {
     minHeight: '100vh',
     backgroundColor: '#f8fafc'
   },
   
-  // Loading & Error States
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -352,7 +383,6 @@ const styles = {
     fontWeight: '500'
   },
 
-  // Header
   header: {
     backgroundColor: 'white',
     borderBottom: '1px solid #e2e8f0',
@@ -380,10 +410,7 @@ const styles = {
     fontWeight: '500',
     padding: '8px',
     cursor: 'pointer',
-    transition: 'all 0.2s',
-    ':hover': {
-      color: '#2563eb'
-    }
+    transition: 'all 0.2s'
   },
   backText: {
     display: 'none',
@@ -421,7 +448,6 @@ const styles = {
     }
   },
 
-  // Container
   container: {
     maxWidth: '1200px',
     margin: '0 auto',
@@ -437,7 +463,6 @@ const styles = {
     animation: 'fadeIn 0.6s ease-out'
   },
 
-  // Profile Card
   profileCard: {
     backgroundColor: 'white',
     borderRadius: '16px',
@@ -520,7 +545,6 @@ const styles = {
     }
   },
 
-  // Info Cards
   infoCards: {
     display: 'grid',
     gridTemplateColumns: '1fr',
@@ -573,7 +597,6 @@ const styles = {
     lineHeight: '1.5'
   },
 
-  // Menu Section
   menuSection: {
     backgroundColor: 'white',
     borderRadius: '16px',
@@ -655,7 +678,6 @@ const styles = {
     flexShrink: 0
   },
 
-  // Summary Card
   summaryCard: {
     backgroundColor: 'white',
     borderRadius: '16px',
