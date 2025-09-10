@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import { jwtDecode } from "jwt-decode";
 import { ArrowLeft, Mail, Lock, AlertCircle, User } from 'lucide-react';
 
 // ==============================================================================
@@ -34,7 +33,6 @@ function EmailLoginForm({ onLoginSuccess }) {
         e.preventDefault();
         setError('');
         
-        // Client-side validation
         if (!email || !password) {
             setError('Email and password are required.');
             return;
@@ -49,7 +47,9 @@ function EmailLoginForm({ onLoginSuccess }) {
         
         try {
             const response = await axios.post(EMAIL_LOGIN_API, { email, password });
-            onLoginSuccess(response.data.token);
+            // ✅ Fixed: Handle different token field names
+            const token = response.data.token || response.data.access_token;
+            onLoginSuccess(token);
         } catch (err) {
             console.error('Login error:', err);
             const errorMessage = err.response?.data?.error || 
@@ -61,6 +61,7 @@ function EmailLoginForm({ onLoginSuccess }) {
         }
     };
 
+    // Rest of EmailLoginForm remains the same...
     return (
         <form onSubmit={handleSubmit} style={styles.form}>
             <div style={styles.inputGroup}>
@@ -136,7 +137,10 @@ function LoginContent() {
     const searchParams = useSearchParams();
     
     const handleLoginSuccess = useCallback((token) => {
-        localStorage.setItem('buyerAccessToken', token);
+        // ✅ Store token properly for API calls
+        localStorage.setItem('access_token', token);
+        localStorage.setItem('buyerAccessToken', token); // Keep both for compatibility
+        
         const redirectTo = searchParams.get('redirect');
         
         if (redirectTo) {
@@ -147,26 +151,42 @@ function LoginContent() {
     }, [router, searchParams]);
     
     useEffect(() => {
-        const token = localStorage.getItem('buyerAccessToken');
+        const token = localStorage.getItem('buyerAccessToken') || localStorage.getItem('access_token');
         if (token) {
             handleLoginSuccess(token);
         }
     }, [router, handleLoginSuccess]);
 
+    // ✅ FIXED: Google Login Handler - Send JWT credential, not decoded data
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
-            const decodedToken = jwtDecode(credentialResponse.credential);
-            const userData = {
-                email: decodedToken.email,
-                name: decodedToken.name,
-                picture: decodedToken.picture
-            };
+            console.log('🔍 Google credential received');
             
-            const response = await axios.post(GOOGLE_LOGIN_API, userData);
-            handleLoginSuccess(response.data.token);
+            // ✅ Send the raw JWT credential to Django backend
+            const response = await axios.post(GOOGLE_LOGIN_API, {
+                credential: credentialResponse.credential  // Send JWT token
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                withCredentials: true
+            });
+            
+            console.log('✅ Google login response:', response.data);
+            
+            // ✅ Handle Django response format
+            const token = response.data.access_token || response.data.token;
+            if (token) {
+                handleLoginSuccess(token);
+            } else {
+                throw new Error('No token received from server');
+            }
+            
         } catch (error) {
-            console.error("Google login failed:", error);
-            alert("Google login failed. Please try again.");
+            console.error("❌ Google login failed:", error);
+            const errorMessage = error.response?.data?.error || 'Google login failed. Please try again.';
+            alert(errorMessage);
         }
     };
 
@@ -217,12 +237,15 @@ function LoginContent() {
                     </div>
                     
                     <div style={styles.googleButtonWrapper}>
+                        {/* ✅ FIXED: Use pixel width instead of percentage */}
                         <GoogleLogin 
                             onSuccess={handleGoogleSuccess} 
                             onError={handleGoogleError}
                             theme="outline"
                             size="large"
-                            width="100%"
+                            width="350"  // ✅ Changed from "100%" to pixel value
+                            text="signin_with"
+                            shape="rectangular"
                         />
                     </div>
                     
@@ -275,11 +298,20 @@ export default function BuyerLoginPage() {
     // Check if Google Client ID is available
     if (!GOOGLE_CLIENT_ID) {
         console.warn('Google Client ID not found. Google login will not work.');
+        return (
+            <div style={styles.container}>
+                <div style={styles.card}>
+                    <div style={styles.errorContainer}>
+                        <AlertCircle size={16} />
+                        <span>Google login is not configured. Please contact support.</span>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (
-        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID || ''}>
-            {/* ✅ Wrap the component that uses useSearchParams in Suspense */}
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
             <Suspense fallback={<LoginLoading />}>
                 <LoginContent />
             </Suspense>
@@ -288,9 +320,10 @@ export default function BuyerLoginPage() {
 }
 
 // ==============================================================================
-// ENHANCED STYLES
+// ENHANCED STYLES (keeping all your existing styles)
 // ==============================================================================
 const styles = {
+    // ... (all your existing styles remain the same)
     pageContainer: { 
         minHeight: '100vh', 
         backgroundColor: '#f8fafc' 
