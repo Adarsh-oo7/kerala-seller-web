@@ -17,11 +17,38 @@ import {
   X
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// ✅ Enhanced environment variable handling for your hosted backend
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  
+  console.log('Environment check:', {
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NODE_ENV: process.env.NODE_ENV
+  });
+  
+  if (envUrl && envUrl !== 'undefined') {
+    return envUrl;
+  }
+  
+  // Updated fallback with your hosted backend URL
+  return process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:8000' 
+    : 'https://keralaseller-backend.onrender.com';  // ✅ Your hosted backend
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/send-otp/`;
 const VERIFY_OTP_API = `${API_BASE_URL}/user/buyer/verify-otp/`;
+
+console.log('🌐 Verification API URLs configured:', { 
+  API_BASE_URL, 
+  PROFILE_API, 
+  SEND_OTP_API, 
+  VERIFY_OTP_API,
+  ENVIRONMENT: process.env.NODE_ENV 
+});
 
 export default function VerificationPage() {
   const [buyer, setBuyer] = useState(null);
@@ -67,21 +94,27 @@ export default function VerificationPage() {
     setError('');
     
     try {
-      console.log('Fetching profile from:', PROFILE_API);
-      const response = await axios.get(PROFILE_API, { headers });
+      console.log('🔄 Fetching profile from:', PROFILE_API);
+      const response = await axios.get(PROFILE_API, { 
+        headers,
+        timeout: 15000  // ✅ Increased timeout for hosted backend
+      });
       
-      console.log('Profile data received:', response.data);
+      console.log('✅ Profile data received:', response.data);
       setBuyer(response.data);
       const profilePhone = response.data.phone_number || '';
       setPhoneNumber(profilePhone);
       setIsPhoneEditable(!profilePhone);
       
     } catch (error) {
-      console.error("Failed to fetch profile:", error);
+      console.error("❌ Failed to fetch profile:", error);
       if (error.response?.status === 401) {
         router.push('/login/buyer');
       } else {
-        setError('Failed to load profile. Please try again.');
+        const errorMessage = error.code === 'ECONNABORTED' 
+          ? 'Server timeout - please check your connection'
+          : 'Failed to load profile from server. Please try again.';
+        setError(errorMessage);
       }
     } finally {
       setIsLoading(false);
@@ -97,6 +130,16 @@ export default function VerificationPage() {
     return phoneRegex.test(phone.replace(/\s+/g, ''));
   };
 
+  // ✅ Enhanced 6-digit OTP validation
+  const validateOTP = (otpValue) => {
+    const isValid = otpValue.length === 6 && /^\d{6}$/.test(otpValue);
+    if (!isValid) {
+      setError('Please enter a valid 6-digit numeric OTP');
+      return false;
+    }
+    return true;
+  };
+
   const handleSendOtp = async () => {
     if (!phoneNumber || !validatePhoneNumber(phoneNumber)) {
       setError('Please enter a valid 10-digit mobile number starting with 6-9');
@@ -110,22 +153,34 @@ export default function VerificationPage() {
     setError('');
     
     try {
-      console.log('Sending OTP to:', phoneNumber);
-      await axios.post(SEND_OTP_API, { phone: phoneNumber }, { headers });
+      console.log('🔄 Sending OTP to:', phoneNumber);
+      await axios.post(SEND_OTP_API, { phone: phoneNumber }, { 
+        headers,
+        timeout: 15000  // ✅ Increased timeout for hosted backend
+      });
       
       setOtpSent(true);
       setResendTimer(60); // 60 seconds countdown
       setOtpAttempts(0);
-      setSuccessMessage(`OTP sent to +91 ${phoneNumber}`);
+      setSuccessMessage(`6-digit OTP sent to +91 ${phoneNumber}`);
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
       
     } catch (error) {
-      console.error('OTP sending failed:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error ||
-                          'Failed to send OTP. Please try again.';
+      console.error('❌ OTP sending failed:', error);
+      
+      let errorMessage = 'Failed to send OTP. Please try again.';
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Server timeout - please check your connection and try again.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.request) {
+        errorMessage = 'Unable to connect to server. Please check your internet connection.';
+      }
+      
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -133,8 +188,8 @@ export default function VerificationPage() {
   };
 
   const handleVerifyOtp = async () => {
-    if (!otp || otp.length !== 4 || !/^\d{4}$/.test(otp)) {
-      setError('Please enter a valid 4-digit OTP');
+    // ✅ Updated to validate 6-digit OTP
+    if (!validateOTP(otp)) {
       return;
     }
 
@@ -145,13 +200,16 @@ export default function VerificationPage() {
     setError('');
     
     try {
-      console.log('Verifying OTP:', otp);
+      console.log('🔄 Verifying 6-digit OTP:', otp);
       await axios.post(VERIFY_OTP_API, { 
         otp, 
         phone: phoneNumber 
-      }, { headers });
+      }, { 
+        headers,
+        timeout: 15000  // ✅ Increased timeout for hosted backend
+      });
       
-      setSuccessMessage('Phone verified successfully!');
+      setSuccessMessage('Phone verified successfully! 🎉');
       
       // Refresh profile data
       await fetchProfile();
@@ -162,12 +220,20 @@ export default function VerificationPage() {
       }, 2000);
       
     } catch (error) {
-      console.error('OTP verification failed:', error);
+      console.error('❌ OTP verification failed:', error);
       setOtpAttempts(prev => prev + 1);
       
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error ||
-                          'Invalid OTP. Please try again.';
+      let errorMessage = 'Invalid OTP. Please try again.';
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Server timeout - please try verifying again.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.request) {
+        errorMessage = 'Unable to connect to server. Please check your connection.';
+      }
+      
       setError(errorMessage);
       
       // Clear OTP input on failure
@@ -211,7 +277,10 @@ export default function VerificationPage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p>Loading verification details...</p>
+        <p>Loading verification details from server...</p>
+        <p style={{fontSize: '12px', color: '#666'}}>
+          🌐 Connected to: {API_BASE_URL}
+        </p>
       </div>
     );
   }
@@ -230,6 +299,10 @@ export default function VerificationPage() {
       </header>
 
       <div style={styles.container}>
+        <p style={{fontSize: '12px', color: '#666', textAlign: 'center', marginBottom: '16px'}}>
+          🌐 Connected to: {API_BASE_URL}
+        </p>
+        
         {/* Success Message */}
         {successMessage && (
           <div style={styles.successAlert}>
@@ -302,7 +375,7 @@ export default function VerificationPage() {
                 <div>
                   <h2 style={styles.sectionTitle}>Verify Your Phone Number</h2>
                   <p style={styles.sectionDescription}>
-                    Secure your account and enable shopping by verifying your phone number.
+                    Secure your account and enable shopping by verifying your phone number with a 6-digit OTP.
                   </p>
                 </div>
               </div>
@@ -348,7 +421,7 @@ export default function VerificationPage() {
                       )}
                     </div>
                     <p style={styles.helpText}>
-                      Enter your mobile number to receive verification OTP
+                      Enter your mobile number to receive a 6-digit verification OTP
                     </p>
                   </div>
                   
@@ -363,12 +436,12 @@ export default function VerificationPage() {
                     {isSubmitting ? (
                       <>
                         <div style={styles.buttonSpinner}></div>
-                        Sending OTP...
+                        Sending 6-digit OTP...
                       </>
                     ) : (
                       <>
                         <MessageCircle size={16} />
-                        Send OTP
+                        Send 6-digit OTP
                       </>
                     )}
                   </button>
@@ -377,47 +450,50 @@ export default function VerificationPage() {
                 <div style={styles.otpSection}>
                   <div style={styles.otpSentInfo}>
                     <MessageCircle size={16} />
-                    <span>OTP sent to +91 {phoneNumber}</span>
+                    <span>6-digit OTP sent to +91 {phoneNumber}</span>
                   </div>
                   
                   <div style={styles.formGroup}>
-                    <label style={styles.label}>Enter Verification Code</label>
+                    <label style={styles.label}>Enter 6-digit Verification Code</label>
                     <input
                       type="text"
                       value={otp}
                       onChange={(e) => {
+                        // ✅ Updated to handle 6-digit input
                         const value = e.target.value.replace(/\D/g, '');
-                        setOtp(value);
-                        if (error) setError('');
+                        if (value.length <= 6) {
+                          setOtp(value);
+                          if (error) setError('');
+                        }
                       }}
-                      placeholder="Enter 4-digit OTP"
+                      placeholder="000000"
                       style={styles.otpInput}
-                      maxLength={4}
+                      maxLength={6}
                       autoFocus
                     />
                     <p style={styles.helpText}>
-                      Check your SMS for the 4-digit verification code
+                      Check your SMS for the 6-digit verification code
                     </p>
                   </div>
 
                   <div style={styles.otpActions}>
                     <button
                       onClick={handleVerifyOtp}
-                      disabled={isSubmitting || otp.length !== 4}
+                      disabled={isSubmitting || otp.length !== 6}
                       style={{
                         ...styles.verifyButton,
-                        ...(isSubmitting || otp.length !== 4 ? styles.disabledButton : {})
+                        ...(isSubmitting || otp.length !== 6 ? styles.disabledButton : {})
                       }}
                     >
                       {isSubmitting ? (
                         <>
                           <div style={styles.buttonSpinner}></div>
-                          Verifying...
+                          Verifying 6-digit OTP...
                         </>
                       ) : (
                         <>
                           <Check size={16} />
-                          Verify OTP
+                          Verify 6-digit OTP
                         </>
                       )}
                     </button>

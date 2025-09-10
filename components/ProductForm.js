@@ -3,10 +3,81 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const CATEGORIES_API_URL = 'http://localhost:8000/api/categories/';
-const PRODUCTS_API_URL = 'http://localhost:8000/user/store/products/';
+// ✅ Enhanced environment variable handling for your hosted backend
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  
+  console.log('Environment check:', {
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NODE_ENV: process.env.NODE_ENV
+  });
+  
+  if (envUrl && envUrl !== 'undefined') {
+    return envUrl;
+  }
+  
+  // Updated fallback with your hosted backend URL
+  return process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:8000' 
+    : 'https://keralaseller-backend.onrender.com';  // ✅ Your hosted backend
+};
 
-// CategorySelector Component (inline for your convenience)
+const API_BASE_URL = getApiBaseUrl();
+const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
+const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
+
+console.log('🌐 API URLs configured:', { 
+  API_BASE_URL, 
+  CATEGORIES_API_URL, 
+  PRODUCTS_API_URL,
+  ENVIRONMENT: process.env.NODE_ENV 
+});
+
+// ✅ Create Axios instance with proper configuration for hosted backend
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 20000,  // Increased timeout for hosted backend operations
+  headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+  }
+});
+
+// Request interceptor
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Token ${token}`;
+    }
+    console.log('🔄 Making API request to:', `${config.baseURL}${config.url}`);
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor
+apiClient.interceptors.response.use(
+  (response) => {
+    console.log('✅ API response received:', {
+      status: response.status,
+      url: response.config.url
+    });
+    return response;
+  },
+  (error) => {
+    console.error('❌ API error:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      message: error.message,
+      data: error.response?.data
+    });
+    return Promise.reject(error);
+  }
+);
+
+// CategorySelector Component (enhanced for production)
 const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesChange }) => {
   const [allCategories, setAllCategories] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
@@ -17,6 +88,8 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
   const [isSubmittingCustom, setIsSubmittingCustom] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   // Load all categories on mount
   useEffect(() => {
@@ -25,18 +98,26 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
 
   const fetchCategories = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await axios.get(CATEGORIES_API_URL, { 
-        headers: { Authorization: `Token ${token}` } 
-      });
+      setLoading(true);
+      setError('');
+      
+      console.log('🔄 Fetching categories from:', CATEGORIES_API_URL);
+      
+      const response = await apiClient.get('/api/categories/');
       const categories = response.data.results || response.data;
+      
+      console.log('📊 Categories loaded:', categories.length);
+      
       setAllCategories(categories);
       
       // Show root categories initially
       const rootCategories = categories.filter(cat => !cat.parent);
       setCurrentCategories(rootCategories);
     } catch (err) {
-      console.error('Failed to load categories:', err);
+      console.error('❌ Failed to load categories:', err);
+      setError('Failed to load categories from server');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -117,23 +198,24 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     if (!customCategoryName.trim()) return;
 
     setIsSubmittingCustom(true);
-    const token = localStorage.getItem('accessToken');
     
     const parentId = currentPath.length > 0 ? currentPath[currentPath.length - 1].id : null;
     
     try {
-      const response = await axios.post(CATEGORIES_API_URL, {
+      console.log('🔄 Creating custom category:', {
+        name: customCategoryName.trim(),
+        parent: parentId
+      });
+      
+      const response = await apiClient.post('/api/categories/', {
         name: customCategoryName.trim(),
         description: customCategoryDesc.trim(),
         parent: parentId
-      }, {
-        headers: { 
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json'
-        }
       });
 
       const newCategory = response.data;
+      
+      console.log('✅ Custom category created:', newCategory);
       
       // Refresh categories
       await fetchCategories();
@@ -150,8 +232,9 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       
       alert('Custom category created successfully!');
     } catch (err) {
-      console.error('Failed to create custom category:', err);
-      alert('Failed to create category. Please try again.');
+      console.error('❌ Failed to create custom category:', err);
+      const errorMessage = err.response?.data?.detail || err.response?.data?.error || 'Failed to create category. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsSubmittingCustom(false);
     }
@@ -189,6 +272,19 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       fontWeight: '500',
       backgroundColor: '#d4edda',
       padding: '4px 8px',
+      borderRadius: '4px'
+    },
+    loadingContainer: {
+      textAlign: 'center',
+      padding: '20px',
+      color: '#666'
+    },
+    errorContainer: {
+      textAlign: 'center',
+      padding: '20px',
+      color: '#dc3545',
+      backgroundColor: '#f8d7da',
+      border: '1px solid #f5c6cb',
       borderRadius: '4px'
     },
     breadcrumb: {
@@ -420,6 +516,35 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       border: '1px solid #e9ecef'
     }
   };
+
+  if (loading) {
+    return (
+      <div style={categoryStyles.container}>
+        <div style={categoryStyles.header}>
+          <label style={categoryStyles.label}>Product Category*</label>
+        </div>
+        <div style={categoryStyles.loadingContainer}>
+          <p>Loading categories from server...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={categoryStyles.container}>
+        <div style={categoryStyles.header}>
+          <label style={categoryStyles.label}>Product Category*</label>
+        </div>
+        <div style={categoryStyles.errorContainer}>
+          <p>⚠️ {error}</p>
+          <button onClick={fetchCategories} style={categoryStyles.clearSearchButton}>
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={categoryStyles.container}>
@@ -702,7 +827,6 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
-    const token = localStorage.getItem('accessToken');
     
     const submissionData = new FormData();
     
@@ -733,10 +857,13 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     const method = product ? 'patch' : 'post';
 
     console.log('=== DEBUG: Form submission ===');
+    console.log('API URL:', url);
+    console.log('Method:', method);
     console.log('Selected category ID:', selectedCategoryId);
     console.log('Main image file:', mainImageFile);
     console.log('Sub image files:', subImageFiles);
     console.log('Form data keys:', Array.from(submissionData.keys()));
+    console.log('Environment:', process.env.NODE_ENV);
     console.log('===============================');
 
     try {
@@ -746,15 +873,17 @@ export default function ProductForm({ product, onClose, onSuccess }) {
         data: submissionData, 
         headers: {
           'Content-Type': 'multipart/form-data',
-          Authorization: `Token ${token}`
-        }
+          Authorization: `Token ${localStorage.getItem('accessToken')}`
+        },
+        timeout: 30000  // 30 second timeout for file uploads to hosted backend
       });
+      
       console.log('✅ Product saved successfully:', response.data);
       onSuccess();
     } catch (err) {
       console.error('❌ Error saving product:', err.response?.data || err);
       
-      let errorMessage = 'Failed to save product. Please check your input.';
+      let errorMessage = 'Failed to save product to server. Please check your input.';
       
       if (err.response?.data) {
         if (typeof err.response.data === 'string') {
@@ -767,7 +896,13 @@ export default function ProductForm({ product, onClose, onSuccess }) {
           errorMessage = `Main image error: ${err.response.data.main_image[0]}`;
         } else if (err.response.data.sub_images) {
           errorMessage = `Sub images error: ${err.response.data.sub_images[0]}`;
+        } else if (err.response.data.category) {
+          errorMessage = `Category error: ${err.response.data.category[0]}`;
         }
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout - the server took too long to respond. Please try again.';
+      } else if (err.request) {
+        errorMessage = 'Unable to connect to server. Please check your internet connection.';
       }
       
       setError(errorMessage);
@@ -780,6 +915,10 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     <div style={styles.modalOverlay}>
       <div style={styles.modalContent}>
         <h2>{product ? 'Edit Product' : 'Add New Product'}</h2>
+        <p style={{fontSize: '12px', color: '#666', marginBottom: '16px'}}>
+          🌐 Connected to: {API_BASE_URL}
+        </p>
+        
         <form onSubmit={handleSubmit}>
           {/* --- Standard Fields --- */}
           <div style={styles.formGroup}>
@@ -947,7 +1086,19 @@ export default function ProductForm({ product, onClose, onSuccess }) {
             </small>
           </div>
           
-          {error && <p style={{color: 'red', fontSize: '14px', marginTop: '10px'}}>{error}</p>}
+          {error && (
+            <div style={{
+              color: '#dc3545',
+              fontSize: '14px',
+              marginTop: '10px',
+              padding: '10px',
+              backgroundColor: '#f8d7da',
+              border: '1px solid #f5c6cb',
+              borderRadius: '4px'
+            }}>
+              ⚠️ {error}
+            </div>
+          )}
           
           <div style={styles.buttonContainer}>
             <button 
@@ -963,7 +1114,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
               disabled={isSubmitting || !selectedCategoryId} 
               style={styles.buttonPrimary}
             >
-              {isSubmitting ? 'Saving...' : 'Save Product'}
+              {isSubmitting ? 'Saving to server...' : 'Save Product'}
             </button>
           </div>
         </form>
