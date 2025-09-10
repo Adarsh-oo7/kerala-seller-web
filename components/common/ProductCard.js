@@ -4,6 +4,18 @@ import { useState, useEffect } from "react"
 import { Heart, Star, ShoppingCart } from "lucide-react"
 import Link from "next/link"
 
+// ✅ Enhanced API base URL function
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
+  }
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  return 'https://keralaseller-backend.onrender.com';
+};
+
 export default function ProductCard({
   id,
   title,
@@ -19,7 +31,8 @@ export default function ProductCard({
   isWishlisted = false,
   onlineStock = 1,
   storeName,
-  modelName
+  modelName,
+  sellerPhone
 }) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
@@ -43,7 +56,7 @@ export default function ProductCard({
     }, 2000)
   }
 
-  // ✅ FIXED API ENDPOINT - CALLING DJANGO DIRECTLY
+  // ✅ Enhanced wishlist toggle with proper token handling
   const handleWishlistToggle = async (e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -52,14 +65,16 @@ export default function ProductCard({
     
     setIsWishlistLoading(true)
     const newWishlistState = !wishlistState
-    setWishlistState(newWishlistState)
+    setWishlistState(newWishlistState) // Optimistic update
     
     try {
-      const token = localStorage.getItem('buyerAccessToken')
+      // ✅ Check both possible token keys
+      const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken')
       
       if (token) {
-        // ✅ UPDATED URL - DIRECT DJANGO API CALL
-        const response = await fetch('http://localhost:8000/api/wishlist/toggle_product/', {
+        console.log('🔍 Making wishlist API call for product:', id)
+        
+        const response = await fetch(`${getApiBaseUrl()}/api/wishlist/toggle_product/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -69,6 +84,7 @@ export default function ProductCard({
         })
         
         const data = await response.json()
+        console.log('✅ Wishlist API response:', data)
         
         if (response.ok) {
           setWishlistState(data.is_wishlisted)
@@ -78,14 +94,26 @@ export default function ProductCard({
           }
           
           // Show success feedback
-          console.log(newWishlistState ? "Added to wishlist ❤️" : "Removed from wishlist")
+          const action = data.action || (data.is_wishlisted ? 'added' : 'removed')
+          console.log(`${action === 'added' ? '✅ Added to' : '❌ Removed from'} wishlist: ${title}`)
+          
         } else {
           // Revert optimistic update on error
           setWishlistState(!newWishlistState)
-          console.error('Wishlist API error:', data.error)
+          console.error('❌ Wishlist API error:', data.error)
+          
+          // Check if it's an auth error
+          if (response.status === 401) {
+            console.log('🔄 Token expired, redirecting to login')
+            localStorage.removeItem('access_token')
+            localStorage.removeItem('buyerAccessToken')
+            window.location.href = '/login/buyer'
+            return
+          }
         }
       } else {
-        // ✅ FALLBACK TO LOCALSTORAGE FOR GUEST USERS
+        // ✅ Enhanced localStorage fallback for guest users
+        console.log('🔍 No token found, using localStorage fallback')
         const existingWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]')
         
         if (newWishlistState) {
@@ -100,6 +128,7 @@ export default function ProductCard({
             online_stock: onlineStock,
             store: storeName ? { name: storeName } : null,
             model_name: modelName,
+            seller_phone: sellerPhone,
             added_at: new Date().toISOString()
           }
           
@@ -107,10 +136,12 @@ export default function ProductCard({
           if (existingIndex === -1) {
             existingWishlist.push(productData)
             localStorage.setItem('wishlist', JSON.stringify(existingWishlist))
+            console.log('✅ Added to localStorage wishlist:', title)
           }
         } else {
           const updatedWishlist = existingWishlist.filter(item => item.id !== id)
           localStorage.setItem('wishlist', JSON.stringify(updatedWishlist))
+          console.log('❌ Removed from localStorage wishlist:', title)
         }
         
         if (onToggleWishlist) {
@@ -118,10 +149,41 @@ export default function ProductCard({
         }
       }
     } catch (error) {
+      // Revert optimistic update on network error
       setWishlistState(!newWishlistState)
-      console.error('Network error:', error)
+      console.error('❌ Network error:', error)
+      
+      // Show user-friendly error message
+      if (window.navigator.onLine === false) {
+        console.log('📡 No internet connection')
+      }
     } finally {
       setIsWishlistLoading(false)
+    }
+  }
+
+  // ✅ Enhanced add to cart handler
+  const handleAddToCart = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (onlineStock === 0) return
+    
+    try {
+      if (onAddToCart) {
+        await onAddToCart(e, {
+          id,
+          name: title,
+          price,
+          mrp,
+          main_image_url: primaryImage,
+          online_stock: onlineStock,
+          seller_phone: sellerPhone,
+          store: storeName ? { name: storeName } : null
+        })
+      }
+    } catch (error) {
+      console.error('❌ Add to cart error:', error)
     }
   }
 
@@ -130,14 +192,33 @@ export default function ProductCard({
       style: 'currency',
       currency: 'INR',
       minimumFractionDigits: 0,
-    }).format(price);
+    }).format(price)
   }
 
   const getDiscountPercentage = () => {
     if (mrp && mrp > price) {
-      return Math.round(((mrp - price) / mrp) * 100);
+      return Math.round(((mrp - price) / mrp) * 100)
     }
-    return null;
+    return null
+  }
+
+  // ✅ Enhanced product URL with seller phone
+  const getProductUrl = () => {
+    if (sellerPhone) {
+      return `/shop/${sellerPhone}/product/${id}`
+    }
+    return `/product/${id}`
+  }
+
+  // ✅ Enhanced image URL handling
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return "/placeholder.svg"
+    
+    if (imageUrl.startsWith('/media/')) {
+      return `${getApiBaseUrl()}${imageUrl}`
+    }
+    
+    return imageUrl
   }
 
   return (
@@ -183,25 +264,25 @@ export default function ProductCard({
             </button>
           </div>
 
-          <Link href={`/product/${id}`} className="image-link">
+          <Link href={getProductUrl()} className="image-link">
             <div className="image-wrapper">
               <img
-                src={primaryImage || "/placeholder.svg"}
+                src={getImageUrl(primaryImage)}
                 alt={title}
                 className={`primary-image ${isHovered ? "hidden" : ""}`}
                 onLoad={() => setImageLoaded(true)}
                 onError={(e) => {
-                  e.target.src = "/placeholder.svg";
+                  e.target.src = "/placeholder.svg"
                 }}
                 loading="lazy"
               />
               {hoverImage && hoverImage !== primaryImage && (
                 <img
-                  src={hoverImage}
+                  src={getImageUrl(hoverImage)}
                   alt={`${title} - alternate view`}
                   className={`hover-image ${isHovered ? "visible" : ""}`}
                   onError={(e) => {
-                    e.target.src = primaryImage || "/placeholder.svg";
+                    e.target.src = getImageUrl(primaryImage) || "/placeholder.svg"
                   }}
                   loading="lazy"
                 />
@@ -215,11 +296,7 @@ export default function ProductCard({
           <div className={`cart-overlay ${isHovered ? "show-cart" : ""}`}>
             <button
               className={`cart-btn ${onlineStock === 0 ? "disabled" : ""}`}
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                if (onlineStock > 0) onAddToCart(e)
-              }}
+              onClick={handleAddToCart}
               disabled={onlineStock === 0}
               type="button"
             >
@@ -233,17 +310,24 @@ export default function ProductCard({
 
         <div className="product-info">
           <h3 className="product-title">
-            <Link href={`/product/${id}`}>{title}</Link>
+            <Link href={getProductUrl()}>{title}</Link>
           </h3>
           
           {modelName && (
             <p className="model-name">{modelName}</p>
           )}
           
+          {storeName && (
+            <p className="store-name">by {storeName}</p>
+          )}
+          
           <div className="price-row">
             <span className="product-price">{formatPrice(price)}</span>
             {mrp && mrp > price && (
-              <span className="original-price">{formatPrice(mrp)}</span>
+              <>
+                <span className="original-price">{formatPrice(mrp)}</span>
+                <span className="savings">Save {formatPrice(mrp - price)}</span>
+              </>
             )}
           </div>
 
@@ -270,23 +354,25 @@ export default function ProductCard({
       </div>
 
       <style jsx>{`
-        /* Keep all your existing styles - they're perfect! */
+        /* Enhanced styles with better mobile responsiveness */
         .product-card {
           display: flex;
           flex-direction: column;
           background: white;
-          border-radius: 10px;
+          border-radius: 12px;
           overflow: hidden;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
           transition: all 0.3s ease;
           position: relative;
           height: 100%;
           max-width: 100%;
+          border: 1px solid #f0f0f0;
         }
 
         .product-card:hover {
-          box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
-          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+          transform: translateY(-4px);
+          border-color: #e0e0e0;
         }
 
         .product-card.out-of-stock {
@@ -308,11 +394,12 @@ export default function ProductCard({
           background: rgba(220, 53, 69, 0.9);
           color: white;
           padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 9px;
+          border-radius: 6px;
+          font-size: 10px;
           font-weight: 600;
           z-index: 3;
           text-transform: uppercase;
+          backdrop-filter: blur(4px);
         }
 
         .discount-badge {
@@ -322,11 +409,12 @@ export default function ProductCard({
           background: rgba(40, 167, 69, 0.9);
           color: white;
           padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 9px;
+          border-radius: 6px;
+          font-size: 10px;
           font-weight: 600;
           z-index: 3;
           text-transform: uppercase;
+          backdrop-filter: blur(4px);
         }
 
         .wishlist {
@@ -348,21 +436,21 @@ export default function ProductCard({
           background: rgba(255, 255, 255, 0.95);
           border: 2px solid rgba(255, 255, 255, 0.8);
           border-radius: 50%;
-          width: 32px;
-          height: 32px;
+          width: 34px;
+          height: 34px;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           transition: all 0.3s ease;
           backdrop-filter: blur(8px);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
         }
 
         .wishlist-btn:hover:not(:disabled) {
           background: white;
           transform: scale(1.1);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
         }
 
         .wishlist-btn:disabled {
@@ -376,7 +464,7 @@ export default function ProductCard({
         }
 
         .wishlist-btn.wish-active:hover:not(:disabled) {
-          background: rgba(220, 53, 69, 0.15);
+          background: rgba(220, 53, 69, 0.2);
           border-color: rgba(220, 53, 69, 0.5);
         }
 
@@ -393,8 +481,8 @@ export default function ProductCard({
         }
 
         .loading-spinner {
-          width: 14px;
-          height: 14px;
+          width: 16px;
+          height: 16px;
           border: 2px solid #f3f3f3;
           border-top: 2px solid #dc3545;
           border-radius: 50%;
@@ -464,12 +552,8 @@ export default function ProductCard({
         }
 
         @keyframes loading {
-          0% {
-            background-position: 200% 0;
-          }
-          100% {
-            background-position: -200% 0;
-          }
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
         }
 
         .cart-overlay {
@@ -478,7 +562,7 @@ export default function ProductCard({
           left: 0;
           right: 0;
           background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-          padding: 16px 10px 10px;
+          padding: 20px 12px 12px;
           transform: translateY(100%);
           transition: all 0.3s ease;
           z-index: 2;
@@ -493,23 +577,24 @@ export default function ProductCard({
           background: #007bff;
           color: white;
           border: none;
-          padding: 8px 12px;
-          border-radius: 6px;
+          padding: 10px 14px;
+          border-radius: 8px;
           font-weight: 600;
-          font-size: 11px;
+          font-size: 12px;
           cursor: pointer;
           transition: all 0.3s ease;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 4px;
+          gap: 6px;
           text-transform: uppercase;
-          letter-spacing: 0.3px;
+          letter-spacing: 0.5px;
         }
 
         .cart-btn:hover:not(.disabled) {
           background: #0056b3;
-          transform: translateY(-1px);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
         }
 
         .cart-btn.disabled {
@@ -518,12 +603,12 @@ export default function ProductCard({
         }
 
         .cart-icon {
-          width: 12px;
-          height: 12px;
+          width: 14px;
+          height: 14px;
         }
 
         .product-info {
-          padding: 12px;
+          padding: 14px;
           flex: 1;
           display: flex;
           flex-direction: column;
@@ -532,7 +617,7 @@ export default function ProductCard({
 
         .product-title {
           margin: 0;
-          font-size: 14px;
+          font-size: 15px;
           font-weight: 600;
           line-height: 1.3;
           color: #333;
@@ -551,36 +636,51 @@ export default function ProductCard({
           color: #007bff;
         }
 
-        .model-name {
+        .model-name,
+        .store-name {
           margin: 0;
           font-size: 12px;
           color: #666;
           font-style: italic;
         }
 
+        .store-name {
+          color: #007bff;
+          font-weight: 500;
+        }
+
         .price-row {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
           flex-wrap: wrap;
         }
 
         .product-price {
-          font-size: 15px;
+          font-size: 16px;
           font-weight: 700;
           color: #28a745;
         }
 
         .original-price {
-          font-size: 12px;
+          font-size: 13px;
           color: #666;
           text-decoration: line-through;
+        }
+
+        .savings {
+          font-size: 11px;
+          color: #28a745;
+          font-weight: 600;
+          background: #d4edda;
+          padding: 2px 6px;
+          border-radius: 4px;
         }
 
         .rating-row {
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 6px;
         }
 
         .rating {
@@ -589,8 +689,8 @@ export default function ProductCard({
         }
 
         .star {
-          width: 10px;
-          height: 10px;
+          width: 12px;
+          height: 12px;
           color: #ddd;
           fill: #ddd;
         }
@@ -601,25 +701,26 @@ export default function ProductCard({
         }
 
         .rating-text {
-          font-size: 10px;
+          font-size: 11px;
           color: #666;
           font-weight: 500;
         }
 
         .low-stock {
-          font-size: 9px;
+          font-size: 10px;
           color: #dc3545;
           font-weight: 600;
           background: #fff5f5;
-          padding: 2px 6px;
-          border-radius: 8px;
+          padding: 3px 8px;
+          border-radius: 10px;
           text-align: center;
           margin-top: 4px;
         }
 
+        /* Enhanced mobile responsiveness */
         @media (max-width: 768px) {
           .product-card {
-            border-radius: 8px;
+            border-radius: 10px;
           }
 
           .wishlist {
@@ -628,8 +729,8 @@ export default function ProductCard({
           }
 
           .wishlist-btn {
-            width: 28px;
-            height: 28px;
+            width: 30px;
+            height: 30px;
           }
 
           .wishlist-icon {
@@ -638,62 +739,66 @@ export default function ProductCard({
           }
 
           .loading-spinner {
-            width: 12px;
-            height: 12px;
-            border-width: 1px;
+            width: 14px;
+            height: 14px;
           }
 
           .cart-overlay {
-            background: rgba(0, 0, 0, 0.85);
-            padding: 12px 8px 8px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 14px 10px 10px;
           }
 
           .cart-btn {
-            padding: 7px 10px;
-            font-size: 10px;
+            padding: 8px 12px;
+            font-size: 11px;
           }
 
           .cart-icon {
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
           }
 
           .product-info {
-            padding: 10px;
+            padding: 12px;
           }
 
           .product-title {
-            font-size: 13px;
+            font-size: 14px;
           }
 
-          .model-name {
+          .model-name,
+          .store-name {
             font-size: 11px;
           }
 
           .product-price {
-            font-size: 14px;
+            font-size: 15px;
           }
 
           .original-price {
-            font-size: 11px;
+            font-size: 12px;
+          }
+
+          .savings {
+            font-size: 10px;
           }
 
           .star {
-            width: 9px;
-            height: 9px;
+            width: 10px;
+            height: 10px;
           }
 
           .rating-text {
-            font-size: 9px;
+            font-size: 10px;
           }
 
           .low-stock {
-            font-size: 8px;
+            font-size: 9px;
           }
 
           .stock-badge,
           .discount-badge {
-            font-size: 8px;
+            font-size: 9px;
             padding: 3px 6px;
           }
         }
@@ -703,7 +808,7 @@ export default function ProductCard({
             position: static;
             background: #f8f9fa;
             transform: none;
-            padding: 8px;
+            padding: 10px;
             border-top: 1px solid #e9ecef;
           }
 
@@ -711,7 +816,7 @@ export default function ProductCard({
             background: #007bff;
             color: white;
             font-size: 11px;
-            padding: 8px 12px;
+            padding: 10px 14px;
           }
 
           .wishlist {
