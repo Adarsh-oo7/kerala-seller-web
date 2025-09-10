@@ -24,8 +24,19 @@ import {
   Globe
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// ✅ Enhanced API base URL handling with environment variables
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
+  }
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  return 'https://keralaseller-backend.onrender.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const ORDERS_COUNT_API = `${API_BASE_URL}/api/buyer/orders/count/`;
@@ -39,17 +50,49 @@ export default function ProfilePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const router = useRouter();
 
+  // ✅ Enhanced token handling - supports both Google login and regular login
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('buyerAccessToken');
+    const token = localStorage.getItem('access_token') || 
+                  localStorage.getItem('buyerAccessToken');
+    
     if (!token) {
+      console.error('❌ No authentication token found');
       router.push('/login/buyer');
       return null;
     }
+    
+    console.log('🔍 Using token:', token.substring(0, 30) + '...');
     return { 'Authorization': `Bearer ${token}` };
+  }, [router]);
+
+  // ✅ Universal logout function that clears ALL authentication data
+  const clearAuthAndLogout = useCallback(() => {
+    console.log('🔄 Clearing all authentication data...');
+    
+    // Clear all possible token keys
+    const keysToRemove = [
+      'access_token',
+      'buyerAccessToken', 
+      'refresh_token',
+      'user',
+      'wishlist',
+      'cart',
+      'cameFromLogin',
+      'preLoginPath'
+    ];
+    
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    });
+    
+    console.log('✅ Authentication data cleared');
+    router.push('/login/buyer');
   }, [router]);
 
   const fetchWishlistCount = useCallback(async (headers) => {
     try {
+      console.log('🔍 Fetching wishlist count...');
       const wishlistResponse = await axios.get(WISHLIST_API, { headers });
       const wishlistData = wishlistResponse.data;
       
@@ -57,13 +100,15 @@ export default function ProfilePage() {
       
       if (wishlistData && wishlistData.items && Array.isArray(wishlistData.items)) {
         setWishlistCount(wishlistData.items.length);
+      } else if (wishlistData && wishlistData.items_count !== undefined) {
+        setWishlistCount(wishlistData.items_count);
       } else if (Array.isArray(wishlistData)) {
         setWishlistCount(wishlistData.length);
       } else {
         setWishlistCount(0);
       }
     } catch (wishlistError) {
-      console.log("Wishlist API error:", wishlistError);
+      console.log("Wishlist API error:", wishlistError.response?.status, wishlistError.response?.data);
       // Fallback to localStorage wishlist count
       try {
         const localWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
@@ -76,10 +121,12 @@ export default function ProfilePage() {
 
   const fetchOrdersCount = useCallback(async (headers) => {
     try {
+      console.log('🔍 Fetching orders count...');
       const ordersResponse = await axios.get(ORDERS_COUNT_API, { headers });
       setOrdersCount(ordersResponse.data.count || 0);
+      console.log('✅ Orders count:', ordersResponse.data.count || 0);
     } catch (ordersError) {
-      console.log("Orders count API error:", ordersError);
+      console.log("Orders count API error:", ordersError.response?.status, ordersError.response?.data);
       setOrdersCount(0);
     }
   }, []);
@@ -96,10 +143,12 @@ export default function ProfilePage() {
     setError('');
     
     try {
-      console.log('Fetching profile from:', PROFILE_API);
+      console.log('🔍 Fetching profile from:', PROFILE_API);
+      console.log('🔍 Using headers:', headers);
+      
       const response = await axios.get(PROFILE_API, { headers });
       
-      console.log('Profile data received:', response.data);
+      console.log('✅ Profile data received:', response.data);
       setBuyer(response.data);
       
       // Fetch additional data in parallel
@@ -109,18 +158,19 @@ export default function ProfilePage() {
       ]);
       
     } catch (error) {
-      console.error("Failed to fetch profile:", error);
+      console.error("❌ Failed to fetch profile:", error.response?.status, error.response?.data);
+      
       if (error.response?.status === 401) {
-        localStorage.removeItem('buyerAccessToken');
-        router.push('/login/buyer');
+        console.error('❌ 401 Unauthorized - clearing all auth data');
+        clearAuthAndLogout();
       } else {
-        setError('Failed to load profile data. Please try again.');
+        setError(`Failed to load profile data: ${error.response?.data?.error || error.message}`);
       }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [getAuthHeaders, router, fetchWishlistCount, fetchOrdersCount]);
+  }, [getAuthHeaders, fetchWishlistCount, fetchOrdersCount, clearAuthAndLogout]);
 
   useEffect(() => {
     fetchProfile();
@@ -128,11 +178,7 @@ export default function ProfilePage() {
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
-      localStorage.removeItem('buyerAccessToken');
-      localStorage.removeItem('wishlist'); // Clear local wishlist
-      sessionStorage.removeItem('cameFromLogin');
-      sessionStorage.removeItem('preLoginPath');
-      router.push('/');
+      clearAuthAndLogout();
     }
   };
 
@@ -542,7 +588,8 @@ const styles = {
     borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '16px',
-    fontWeight: '500'
+    fontWeight: '500',
+    transition: 'all 0.2s'
   },
   
   loginButton: {
@@ -584,7 +631,8 @@ const styles = {
     fontWeight: '500',
     padding: '8px',
     cursor: 'pointer',
-    transition: 'all 0.2s'
+    transition: 'all 0.2s',
+    borderRadius: '6px'
   },
   
   backText: {
@@ -667,7 +715,11 @@ const styles = {
   avatarSection: {
     display: 'flex',
     alignItems: 'center',
-    gap: '24px'
+    gap: '24px',
+    '@media (max-width: 640px)': {
+      flexDirection: 'column',
+      textAlign: 'center'
+    }
   },
   
   avatar: {
@@ -742,7 +794,7 @@ const styles = {
   // Stats Grid
   statsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '16px'
   },
   
@@ -787,11 +839,8 @@ const styles = {
 
   infoCards: {
     display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: '16px',
-    '@media (min-width: 768px)': {
-      gridTemplateColumns: '1fr 1fr'
-    }
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '16px'
   },
   
   infoCard: {
@@ -934,7 +983,7 @@ const styles = {
   
   summaryGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
     gap: '16px'
   },
   
