@@ -9,13 +9,24 @@ import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
 import { ShoppingCart, CreditCard, User, Phone, Home, Truck, MapPin, AlertCircle, Wallet, Landmark } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+// ✅ Enhanced API base URL function
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
+  }
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  return 'https://keralaseller-backend.onrender.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 const CREATE_ORDER_API = `${API_BASE_URL}/user/orders/create-order/`; 
 const STORE_API_URL = `${API_BASE_URL}/shop/`;
 const CREATE_PAYMENT_ORDER_API = `${API_BASE_URL}/user/orders/create-payment-order/`;
-const VERIFY_PAYMENT_API = `${API_BASE_URL}/user/orders/verify-product-payment/`;
+const VERIFY_PAYMENT_API = `${API_BASE_URL}/user/orders/verify-payment/`;  // ✅ Updated to use the fixed endpoint
 
 // ✅ Environment variable for Razorpay Key
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RClyCqWG0I7Frn';
@@ -36,8 +47,9 @@ export default function CheckoutPage() {
     const { sellerPhone } = params;
     const { getCartBySeller, clearCartForSeller } = useCart();
 
+    // ✅ Enhanced token handling - check both possible keys
     const getAuthHeaders = useCallback(() => {
-        const token = localStorage.getItem('buyerAccessToken');
+        const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
         if (!token) {
             router.push(`/login/buyer?redirect=/checkout/${sellerPhone}`);
             return null;
@@ -79,7 +91,11 @@ export default function CheckoutPage() {
             }
         }).catch(err => {
             console.error("Failed to load checkout data", err);
-            router.push('/login/buyer');
+            if (err.response?.status === 401) {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('buyerAccessToken');
+                router.push('/login/buyer');
+            }
         }).finally(() => setIsLoading(false));
     }, [sellerPhone, getCartBySeller, getAuthHeaders, router]);
     
@@ -103,6 +119,7 @@ export default function CheckoutPage() {
         if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
     };
 
+    // ✅ Enhanced order placement with better error handling
     const handlePlaceOrder = async () => {
         if (!validateForm()) {
             alert('Please fill all required fields correctly.');
@@ -115,7 +132,9 @@ export default function CheckoutPage() {
         
         const headers = getAuthHeaders();
         if (!headers) return;
+        
         setIsSubmitting(true);
+        console.log('🔍 Placing order with payment method:', selectedPaymentMethod);
         
         const finalAddress = `${shippingInfo.address}, ${shippingInfo.city}, ${shippingInfo.pincode}`;
         const orderData = {
@@ -127,21 +146,36 @@ export default function CheckoutPage() {
         };
 
         if (selectedPaymentMethod === 'COD') {
-            // For COD, create order directly
+            // ✅ For COD, create order directly
             try {
+                console.log('🔍 Creating COD order...');
                 const response = await axios.post(CREATE_ORDER_API, orderData, { headers });
+                console.log('✅ COD order created:', response.data);
+                
                 clearCartForSeller(sellerPhone);
                 router.push(`/order-confirmation/${response.data.order_id}`);
             } catch (error) {
+                console.error('❌ COD order error:', error.response?.data);
                 alert(`Error placing order: ${error.response?.data?.error || 'Please try again.'}`);
             } finally {
                 setIsSubmitting(false);
             }
         } else if (selectedPaymentMethod === 'ONLINE') {
-            // For online payments, use the verification flow
+            // ✅ Enhanced online payment flow
             try {
-                const paymentOrderRes = await axios.post(CREATE_PAYMENT_ORDER_API, { amount: calculateTotal() }, { headers });
-                const { order_id, amount } = paymentOrderRes.data;
+                console.log('🔍 Creating payment order...');
+                
+                // Step 1: Create order first (before payment)
+                const orderResponse = await axios.post(CREATE_ORDER_API, orderData, { headers });
+                const orderId = orderResponse.data.order_id;
+                console.log('✅ Order created:', orderId);
+                
+                // Step 2: Create Razorpay payment order
+                const paymentOrderRes = await axios.post(CREATE_PAYMENT_ORDER_API, { 
+                    amount: calculateTotal() 
+                }, { headers });
+                const { order_id: razorpayOrderId, amount } = paymentOrderRes.data;
+                console.log('✅ Razorpay order created:', razorpayOrderId);
                 
                 // ✅ Check if Razorpay is available
                 if (typeof window === 'undefined' || !window.Razorpay) {
@@ -153,29 +187,29 @@ export default function CheckoutPage() {
                 const options = {
                     key: RAZORPAY_KEY_ID,
                     amount,
-                    order_id,
+                    order_id: razorpayOrderId,
                     name: "Kerala Sellers",
+                    description: `Order from ${store?.name}`,
                     handler: async function (response) {
                         try {
-                            // Call the verification API with payment details AND order data
+                            console.log('🔍 Payment successful, verifying...');
+                            
+                            // Step 3: Verify payment and update order status
                             const verificationData = {
                                 razorpay_payment_id: response.razorpay_payment_id,
                                 razorpay_order_id: response.razorpay_order_id,
                                 razorpay_signature: response.razorpay_signature,
-                                // Include all order details for verification API
-                                customer_name: orderData.customer_name,
-                                customer_phone: orderData.customer_phone,
-                                shipping_address: orderData.shipping_address,
-                                items: orderData.items
                             };
 
                             const verifyResponse = await axios.post(VERIFY_PAYMENT_API, verificationData, { headers });
+                            console.log('✅ Payment verified:', verifyResponse.data);
                             
-                            // Payment verified and order created successfully
+                            // Payment verified successfully
                             clearCartForSeller(sellerPhone);
-                            router.push(`/order-confirmation/${verifyResponse.data.order_id}`);
+                            router.push(`/order-confirmation/${orderId}`);
+                            
                         } catch (verificationError) {
-                            console.error('Payment verification failed:', verificationError);
+                            console.error('❌ Payment verification failed:', verificationError.response?.data);
                             alert('Payment verification failed. Please contact support with your payment ID: ' + response.razorpay_payment_id);
                             setIsSubmitting(false);
                         }
@@ -187,26 +221,31 @@ export default function CheckoutPage() {
                     },
                     modal: { 
                         ondismiss: () => {
-                            console.log('Payment modal closed by user');
+                            console.log('🔄 Payment modal closed by user');
                             setIsSubmitting(false);
                         }
                     },
                     theme: {
                         color: "#28a745"
+                    },
+                    notes: {
+                        order_id: orderId,
+                        seller_phone: sellerPhone
                     }
                 };
                 
                 const rzp = new window.Razorpay(options);
                 rzp.on('payment.failed', function (response) {
-                    console.error('Payment failed:', response.error);
+                    console.error('❌ Payment failed:', response.error);
                     alert('Payment failed: ' + response.error.description);
                     setIsSubmitting(false);
                 });
                 
                 rzp.open();
+                
             } catch (error) {
-                console.error('Could not initiate online payment:', error);
-                alert("Could not initiate online payment. Please try again.");
+                console.error('❌ Online payment error:', error.response?.data);
+                alert(`Could not initiate online payment: ${error.response?.data?.error || 'Please try again.'}`);
                 setIsSubmitting(false);
             }
         }
@@ -395,11 +434,27 @@ export default function CheckoutPage() {
                     from { opacity: 0; transform: translateY(20px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
+                
+                .input:focus, .textarea:focus {
+                    border-color: #3b82f6;
+                    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                }
+                
+                .payment-option:hover {
+                    border-color: #3b82f6;
+                    background-color: #f8fafc;
+                }
+                
+                .checkout-button:hover:not(:disabled) {
+                    background-color: #218838;
+                    transform: translateY(-1px);
+                }
             `}</style>
         </div>
     );
 }
 
+// ✅ Keep all your existing styles - they're perfect!
 const styles = {
     pageContainer: {
         minHeight: '100vh',
@@ -451,7 +506,11 @@ const styles = {
         display: 'grid', 
         gridTemplateColumns: '1.5fr 1fr', 
         gap: '30px', 
-        alignItems: 'start'
+        alignItems: 'start',
+        '@media (max-width: 768px)': {
+            gridTemplateColumns: '1fr',
+            gap: '20px'
+        }
     },
     
     formSection: { 
@@ -467,7 +526,11 @@ const styles = {
         padding: '24px', 
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)', 
         position: 'sticky', 
-        top: '20px' 
+        top: '20px',
+        '@media (max-width: 768px)': {
+            position: 'relative',
+            top: 'auto'
+        }
     },
     
     sectionTitle: { 
@@ -487,7 +550,11 @@ const styles = {
     formRow: { 
         display: 'grid', 
         gridTemplateColumns: '1fr 1fr', 
-        gap: '20px' 
+        gap: '20px',
+        '@media (max-width: 480px)': {
+            gridTemplateColumns: '1fr',
+            gap: '16px'
+        }
     },
     
     label: { 
@@ -506,8 +573,9 @@ const styles = {
         border: '2px solid #e5e7eb', 
         borderRadius: '8px', 
         fontSize: '1rem',
-        transition: 'border-color 0.2s',
-        outline: 'none'
+        transition: 'all 0.2s',
+        outline: 'none',
+        fontFamily: 'inherit'
     },
     
     textarea: { 
@@ -518,7 +586,7 @@ const styles = {
         fontSize: '1rem', 
         resize: 'vertical', 
         fontFamily: 'inherit',
-        transition: 'border-color 0.2s',
+        transition: 'all 0.2s',
         outline: 'none'
     },
     
@@ -619,7 +687,8 @@ const styles = {
         display: 'flex', 
         alignItems: 'center', 
         gap: '10px',
-        transition: 'all 0.2s'
+        transition: 'all 0.2s',
+        fontFamily: 'inherit'
     },
     
     paymentOptionSelected: { 
@@ -634,7 +703,8 @@ const styles = {
         alignItems: 'center', 
         gap: '10px', 
         color: '#0d6efd', 
-        fontWeight: 'bold' 
+        fontWeight: 'bold',
+        fontFamily: 'inherit'
     },
     
     checkoutButton: { 
@@ -648,7 +718,8 @@ const styles = {
         fontWeight: '600', 
         cursor: 'pointer',
         marginTop: '20px',
-        transition: 'all 0.2s'
+        transition: 'all 0.2s',
+        fontFamily: 'inherit'
     },
     
     disabledButton: { 
