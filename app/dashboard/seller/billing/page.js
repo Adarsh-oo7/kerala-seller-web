@@ -32,6 +32,7 @@ export default function BillingPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // ✅ FIXED: Changed Token to Bearer authentication
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
@@ -39,7 +40,7 @@ export default function BillingPage() {
       setError("Please log in to access billing features.");
       return null;
     }
-    return { 'Authorization': `Token ${token}` };
+    return { 'Authorization': `Bearer ${token}` };
   }, []);
 
   // Fetch products on component mount
@@ -60,7 +61,13 @@ export default function BillingPage() {
       setFilteredProducts(productData);
     } catch (error) {
       console.error('Failed to fetch products:', error);
-      setError('Failed to load products. Please refresh the page.');
+      if (error.response?.status === 401) {
+        setError('Session expired. Please log in again.');
+        // Optionally redirect to login
+        // window.location.href = '/login/seller';
+      } else {
+        setError('Failed to load products. Please refresh the page.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -200,10 +207,14 @@ export default function BillingPage() {
       
     } catch (error) {
       console.error('Billing error:', error);
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.message ||
-                          'Could not create bill. Please try again.';
-      setError(errorMessage);
+      if (error.response?.status === 401) {
+        setError('Session expired. Please log in again.');
+      } else {
+        const errorMessage = error.response?.data?.error || 
+                            error.response?.data?.message ||
+                            'Could not create bill. Please try again.';
+        setError(errorMessage);
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -466,6 +477,7 @@ export default function BillingPage() {
   );
 }
 
+// ... (all styles remain exactly the same)
 const styles = {
   pageContainer: {
     padding: '24px',

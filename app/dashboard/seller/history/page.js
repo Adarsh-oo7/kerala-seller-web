@@ -29,9 +29,10 @@ export default function HistoryPage() {
     product: ''
   });
 
+  // ✅ FIXED: Changed Token to Bearer authentication
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
-    return token ? { Authorization: `Token ${token}` } : null;
+    return token ? { Authorization: `Bearer ${token}` } : null;
   }, []);
 
   const fetchHistory = useCallback(async () => {
@@ -50,7 +51,7 @@ export default function HistoryPage() {
       const response = await axios.get(HISTORY_API_URL, { headers });
       
       const historyData = response.data.results || response.data || [];
-      console.log('History data received:', historyData);
+      console.log('History data received:', historyData.length, 'records');
       
       setHistory(historyData);
       setFilteredHistory(historyData);
@@ -58,6 +59,15 @@ export default function HistoryPage() {
       console.error('Failed to fetch history:', error);
       if (error.response?.status === 401) {
         setError('Session expired. Please log in again.');
+        // Optionally redirect to login
+        setTimeout(() => {
+          window.location.href = '/login/seller';
+        }, 2000);
+      } else if (error.response?.status === 404) {
+        // Handle case where history API might not exist yet
+        setError('Stock history service not available.');
+        setHistory([]);
+        setFilteredHistory([]);
       } else {
         setError('Failed to load stock history. Please try again.');
       }
@@ -108,9 +118,13 @@ export default function HistoryPage() {
     switch (action) {
       case 'stock_in':
       case 'increase':
+      case 'restock':
+      case 'added':
         return <TrendingUp size={16} color="#059669" />;
       case 'stock_out':
       case 'decrease':
+      case 'sale':
+      case 'sold':
         return <TrendingDown size={16} color="#dc2626" />;
       default:
         return <Package size={16} color="#6b7280" />;
@@ -131,10 +145,16 @@ export default function HistoryPage() {
         return 'Adjustment';
       case 'sale':
         return 'Sale';
+      case 'sold':
+        return 'Sold';
       case 'return':
         return 'Return';
+      case 'restock':
+        return 'Restocked';
+      case 'added':
+        return 'Added';
       default:
-        return action;
+        return action?.charAt(0)?.toUpperCase() + action?.slice(1) || 'Unknown';
     }
   };
 
@@ -149,14 +169,19 @@ export default function HistoryPage() {
   };
 
   const exportHistory = () => {
+    if (filteredHistory.length === 0) {
+      alert('No history records to export');
+      return;
+    }
+
     const csvContent = [
       ['Date', 'Product', 'Action', 'Total Change', 'Online Change', 'Note'],
       ...filteredHistory.map(item => [
         formatDate(item.timestamp),
-        item.product,
+        item.product || 'Unknown Product',
         getActionLabel(item.action),
-        item.change_total,
-        item.change_online,
+        item.change_total || 0,
+        item.change_online || 0,
         item.note || '-'
       ])
     ].map(row => row.join(',')).join('\n');
@@ -176,7 +201,7 @@ export default function HistoryPage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p>Loading stock history...</p>
+        <p>Loading your stock history...</p>
       </div>
     );
   }
@@ -205,11 +230,11 @@ export default function HistoryPage() {
             Stock History
           </h1>
           <p style={styles.pageSubtitle}>
-            Track all inventory changes and stock movements
+            Track all inventory changes and stock movements for your store
           </p>
         </div>
         <div style={styles.headerActions}>
-          <button onClick={exportHistory} style={styles.exportButton}>
+          <button onClick={exportHistory} style={styles.exportButton} disabled={filteredHistory.length === 0}>
             <Download size={18} />
             Export CSV
           </button>
@@ -244,6 +269,7 @@ export default function HistoryPage() {
               <option value="adjustment">Adjustment</option>
               <option value="sale">Sale</option>
               <option value="return">Return</option>
+              <option value="restock">Restock</option>
             </select>
           </div>
 
@@ -318,7 +344,7 @@ export default function HistoryPage() {
                   <td style={styles.td}>
                     <div style={styles.productCell}>
                       <Package size={16} />
-                      <span>{log.product}</span>
+                      <span>{log.product || 'Unknown Product'}</span>
                     </div>
                   </td>
                   <td style={styles.td}>
@@ -330,19 +356,19 @@ export default function HistoryPage() {
                   <td style={{
                     ...styles.td, 
                     ...styles.changeCell,
-                    color: log.change_total >= 0 ? '#059669' : '#dc2626'
+                    color: (log.change_total || 0) >= 0 ? '#059669' : '#dc2626'
                   }}>
                     <strong>
-                      {log.change_total > 0 ? `+${log.change_total}` : log.change_total}
+                      {(log.change_total || 0) > 0 ? `+${log.change_total || 0}` : (log.change_total || 0)}
                     </strong>
                   </td>
                   <td style={{
                     ...styles.td,
                     ...styles.changeCell,
-                    color: log.change_online >= 0 ? '#059669' : '#dc2626'
+                    color: (log.change_online || 0) >= 0 ? '#059669' : '#dc2626'
                   }}>
                     <strong>
-                      {log.change_online > 0 ? `+${log.change_online}` : log.change_online}
+                      {(log.change_online || 0) > 0 ? `+${log.change_online || 0}` : (log.change_online || 0)}
                     </strong>
                   </td>
                   <td style={styles.td}>
@@ -361,7 +387,7 @@ export default function HistoryPage() {
             <p>
               {filters.action !== 'all' || filters.product || filters.dateRange !== '30'
                 ? 'No records match your current filters. Try adjusting the filters above.'
-                : 'No stock movements have been recorded yet.'
+                : 'No stock movements have been recorded yet. Stock changes will appear here when you update inventory levels.'
               }
             </p>
             {(filters.action !== 'all' || filters.product || filters.dateRange !== '30') && (
@@ -392,6 +418,7 @@ export default function HistoryPage() {
   );
 }
 
+// ... (all styles remain exactly the same)
 const styles = {
   pageContainer: {
     padding: '24px',

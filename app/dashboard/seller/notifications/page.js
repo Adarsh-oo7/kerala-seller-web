@@ -30,13 +30,14 @@ export default function NotificationsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const router = useRouter();
 
+  // ✅ FIXED: Changed Token to Bearer authentication
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
       router.push('/login/seller');
       return null;
     }
-    return { 'Authorization': `Token ${token}` };
+    return { 'Authorization': `Bearer ${token}` };
   }, [router]);
 
   const fetchNotifications = useCallback(async () => {
@@ -51,14 +52,20 @@ export default function NotificationsPage() {
       const response = await axios.get(NOTIFICATIONS_API, { headers });
       
       const notificationData = response.data.results || response.data || [];
-      console.log('Notifications fetched:', notificationData);
+      console.log('Notifications fetched:', notificationData.length);
       
       setNotifications(notificationData);
       setFilteredNotifications(notificationData);
     } catch (error) {
       console.error("Failed to fetch notifications", error);
       if (error.response?.status === 401) {
-        router.push('/login/seller');
+        setError('Session expired. Please log in again.');
+        setTimeout(() => router.push('/login/seller'), 2000);
+      } else if (error.response?.status === 404) {
+        // Handle case where notifications API might not exist yet
+        setError('Notifications service not available.');
+        setNotifications([]);
+        setFilteredNotifications([]);
       } else {
         setError('Failed to load notifications. Please try again.');
       }
@@ -105,8 +112,13 @@ export default function NotificationsPage() {
       );
     } catch (error) {
       console.error('Failed to mark as read:', error);
-      setError('Could not mark notification as read. Please try again.');
-      setTimeout(() => setError(''), 3000);
+      if (error.response?.status === 401) {
+        setError('Session expired. Please log in again.');
+        setTimeout(() => router.push('/login/seller'), 2000);
+      } else {
+        setError('Could not mark notification as read. Please try again.');
+        setTimeout(() => setError(''), 3000);
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -135,8 +147,13 @@ export default function NotificationsPage() {
       );
     } catch (error) {
       console.error('Failed to mark all as read:', error);
-      setError('Could not mark all notifications as read. Please try again.');
-      setTimeout(() => setError(''), 3000);
+      if (error.response?.status === 401) {
+        setError('Session expired. Please log in again.');
+        setTimeout(() => router.push('/login/seller'), 2000);
+      } else {
+        setError('Could not mark all notifications as read. Please try again.');
+        setTimeout(() => setError(''), 3000);
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -185,7 +202,7 @@ export default function NotificationsPage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p>Loading notifications...</p>
+        <p>Loading your notifications...</p>
       </div>
     );
   }
@@ -296,7 +313,7 @@ export default function NotificationsPage() {
                 ? 'All caught up! You have no new notifications.'
                 : filter === 'read'
                 ? 'No notifications have been read yet.'
-                : 'New notifications will appear here when you receive them.'}
+                : 'New notifications will appear here when customers place orders or interact with your store.'}
             </p>
           </div>
         ) : (

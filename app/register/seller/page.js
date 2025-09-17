@@ -154,6 +154,7 @@ export default function RegisterSellerPage() {
         }
     };
 
+    // ✅ FIXED: Added confirmPassword to the registration request
     const handleCompleteRegistration = async (e) => {
         e.preventDefault();
         setError('');
@@ -166,12 +167,23 @@ export default function RegisterSellerPage() {
         setIsLoading(true);
         
         try {
+            console.log('🔍 Sending registration data:', {
+                name: formData.name.trim(),
+                shop_name: formData.shop_name.trim(),
+                phone: formData.phone.trim(),
+                email: formData.email.trim(),
+                password: formData.password,
+                confirmPassword: formData.confirmPassword, // ✅ ADDED THIS
+                otp: formData.otp.trim(),
+            });
+
             await axios.post(REGISTER_API, {
                 name: formData.name.trim(),
                 shop_name: formData.shop_name.trim(),
                 phone: formData.phone.trim(),
                 email: formData.email.trim(),
                 password: formData.password,
+                confirmPassword: formData.confirmPassword, // ✅ FIXED: Added this field
                 otp: formData.otp.trim(),
             });
             
@@ -182,10 +194,26 @@ export default function RegisterSellerPage() {
             
         } catch (err) {
             console.error('Registration error:', err);
-            const errorMessage = err.response?.data?.error || 
-                               err.response?.data?.otp?.[0] ||
-                               err.response?.data?.message ||
-                               'Registration failed. Please check your OTP and try again.';
+            console.error('Error response:', err.response?.data);
+            
+            // ✅ Enhanced error handling
+            const errorData = err.response?.data;
+            let errorMessage = 'Registration failed. Please try again.';
+            
+            if (errorData?.phone?.[0]) {
+                errorMessage = errorData.phone[0];
+            } else if (errorData?.confirmPassword?.[0]) {
+                errorMessage = errorData.confirmPassword[0];
+            } else if (errorData?.otp?.[0]) {
+                errorMessage = errorData.otp[0];
+            } else if (errorData?.email?.[0]) {
+                errorMessage = errorData.email[0];
+            } else if (errorData?.error) {
+                errorMessage = errorData.error;
+            } else if (errorData?.message) {
+                errorMessage = errorData.message;
+            }
+            
             setError(errorMessage);
         } finally {
             setIsLoading(false);
@@ -219,7 +247,6 @@ export default function RegisterSellerPage() {
 
     return (
         <div style={styles.pageContainer}>
-            <Header />
             <div style={styles.container}>
                 <div style={styles.card}>
                     {/* Header */}
@@ -529,7 +556,6 @@ export default function RegisterSellerPage() {
                     </div>
                 </div>
             </div>
-            <Footer />
 
             {/* CSS Animations */}
             <style jsx>{`
@@ -557,7 +583,7 @@ const styles = {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        minHeight: '80vh', 
+        minHeight: '100vh', 
         padding: '20px' 
     },
     

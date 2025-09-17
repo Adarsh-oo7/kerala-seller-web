@@ -44,12 +44,12 @@ const apiClient = axios.create({
   }
 });
 
-// Request interceptor
+// ✅ FIXED: Request interceptor with Bearer authentication
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
-      config.headers.Authorization = `Token ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;  // Changed from Token to Bearer
     }
     console.log('🔄 Making API request to:', `${config.baseURL}${config.url}`);
     return config;
@@ -73,6 +73,14 @@ apiClient.interceptors.response.use(
       message: error.message,
       data: error.response?.data
     });
+    
+    // Handle 401 errors globally
+    if (error.response?.status === 401) {
+      console.log('🔓 Authentication failed, redirecting to login...');
+      localStorage.removeItem('accessToken');
+      window.location.href = '/login/seller';
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -115,7 +123,11 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       setCurrentCategories(rootCategories);
     } catch (err) {
       console.error('❌ Failed to load categories:', err);
-      setError('Failed to load categories from server');
+      if (err.response?.status === 401) {
+        setError('Session expired. Please log in again.');
+      } else {
+        setError('Failed to load categories from server');
+      }
     } finally {
       setLoading(false);
     }
@@ -233,8 +245,12 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       alert('Custom category created successfully!');
     } catch (err) {
       console.error('❌ Failed to create custom category:', err);
-      const errorMessage = err.response?.data?.detail || err.response?.data?.error || 'Failed to create category. Please try again.';
-      alert(errorMessage);
+      if (err.response?.status === 401) {
+        alert('Session expired. Please log in again.');
+      } else {
+        const errorMessage = err.response?.data?.detail || err.response?.data?.error || 'Failed to create category. Please try again.';
+        alert(errorMessage);
+      }
     } finally {
       setIsSubmittingCustom(false);
     }
@@ -867,13 +883,14 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     console.log('===============================');
 
     try {
+      // ✅ FIXED: Changed Token to Bearer authentication
       const response = await axios({ 
         method, 
         url, 
         data: submissionData, 
         headers: {
           'Content-Type': 'multipart/form-data',
-          Authorization: `Token ${localStorage.getItem('accessToken')}`
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`  // Changed from Token to Bearer
         },
         timeout: 30000  // 30 second timeout for file uploads to hosted backend
       });
@@ -885,7 +902,13 @@ export default function ProductForm({ product, onClose, onSuccess }) {
       
       let errorMessage = 'Failed to save product to server. Please check your input.';
       
-      if (err.response?.data) {
+      if (err.response?.status === 401) {
+        errorMessage = 'Session expired. Please log in again.';
+        setTimeout(() => {
+          localStorage.removeItem('accessToken');
+          window.location.href = '/login/seller';
+        }, 2000);
+      } else if (err.response?.data) {
         if (typeof err.response.data === 'string') {
           errorMessage = err.response.data;
         } else if (err.response.data.detail) {

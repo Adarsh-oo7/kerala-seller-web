@@ -19,7 +19,6 @@ import {
   LogOut
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
 const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
@@ -30,21 +29,20 @@ export default function DashboardLayout({ children }) {
   const [sellerName, setSellerName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const hasInitialized = useRef(false); // ✅ Prevent infinite loops
+  const hasInitialized = useRef(false);
   
-  // State for notification counts
   const [notificationCounts, setNotificationCounts] = useState({
     orders: 0,
     notifications: 0
   });
 
+  // ✅ CRITICAL FIX: Change Token to Bearer
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
-    return token ? { Authorization: `Token ${token}` } : null;
+    return token ? { Authorization: `Bearer ${token}` } : null;
   }, []);
 
   const fetchDashboardData = useCallback(async () => {
-    // ✅ Prevent multiple simultaneous calls
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
@@ -58,18 +56,20 @@ export default function DashboardLayout({ children }) {
     setError('');
 
     try {
-      console.log('Fetching dashboard data from:', { PROFILE_API_URL, DASHBOARD_API_URL });
-      
       // Fetch both profile and dashboard data
       const [profileRes, dashRes] = await Promise.all([
         axios.get(PROFILE_API_URL, { headers }),
         axios.get(DASHBOARD_API_URL, { headers })
       ]);
 
-      console.log('Profile response:', profileRes.data);
-      console.log('Dashboard response:', dashRes.data);
-
-      setSellerName(profileRes.data.name || 'Seller');
+      // Handle seller name from multiple possible response structures
+      setSellerName(
+        profileRes.data.seller?.name ||
+        profileRes.data.store_profile?.name ||
+        profileRes.data.name ||
+        dashRes.data.seller?.name ||
+        'Seller'
+      );
       
       // Set notification counts from dashboard data
       if (dashRes.data.analytics) {
@@ -79,8 +79,9 @@ export default function DashboardLayout({ children }) {
         });
       }
 
-      // ✅ Enhanced profile completion check
-      const isComplete = profileRes.data.is_profile_complete;
+      // Enhanced profile completion check
+      const isComplete = profileRes.data.is_profile_complete || 
+                         (profileRes.data.store_profile && profileRes.data.store_profile.is_profile_complete);
       const isOnSettingsPage = pathname === '/dashboard/seller/settings';
       
       if (!isComplete && !isOnSettingsPage) {
@@ -88,11 +89,9 @@ export default function DashboardLayout({ children }) {
       }
       
     } catch (error) {
-      console.error("Dashboard data fetch failed:", error);
-      
       if (error.response?.status === 401) {
-        // ✅ Clear token and redirect only once
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('sellerInfo');
         router.replace('/login/seller?message=Session expired');
       } else {
         setError('Failed to load dashboard data');
@@ -102,15 +101,15 @@ export default function DashboardLayout({ children }) {
     }
   }, [getAuthHeaders, pathname, router]);
 
-  // ✅ Simplified useEffect with proper dependency management
   useEffect(() => {
-    // Reset initialization flag when pathname changes
     hasInitialized.current = false;
     fetchDashboardData();
-  }, [pathname]); // Only depend on pathname
+  }, [pathname, fetchDashboardData]);
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
+    localStorage.removeItem('sellerInfo');
+    hasInitialized.current = false;
     router.replace('/login/seller');
   };
 
@@ -118,7 +117,7 @@ export default function DashboardLayout({ children }) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p>Verifying your profile...</p>
+        <p>Loading dashboard...</p>
       </div>
     );
   }
@@ -142,45 +141,23 @@ export default function DashboardLayout({ children }) {
     {
       title: 'SALES & E-COMMERCE',
       items: [
-        { 
-          name: 'Products', 
-          href: '/dashboard/seller/products', 
-          icon: <Package size={18} />
-        },
-        { 
-          name: 'Orders', 
-          href: '/dashboard/seller/orders', 
-          count: notificationCounts.orders,
-          icon: <ShoppingCart size={18} />
-        },
-        { 
-          name: 'Notifications', 
-          href: '/dashboard/seller/notifications', 
-          count: notificationCounts.notifications,
-          icon: <Bell size={18} />
-        },
+        { name: 'Products', href: '/dashboard/seller/products', icon: <Package size={18} /> },
+        { name: 'Orders', href: '/dashboard/seller/orders', count: notificationCounts.orders, icon: <ShoppingCart size={18} /> },
+        { name: 'Notifications', href: '/dashboard/seller/notifications', count: notificationCounts.notifications, icon: <Bell size={18} /> },
       ]
     },
     {
       title: 'INVENTORY',
       items: [
-        { 
-          name: 'Stock', 
-          href: '/dashboard/seller/stock',
-          icon: <BarChart3 size={18} />
-        },
-        { 
-          name: 'History', 
-          href: '/dashboard/seller/history',
-          icon: <History size={18} />
-        },
+        { name: 'Stock', href: '/dashboard/seller/stock', icon: <BarChart3 size={18} /> },
+        { name: 'History', href: '/dashboard/seller/history', icon: <History size={18} /> },
       ]
     }
   ];
 
   return (
     <div style={styles.layoutContainer}>
-      {/* Enhanced Sidebar */}
+      {/* Sidebar */}
       <div style={styles.sidebar}>
         <div style={styles.sidebarHeader}>
           <div style={styles.logoContainer}>
@@ -251,7 +228,6 @@ export default function DashboardLayout({ children }) {
         </main>
       </div>
 
-      {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -267,7 +243,6 @@ export default function DashboardLayout({ children }) {
   );
 }
 
-// Enhanced NavItem component
 function NavItem({ href, name, pathname, count = 0, icon }) {
     const isActive = href === '/dashboard/seller' ? pathname === href : pathname.startsWith(href);
     

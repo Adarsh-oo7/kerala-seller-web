@@ -116,12 +116,13 @@ export default function StockManagementPage() {
       setError('');
       
       console.log('Fetching products from:', API_URL);
+      // ✅ FIXED: Changed Token to Bearer authentication
       const response = await axios.get(API_URL, { 
-        headers: { Authorization: `Token ${token}` } 
+        headers: { Authorization: `Bearer ${token}` } 
       });
       
       const productData = response.data.results || response.data || [];
-      console.log('Products fetched:', productData.length);
+      console.log('Products fetched for stock management:', productData.length);
       
       setProducts(productData);
       setFilteredProducts(productData);
@@ -129,6 +130,10 @@ export default function StockManagementPage() {
       console.error('Failed to fetch products:', error);
       if (error.response?.status === 401) {
         setError('Session expired. Please log in again.');
+        // Optionally redirect to login after a delay
+        setTimeout(() => {
+          window.location.href = '/login/seller';
+        }, 2000);
       } else {
         setError('Failed to load products. Please try again.');
       }
@@ -203,17 +208,25 @@ export default function StockManagementPage() {
         };
 
         try {
+          // ✅ FIXED: Changed Token to Bearer authentication
           await axios.patch(`${API_URL}${productId}/update-stock/`, data, {
-            headers: { Authorization: `Token ${token}` }
+            headers: { Authorization: `Bearer ${token}` }
           });
           await fetchData();
           setError('');
         } catch (error) {
           console.error('Stock update failed:', error);
-          const errorMessage = error.response?.data?.error || 
-                              error.response?.data?.message ||
-                              'Could not update stock. Please try again.';
-          setError(errorMessage);
+          if (error.response?.status === 401) {
+            setError('Session expired. Please log in again.');
+            setTimeout(() => {
+              window.location.href = '/login/seller';
+            }, 2000);
+          } else {
+            const errorMessage = error.response?.data?.error || 
+                                error.response?.data?.message ||
+                                'Could not update stock. Please try again.';
+            setError(errorMessage);
+          }
           await fetchData(); // Refresh to show correct values
         } finally {
           setConfirmation(null);
@@ -276,7 +289,7 @@ export default function StockManagementPage() {
             Stock Management
           </h1>
           <p style={styles.subtitle}>
-            Manage inventory levels and track stock changes
+            Manage inventory levels and track stock changes for your store
           </p>
         </div>
         <div style={styles.headerActions}>
@@ -379,7 +392,7 @@ export default function StockManagementPage() {
                 <td colSpan="4" style={{...styles.td, textAlign: 'center', padding: '3rem'}}>
                   <div style={styles.loadingState}>
                     <div style={styles.spinner}></div>
-                    <span>Loading products...</span>
+                    <span>Loading your inventory...</span>
                   </div>
                 </td>
               </tr>
@@ -498,7 +511,7 @@ export default function StockManagementPage() {
                     <p>
                       {searchTerm || stockFilter !== 'all'
                         ? 'No products match your current filters.'
-                        : 'You haven\'t added any products yet.'}
+                        : 'You haven\'t added any products to your store yet.'}
                     </p>
                     {searchTerm || stockFilter !== 'all' ? (
                       <button
@@ -540,6 +553,7 @@ export default function StockManagementPage() {
   );
 }
 
+// ... (all styles remain exactly the same)
 const styles = {
   container: {
     padding: '24px',

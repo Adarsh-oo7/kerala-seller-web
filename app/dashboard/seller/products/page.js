@@ -48,9 +48,10 @@ export default function ProductsPage() {
     try {
       console.log('🔄 Fetching products from:', API_URL);
       
+      // ✅ FIXED: Use Bearer instead of Token
       const response = await axios.get(API_URL, { 
         headers: { 
-          'Authorization': `Token ${token}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         } 
       });
@@ -72,7 +73,7 @@ export default function ProductsPage() {
 
       setProducts(productsData);
       setFilteredProducts(productsData);
-      console.log(`📦 Found ${productsData.length} products`);
+      console.log(`📦 Found ${productsData.length} products for your store`);
 
     } catch (error) {
       console.error('❌ Failed to fetch products:', error);
@@ -138,9 +139,10 @@ export default function ProductsPage() {
     setIsDeleting(productId);
     
     try {
+      // ✅ FIXED: Use Bearer instead of Token
       await axios.delete(`${API_URL}${productId}/`, {
         headers: { 
-          'Authorization': `Token ${token}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
       });
@@ -176,6 +178,9 @@ export default function ProductsPage() {
   // Helper to display the sale type nicely
   const formatSaleType = (type) => {
     const types = {
+      'ONLINE_AND_OFFLINE': 'Online & In-Store',
+      'OFFLINE_ONLY': 'In-Store Only',
+      'ONLINE_ONLY': 'Online Only',
       'BOTH': 'Online & In-Store',
       'OFFLINE': 'In-Store Only',
       'ONLINE': 'Online Only'
@@ -203,7 +208,7 @@ export default function ProductsPage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p>Loading products...</p>
+        <p>Loading your products...</p>
       </div>
     );
   }
@@ -415,7 +420,7 @@ export default function ProductsPage() {
           <p>
             {searchTerm || filterType !== 'all'
               ? 'Try adjusting your search terms or filters to find products.'
-              : 'You haven\'t added any products yet. Start by adding your first product!'}
+              : 'You haven\'t added any products to your store yet. Start by adding your first product!'}
           </p>
           {searchTerm || filterType !== 'all' ? (
             <button 
@@ -452,6 +457,7 @@ export default function ProductsPage() {
   );
 }
 
+// ... (styles remain the same)
 const styles = {
   container: {
     padding: '24px',

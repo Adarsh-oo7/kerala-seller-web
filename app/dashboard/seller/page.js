@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import axios from 'axios';
 import { 
   Store, 
   TrendingUp, 
@@ -16,17 +16,19 @@ import {
   Users,
   IndianRupee,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  RefreshCw
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
+// API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const DASHBOARD_URL = `${API_BASE_URL}/user/dashboard/`;
+const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
+const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
 
 // Frontend base URL for store links
 const FRONTEND_BASE_URL = process.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'http://localhost:3000';
 
-// --- Sub-component for the "Setup Your Store" prompt ---
+// Setup Store Prompt Component
 function SetupStorePrompt() {
     return (
         <div style={styles.setupCard}>
@@ -61,57 +63,69 @@ function SetupStorePrompt() {
     );
 }
 
-// --- Main Dashboard Page Component ---
+// Main Dashboard Overview Component
 export default function SellerDashboardOverview() {
   const [dashboardData, setDashboardData] = useState(null);
+  const [storeData, setStoreData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
   const router = useRouter();
 
-  const fetchData = useCallback(async () => {
+  // Get authentication headers
+  const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
-    if (!token) {
-        router.push('/login/seller');
-        return;
+    return token ? { Authorization: `Bearer ${token}` } : null;
+  }, []);
+
+  // Fetch real data from your APIs
+  const fetchDashboardData = useCallback(async () => {
+    const headers = getAuthHeaders();
+    if (!headers) {
+      router.push('/login/seller');
+      return;
     }
-    
+
     setIsLoading(true);
     setError('');
-    
+
     try {
-        console.log('Fetching dashboard data from:', DASHBOARD_URL);
-        const response = await axios.get(DASHBOARD_URL, { 
-            headers: { Authorization: `Token ${token}` } 
-        });
-        
-        console.log('Dashboard data received:', response.data);
-        setDashboardData(response.data);
-    } catch (err) {
-        console.error("Failed to fetch dashboard data", err);
-        if (err.response?.status === 401) {
-            localStorage.removeItem('accessToken');
-            router.push('/login/seller');
-        } else {
-            setError('Failed to load dashboard data. Please refresh the page.');
-        }
+      // Fetch both dashboard and store profile data
+      const [dashboardRes, storeRes] = await Promise.all([
+        axios.get(DASHBOARD_API_URL, { headers }),
+        axios.get(PROFILE_API_URL, { headers }).catch(() => null) // Don't fail if profile doesn't exist
+      ]);
+
+      setDashboardData(dashboardRes.data);
+      setStoreData(storeRes?.data || null);
+
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken');
+        router.push('/login/seller?message=Session expired');
+      } else {
+        setError('Failed to load dashboard data. Please try again.');
+      }
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-  }, [router]);
+  }, [getAuthHeaders, router]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-  
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
   const copyStoreLink = async () => {
-    const storeUrl = `${FRONTEND_BASE_URL}/shop/${dashboardData.seller.phone}`;
+    const phone = dashboardData?.seller?.phone || storeData?.seller?.phone;
+    if (!phone) return;
+    
+    const storeUrl = `${FRONTEND_BASE_URL}/shop/${phone}`;
     try {
         await navigator.clipboard.writeText(storeUrl);
         setCopySuccess(true);
         setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
-        // Fallback for older browsers
         const textArea = document.createElement('textarea');
         textArea.value = storeUrl;
         document.body.appendChild(textArea);
@@ -124,7 +138,9 @@ export default function SellerDashboardOverview() {
   };
 
   const visitStore = () => {
-    const storeUrl = `${FRONTEND_BASE_URL}/shop/${dashboardData.seller.phone}`;
+    const phone = dashboardData?.seller?.phone || storeData?.seller?.phone;
+    if (!phone) return;
+    const storeUrl = `${FRONTEND_BASE_URL}/shop/${phone}`;
     window.open(storeUrl, '_blank');
   };
 
@@ -143,7 +159,8 @@ export default function SellerDashboardOverview() {
             <AlertCircle size={48} />
             <h2>Something went wrong</h2>
             <p>{error}</p>
-            <button onClick={fetchData} style={styles.retryButton}>
+            <button onClick={fetchDashboardData} style={styles.retryButton}>
+                <RefreshCw size={18} />
                 Try Again
             </button>
         </div>
@@ -154,13 +171,18 @@ export default function SellerDashboardOverview() {
     return (
         <div style={styles.errorContainer}>
             <AlertCircle size={48} />
-            <p>Could not load dashboard data.</p>
-            <button onClick={fetchData} style={styles.retryButton}>
-                Reload Dashboard
+            <p>No dashboard data available</p>
+            <button onClick={fetchDashboardData} style={styles.retryButton}>
+                <RefreshCw size={18} />
+                Reload
             </button>
         </div>
     );
   }
+
+  // Determine if store profile is complete
+  const hasStoreProfile = dashboardData.has_store_profile || (storeData && storeData.is_profile_complete);
+  const sellerName = dashboardData.seller?.name || storeData?.seller?.name || 'Seller';
 
   return (
     <div style={styles.dashboardContainer}>
@@ -168,7 +190,7 @@ export default function SellerDashboardOverview() {
         <div style={styles.header}>
             <div>
                 <h1 style={styles.welcomeTitle}>
-                    Welcome back, {dashboardData.seller?.name || 'Seller'}!
+                    Welcome back, {sellerName}!
                 </h1>
                 <p style={styles.welcomeSubtitle}>
                     Here's what's happening with your store today
@@ -179,17 +201,20 @@ export default function SellerDashboardOverview() {
                     <Package size={18} />
                     Manage Products
                 </Link>
+                <button onClick={fetchDashboardData} style={styles.refreshButton}>
+                    <RefreshCw size={16} />
+                    Refresh
+                </button>
             </div>
         </div>
 
-        {/* ✅ Corrected conditional logic */}
-        {dashboardData.has_store_profile ? (
+        {hasStoreProfile ? (
             <>
                 {/* Statistics Cards */}
                 <div style={styles.statsContainer}>
                     <StatCard 
                         title="Total Revenue" 
-                        value={`₹${(dashboardData.analytics?.total_revenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}
+                        value={`₹${(dashboardData.analytics?.total_revenue || 0).toLocaleString('en-IN')}`}
                         icon={<IndianRupee size={24} />}
                         color="#059669"
                         bgColor="#ecfdf5"
@@ -209,7 +234,7 @@ export default function SellerDashboardOverview() {
                         bgColor="#f3e8ff"
                     />
                     <StatCard 
-                        title="Customers" 
+                        title="Total Customers" 
                         value={dashboardData.analytics?.total_customers || 0}
                         icon={<Users size={24} />}
                         color="#f59e0b"
@@ -232,7 +257,7 @@ export default function SellerDashboardOverview() {
                         </p>
                         <div style={styles.linkBox}>
                             <span style={styles.storeUrl}>
-                                {`${FRONTEND_BASE_URL}/shop/${dashboardData.seller.phone}`}
+                                {`${FRONTEND_BASE_URL}/shop/${dashboardData.seller?.phone || storeData?.seller?.phone || 'your-phone'}`}
                             </span>
                             <div style={styles.linkActions}>
                                 <button 
@@ -321,29 +346,11 @@ export default function SellerDashboardOverview() {
         ) : (
             <SetupStorePrompt />
         )}
-
-        {/* CSS Animations */}
-        <style jsx>{`
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-            
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(20px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            
-            @keyframes pulse {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.8; }
-            }
-        `}</style>
     </div>
   );
 }
 
-// Enhanced StatCard component
+// StatCard component
 function StatCard({ title, value, icon, color, bgColor }) {
     return (
         <div style={styles.statCard}>
@@ -362,8 +369,7 @@ const styles = {
     dashboardContainer: {
         padding: '24px',
         maxWidth: '1200px',
-        margin: '0 auto',
-        animation: 'fadeIn 0.6s ease-out'
+        margin: '0 auto'
     },
     
     loadingContainer: {
@@ -372,7 +378,9 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '400px',
-        gap: '20px'
+        gap: '20px',
+        textAlign: 'center',
+        color: '#6b7280'
     },
     
     spinner: {
@@ -396,6 +404,9 @@ const styles = {
     },
     
     retryButton: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
         padding: '12px 24px',
         backgroundColor: '#3b82f6',
         color: 'white',
@@ -446,7 +457,21 @@ const styles = {
         fontWeight: '500'
     },
     
-    // Setup Store Prompt Styles
+    refreshButton: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '10px 16px',
+        backgroundColor: '#f3f4f6',
+        color: '#374151',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: '500'
+    },
+    
+    // Setup Card
     setupCard: { 
         backgroundColor: '#fefce8', 
         border: '2px solid #facc15', 
@@ -514,7 +539,7 @@ const styles = {
         fontWeight: '500'
     },
     
-    // Statistics Cards
+    // Statistics
     statsContainer: { 
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
@@ -560,7 +585,7 @@ const styles = {
         color: '#1f2937'
     },
     
-    // Main Content Grid
+    // Grid
     gridContainer: { 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
@@ -653,7 +678,7 @@ const styles = {
         fontWeight: '500'
     },
     
-    // Products List
+    // Products
     productsList: {
         display: 'flex',
         flexDirection: 'column',

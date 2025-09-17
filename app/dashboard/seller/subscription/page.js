@@ -124,13 +124,14 @@ export default function SubscriptionPage() {
     const [error, setError] = useState('');
     const router = useRouter();
 
+    // ✅ FIXED: Changed Token to Bearer authentication
     const getAuthHeaders = useCallback(() => {
         const token = localStorage.getItem('accessToken');
         if (!token) {
             router.push('/login/seller');
             return null;
         }
-        return { Authorization: `Token ${token}` };
+        return { Authorization: `Bearer ${token}` };
     }, [router]);
 
     const loadSubscriptionData = useCallback(async () => {
@@ -147,13 +148,16 @@ export default function SubscriptionPage() {
         } catch (subErr) {
             console.log('No active subscription found');
             setCurrentSubscription(null);
-            if (subErr.response?.status !== 404 && subErr.response?.status !== 401) {
+            if (subErr.response?.status === 401) {
+                setSubscriptionError('Session expired. Please log in again.');
+                setTimeout(() => router.push('/login/seller'), 2000);
+            } else if (subErr.response?.status !== 404) {
                 setSubscriptionError('Failed to load subscription data');
             }
         } finally {
             setSubscriptionLoading(false);
         }
-    }, [getAuthHeaders]);
+    }, [getAuthHeaders, router]);
 
     const loadPlansData = useCallback(async () => {
         try {
@@ -232,17 +236,22 @@ export default function SubscriptionPage() {
                     try {
                         await axios.post(VERIFY_PAYMENT_API, verificationData, { headers });
                         setError('');
-                        alert('🎉 Subscription activated successfully! Welcome to Kerala Sellers!');
+                        alert('🎉 Subscription activated successfully! Welcome to Kerala Sellers Premium!');
                         
                         // Refresh subscription data
                         await loadSubscriptionData();
                         
                     } catch (error) {
                         console.error('Payment verification failed:', error);
-                        const errorMessage = error.response?.data?.message || 
-                                           error.response?.data?.error ||
-                                           'Payment verification failed. Please contact support.';
-                        alert(`❌ ${errorMessage}`);
+                        if (error.response?.status === 401) {
+                            alert('❌ Session expired. Please log in again.');
+                            setTimeout(() => router.push('/login/seller'), 2000);
+                        } else {
+                            const errorMessage = error.response?.data?.message || 
+                                               error.response?.data?.error ||
+                                               'Payment verification failed. Please contact support.';
+                            alert(`❌ ${errorMessage}`);
+                        }
                     } finally {
                         setIsProcessing(null);
                     }
@@ -273,10 +282,15 @@ export default function SubscriptionPage() {
 
         } catch (error) {
             console.error('Subscription error:', error);
-            const errorMessage = error.response?.data?.message || 
-                               error.response?.data?.error ||
-                               'Failed to process subscription. Please try again.';
-            alert(`❌ ${errorMessage}`);
+            if (error.response?.status === 401) {
+                alert('❌ Session expired. Please log in again.');
+                setTimeout(() => router.push('/login/seller'), 2000);
+            } else {
+                const errorMessage = error.response?.data?.message || 
+                                   error.response?.data?.error ||
+                                   'Failed to process subscription. Please try again.';
+                alert(`❌ ${errorMessage}`);
+            }
             setIsProcessing(null);
         }
     };
@@ -470,6 +484,7 @@ export default function SubscriptionPage() {
     );
 }
 
+// ... (all styles remain exactly the same)
 const styles = {
     container: { 
         padding: '24px',

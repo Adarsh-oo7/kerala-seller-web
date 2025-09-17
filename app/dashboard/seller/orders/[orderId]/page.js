@@ -60,17 +60,25 @@ function UpdateStatusModal({ order, onClose, onUpdate }) {
 
         try {
             console.log('Updating order status:', updateData);
+            // ✅ FIXED: Changed Token to Bearer authentication
             await axios.patch(`${ORDERS_API_URL}${order.id}/update_status/`, updateData, {
-                headers: { Authorization: `Token ${token}` }
+                headers: { Authorization: `Bearer ${token}` }
             });
             onUpdate(); // Refresh the order details on the main page
             onClose();
         } catch (error) {
             console.error('Status update failed:', error);
-            const errorMessage = error.response?.data?.error || 
-                               error.response?.data?.message ||
-                               'Failed to update order status. Please try again.';
-            setError(errorMessage);
+            if (error.response?.status === 401) {
+                setError('Session expired. Please log in again.');
+                setTimeout(() => {
+                    window.location.href = '/login/seller';
+                }, 2000);
+            } else {
+                const errorMessage = error.response?.data?.error || 
+                                   error.response?.data?.message ||
+                                   'Failed to update order status. Please try again.';
+                setError(errorMessage);
+            }
         } finally {
             setIsSaving(false);
         }
@@ -190,13 +198,14 @@ export default function OrderDetailPage() {
   const { orderId } = useParams();
   const router = useRouter();
   
+  // ✅ FIXED: Changed Token to Bearer authentication
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
       router.push('/login/seller');
       return null;
     }
-    return { 'Authorization': `Token ${token}` };
+    return { 'Authorization': `Bearer ${token}` };
   }, [router]);
 
   const fetchOrderDetails = useCallback(async () => {
@@ -215,7 +224,8 @@ export default function OrderDetailPage() {
     } catch (error) {
       console.error("Failed to fetch order details", error);
       if (error.response?.status === 401) {
-        router.push('/login/seller');
+        setError('Session expired. Please log in again.');
+        setTimeout(() => router.push('/login/seller'), 2000);
       } else if (error.response?.status === 404) {
         setError('Order not found or you do not have permission to view it.');
       } else {
@@ -248,9 +258,14 @@ export default function OrderDetailPage() {
       window.open(fileURL, '_blank');
     } catch (error) {
       console.error('Bill generation failed:', error);
-      const errorMessage = error.response?.data?.error || 'Could not generate the bill. Please try again.';
-      setError(errorMessage);
-      setTimeout(() => setError(''), 3000);
+      if (error.response?.status === 401) {
+        setError('Session expired. Please log in again.');
+        setTimeout(() => router.push('/login/seller'), 2000);
+      } else {
+        const errorMessage = error.response?.data?.error || 'Could not generate the bill. Please try again.';
+        setError(errorMessage);
+        setTimeout(() => setError(''), 3000);
+      }
     }
   };
 
@@ -435,8 +450,8 @@ export default function OrderDetailPage() {
               <strong>Status:</strong>
               <span style={{
                 ...styles.paymentStatus,
-                backgroundColor: order.payment_status === 'Paid' ? '#d1fae5' : '#dbeafe',
-                color: order.payment_status === 'Paid' ? '#065f46' : '#1e40af'
+                backgroundColor: order.payment_status === 'Paid' || order.payment_status === 'PAID' ? '#d1fae5' : '#dbeafe',
+                color: order.payment_status === 'Paid' || order.payment_status === 'PAID' ? '#065f46' : '#1e40af'
               }}>
                 {order.payment_status}
               </span>
@@ -524,6 +539,7 @@ export default function OrderDetailPage() {
   );
 }
 
+// ... (all styles remain exactly the same)
 const styles = {
   pageContainer: {
     padding: '24px',

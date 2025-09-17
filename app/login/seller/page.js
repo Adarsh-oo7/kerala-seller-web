@@ -1,11 +1,9 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
-import Header from '../../../components/common/Header';
-import Footer from '../../../components/common/Footer';
 import { Phone, Lock, Eye, EyeOff, User, ArrowLeft, AlertCircle, Store } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
@@ -71,33 +69,61 @@ function LoginForm() {
     setError('');
 
     try {
+      console.log('🔍 Attempting login with phone:', phone);
+      
       const response = await axios.post(LOGIN_API_URL, { 
         phone, 
         password,
         user_type: 'seller'
       });
       
+      console.log('✅ Login response:', response.data);
+      
+      // ✅ Fixed: Use access_token from response
+      const { access_token, seller, debug_info } = response.data;
+      
+      if (!access_token) {
+        throw new Error('No access token received');
+      }
+      
+      console.log('✅ Login successful for:', debug_info?.admin_user_email);
+      console.log('✅ Access token preview:', access_token.substring(0, 50) + '...');
+      
+      // ✅ Store the access token properly
+      localStorage.setItem('accessToken', access_token);
+      
+      if (seller) {
+        localStorage.setItem('sellerInfo', JSON.stringify(seller));
+      }
+      
       if (rememberMe) {
-        localStorage.setItem('accessToken', response.data.token);
         localStorage.setItem('rememberSeller', 'true');
-      } else {
-        sessionStorage.setItem('accessToken', response.data.token);
-        localStorage.setItem('accessToken', response.data.token);
       }
       
-      if (response.data.user) {
-        localStorage.setItem('sellerInfo', JSON.stringify(response.data.user));
-      }
+      console.log('✅ Token stored, redirecting...');
       
-      const redirectUrl = redirect || '/dashboard/seller';
-      router.push(redirectUrl);
+      // ✅ Small delay to ensure storage completes
+      setTimeout(() => {
+        const redirectUrl = redirect || '/dashboard/seller';
+        router.push(redirectUrl);
+      }, 150);
       
     } catch (err) {
-      console.error('Login error:', err);
-      const errorMessage = err.response?.data?.error || 
-                          err.response?.data?.detail || 
-                          err.response?.data?.message ||
-                          'Login failed. Please check your credentials.';
+      console.error('❌ Login error:', err);
+      console.error('❌ Error response:', err.response?.data);
+      
+      let errorMessage = 'Login failed. Please check your credentials.';
+      
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.response?.data?.detail) {
+        errorMessage = err.response.data.detail;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.status === 401) {
+        errorMessage = 'Invalid phone number or password';
+      }
+      
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -251,7 +277,6 @@ function LoginLoading() {
 export default function LoginSellerPage() {
   return (
     <div style={styles.pageContainer}>
-      <Header />
       <div style={styles.container}>
         {/* ✅ Wrap the component that uses useSearchParams in Suspense */}
         <Suspense fallback={<LoginLoading />}>
@@ -270,7 +295,6 @@ export default function LoginSellerPage() {
           </ul>
         </div>
       </div>
-      <Footer />
 
       {/* CSS Animations */}
       <style jsx>{`
@@ -293,10 +317,6 @@ export default function LoginSellerPage() {
   );
 }
 
-// Add the missing import at the top
-import { useSearchParams } from 'next/navigation';
-
-// ✅ All your existing styles remain the same
 const styles = {
   pageContainer: {
     minHeight: '100vh',

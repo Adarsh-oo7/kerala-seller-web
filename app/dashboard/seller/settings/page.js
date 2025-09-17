@@ -4,24 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { 
-  Shield, 
-  Upload, 
-  Check, 
-  AlertCircle, 
-  Star, 
-  Settings, 
-  Building,
-  FileText,
-  CreditCard,
-  Phone,
-  Globe,
-  Truck,
-  Search,
-  Eye,
-  EyeOff,
-  X,
-  RefreshCw,
-  Save
+  Shield, Upload, Check, AlertCircle, Star, Settings, Building, FileText, CreditCard, Phone, Globe, Truck, Search, Eye, EyeOff, X, RefreshCw, Save
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
@@ -75,13 +58,14 @@ export default function SettingsPage() {
   const [showSecrets, setShowSecrets] = useState({});
   const router = useRouter();
 
+  // ✅ FIXED: Use Bearer authentication instead of Token
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
-        router.push('/login/seller');
-        return null;
+      router.push('/login/seller');
+      return null;
     }
-    return { 'Authorization': `Token ${token}` };
+    return { Authorization: `Bearer ${token}` };
   }, [router]);
 
   const fetchStoreProfile = useCallback(async () => {
@@ -89,18 +73,15 @@ export default function SettingsPage() {
     if (!headers) return;
 
     try {
-      console.log('Fetching store profile from:', API_URL);
       const response = await axios.get(API_URL, { headers });
       
-      console.log('Store profile received:', response.data);
-      setStore(prev => ({ ...prev, ...response.data }));
-      setCurrentBannerUrl(response.data.banner_image_url || '');
-      setCurrentLogoUrl(response.data.logo_url || '');
-      setCurrentDocUrl(response.data.verification_doc_url || '');
-      calculateProgress(response.data);
+      setStore(prev => ({ ...prev, ...response.data.store_profile }));
+      setCurrentBannerUrl(response.data.store_profile?.banner_image_url || '');
+      setCurrentLogoUrl(response.data.store_profile?.logo_url || '');
+      setCurrentDocUrl(response.data.store_profile?.verification_doc_url || '');
+      calculateProgress(response.data.store_profile || {});
       
     } catch (error) {
-      console.error('Failed to fetch store settings:', error);
       if (error.response?.status === 401) {
         router.push('/login/seller');
       } else {
@@ -183,8 +164,8 @@ export default function SettingsPage() {
     
     const headers = getAuthHeaders();
     if (!headers) {
-        setIsSaving(false);
-        return;
+      setIsSaving(false);
+      return;
     }
     
     const formData = new FormData();
@@ -202,7 +183,7 @@ export default function SettingsPage() {
     if (verificationDocFile) formData.append('verification_doc', verificationDocFile);
 
     try {
-      console.log('Updating store profile...');
+      // ✅ FIXED: Use headers correctly without overriding Content-Type
       const response = await axios.patch(API_URL, formData, { 
         headers: {
           ...headers,
@@ -210,10 +191,9 @@ export default function SettingsPage() {
         }
       });
       
-      console.log('Store updated successfully:', response.data);
-      setCurrentBannerUrl(response.data.banner_image_url || '');
-      setCurrentLogoUrl(response.data.logo_url || '');
-      setCurrentDocUrl(response.data.verification_doc_url || '');
+      setCurrentBannerUrl(response.data.store_profile?.banner_image_url || '');
+      setCurrentLogoUrl(response.data.store_profile?.logo_url || '');
+      setCurrentDocUrl(response.data.store_profile?.verification_doc_url || '');
       setSuccessMessage('Store settings updated successfully!');
       
       // Reset file inputs
@@ -225,13 +205,12 @@ export default function SettingsPage() {
       const fileInputs = document.querySelectorAll('input[type="file"]');
       fileInputs.forEach(input => input.value = '');
       
-      calculateProgress(response.data);
+      calculateProgress(response.data.store_profile || {});
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
       
     } catch (error) {
-      console.error('Store update failed:', error);
       const errorMessage = error.response?.data?.error || 
                           error.response?.data?.message ||
                           'Failed to update store settings. Please try again.';
@@ -292,10 +271,8 @@ export default function SettingsPage() {
         text: 'Verification Rejected' 
       }
     };
-    
     const config = statusConfig[store.verification_status] || statusConfig.pending;
     const Icon = config.icon;
-    
     return (
       <div style={{
         ...styles.verificationStatus, 
@@ -877,7 +854,6 @@ export default function SettingsPage() {
         </div>
       </form>
 
-      {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -906,7 +882,6 @@ const styles = {
     animation: 'fadeIn 0.6s ease-out'
   },
   
-  // Loading
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -935,7 +910,6 @@ const styles = {
     marginRight: '8px'
   },
 
-  // Header
   header: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -966,7 +940,6 @@ const styles = {
     fontSize: '1rem'
   },
 
-  // Alert Messages
   successAlert: {
     display: 'flex',
     alignItems: 'center',
@@ -992,7 +965,7 @@ const styles = {
     marginBottom: '24px',
     animation: 'slideIn 0.3s ease-out'
   },
-  
+
   closeAlert: {
     marginLeft: 'auto',
     background: 'none',
@@ -1002,7 +975,6 @@ const styles = {
     padding: '4px'
   },
 
-  // Verification Status
   verificationStatus: {
     display: 'flex',
     alignItems: 'center',
@@ -1130,6 +1102,98 @@ const styles = {
     lineHeight: '1.5'
   },
 
+  // Branding
+  brandingContainer: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '32px'
+  },
+
+  logoSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+
+  bannerSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+
+  imageUploadContainer: {
+    position: 'relative',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    border: '2px dashed #d1d5db',
+    backgroundColor: '#f9fafb'
+  },
+
+  logoPreview: {
+    width: '100%',
+    height: '200px',
+    objectFit: 'contain',
+    backgroundColor: 'white'
+  },
+
+  bannerPreview: {
+    width: '100%',
+    height: '200px',
+    objectFit: 'cover'
+  },
+
+  logoPlaceholder: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '200px',
+    color: '#6b7280',
+    gap: '8px'
+  },
+
+  bannerPlaceholder: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '200px',
+    color: '#6b7280',
+    gap: '8px'
+  },
+
+  imageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0,
+    transition: 'opacity 0.2s'
+  },
+
+  hiddenFileInput: {
+    display: 'none'
+  },
+
+  uploadButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 20px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    textDecoration: 'none'
+  },
+
   // Form Elements
   formGrid: {
     display: 'grid',
@@ -1199,165 +1263,34 @@ const styles = {
     fontWeight: '500'
   },
 
-  // Password Input
-  passwordContainer: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center'
-  },
-  
-  passwordInput: {
-    padding: '12px 48px 12px 16px',
-    border: '2px solid #e5e7eb',
-    borderRadius: '8px',
-    fontSize: '14px',
-    outline: 'none',
-    transition: 'all 0.2s',
-    backgroundColor: 'white',
-    width: '100%'
-  },
-  
-  passwordToggle: {
-    position: 'absolute',
-    right: '12px',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#6b7280',
-    padding: '4px'
-  },
-
-  // File Uploads
-  brandingContainer: {
-    display: 'grid',
-    gridTemplateColumns: 'auto 1fr',
-    gap: '32px',
-    alignItems: 'flex-start'
-  },
-  
-  logoSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  },
-  
-  bannerSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  },
-  
-  imageUploadContainer: {
-    position: 'relative',
-    overflow: 'hidden',
-    borderRadius: '12px'
-  },
-  
-  logoPreview: {
-    width: '120px',
-    height: '120px',
-    objectFit: 'cover',
-    borderRadius: '12px',
-    border: '2px solid #e5e7eb'
-  },
-  
-  logoPlaceholder: {
-    width: '120px',
-    height: '120px',
-    borderRadius: '12px',
-    backgroundColor: '#f8fafc',
-    border: '2px dashed #cbd5e1',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#6b7280',
-    fontSize: '12px',
-    gap: '8px'
-  },
-  
-  bannerPreview: {
-    width: '100%',
-    height: '120px',
-    objectFit: 'cover',
-    borderRadius: '12px',
-    border: '2px solid #e5e7eb'
-  },
-  
-  bannerPlaceholder: {
-    width: '100%',
-    height: '120px',
-    borderRadius: '12px',
-    backgroundColor: '#f8fafc',
-    border: '2px dashed #cbd5e1',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#6b7280',
-    fontSize: '14px',
-    gap: '8px'
-  },
-  
-  imageOverlay: {
-    position: 'absolute',
-    bottom: '8px',
-    right: '8px'
-  },
-  
-  hiddenFileInput: {
-    position: 'absolute',
-    width: '1px',
-    height: '1px',
-    padding: 0,
-    margin: '-1px',
-    overflow: 'hidden',
-    clip: 'rect(0, 0, 0, 0)',
-    whiteSpace: 'nowrap',
-    border: 0
-  },
-  
-  uploadButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '6px 12px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: '500',
-    transition: 'all 0.2s'
-  },
-  
+  // File Upload
   fileUploadArea: {
-    border: '2px dashed #cbd5e1',
+    border: '2px dashed #d1d5db',
     borderRadius: '12px',
     padding: '24px',
-    textAlign: 'center',
-    backgroundColor: '#f8fafc',
-    transition: 'all 0.2s'
+    backgroundColor: '#f9fafb',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '16px'
   },
-  
+
+  filePreview: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    color: '#059669'
+  },
+
   uploadPlaceholder: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '12px',
+    gap: '8px',
     color: '#6b7280',
-    marginBottom: '16px'
+    textAlign: 'center'
   },
-  
-  filePreview: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '12px',
-    color: '#059669',
-    marginBottom: '16px'
-  },
-  
+
   viewLink: {
     display: 'flex',
     alignItems: 'center',
@@ -1368,50 +1301,79 @@ const styles = {
     fontWeight: '500'
   },
 
+  // Password Input
+  passwordContainer: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center'
+  },
+
+  passwordInput: {
+    padding: '12px 48px 12px 16px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '8px',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'all 0.2s',
+    backgroundColor: 'white',
+    width: '100%'
+  },
+
+  passwordToggle: {
+    position: 'absolute',
+    right: '12px',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#6b7280',
+    padding: '4px'
+  },
+
   // Payment Config
   paymentConfig: {
-    backgroundColor: '#f8fafc',
     padding: '20px',
+    backgroundColor: '#f8fafc',
     borderRadius: '12px',
     border: '1px solid #e2e8f0'
   },
 
   // Checkbox
   checkboxGroup: {
-    paddingTop: '16px',
-    borderTop: '1px solid #e5e7eb'
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
   },
-  
+
   checkboxLabel: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
-    fontSize: '14px',
-    color: '#374151',
     cursor: 'pointer',
-    fontWeight: '500'
+    fontSize: '14px',
+    color: '#374151'
   },
-  
+
   checkbox: {
     width: '18px',
     height: '18px',
-    cursor: 'pointer'
+    accentColor: '#3b82f6'
   },
 
-  // Submit
+  // Submit Section
   submitSection: {
     display: 'flex',
-    alignItems: 'center',
     gap: '16px',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
     paddingTop: '32px',
-    marginTop: '32px',
-    borderTop: '2px solid #f3f4f6'
+    borderTop: '2px solid #f3f4f6',
+    marginTop: '32px'
   },
-  
+
   submitButton: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    gap: '12px',
     padding: '16px 32px',
     backgroundColor: '#3b82f6',
     color: 'white',
@@ -1422,24 +1384,24 @@ const styles = {
     fontWeight: '600',
     transition: 'all 0.2s'
   },
-  
+
+  disabledButton: {
+    backgroundColor: '#9ca3af',
+    cursor: 'not-allowed'
+  },
+
   refreshButton: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
     padding: '16px 24px',
-    backgroundColor: '#6b7280',
-    color: 'white',
+    backgroundColor: '#f3f4f6',
+    color: '#374151',
     border: 'none',
     borderRadius: '12px',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500',
     transition: 'all 0.2s'
-  },
-  
-  disabledButton: {
-    backgroundColor: '#9ca3af',
-    cursor: 'not-allowed'
   }
 };

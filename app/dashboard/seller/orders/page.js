@@ -142,13 +142,14 @@ export default function OrdersListPage() {
   const [orderStats, setOrderStats] = useState({});
   const router = useRouter();
 
+  // ✅ FIXED: Changed Token to Bearer authentication
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
       router.push('/login/seller');
       return null;
     }
-    return { 'Authorization': `Token ${token}` };
+    return { 'Authorization': `Bearer ${token}` };
   }, [router]);
 
   const fetchOrders = useCallback(async () => {
@@ -184,7 +185,8 @@ export default function OrdersListPage() {
     } catch (error) {
       console.error("Failed to fetch orders", error);
       if (error.response?.status === 401) {
-        router.push('/login/seller');
+        setError('Session expired. Please log in again.');
+        setTimeout(() => router.push('/login/seller'), 2000);
       } else {
         setError('Failed to load orders. Please try again.');
       }
@@ -228,11 +230,19 @@ export default function OrdersListPage() {
       'Paid': { backgroundColor: '#d1fae5', color: '#065f46', borderColor: '#10b981' },
       'Pay on Delivery': { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#3b82f6' },
       'Pending': { backgroundColor: '#fef3c7', color: '#92400e', borderColor: '#f59e0b' },
+      'PAID': { backgroundColor: '#d1fae5', color: '#065f46', borderColor: '#10b981' },
+      'COD': { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#3b82f6' },
+      'PENDING': { backgroundColor: '#fef3c7', color: '#92400e', borderColor: '#f59e0b' },
     };
     return paymentStyles[status] || { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#9ca3af' };
   };
 
   const handleExportOrders = () => {
+    if (filteredOrders.length === 0) {
+      alert('No orders to export');
+      return;
+    }
+
     const csvContent = [
       ['Order ID', 'Date', 'Customer', 'Phone', 'Amount', 'Status', 'Payment Status', 'Items Count'],
       ...filteredOrders.map(order => [
@@ -262,7 +272,7 @@ export default function OrdersListPage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p>Loading orders...</p>
+        <p>Loading your orders...</p>
       </div>
     );
   }
@@ -288,7 +298,7 @@ export default function OrdersListPage() {
         <div>
           <h1 style={styles.pageTitle}>
             <Package size={28} />
-            Manage Orders
+            My Orders
             {orderStats.total && (
               <span style={styles.totalBadge}>({orderStats.total})</span>
             )}
@@ -358,7 +368,7 @@ export default function OrdersListPage() {
                 ? `No orders match "${searchTerm}". Try different search terms.`
                 : statusFilter
                 ? `No orders found with status "${statusFilter}".`
-                : 'No orders have been placed yet.'
+                : 'No orders have been placed at your store yet.'
               }
             </p>
             {(searchTerm || statusFilter) && (
