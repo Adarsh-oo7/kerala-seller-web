@@ -29,6 +29,7 @@ export default function ProductCard({
   onAddToCart,
   onToggleWishlist,
   isWishlisted = false,
+  isWishlistLoading = false, // ✅ Added loading prop from parent
   onlineStock = 1,
   storeName,
   modelName,
@@ -38,7 +39,7 @@ export default function ProductCard({
   const [imageLoaded, setImageLoaded] = useState(false)
   const [touchStarted, setTouchStarted] = useState(false)
   const [wishlistState, setWishlistState] = useState(isWishlisted)
-  const [isWishlistLoading, setIsWishlistLoading] = useState(false)
+  const [localWishlistLoading, setLocalWishlistLoading] = useState(false)
 
   useEffect(() => {
     setWishlistState(isWishlisted)
@@ -56,110 +57,126 @@ export default function ProductCard({
     }, 2000)
   }
 
-  // ✅ Enhanced wishlist toggle with proper token handling
+  // ✅ Enhanced wishlist toggle with improved error handling
   const handleWishlistToggle = async (e) => {
     e.preventDefault()
     e.stopPropagation()
     
-    if (isWishlistLoading) return
+    // Prevent multiple clicks
+    if (isWishlistLoading || localWishlistLoading) {
+      console.log('⏳ Wishlist operation already in progress for product:', id)
+      return
+    }
     
-    setIsWishlistLoading(true)
+    // Check for authentication first
+    const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken')
+    
+    if (!token) {
+      console.log('🔐 No authentication token found, prompting user to login')
+      
+      // Show login prompt
+      const shouldLogin = window.confirm('Please login to add items to your wishlist. Would you like to login now?')
+      if (shouldLogin) {
+        window.location.href = '/login/buyer'
+      }
+      return
+    }
+
+    setLocalWishlistLoading(true)
+    const previousState = wishlistState
     const newWishlistState = !wishlistState
-    setWishlistState(newWishlistState) // Optimistic update
+    
+    // Optimistic update
+    setWishlistState(newWishlistState)
     
     try {
-      // ✅ Check both possible token keys
-      const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken')
+      console.log('🔄 Making wishlist API call for product:', id)
       
-      if (token) {
-        console.log('🔍 Making wishlist API call for product:', id)
-        
-        const response = await fetch(`${getApiBaseUrl()}/api/wishlist/toggle_product/`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ product_id: id })
-        })
-        
+      const response = await fetch(`${getApiBaseUrl()}/api/wishlist/toggle_product/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ product_id: id }),
+        timeout: 10000 // 10 second timeout
+      })
+      
+      if (response.ok) {
         const data = await response.json()
         console.log('✅ Wishlist API response:', data)
         
-        if (response.ok) {
-          setWishlistState(data.is_wishlisted)
-          
-          if (onToggleWishlist) {
-            onToggleWishlist(id, data.is_wishlisted, data.action)
-          }
-          
-          // Show success feedback
-          const action = data.action || (data.is_wishlisted ? 'added' : 'removed')
-          console.log(`${action === 'added' ? '✅ Added to' : '❌ Removed from'} wishlist: ${title}`)
-          
-        } else {
-          // Revert optimistic update on error
-          setWishlistState(!newWishlistState)
-          console.error('❌ Wishlist API error:', data.error)
-          
-          // Check if it's an auth error
-          if (response.status === 401) {
-            console.log('🔄 Token expired, redirecting to login')
-            localStorage.removeItem('access_token')
-            localStorage.removeItem('buyerAccessToken')
-            window.location.href = '/login/buyer'
-            return
-          }
-        }
-      } else {
-        // ✅ Enhanced localStorage fallback for guest users
-        console.log('🔍 No token found, using localStorage fallback')
-        const existingWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]')
+        // Update with server response
+        setWishlistState(data.is_wishlisted)
         
-        if (newWishlistState) {
-          const productData = {
-            id,
-            name: title,
-            price,
-            mrp,
-            main_image_url: primaryImage,
-            average_rating: rating,
-            review_count: reviewCount,
-            online_stock: onlineStock,
-            store: storeName ? { name: storeName } : null,
-            model_name: modelName,
-            seller_phone: sellerPhone,
-            added_at: new Date().toISOString()
-          }
-          
-          const existingIndex = existingWishlist.findIndex(item => item.id === id)
-          if (existingIndex === -1) {
-            existingWishlist.push(productData)
-            localStorage.setItem('wishlist', JSON.stringify(existingWishlist))
-            console.log('✅ Added to localStorage wishlist:', title)
-          }
-        } else {
-          const updatedWishlist = existingWishlist.filter(item => item.id !== id)
-          localStorage.setItem('wishlist', JSON.stringify(updatedWishlist))
-          console.log('❌ Removed from localStorage wishlist:', title)
-        }
-        
+        // Call parent callback if provided
         if (onToggleWishlist) {
-          onToggleWishlist(id, newWishlistState, newWishlistState ? 'added' : 'removed')
+          onToggleWishlist(id, data.is_wishlisted, data.action || (data.is_wishlisted ? 'added' : 'removed'))
+        }
+        
+        // Show success feedback
+        const action = data.is_wishlisted ? 'added to' : 'removed from'
+        console.log(`✅ ${title} ${action} wishlist`)
+        
+        // Visual feedback
+        showWishlistFeedback(newWishlistState)
+        
+      } else {
+        // Revert optimistic update
+        setWishlistState(previousState)
+        
+        if (response.status === 401) {
+          console.log('🔄 Authentication failed, clearing tokens and redirecting')
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('buyerAccessToken')
+          
+          const shouldLogin = window.confirm('Your session has expired. Please login again to continue.')
+          if (shouldLogin) {
+            window.location.href = '/login/buyer'
+          }
+        } else {
+          const errorData = await response.json().catch(() => ({}))
+          console.error('❌ Wishlist API error:', errorData.error || `HTTP ${response.status}`)
+          
+          // Show user-friendly error
+          showErrorFeedback('Failed to update wishlist. Please try again.')
         }
       }
+      
     } catch (error) {
-      // Revert optimistic update on network error
-      setWishlistState(!newWishlistState)
+      // Revert optimistic update
+      setWishlistState(previousState)
       console.error('❌ Network error:', error)
       
-      // Show user-friendly error message
-      if (window.navigator.onLine === false) {
-        console.log('📡 No internet connection')
+      if (error.name === 'AbortError') {
+        showErrorFeedback('Request timed out. Please check your connection.')
+      } else if (!navigator.onLine) {
+        showErrorFeedback('No internet connection. Please check your network.')
+      } else {
+        showErrorFeedback('Failed to update wishlist. Please try again.')
       }
+      
     } finally {
-      setIsWishlistLoading(false)
+      setLocalWishlistLoading(false)
     }
+  }
+
+  // ✅ Visual feedback functions
+  const showWishlistFeedback = (isAdded) => {
+    // Find the wishlist button and add visual feedback
+    const button = document.querySelector(`[data-product-id="${id}"] .wishlist-btn`)
+    if (button) {
+      button.style.transform = 'scale(1.2)'
+      setTimeout(() => {
+        button.style.transform = 'scale(1)'
+      }, 200)
+    }
+  }
+
+  const showErrorFeedback = (message) => {
+    // You could implement a toast system here
+    // For now, just console log the error
+    console.warn('⚠️ Wishlist error:', message)
   }
 
   // ✅ Enhanced add to cart handler
@@ -167,43 +184,69 @@ export default function ProductCard({
     e.preventDefault()
     e.stopPropagation()
     
-    if (onlineStock === 0) return
+    if (onlineStock === 0) {
+      showErrorFeedback('This item is currently out of stock.')
+      return
+    }
     
     try {
       if (onAddToCart) {
-        await onAddToCart(e, {
+        const productData = {
           id,
           name: title,
-          price,
-          mrp,
+          price: parseFloat(price) || 0,
+          mrp: mrp ? parseFloat(mrp) : null,
           main_image_url: primaryImage,
+          image_url: primaryImage, // Fallback
           online_stock: onlineStock,
           seller_phone: sellerPhone,
-          store: storeName ? { name: storeName } : null
-        })
+          store: storeName ? { name: storeName } : null,
+          model_name: modelName,
+          average_rating: rating,
+          review_count: reviewCount
+        }
+        
+        await onAddToCart(e, productData)
       }
     } catch (error) {
       console.error('❌ Add to cart error:', error)
+      showErrorFeedback('Failed to add item to cart. Please try again.')
     }
   }
 
   const formatPrice = (price) => {
+    const numPrice = parseFloat(price) || 0
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
       minimumFractionDigits: 0,
-    }).format(price)
+      maximumFractionDigits: 0,
+    }).format(numPrice)
   }
 
   const getDiscountPercentage = () => {
-    if (mrp && mrp > price) {
-      return Math.round(((mrp - price) / mrp) * 100)
+    const numPrice = parseFloat(price) || 0
+    const numMrp = parseFloat(mrp) || 0
+    
+    if (numMrp && numMrp > numPrice) {
+      return Math.round(((numMrp - numPrice) / numMrp) * 100)
     }
     return null
   }
 
-  // ✅ Enhanced product URL with seller phone
+  // ✅ Enhanced product URL with store context awareness
   const getProductUrl = () => {
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname
+      const storeMatch = currentPath.match(/\/store\/([^\/]+)/)
+      
+      if (storeMatch) {
+        // If we're in a store context, maintain it
+        return `/store/${storeMatch[1]}/product/${id}`
+      }
+    }
+    
+    // Default product URL
     if (sellerPhone) {
       return `/shop/${sellerPhone}/product/${id}`
     }
@@ -214,17 +257,32 @@ export default function ProductCard({
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return "/placeholder.svg"
     
-    if (imageUrl.startsWith('/media/')) {
+    // Handle relative URLs
+    if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
       return `${getApiBaseUrl()}${imageUrl}`
     }
     
-    return imageUrl
+    // Handle absolute URLs
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl
+    }
+    
+    // Handle other relative paths
+    if (imageUrl.startsWith('/')) {
+      return `${getApiBaseUrl()}${imageUrl}`
+    }
+    
+    return imageUrl || "/placeholder.svg"
   }
+
+  // Determine if wishlist is loading (from parent or local)
+  const isWishlistCurrentlyLoading = isWishlistLoading || localWishlistLoading
 
   return (
     <>
       <div
         className={`product-card ${className || ""} ${onlineStock === 0 ? "out-of-stock" : ""}`}
+        data-product-id={id}
         onMouseEnter={() => !touchStarted && setIsHovered(true)}
         onMouseLeave={() => !touchStarted && setIsHovered(false)}
         onTouchStart={handleTouchStart}
@@ -245,13 +303,13 @@ export default function ProductCard({
 
           <div className={`wishlist ${isHovered || wishlistState ? "show" : ""}`}>
             <button
-              className={`wishlist-btn ${wishlistState ? "wish-active" : ""} ${isWishlistLoading ? "loading" : ""}`}
+              className={`wishlist-btn ${wishlistState ? "wish-active" : ""} ${isWishlistCurrentlyLoading ? "loading" : ""}`}
               onClick={handleWishlistToggle}
               aria-label={wishlistState ? "Remove from wishlist" : "Add to wishlist"}
               type="button"
-              disabled={isWishlistLoading}
+              disabled={isWishlistCurrentlyLoading}
             >
-              {isWishlistLoading ? (
+              {isWishlistCurrentlyLoading ? (
                 <div className="loading-spinner"></div>
               ) : (
                 <Heart
@@ -268,10 +326,11 @@ export default function ProductCard({
             <div className="image-wrapper">
               <img
                 src={getImageUrl(primaryImage)}
-                alt={title}
+                alt={title || 'Product'}
                 className={`primary-image ${isHovered ? "hidden" : ""}`}
                 onLoad={() => setImageLoaded(true)}
                 onError={(e) => {
+                  console.warn(`Failed to load primary image for product ${id}:`, primaryImage)
                   e.target.src = "/placeholder.svg"
                 }}
                 loading="lazy"
@@ -279,9 +338,10 @@ export default function ProductCard({
               {hoverImage && hoverImage !== primaryImage && (
                 <img
                   src={getImageUrl(hoverImage)}
-                  alt={`${title} - alternate view`}
+                  alt={`${title || 'Product'} - alternate view`}
                   className={`hover-image ${isHovered ? "visible" : ""}`}
                   onError={(e) => {
+                    console.warn(`Failed to load hover image for product ${id}:`, hoverImage)
                     e.target.src = getImageUrl(primaryImage) || "/placeholder.svg"
                   }}
                   loading="lazy"
@@ -310,7 +370,7 @@ export default function ProductCard({
 
         <div className="product-info">
           <h3 className="product-title">
-            <Link href={getProductUrl()}>{title}</Link>
+            <Link href={getProductUrl()}>{title || 'Product'}</Link>
           </h3>
           
           {modelName && (
@@ -323,15 +383,15 @@ export default function ProductCard({
           
           <div className="price-row">
             <span className="product-price">{formatPrice(price)}</span>
-            {mrp && mrp > price && (
+            {mrp && parseFloat(mrp) > parseFloat(price) && (
               <>
                 <span className="original-price">{formatPrice(mrp)}</span>
-                <span className="savings">Save {formatPrice(mrp - price)}</span>
+                <span className="savings">Save {formatPrice(parseFloat(mrp) - parseFloat(price))}</span>
               </>
             )}
           </div>
 
-          {rating && (
+          {rating && rating > 0 && (
             <div className="rating-row">
               <div className="rating">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -342,7 +402,7 @@ export default function ProductCard({
                 ))}
               </div>
               <span className="rating-text">
-                ({rating.toFixed(1)}) {reviewCount > 0 && `• ${reviewCount}`}
+                ({rating.toFixed(1)}){reviewCount > 0 && ` • ${reviewCount} reviews`}
               </span>
             </div>
           )}

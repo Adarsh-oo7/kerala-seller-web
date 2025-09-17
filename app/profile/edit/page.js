@@ -14,12 +14,22 @@ import {
   CheckCircle,
   RefreshCw,
   X,
-  Eye,
-  EyeOff
+  Globe
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// ✅ Enhanced API base URL handling with environment variables
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
+  }
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  return 'https://keralaseller-backend.onrender.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 
 export default function EditProfilePage() {
@@ -38,16 +48,35 @@ export default function EditProfilePage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
   const router = useRouter();
 
+  // ✅ Enhanced token handling - supports both Google login and regular login
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('buyerAccessToken');
+    const token = localStorage.getItem('access_token') || 
+                  localStorage.getItem('buyerAccessToken');
+    
     if (!token) {
+      console.error('❌ No authentication token found');
       router.push('/login/buyer');
       return null;
     }
+    
+    console.log('🔍 Using token:', token.substring(0, 30) + '...');
     return { 'Authorization': `Bearer ${token}` };
   }, [router]);
+
+  // ✅ Get current store info from URL
+  const getCurrentStoreInfo = useCallback(() => {
+    if (typeof window === 'undefined') return { storeId: null, isInStore: false };
+    
+    const currentPath = window.location.pathname;
+    const storeMatch = currentPath.match(/\/store\/([^\/]+)/);
+    return {
+      storeId: storeMatch ? storeMatch[1] : null,
+      isInStore: !!storeMatch
+    };
+  }, []);
 
   const fetchProfile = useCallback(async () => {
     const headers = getAuthHeaders();
@@ -73,9 +102,15 @@ export default function EditProfilePage() {
       setOriginalData(profileData);
       setHasChanges(false);
       
+      // ✅ Update current store info
+      setCurrentStoreInfo(getCurrentStoreInfo());
+      
     } catch (error) {
       console.error("Failed to fetch profile:", error);
       if (error.response?.status === 401) {
+        // Clear tokens and redirect
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('buyerAccessToken');
         router.push('/login/buyer');
       } else {
         setErrors({ general: 'Failed to load profile. Please refresh the page.' });
@@ -83,7 +118,7 @@ export default function EditProfilePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [getAuthHeaders, router]);
+  }, [getAuthHeaders, router, getCurrentStoreInfo]);
 
   useEffect(() => {
     fetchProfile();
@@ -181,7 +216,12 @@ export default function EditProfilePage() {
       
     } catch (error) {
       console.error('Profile update failed:', error);
-      if (error.response?.status === 400) {
+      if (error.response?.status === 401) {
+        // Clear tokens and redirect
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('buyerAccessToken');
+        router.push('/login/buyer');
+      } else if (error.response?.status === 400) {
         // Handle validation errors from server
         const serverErrors = error.response.data;
         setErrors({ general: serverErrors.message || 'Please check your input and try again.' });
@@ -193,10 +233,23 @@ export default function EditProfilePage() {
     }
   };
 
+  // ✅ Store-aware back navigation
   const handleCancel = () => {
     if (hasChanges) {
       setShowUnsavedWarning(true);
     } else {
+      navigateBack();
+    }
+  };
+
+  const navigateBack = () => {
+    const { storeId, isInStore } = currentStoreInfo;
+    
+    if (isInStore && storeId) {
+      // If we're in a store, go back to that store's profile page
+      router.push(`/store/${storeId}/profile`);
+    } else {
+      // Go to main profile page
       router.push('/profile');
     }
   };
@@ -205,7 +258,7 @@ export default function EditProfilePage() {
     setFormData(originalData);
     setHasChanges(false);
     setShowUnsavedWarning(false);
-    router.push('/profile');
+    navigateBack();
   };
 
   const handleReset = () => {
@@ -263,7 +316,9 @@ export default function EditProfilePage() {
         <div style={styles.headerContainer}>
           <button onClick={handleCancel} style={styles.backButton}>
             <ArrowLeft size={20} />
-            <span style={styles.backText}>Back to Profile</span>
+            <span style={styles.backText}>
+              {currentStoreInfo.isInStore ? 'Back to Store Profile' : 'Back to Profile'}
+            </span>
           </button>
           <h1 style={styles.headerTitle}>Edit Profile</h1>
           <div style={styles.headerActions}>
@@ -279,6 +334,14 @@ export default function EditProfilePage() {
 
       <div style={styles.container}>
         <div style={styles.formWrapper}>
+          {/* ✅ Show store context indicator */}
+          {currentStoreInfo.isInStore && (
+            <div style={styles.storeIndicator}>
+              <Globe size={16} />
+              <span>Editing profile from store context • Store ID: {currentStoreInfo.storeId}</span>
+            </div>
+          )}
+
           {/* Success Message */}
           {successMessage && (
             <div style={styles.successAlert}>
@@ -492,6 +555,21 @@ export default function EditProfilePage() {
 }
 
 const styles = {
+  // ✅ NEW: Store context indicator
+  storeIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 16px',
+    backgroundColor: '#dbeafe',
+    border: '1px solid #3b82f6',
+    borderRadius: '8px',
+    fontSize: '14px',
+    color: '#1e40af',
+    fontWeight: '500',
+    marginBottom: '24px'
+  },
+
   pageContainer: {
     minHeight: '100vh',
     backgroundColor: '#f8fafc'

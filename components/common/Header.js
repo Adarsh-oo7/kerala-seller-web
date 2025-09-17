@@ -113,9 +113,24 @@ export default function Header() {
     .flat()
     .reduce((count, item) => count + item.quantity, 0);
 
+  // ✅ FIXED: Enhanced authentication check to support both token types
   useEffect(() => {
-    const token = localStorage.getItem('buyerAccessToken');
+    // Check both possible token locations
+    const token = localStorage.getItem('access_token') || 
+                  localStorage.getItem('buyerAccessToken');
     setIsLoggedIn(!!token);
+    
+    console.log('🔍 Auth check - Token found:', !!token);
+    
+    // Listen for storage changes (login/logout from other tabs)
+    const handleStorageChange = () => {
+      const newToken = localStorage.getItem('access_token') || 
+                       localStorage.getItem('buyerAccessToken');
+      setIsLoggedIn(!!newToken);
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const toggleMobileMenu = () => {
@@ -148,7 +163,7 @@ export default function Header() {
 
         <DesktopNav />
 
-        <MobileMenu isOpen={isMobileMenuOpen} onClose={toggleMobileMenu} />
+        <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       </header>
       
       <BottomNav cartItemCount={cartItemCount} isLoggedIn={isLoggedIn} />

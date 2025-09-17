@@ -19,11 +19,23 @@ import {
   CheckCircle,
   Truck,
   X,
-  Filter
+  Filter,
+  Globe
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// ✅ Enhanced API base URL handling with environment variables
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
+  }
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  return 'https://keralaseller-backend.onrender.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/history/`;
 
 export default function BuyerOrdersPage() {
@@ -34,17 +46,37 @@ export default function BuyerOrdersPage() {
     const [statusFilter, setStatusFilter] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('newest');
+    const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
     const router = useRouter();
 
+    // ✅ Enhanced token handling - supports both Google login and regular login
     const getAuthHeaders = useCallback(() => {
-        const token = localStorage.getItem('buyerAccessToken');
+        const token = localStorage.getItem('access_token') || 
+                      localStorage.getItem('buyerAccessToken');
+        
         if (!token) {
+            console.error('❌ No authentication token found');
             router.push('/login/buyer');
             return null;
         }
+        
+        console.log('🔍 Using token:', token.substring(0, 30) + '...');
         return { 'Authorization': `Bearer ${token}` };
     }, [router]);
 
+    // ✅ Get current store info from URL
+    const getCurrentStoreInfo = useCallback(() => {
+        if (typeof window === 'undefined') return { storeId: null, isInStore: false };
+        
+        const currentPath = window.location.pathname;
+        const storeMatch = currentPath.match(/\/store\/([^\/]+)/);
+        return {
+            storeId: storeMatch ? storeMatch[1] : null,
+            isInStore: !!storeMatch
+        };
+    }, []);
+
+    // ✅ Store-aware fetch orders
     const fetchOrders = useCallback(async () => {
         const headers = getAuthHeaders();
         if (!headers) return;
@@ -53,8 +85,19 @@ export default function BuyerOrdersPage() {
         setError('');
 
         try {
-            console.log('Fetching orders from:', ORDERS_API_URL);
-            const response = await axios.get(ORDERS_API_URL, { headers });
+            // Get current store context
+            const storeInfo = getCurrentStoreInfo();
+            setCurrentStoreInfo(storeInfo);
+            
+            // Build API URL with store filter if in store context
+            let apiUrl = ORDERS_API_URL;
+            if (storeInfo.isInStore && storeInfo.storeId) {
+                const separator = apiUrl.includes('?') ? '&' : '?';
+                apiUrl = `${apiUrl}${separator}store_id=${storeInfo.storeId}`;
+            }
+            
+            console.log('Fetching orders from:', apiUrl);
+            const response = await axios.get(apiUrl, { headers });
             
             const orderData = response.data.results || response.data || [];
             console.log('Orders received:', orderData);
@@ -64,6 +107,9 @@ export default function BuyerOrdersPage() {
         } catch (err) {
             console.error("Failed to fetch order history", err);
             if (err.response?.status === 401) {
+                // Clear tokens and redirect
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('buyerAccessToken');
                 router.push('/login/buyer');
             } else {
                 setError('Failed to load orders. Please try again.');
@@ -71,7 +117,7 @@ export default function BuyerOrdersPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [getAuthHeaders, router]);
+    }, [getAuthHeaders, router, getCurrentStoreInfo]);
 
     useEffect(() => {
         fetchOrders();
@@ -96,7 +142,8 @@ export default function BuyerOrdersPage() {
                     item.product?.name?.toLowerCase().includes(query) ||
                     item.product_name?.toLowerCase().includes(query)
                 ) ||
-                order.customer_name?.toLowerCase().includes(query)
+                order.customer_name?.toLowerCase().includes(query) ||
+                order.store_name?.toLowerCase().includes(query)
             );
         }
 
@@ -157,6 +204,13 @@ export default function BuyerOrdersPage() {
         });
     };
 
+    // ✅ Store-aware back navigation
+    const getBackUrl = () => {
+        return currentStoreInfo.isInStore && currentStoreInfo.storeId
+            ? `/store/${currentStoreInfo.storeId}/profile`
+            : '/profile';
+    };
+
     if (isLoading) {
         return (
             <div>
@@ -195,17 +249,22 @@ export default function BuyerOrdersPage() {
             <Header />
             <div style={styles.container}>
                 <div style={styles.header}>
-                    <Link href="/profile" style={styles.backLink}>
+                    <Link href={getBackUrl()} style={styles.backLink}>
                         <ArrowLeft size={20}/>
-                        <span>Back to Profile</span>
+                        <span>
+                            {currentStoreInfo.isInStore ? 'Back to Store Profile' : 'Back to Profile'}
+                        </span>
                     </Link>
                     <div style={styles.titleSection}>
                         <h1 style={styles.title}>
                             <Package size={28} />
-                            My Orders
+                            {currentStoreInfo.isInStore ? 'Store Orders' : 'My Orders'}
                         </h1>
                         <p style={styles.subtitle}>
-                            Track and manage all your orders in one place
+                            {currentStoreInfo.isInStore 
+                                ? 'Orders from this store only'
+                                : 'Track and manage all your orders in one place'
+                            }
                         </p>
                     </div>
                     <button onClick={fetchOrders} style={styles.refreshButton}>
@@ -213,13 +272,21 @@ export default function BuyerOrdersPage() {
                     </button>
                 </div>
 
+                {/* ✅ Show store context indicator */}
+                {currentStoreInfo.isInStore && (
+                    <div style={styles.storeIndicator}>
+                        <Globe size={16} />
+                        <span>Showing orders from Store ID: {currentStoreInfo.storeId}</span>
+                    </div>
+                )}
+
                 <div style={styles.filtersSection}>
                     {/* Search Box */}
                     <div style={styles.searchBox}>
                         <Search size={18} style={styles.searchIcon} />
                         <input 
                             type="text" 
-                            placeholder="Search by Order ID, Product name, or Customer..." 
+                            placeholder={`Search by Order ID, Product name${currentStoreInfo.isInStore ? '...' : ', Store name...'}`}
                             value={searchQuery} 
                             onChange={(e) => setSearchQuery(e.target.value)} 
                             style={styles.searchInput}
@@ -270,7 +337,9 @@ export default function BuyerOrdersPage() {
                         <p>
                             {searchQuery || statusFilter !== 'all' 
                                 ? 'Try adjusting your search or filters.' 
-                                : 'You haven\'t placed any orders yet. Start shopping to see your orders here!'
+                                : currentStoreInfo.isInStore
+                                    ? "You haven't ordered from this store yet."
+                                    : "You haven't placed any orders yet. Start shopping to see your orders here!"
                             }
                         </p>
                         {(searchQuery || statusFilter !== 'all') && (
@@ -285,9 +354,15 @@ export default function BuyerOrdersPage() {
                             </button>
                         )}
                         {!searchQuery && statusFilter === 'all' && (
-                            <Link href="/shop" style={styles.shopButton}>
+                            <Link 
+                                href={currentStoreInfo.isInStore 
+                                    ? `/store/${currentStoreInfo.storeId}` 
+                                    : "/shop"
+                                } 
+                                style={styles.shopButton}
+                            >
                                 <ShoppingBag size={18} />
-                                Start Shopping
+                                {currentStoreInfo.isInStore ? 'Browse Store' : 'Start Shopping'}
                             </Link>
                         )}
                     </div>
@@ -309,6 +384,13 @@ export default function BuyerOrdersPage() {
                                                     at {formatTime(order.created_at)}
                                                 </span>
                                             </div>
+                                            {/* ✅ Show store name if not in store context */}
+                                            {!currentStoreInfo.isInStore && order.store_name && (
+                                                <div style={styles.storeInfo}>
+                                                    <span style={styles.storeLabel}>From:</span>
+                                                    <span style={styles.storeName}>{order.store_name}</span>
+                                                </div>
+                                            )}
                                         </div>
                                         <div style={styles.orderAmount}>
                                             <strong style={styles.total}>
@@ -378,7 +460,10 @@ export default function BuyerOrdersPage() {
                                     <div style={styles.cardFooter}>
                                         <div style={styles.cardActions}>
                                             <Link 
-                                                href={`/profile/orders/${order.id}`} 
+                                                href={currentStoreInfo.isInStore 
+                                                    ? `/store/${currentStoreInfo.storeId}/profile/orders/${order.id}`
+                                                    : `/profile/orders/${order.id}`
+                                                } 
                                                 style={styles.viewButton}
                                             >
                                                 <Eye size={16} />
@@ -405,6 +490,7 @@ export default function BuyerOrdersPage() {
                             Showing {filteredOrders.length} of {orders.length} orders
                             {searchQuery && ` for "${searchQuery}"`}
                             {statusFilter !== 'all' && ` with status "${statusFilter}"`}
+                            {currentStoreInfo.isInStore && ` from this store`}
                         </p>
                     </div>
                 )}
@@ -428,6 +514,44 @@ export default function BuyerOrdersPage() {
 }
 
 const styles = {
+    // ✅ NEW: Store context indicator
+    storeIndicator: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '12px 16px',
+        backgroundColor: '#dbeafe',
+        border: '1px solid #3b82f6',
+        borderRadius: '8px',
+        fontSize: '14px',
+        color: '#1e40af',
+        fontWeight: '500',
+        marginBottom: '24px'
+    },
+
+    // ✅ NEW: Store info in order cards
+    storeInfo: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        marginTop: '4px'
+    },
+
+    storeLabel: {
+        fontSize: '12px',
+        color: '#6b7280',
+        fontWeight: '500'
+    },
+
+    storeName: {
+        fontSize: '12px',
+        color: '#3b82f6',
+        fontWeight: '600',
+        backgroundColor: '#dbeafe',
+        padding: '2px 6px',
+        borderRadius: '4px'
+    },
+
     pageContainer: {
         minHeight: '100vh',
         backgroundColor: '#f8fafc'

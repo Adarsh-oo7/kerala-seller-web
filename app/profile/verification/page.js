@@ -14,27 +14,20 @@ import {
   Clock,
   Lock,
   MessageCircle,
-  X
+  X,
+  Globe
 } from 'lucide-react';
 
-// ✅ Enhanced environment variable handling for your hosted backend
+// ✅ Enhanced API base URL handling with environment variables
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  
-  console.log('Environment check:', {
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    NODE_ENV: process.env.NODE_ENV
-  });
-  
-  if (envUrl && envUrl !== 'undefined') {
-    return envUrl;
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
   }
-  
-  // Updated fallback with your hosted backend URL
-  return process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:8000' 
-    : 'https://keralaseller-backend.onrender.com';  // ✅ Your hosted backend
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  return 'https://keralaseller-backend.onrender.com';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -62,16 +55,35 @@ export default function VerificationPage() {
   const [resendTimer, setResendTimer] = useState(0);
   const [otpAttempts, setOtpAttempts] = useState(0);
   const [isPhoneEditable, setIsPhoneEditable] = useState(true);
+  const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
   const router = useRouter();
 
+  // ✅ Enhanced token handling - supports both Google login and regular login
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('buyerAccessToken');
+    const token = localStorage.getItem('access_token') || 
+                  localStorage.getItem('buyerAccessToken');
+    
     if (!token) {
+      console.error('❌ No authentication token found');
       router.push('/login/buyer');
       return null;
     }
+    
+    console.log('🔍 Using token:', token.substring(0, 30) + '...');
     return { 'Authorization': `Bearer ${token}` };
   }, [router]);
+
+  // ✅ Get current store info from URL
+  const getCurrentStoreInfo = useCallback(() => {
+    if (typeof window === 'undefined') return { storeId: null, isInStore: false };
+    
+    const currentPath = window.location.pathname;
+    const storeMatch = currentPath.match(/\/store\/([^\/]+)/);
+    return {
+      storeId: storeMatch ? storeMatch[1] : null,
+      isInStore: !!storeMatch
+    };
+  }, []);
 
   // Countdown timer for OTP resend
   useEffect(() => {
@@ -95,9 +107,14 @@ export default function VerificationPage() {
     
     try {
       console.log('🔄 Fetching profile from:', PROFILE_API);
+      
+      // ✅ Get current store context
+      const storeInfo = getCurrentStoreInfo();
+      setCurrentStoreInfo(storeInfo);
+      
       const response = await axios.get(PROFILE_API, { 
         headers,
-        timeout: 15000  // ✅ Increased timeout for hosted backend
+        timeout: 15000
       });
       
       console.log('✅ Profile data received:', response.data);
@@ -109,6 +126,9 @@ export default function VerificationPage() {
     } catch (error) {
       console.error("❌ Failed to fetch profile:", error);
       if (error.response?.status === 401) {
+        // Clear tokens and redirect
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('buyerAccessToken');
         router.push('/login/buyer');
       } else {
         const errorMessage = error.code === 'ECONNABORTED' 
@@ -119,7 +139,7 @@ export default function VerificationPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [getAuthHeaders, router]);
+  }, [getAuthHeaders, router, getCurrentStoreInfo]);
 
   useEffect(() => {
     fetchProfile();
@@ -156,7 +176,7 @@ export default function VerificationPage() {
       console.log('🔄 Sending OTP to:', phoneNumber);
       await axios.post(SEND_OTP_API, { phone: phoneNumber }, { 
         headers,
-        timeout: 15000  // ✅ Increased timeout for hosted backend
+        timeout: 15000
       });
       
       setOtpSent(true);
@@ -171,7 +191,12 @@ export default function VerificationPage() {
       console.error('❌ OTP sending failed:', error);
       
       let errorMessage = 'Failed to send OTP. Please try again.';
-      if (error.code === 'ECONNABORTED') {
+      if (error.response?.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('buyerAccessToken');
+        router.push('/login/buyer');
+        return;
+      } else if (error.code === 'ECONNABORTED') {
         errorMessage = 'Server timeout - please check your connection and try again.';
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -206,7 +231,7 @@ export default function VerificationPage() {
         phone: phoneNumber 
       }, { 
         headers,
-        timeout: 15000  // ✅ Increased timeout for hosted backend
+        timeout: 15000
       });
       
       setSuccessMessage('Phone verified successfully! 🎉');
@@ -214,9 +239,12 @@ export default function VerificationPage() {
       // Refresh profile data
       await fetchProfile();
       
-      // Redirect after success
+      // ✅ Store-aware redirect
       setTimeout(() => {
-        router.push('/profile');
+        const redirectUrl = currentStoreInfo.isInStore && currentStoreInfo.storeId
+          ? `/store/${currentStoreInfo.storeId}/profile`
+          : '/profile';
+        router.push(redirectUrl);
       }, 2000);
       
     } catch (error) {
@@ -224,7 +252,12 @@ export default function VerificationPage() {
       setOtpAttempts(prev => prev + 1);
       
       let errorMessage = 'Invalid OTP. Please try again.';
-      if (error.code === 'ECONNABORTED') {
+      if (error.response?.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('buyerAccessToken');
+        router.push('/login/buyer');
+        return;
+      } else if (error.code === 'ECONNABORTED') {
         errorMessage = 'Server timeout - please try verifying again.';
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -273,6 +306,13 @@ export default function VerificationPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // ✅ Store-aware back URL
+  const getBackUrl = () => {
+    return currentStoreInfo.isInStore && currentStoreInfo.storeId
+      ? `/store/${currentStoreInfo.storeId}/profile`
+      : '/profile';
+  };
+
   if (isLoading) {
     return (
       <div style={styles.loadingContainer}>
@@ -289,9 +329,11 @@ export default function VerificationPage() {
     <div style={styles.pageContainer}>
       <header style={styles.header}>
         <div style={styles.headerContainer}>
-          <Link href="/profile" style={styles.backLink}>
+          <Link href={getBackUrl()} style={styles.backLink}>
             <ArrowLeft size={18} />
-            <span>Back to Profile</span>
+            <span>
+              {currentStoreInfo.isInStore ? 'Back to Store Profile' : 'Back to Profile'}
+            </span>
           </Link>
           <h1 style={styles.headerTitle}>Phone Verification</h1>
           <div style={styles.headerSpacer}></div>
@@ -299,6 +341,14 @@ export default function VerificationPage() {
       </header>
 
       <div style={styles.container}>
+        {/* ✅ Show store context indicator */}
+        {currentStoreInfo.isInStore && (
+          <div style={styles.storeIndicator}>
+            <Globe size={16} />
+            <span>Verifying from Store ID: {currentStoreInfo.storeId}</span>
+          </div>
+        )}
+        
         <p style={{fontSize: '12px', color: '#666', textAlign: 'center', marginBottom: '16px'}}>
           🌐 Connected to: {API_BASE_URL}
         </p>
@@ -360,8 +410,8 @@ export default function VerificationPage() {
                 </div>
 
                 <div style={styles.verifiedActions}>
-                  <Link href="/profile" style={styles.backToProfileButton}>
-                    Back to Profile
+                  <Link href={getBackUrl()} style={styles.backToProfileButton}>
+                    {currentStoreInfo.isInStore ? 'Back to Store Profile' : 'Back to Profile'}
                   </Link>
                 </div>
               </div>
@@ -562,6 +612,21 @@ export default function VerificationPage() {
 }
 
 const styles = {
+  // ✅ NEW: Store context indicator
+  storeIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 16px',
+    backgroundColor: '#dbeafe',
+    border: '1px solid #3b82f6',
+    borderRadius: '8px',
+    fontSize: '14px',
+    color: '#1e40af',
+    fontWeight: '500',
+    marginBottom: '24px'
+  },
+
   pageContainer: {
     minHeight: '100vh',
     backgroundColor: '#f8fafc'

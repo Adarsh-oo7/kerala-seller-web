@@ -21,28 +21,59 @@ import {
   RefreshCw,
   CreditCard,
   Wallet,
-  Eye
+  Eye,
+  Globe
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// ✅ Enhanced API base URL handling with environment variables
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
+  }
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  return 'https://keralaseller-backend.onrender.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const ORDER_DETAIL_API_URL = `${API_BASE_URL}/user/orders/`;
 
 export default function OrderDetailPage() {
     const [order, setOrder] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
     const { orderId } = useParams();
     const router = useRouter();
 
+    // ✅ Enhanced token handling - supports both Google login and regular login
     const getAuthHeaders = useCallback(() => {
-        const token = localStorage.getItem('buyerAccessToken');
+        const token = localStorage.getItem('access_token') || 
+                      localStorage.getItem('buyerAccessToken');
+        
         if (!token) {
+            console.error('❌ No authentication token found');
             router.push('/login/buyer');
             return null;
         }
+        
+        console.log('🔍 Using token:', token.substring(0, 30) + '...');
         return { 'Authorization': `Bearer ${token}` };
     }, [router]);
+
+    // ✅ Get current store info from URL
+    const getCurrentStoreInfo = useCallback(() => {
+        if (typeof window === 'undefined') return { storeId: null, isInStore: false };
+        
+        const currentPath = window.location.pathname;
+        const storeMatch = currentPath.match(/\/store\/([^\/]+)/);
+        return {
+            storeId: storeMatch ? storeMatch[1] : null,
+            isInStore: !!storeMatch
+        };
+    }, []);
 
     const fetchOrderDetails = useCallback(async () => {
         const headers = getAuthHeaders();
@@ -56,13 +87,29 @@ export default function OrderDetailPage() {
 
         try {
             console.log('Fetching order details for ID:', orderId);
+            
+            // ✅ Get current store context
+            const storeInfo = getCurrentStoreInfo();
+            setCurrentStoreInfo(storeInfo);
+            
             const response = await axios.get(`${ORDER_DETAIL_API_URL}${orderId}/`, { headers });
             
             console.log('Order details received:', response.data);
             setOrder(response.data);
+            
+            // ✅ Verify store context if in store mode
+            if (storeInfo.isInStore && response.data.store?.id?.toString() !== storeInfo.storeId) {
+                console.warn('Order does not belong to current store context');
+                setError('This order is not from the current store.');
+                return;
+            }
+            
         } catch (err) {
             console.error("Failed to fetch order details", err);
             if (err.response?.status === 401) {
+                // Clear tokens and redirect
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('buyerAccessToken');
                 router.push('/login/buyer');
             } else if (err.response?.status === 404) {
                 setError('Order not found or you do not have permission to view it.');
@@ -72,7 +119,7 @@ export default function OrderDetailPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [orderId, getAuthHeaders, router]);
+    }, [orderId, getAuthHeaders, router, getCurrentStoreInfo]);
 
     useEffect(() => {
         fetchOrderDetails();
@@ -116,6 +163,13 @@ export default function OrderDetailPage() {
         return (parseFloat(price || 0) * quantity).toFixed(2);
     };
 
+    // ✅ Store-aware back navigation
+    const getBackUrl = () => {
+        return currentStoreInfo.isInStore && currentStoreInfo.storeId
+            ? `/store/${currentStoreInfo.storeId}/profile/orders`
+            : '/profile/orders';
+    };
+
     if (isLoading) {
         return (
             <div>
@@ -137,10 +191,16 @@ export default function OrderDetailPage() {
                     <AlertCircle size={48} color="#ef4444" />
                     <h2>Something went wrong</h2>
                     <p>{error}</p>
-                    <button onClick={fetchOrderDetails} style={styles.retryButton}>
-                        <RefreshCw size={18} />
-                        Try Again
-                    </button>
+                    <div style={styles.errorActions}>
+                        <button onClick={fetchOrderDetails} style={styles.retryButton}>
+                            <RefreshCw size={18} />
+                            Try Again
+                        </button>
+                        <Link href={getBackUrl()} style={styles.backToOrdersLink}>
+                            <ArrowLeft size={18} />
+                            Back to Orders
+                        </Link>
+                    </div>
                 </div>
                 <Footer />
             </div>
@@ -155,7 +215,7 @@ export default function OrderDetailPage() {
                     <Package size={48} color="#6b7280" />
                     <h2>Order not found</h2>
                     <p>The order you're looking for doesn't exist or you don't have permission to view it.</p>
-                    <Link href="/profile/orders" style={styles.backToOrdersLink}>
+                    <Link href={getBackUrl()} style={styles.backToOrdersLink}>
                         <ArrowLeft size={18} />
                         Back to Orders
                     </Link>
@@ -172,10 +232,20 @@ export default function OrderDetailPage() {
         <div style={styles.pageContainer}>
             <Header />
             <div style={styles.container}>
-                <Link href="/profile/orders" style={styles.backLink}>
+                <Link href={getBackUrl()} style={styles.backLink}>
                     <ArrowLeft size={20}/> 
-                    <span>Back to All Orders</span>
+                    <span>
+                        {currentStoreInfo.isInStore ? 'Back to Store Orders' : 'Back to All Orders'}  
+                    </span>
                 </Link>
+
+                {/* ✅ Show store context indicator */}
+                {currentStoreInfo.isInStore && (
+                    <div style={styles.storeIndicator}>
+                        <Globe size={16} />
+                        <span>Viewing order from Store ID: {currentStoreInfo.storeId}</span>
+                    </div>
+                )}
 
                 <div style={styles.orderCard}>
                     {/* Order Header */}
@@ -186,6 +256,13 @@ export default function OrderDetailPage() {
                                 <Calendar size={16} />
                                 <span>Placed on {formatDate(order.created_at)}</span>
                             </div>
+                            {/* ✅ Show store info if not in store context */}
+                            {!currentStoreInfo.isInStore && order.store && (
+                                <div style={styles.storeInfo}>
+                                    <span style={styles.storeLabel}>From Store:</span>
+                                    <span style={styles.storeName}>{order.store.name || `Store #${order.store.id}`}</span>
+                                </div>
+                            )}
                         </div>
                         <div style={styles.orderAmount}>
                             <strong style={styles.totalAmount}>₹{parseFloat(order.total_amount).toFixed(2)}</strong>
@@ -285,11 +362,17 @@ export default function OrderDetailPage() {
                                         <strong>Payment Status:</strong>
                                         <span style={{
                                             ...styles.paymentStatus,
-                                            backgroundColor: order.payment_status === 'Paid' ? '#d1fae5' : '#dbeafe',
-                                            color: order.payment_status === 'Paid' ? '#065f46' : '#1e40af'
+                                            backgroundColor: order.payment_status.includes('Paid') ? '#d1fae5' : '#dbeafe',
+                                            color: order.payment_status.includes('Paid') ? '#065f46' : '#1e40af'
                                         }}>
                                             {order.payment_status}
                                         </span>
+                                    </div>
+                                )}
+                                {order.razorpay_payment_id && (
+                                    <div style={styles.paymentItem}>
+                                        <strong>Payment ID:</strong>
+                                        <span style={styles.paymentId}>{order.razorpay_payment_id}</span>
                                     </div>
                                 )}
                             </div>
@@ -389,6 +472,61 @@ export default function OrderDetailPage() {
 }
 
 const styles = {
+    // ✅ NEW: Store context indicator
+    storeIndicator: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '12px 16px',
+        backgroundColor: '#dbeafe',
+        border: '1px solid #3b82f6',
+        borderRadius: '8px',
+        fontSize: '14px',
+        color: '#1e40af',
+        fontWeight: '500',
+        marginBottom: '24px'
+    },
+
+    // ✅ NEW: Store info in order header
+    storeInfo: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        marginTop: '8px'
+    },
+
+    storeLabel: {
+        fontSize: '14px',
+        color: '#6b7280',
+        fontWeight: '500'
+    },
+
+    storeName: {
+        fontSize: '14px',
+        color: '#3b82f6',
+        fontWeight: '600',
+        backgroundColor: '#dbeafe',
+        padding: '4px 8px',
+        borderRadius: '6px'
+    },
+
+    // ✅ NEW: Payment ID styling
+    paymentId: {
+        fontFamily: 'monospace',
+        backgroundColor: '#f3f4f6',
+        padding: '2px 6px',
+        borderRadius: '4px',
+        fontSize: '13px'
+    },
+
+    // ✅ NEW: Error actions container
+    errorActions: {
+        display: 'flex',
+        gap: '12px',
+        flexWrap: 'wrap',
+        justifyContent: 'center'
+    },
+
     pageContainer: {
         minHeight: '100vh',
         backgroundColor: '#f8fafc'

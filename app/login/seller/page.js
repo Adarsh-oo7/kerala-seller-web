@@ -4,13 +4,44 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
-import { Phone, Lock, Eye, EyeOff, User, ArrowLeft, AlertCircle, Store } from 'lucide-react';
+import { 
+  Phone, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  User, 
+  ArrowLeft, 
+  AlertCircle, 
+  Store,
+  Globe,
+  Shield,
+  CheckCircle,
+  TrendingUp,
+  Users,
+  Zap
+} from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+// ✅ Enhanced API configuration
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
+  }
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  return 'https://keralaseller-backend.onrender.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const LOGIN_API_URL = `${API_BASE_URL}/user/login/`;
 
-// ✅ Extract the component that uses useSearchParams
+console.log('🌐 Seller Login API URLs configured:', { 
+  API_BASE_URL, 
+  LOGIN_API_URL 
+});
+
+// ✅ Enhanced LoginForm with store awareness
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -21,11 +52,31 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [rememberMe, setRememberMe] = useState(false);
+  const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
+
+  // ✅ Get current store info from URL
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname;
+      const storeMatch = currentPath.match(/\/store\/([^\/]+)/);
+      setCurrentStoreInfo({
+        storeId: storeMatch ? storeMatch[1] : null,
+        isInStore: !!storeMatch
+      });
+
+      // Pre-fill phone if it matches store ID and is valid
+      if (storeMatch && /^[6-9]\d{9}$/.test(storeMatch[1])) {
+        setPhone(storeMatch[1]);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('access_token');
     if (token) {
+      console.log('🔍 Existing seller token found, redirecting...');
       const redirectUrl = redirect || '/dashboard/seller';
       router.push(redirectUrl);
     }
@@ -36,64 +87,90 @@ function LoginForm() {
     return phoneRegex.test(phone);
   };
 
-  const handlePhoneChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-    setPhone(value);
-    if (error) setError('');
+  const validatePassword = (password) => {
+    return password.length >= 6;
   };
 
-  const handlePasswordChange = (e) => {
-    setPassword(e.target.value);
+  const handleFieldChange = (field, value) => {
+    if (field === 'phone') {
+      const cleanValue = value.replace(/\D/g, '').slice(0, 10);
+      setPhone(cleanValue);
+      if (fieldErrors.phone && validatePhone(cleanValue)) {
+        setFieldErrors(prev => ({ ...prev, phone: '' }));
+      }
+    } else if (field === 'password') {
+      setPassword(value);
+      if (fieldErrors.password && validatePassword(value)) {
+        setFieldErrors(prev => ({ ...prev, password: '' }));
+      }
+    }
+    
+    // Clear general error when user starts typing
     if (error) setError('');
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     
-    if (!phone || !password) {
-      setError('Phone number and password are required.');
-      return;
+    // Enhanced validation
+    const newFieldErrors = {};
+    
+    if (!phone.trim()) {
+      newFieldErrors.phone = 'Phone number is required';
+    } else if (!validatePhone(phone)) {
+      newFieldErrors.phone = 'Please enter a valid 10-digit phone number (6-9xxxxxxxxx)';
     }
 
-    if (!validatePhone(phone)) {
-      setError('Please enter a valid 10-digit phone number.');
-      return;
+    if (!password) {
+      newFieldErrors.password = 'Password is required';
+    } else if (!validatePassword(password)) {
+      newFieldErrors.password = 'Password must be at least 6 characters long';
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
       return;
     }
 
     setLoading(true);
     setError('');
+    setFieldErrors({});
 
     try {
-      console.log('🔍 Attempting login with phone:', phone);
+      console.log('🔍 Attempting seller login with phone:', phone);
       
       const response = await axios.post(LOGIN_API_URL, { 
-        phone, 
-        password,
-        user_type: 'seller'
+        phone: phone.trim(), 
+        password: password,
+        user_type: 'seller',
+        store_context: currentStoreInfo.isInStore ? currentStoreInfo.storeId : null
+      }, {
+        timeout: 15000
       });
       
       console.log('✅ Login response:', response.data);
       
-      // ✅ Fixed: Use access_token from response
-      const { access_token, seller, debug_info } = response.data;
+      // Handle different token field names
+      const token = response.data.access_token || 
+                   response.data.token || 
+                   response.data.access;
       
-      if (!access_token) {
-        throw new Error('No access token received');
+      if (!token) {
+        throw new Error('No access token received from server');
       }
       
-      console.log('✅ Login successful for:', debug_info?.admin_user_email);
-      console.log('✅ Access token preview:', access_token.substring(0, 50) + '...');
+      const { seller, debug_info } = response.data;
       
-      // ✅ Store the access token properly
-      localStorage.setItem('accessToken', access_token);
+      console.log('✅ Login successful for:', debug_info?.admin_user_email || phone);
+      console.log('✅ Access token preview:', token.substring(0, 50) + '...');
+      
+      // Store tokens with multiple keys for compatibility
+      localStorage.setItem('accessToken', token);
+      localStorage.setItem('access_token', token);
       
       if (seller) {
         localStorage.setItem('sellerInfo', JSON.stringify(seller));
+        localStorage.setItem('userInfo', JSON.stringify(seller));
       }
       
       if (rememberMe) {
@@ -102,11 +179,18 @@ function LoginForm() {
       
       console.log('✅ Token stored, redirecting...');
       
-      // ✅ Small delay to ensure storage completes
+      // ✅ Store-aware redirect logic
       setTimeout(() => {
-        const redirectUrl = redirect || '/dashboard/seller';
-        router.push(redirectUrl);
-      }, 150);
+        if (redirect) {
+          router.push(decodeURIComponent(redirect));
+        } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
+          // If logging in from store context, redirect to store management
+          router.push(`/store/${currentStoreInfo.storeId}/dashboard`);
+        } else {
+          // Default to seller dashboard
+          router.push('/dashboard/seller');
+        }
+      }, 200);
       
     } catch (err) {
       console.error('❌ Login error:', err);
@@ -114,14 +198,19 @@ function LoginForm() {
       
       let errorMessage = 'Login failed. Please check your credentials.';
       
-      if (err.response?.data?.error) {
-        errorMessage = err.response.data.error;
-      } else if (err.response?.data?.detail) {
-        errorMessage = err.response.data.detail;
-      } else if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.response?.status === 401) {
-        errorMessage = 'Invalid phone number or password';
+      if (err.response?.status === 401) {
+        errorMessage = 'Invalid phone number or password. Please check your credentials.';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'No seller account found with this phone number. Please create an account first.';
+      } else if (err.response?.status === 403) {
+        errorMessage = 'Account is not verified or inactive. Please contact support.';
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Request timed out. Please check your connection and try again.';
+      } else if (err.response?.data) {
+        errorMessage = err.response.data.error || 
+                     err.response.data.detail || 
+                     err.response.data.message || 
+                     errorMessage;
       }
       
       setError(errorMessage);
@@ -130,16 +219,57 @@ function LoginForm() {
     }
   };
 
+  // ✅ Store-aware navigation
+  const handleBackClick = () => {
+    if (redirect) {
+      router.push(decodeURIComponent(redirect));
+    } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
+      router.push(`/store/${currentStoreInfo.storeId}`);
+    } else {
+      router.push('/');
+    }
+  };
+
+  // ✅ Store-aware links
+  const getForgotPasswordLink = () => {
+    const redirectParam = redirect ? `?redirect=${encodeURIComponent(redirect)}` : '';
+    if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
+      return `/store/${currentStoreInfo.storeId}/forgot-password${redirectParam}`;
+    }
+    return `/forgot-password/seller${redirectParam}`;
+  };
+
+  const getRegisterLink = () => {
+    const redirectParam = redirect ? `?redirect=${encodeURIComponent(redirect)}` : '';
+    if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
+      return `/store/${currentStoreInfo.storeId}/register${redirectParam}`;
+    }
+    return `/register/seller${redirectParam}`;
+  };
+
   return (
     <div style={styles.card}>
+      {/* ✅ Store context indicator */}
+      {currentStoreInfo.isInStore && (
+        <div style={styles.storeNotice}>
+          <Globe size={16} />
+          <span>Store owner login for: {currentStoreInfo.storeId}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div style={styles.header}>
         <div style={styles.iconContainer}>
           <Store size={32} color="#3b82f6" />
         </div>
-        <h1 style={styles.title}>Seller Login</h1>
+        <h1 style={styles.title}>
+          {currentStoreInfo.isInStore ? 'Store Owner Login' : 'Seller Login'}
+        </h1>
         <p style={styles.subtitle}>
-          Welcome back! Sign in to manage your store and products.
+          {currentStoreInfo.isInStore 
+            ? 'Sign in to manage your store and access seller features'
+            : 'Welcome back! Sign in to manage your store and products.'
+          }
         </p>
       </div>
 
@@ -150,19 +280,26 @@ function LoginForm() {
             <Phone size={16} />
             Phone Number
           </label>
-          <input
-            type="tel"
-            placeholder="Enter 10-digit phone number"
-            value={phone}
-            onChange={handlePhoneChange}
-            style={{
-              ...styles.input,
-              ...(error && !validatePhone(phone) && phone ? styles.inputError : {})
-            }}
-            maxLength={10}
-            required
-            disabled={loading}
-          />
+          <div style={styles.phoneInputContainer}>
+            <span style={styles.countryCode}>+91</span>
+            <input
+              type="tel"
+              placeholder="Enter 10-digit phone number"
+              value={phone}
+              onChange={(e) => handleFieldChange('phone', e.target.value)}
+              style={{
+                ...styles.phoneInput,
+                ...(fieldErrors.phone ? styles.inputError : {})
+              }}
+              maxLength={10}
+              required
+              disabled={loading}
+              autoFocus
+            />
+          </div>
+          {fieldErrors.phone && (
+            <span style={styles.fieldError}>{fieldErrors.phone}</span>
+          )}
         </div>
 
         <div style={styles.inputGroup}>
@@ -175,10 +312,10 @@ function LoginForm() {
               type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
               value={password}
-              onChange={handlePasswordChange}
+              onChange={(e) => handleFieldChange('password', e.target.value)}
               style={{
                 ...styles.passwordInput,
-                ...(error && password.length < 6 && password ? styles.inputError : {})
+                ...(fieldErrors.password ? styles.inputError : {})
               }}
               required
               disabled={loading}
@@ -188,10 +325,14 @@ function LoginForm() {
               onClick={() => setShowPassword(!showPassword)}
               style={styles.eyeButton}
               disabled={loading}
+              tabIndex={-1}
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
+          {fieldErrors.password && (
+            <span style={styles.fieldError}>{fieldErrors.password}</span>
+          )}
         </div>
 
         {/* Remember Me */}
@@ -204,7 +345,7 @@ function LoginForm() {
               style={styles.checkbox}
               disabled={loading}
             />
-            <span>Remember me</span>
+            <span>Keep me signed in</span>
           </label>
         </div>
 
@@ -219,7 +360,7 @@ function LoginForm() {
         {/* Login Button */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !phone || !password}
           style={{
             ...styles.button,
             ...(loading ? styles.buttonLoading : {})
@@ -228,72 +369,147 @@ function LoginForm() {
           {loading ? (
             <span style={styles.buttonContent}>
               <div style={styles.spinner}></div>
-              Logging in...
+              Signing in...
             </span>
           ) : (
             <span style={styles.buttonContent}>
               <User size={18} />
-              Login to Dashboard
+              {currentStoreInfo.isInStore ? 'Access Store Dashboard' : 'Login to Dashboard'}
             </span>
           )}
         </button>
       </form>
 
+      {/* ✅ Security badges */}
+      <div style={styles.securityBadges}>
+        <div style={styles.securityBadge}>
+          <Shield size={14} />
+          <span>Secure Login</span>
+        </div>
+        <div style={styles.securityBadge}>
+          <CheckCircle size={14} />
+          <span>Verified Sellers</span>
+        </div>
+      </div>
+
       {/* Footer Links */}
       <div style={styles.footerLinks}>
-        <Link href="/forgot-password/seller" style={styles.link}>
+        <Link href={getForgotPasswordLink()} style={styles.link}>
           Forgot Password?
         </Link>
         <span style={styles.divider}>|</span>
-        <Link href="/register/seller" style={styles.link}>
+        <Link href={getRegisterLink()} style={styles.link}>
           Create Account
         </Link>
       </div>
 
-      {/* Back to Home */}
+      {/* Back Section */}
       <div style={styles.backSection}>
-        <Link href="/" style={styles.backLink}>
+        <button onClick={handleBackClick} style={styles.backLink}>
           <ArrowLeft size={16} />
-          Back to Home
+          {currentStoreInfo.isInStore ? 'Back to Store' : 'Back to Home'}
+        </button>
+      </div>
+
+      {/* ✅ Buyer login link */}
+      <div style={styles.buyerLink}>
+        <p style={styles.buyerText}>Are you a customer?</p>
+        <Link href="/login/buyer" style={styles.buyerLinkButton}>
+          Sign in as Customer
         </Link>
       </div>
     </div>
   );
 }
 
-// ✅ Loading component for Suspense fallback
+// ✅ Enhanced Loading component
 function LoginLoading() {
   return (
     <div style={styles.card}>
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p>Loading login form...</p>
+        <p>Loading seller login...</p>
+        <p style={styles.loadingSubtext}>🌐 Connected to: {API_BASE_URL}</p>
       </div>
     </div>
   );
 }
 
-// ✅ Main component with Suspense wrapper
+// ✅ Enhanced Features component
+function FeaturesSection() {
+  const features = [
+    {
+      icon: <TrendingUp size={20} color="#059669" />,
+      title: "Zero Commission",
+      description: "Keep 100% of your sales revenue"
+    },
+    {
+      icon: <Users size={20} color="#3b82f6" />,
+      title: "Reach More Customers", 
+      description: "Connect with buyers across Kerala"
+    },
+    {
+      icon: <Shield size={20} color="#f59e0b" />,
+      title: "Secure Payments",
+      description: "Safe and reliable payment processing"
+    },
+    {
+      icon: <Zap size={20} color="#8b5cf6" />,
+      title: "Easy Management",
+      description: "Simple tools to manage your store"
+    }
+  ];
+
+  return (
+    <div style={styles.featuresSection}>
+      <h3 style={styles.featuresTitle}>Why Choose Kerala Sellers?</h3>
+      <div style={styles.featuresGrid}>
+        {features.map((feature, index) => (
+          <div key={index} style={styles.featureCard}>
+            <div style={styles.featureIcon}>
+              {feature.icon}
+            </div>
+            <div style={styles.featureContent}>
+              <h4 style={styles.featureTitle}>{feature.title}</h4>
+              <p style={styles.featureDescription}>{feature.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* ✅ Success stats */}
+      <div style={styles.statsSection}>
+        <h4 style={styles.statsTitle}>Join Successful Sellers</h4>
+        <div style={styles.statsGrid}>
+          <div style={styles.statItem}>
+            <span style={styles.statNumber}>1000+</span>
+            <span style={styles.statLabel}>Active Sellers</span>
+          </div>
+          <div style={styles.statItem}>
+            <span style={styles.statNumber}>15K+</span>
+            <span style={styles.statLabel}>Products Listed</span>
+          </div>
+          <div style={styles.statItem}>
+            <span style={styles.statNumber}>0%</span>
+            <span style={styles.statLabel}>Commission</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ Enhanced main component
 export default function LoginSellerPage() {
   return (
     <div style={styles.pageContainer}>
       <div style={styles.container}>
-        {/* ✅ Wrap the component that uses useSearchParams in Suspense */}
         <Suspense fallback={<LoginLoading />}>
           <LoginForm />
         </Suspense>
 
-        {/* Features Section */}
-        <div style={styles.featuresSection}>
-          <h3 style={styles.featuresTitle}>Why Choose Kerala Sellers?</h3>
-          <ul style={styles.featuresList}>
-            <li>✓ Zero commission on sales</li>
-            <li>✓ Easy product management</li>
-            <li>✓ Reach customers across Kerala</li>
-            <li>✓ Secure payment processing</li>
-            <li>✓ 24/7 support</li>
-          </ul>
-        </div>
+        {/* Enhanced Features Section */}
+        <FeaturesSection />
       </div>
 
       {/* CSS Animations */}
@@ -312,11 +528,26 @@ export default function LoginSellerPage() {
           from { transform: translateX(-20px); opacity: 0; }
           to { transform: translateX(0); opacity: 1; }
         }
+
+        .input:focus, .phoneInput:focus, .passwordInput:focus {
+          border-color: #3b82f6 !important;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        }
+        
+        .button:hover:not(:disabled) {
+          background-color: #2563eb !important;
+          transform: translateY(-1px);
+        }
+        
+        .buyerLinkButton:hover {
+          background-color: #047857 !important;
+        }
       `}</style>
     </div>
   );
 }
 
+// ✅ Enhanced styles with new components
 const styles = {
   pageContainer: {
     minHeight: '100vh',
@@ -326,10 +557,10 @@ const styles = {
   container: { 
     display: 'flex', 
     justifyContent: 'center', 
-    alignItems: 'center', 
-    minHeight: '80vh', 
-    padding: '20px',
-    gap: '40px',
+    alignItems: 'flex-start', 
+    minHeight: '100vh', 
+    padding: '40px 20px',
+    gap: '60px',
     flexWrap: 'wrap'
   },
   
@@ -343,14 +574,34 @@ const styles = {
     border: '1px solid #e5e7eb',
     animation: 'fadeIn 0.6s ease-out'
   },
+
+  // ✅ Store notice
+  storeNotice: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 16px',
+    backgroundColor: '#dbeafe',
+    border: '1px solid #3b82f6',
+    borderRadius: '8px',
+    fontSize: '0.9rem',
+    color: '#1e40af',
+    marginBottom: '20px'
+  },
   
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: '200px',
+    minHeight: '300px',
     gap: '16px'
+  },
+
+  loadingSubtext: {
+    fontSize: '0.8rem',
+    color: '#9ca3af',
+    margin: 0
   },
   
   header: {
@@ -402,6 +653,34 @@ const styles = {
     color: '#374151',
     marginBottom: '8px'
   },
+
+  // ✅ Enhanced phone input
+  phoneInputContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
+    backgroundColor: '#ffffff',
+    overflow: 'hidden'
+  },
+
+  countryCode: {
+    padding: '14px 12px',
+    backgroundColor: '#f9fafb',
+    borderRight: '1px solid #d1d5db',
+    fontSize: '1rem',
+    color: '#374151',
+    fontWeight: '500'
+  },
+
+  phoneInput: {
+    width: '100%',
+    padding: '14px 16px',
+    border: 'none',
+    fontSize: '1rem',
+    backgroundColor: 'transparent',
+    outline: 'none'
+  },
   
   input: { 
     width: '100%', 
@@ -446,6 +725,12 @@ const styles = {
   
   inputError: {
     borderColor: '#ef4444'
+  },
+
+  fieldError: {
+    color: '#ef4444',
+    fontSize: '0.8rem',
+    marginTop: '4px'
   },
   
   checkboxContainer: {
@@ -517,13 +802,33 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
+
+  // ✅ Security badges
+  securityBadges: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '16px',
+    marginTop: '20px',
+    paddingTop: '16px',
+    borderTop: '1px solid #f1f5f9'
+  },
+
+  securityBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '0.8rem',
+    color: '#059669',
+    fontWeight: '500'
+  },
   
   footerLinks: { 
     marginTop: '24px',
     display: 'flex', 
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
-    fontSize: '0.9rem'
+    fontSize: '0.9rem',
+    gap: '12px'
   },
   
   link: { 
@@ -548,25 +853,131 @@ const styles = {
     alignItems: 'center',
     gap: '6px',
     color: '#6b7280',
+    background: 'none',
+    border: 'none',
+    fontSize: '0.9rem',
+    cursor: 'pointer'
+  },
+
+  // ✅ Buyer link section
+  buyerLink: {
+    marginTop: '16px',
+    padding: '16px',
+    backgroundColor: '#f8fafc',
+    borderRadius: '8px',
+    textAlign: 'center',
+    border: '1px solid #e2e8f0'
+  },
+
+  buyerText: {
+    fontSize: '0.9rem',
+    color: '#6b7280',
+    margin: '0 0 8px 0'
+  },
+
+  buyerLinkButton: {
+    display: 'inline-block',
+    padding: '8px 16px',
+    backgroundColor: '#059669',
+    color: 'white',
     textDecoration: 'none',
-    fontSize: '0.9rem'
+    borderRadius: '6px',
+    fontSize: '0.9rem',
+    fontWeight: '500',
+    transition: 'background-color 0.2s'
   },
   
+  // ✅ Enhanced features section
   featuresSection: {
-    maxWidth: '300px',
+    maxWidth: '400px',
     animation: 'slideIn 0.8s ease-out'
   },
   
   featuresTitle: {
-    fontSize: '1.2rem',
+    fontSize: '1.5rem',
     fontWeight: '700',
     color: '#1f2937',
-    marginBottom: '16px'
+    marginBottom: '24px',
+    textAlign: 'center'
   },
-  
-  featuresList: {
-    listStyle: 'none',
-    padding: 0,
-    margin: 0
+
+  featuresGrid: {
+    display: 'grid',
+    gap: '16px',
+    marginBottom: '32px'
+  },
+
+  featureCard: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px',
+    padding: '16px',
+    backgroundColor: '#ffffff',
+    border: '1px solid #e5e7eb',
+    borderRadius: '12px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+  },
+
+  featureIcon: {
+    flexShrink: 0,
+    padding: '8px',
+    backgroundColor: '#f8fafc',
+    borderRadius: '8px'
+  },
+
+  featureContent: {
+    flex: 1
+  },
+
+  featureTitle: {
+    fontSize: '1rem',
+    fontWeight: '600',
+    color: '#1f2937',
+    margin: '0 0 4px 0'
+  },
+
+  featureDescription: {
+    fontSize: '0.875rem',
+    color: '#6b7280',
+    margin: 0,
+    lineHeight: '1.4'
+  },
+
+  // ✅ Success stats
+  statsSection: {
+    padding: '20px',
+    backgroundColor: '#f0fdf4',
+    borderRadius: '12px',
+    border: '1px solid #bbf7d0'
+  },
+
+  statsTitle: {
+    fontSize: '1.1rem',
+    fontWeight: '600',
+    color: '#166534',
+    marginBottom: '16px',
+    textAlign: 'center'
+  },
+
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '16px'
+  },
+
+  statItem: {
+    textAlign: 'center'
+  },
+
+  statNumber: {
+    display: 'block',
+    fontSize: '1.5rem',
+    fontWeight: '700',
+    color: '#166534'
+  },
+
+  statLabel: {
+    fontSize: '0.8rem',
+    color: '#16a34a'
   }
 };

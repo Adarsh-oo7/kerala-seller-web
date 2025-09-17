@@ -4,7 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
-import { Users, Target, Heart, Store, TrendingUp, CheckCircle, BarChart, Gift, Zap, ArrowRight, Star, Shield, Clock } from 'lucide-react';
+import { 
+  Users, Target, Heart, Store, TrendingUp, CheckCircle, BarChart, Gift, Zap, ArrowRight, 
+  Star, Shield, Clock, ShoppingBag, MapPin, UserCheck, Globe 
+} from 'lucide-react';
 
 export default function AboutPage() {
   const [isVisible, setIsVisible] = useState({});
@@ -42,24 +45,25 @@ export default function AboutPage() {
         <div style={styles.heroContent}>
           <div style={styles.heroBadge}>
             <Star size={16} color="#f59e0b" />
-            <span>Trusted by 1000+ Kerala Businesses</span>
+            <span>Kerala's Most Trusted Online Marketplace</span>
           </div>
           <h1 style={styles.heroTitle}>
-            Your Own Online Shop in Kerala,{' '}
-            <span style={styles.heroHighlight}>Made Easy</span>
+            Connecting Kerala's{' '}
+            <span style={styles.heroHighlight}>Sellers & Buyers</span>
           </h1>
           <p style={styles.heroSubtitle}>
-            Kerala Sellers helps local businesses, home-based entrepreneurs, and artisans 
-            create a professional online store in minutes. No commissions, no hidden fees. 
-            Just your products, your brand, and your customers.
+            Kerala Sellers is a zero-commission marketplace that empowers local businesses 
+            to sell online while providing buyers with authentic Kerala products from 
+            trusted sellers across the state.
           </p>
           <div style={styles.heroCta}>
             <Link href="/register/seller" style={styles.primaryButton}>
-              <span>Start Your Free Trial</span>
-              <ArrowRight size={18} />
+              <Store size={18} />
+              <span>Start Selling</span>
             </Link>
-            <Link href="/login/seller" style={styles.secondaryButton}>
-              Seller Login
+            <Link href="/" style={styles.secondaryButton}>
+              <ShoppingBag size={18} />
+              <span>Start Shopping</span>
             </Link>
           </div>
           <div style={styles.heroStats}>
@@ -72,6 +76,10 @@ export default function AboutPage() {
               <span style={styles.statLabel}>Products Listed</span>
             </div>
             <div style={styles.statItem}>
+              <span style={styles.statNumber}>50K+</span>
+              <span style={styles.statLabel}>Happy Buyers</span>
+            </div>
+            <div style={styles.statItem}>
               <span style={styles.statNumber}>0%</span>
               <span style={styles.statLabel}>Commission</span>
             </div>
@@ -80,8 +88,48 @@ export default function AboutPage() {
       </div>
 
       <div style={styles.container}>
-        {/* Why Join Us Section */}
-        <div style={styles.section} data-animate id="features">
+        {/* Platform Overview */}
+        <div style={styles.section} data-animate id="overview">
+          <div style={styles.sectionHeader}>
+            <h2 style={styles.sectionTitle}>A Complete Marketplace Solution</h2>
+            <p style={styles.sectionSubtitle}>
+              Designed for Kerala's unique business landscape
+            </p>
+          </div>
+          <div style={styles.overviewGrid}>
+            <div style={styles.overviewCard}>
+              <div style={styles.overviewIcon}>
+                <Store size={32} color="#3b82f6" />
+              </div>
+              <h3 style={styles.overviewTitle}>For Sellers</h3>
+              <p style={styles.overviewText}>
+                Create your own online store with a personalized link. Manage inventory, 
+                track orders, and grow your business with zero commission fees.
+              </p>
+              <Link href="/register/seller" style={styles.overviewLink}>
+                <span>Start Selling</span>
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div style={styles.overviewCard}>
+              <div style={styles.overviewIcon}>
+                <ShoppingBag size={32} color="#10b981" />
+              </div>
+              <h3 style={styles.overviewTitle}>For Buyers</h3>
+              <p style={styles.overviewText}>
+                Discover authentic Kerala products from trusted local sellers. 
+                Shop with confidence knowing every seller is verified.
+              </p>
+              <Link href="/" style={styles.overviewLink}>
+                <span>Start Shopping</span>
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Why Sellers Choose Us */}
+        <div style={styles.section} data-animate id="seller-features">
           <div style={styles.sectionHeader}>
             <h2 style={styles.sectionTitle}>Why Sellers Love Kerala Sellers</h2>
             <p style={styles.sectionSubtitle}>
@@ -92,31 +140,64 @@ export default function AboutPage() {
             <FeatureCard
               icon={<CheckCircle size={28} />}
               title="Zero Commission"
-              text="You keep 100% of your sales revenue. We believe your profits belong to you."
+              text="Keep 100% of your sales revenue. No hidden fees, no commission charges. Your profits belong to you."
               color="#10b981"
               delay="0ms"
             />
             <FeatureCard
-              icon={<Store size={28} />}
+              icon={<Globe size={28} />}
               title="Your Own Store Link"
-              text="Get a professional, shareable link (e.g., keralasellers.in/shop/your-name) to promote your brand."
+              text="Get a professional shareable link (keralasellers.in/shop/yourname) to build your brand identity."
               color="#3b82f6"
               delay="150ms"
             />
             <FeatureCard
               icon={<TrendingUp size={28} />}
-              title="Simple Stock Management"
-              text="Easily add products, track your total and online inventory, and manage everything from one dashboard."
+              title="Simple Management"
+              text="Easy-to-use dashboard for inventory, orders, and customer management. No technical knowledge required."
               color="#8b5cf6"
               delay="300ms"
             />
           </div>
         </div>
 
-        {/* How It Works Section */}
-        <div style={styles.section} data-animate id="steps">
+        {/* Why Buyers Trust Us */}
+        <div style={styles.section} data-animate id="buyer-features">
           <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>Get Started in 3 Simple Steps</h2>
+            <h2 style={styles.sectionTitle}>Why Buyers Trust Kerala Sellers</h2>
+            <p style={styles.sectionSubtitle}>
+              Shop with confidence from verified Kerala businesses
+            </p>
+          </div>
+          <div style={styles.featuresGrid}>
+            <FeatureCard
+              icon={<UserCheck size={28} />}
+              title="Verified Sellers"
+              text="All sellers are verified with proper documentation and contact details for your safety."
+              color="#ef4444"
+              delay="0ms"
+            />
+            <FeatureCard
+              icon={<MapPin size={28} />}
+              title="Local Products"
+              text="Authentic Kerala products from local artisans, home businesses, and established stores."
+              color="#f59e0b"
+              delay="150ms"
+            />
+            <FeatureCard
+              icon={<Shield size={28} />}
+              title="Secure Shopping"
+              text="Safe payment options and reliable customer support for a worry-free shopping experience."
+              color="#06b6d4"
+              delay="300ms"
+            />
+          </div>
+        </div>
+
+        {/* How It Works for Sellers */}
+        <div style={styles.section} data-animate id="seller-steps">
+          <div style={styles.sectionHeader}>
+            <h2 style={styles.sectionTitle}>Get Started as a Seller</h2>
             <p style={styles.sectionSubtitle}>
               Launch your online store in less than 10 minutes
             </p>
@@ -125,22 +206,56 @@ export default function AboutPage() {
             <div style={styles.stepsGrid}>
               <StepCard 
                 number="1" 
-                title="Register Your Account" 
-                text="Create your seller account in just a few minutes with our simple OTP verification."
+                title="Register & Verify" 
+                text="Create your seller account with OTP verification and business details."
                 delay="0ms"
               />
               <div style={styles.stepConnector}></div>
               <StepCard 
                 number="2" 
-                title="Set Up Your Store" 
-                text="Add your shop name, logo, banner, and business details to build your brand identity."
+                title="Set Up Store" 
+                text="Add your shop name, logo, banner, and business information to build your brand."
                 delay="150ms"
               />
               <div style={styles.stepConnector}></div>
               <StepCard 
                 number="3" 
-                title="List & Share" 
-                text="Add your products and start sharing your unique shop link with customers on WhatsApp, Instagram, and Facebook."
+                title="List & Sell" 
+                text="Add products, manage inventory, and start receiving orders from Kerala buyers."
+                delay="300ms"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* How It Works for Buyers */}
+        <div style={styles.section} data-animate id="buyer-steps">
+          <div style={styles.sectionHeader}>
+            <h2 style={styles.sectionTitle}>How to Shop on Kerala Sellers</h2>
+            <p style={styles.sectionSubtitle}>
+              Simple and secure shopping experience
+            </p>
+          </div>
+          <div style={styles.stepsContainer}>
+            <div style={styles.stepsGrid}>
+              <StepCard 
+                number="1" 
+                title="Browse & Discover" 
+                text="Explore products from verified Kerala sellers or visit specific store pages."
+                delay="0ms"
+              />
+              <div style={styles.stepConnector}></div>
+              <StepCard 
+                number="2" 
+                title="Add to Cart" 
+                text="Select products from multiple stores and manage your cart by seller."
+                delay="150ms"
+              />
+              <div style={styles.stepConnector}></div>
+              <StepCard 
+                number="3" 
+                title="Order & Enjoy" 
+                text="Place your order with secure payment and receive authentic Kerala products."
                 delay="300ms"
               />
             </div>
@@ -150,25 +265,27 @@ export default function AboutPage() {
         {/* Who It's For Section */}
         <div style={styles.section} data-animate id="audience">
           <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>Perfect For Every Local Business</h2>
+            <h2 style={styles.sectionTitle}>Perfect For Every Kerala Business</h2>
           </div>
           <div style={styles.audienceCard}>
             <div style={styles.audienceIcon}>
               <Heart size={32} color="#ef4444" />
             </div>
             <p style={styles.audienceText}>
-              Whether you sell fashion, jewellery, spices, food items, or handicrafts, 
-              our platform is built for you. We provide the tools to manage your products, 
-              track orders, and connect directly with buyers across Kerala, solving the 
-              trust issues in peer-to-peer sales.
+              Whether you're selling traditional Kerala spices, handmade crafts, fashion items, 
+              jewelry, or any other products, our platform connects you directly with buyers 
+              across Kerala and beyond. We bridge the gap between local businesses and customers 
+              who value authenticity.
             </p>
             <div style={styles.businessTypes}>
-              <span style={styles.businessType}>Fashion</span>
-              <span style={styles.businessType}>Jewellery</span>
-              <span style={styles.businessType}>Spices</span>
-              <span style={styles.businessType}>Food Items</span>
+              <span style={styles.businessType}>Spices & Food</span>
               <span style={styles.businessType}>Handicrafts</span>
+              <span style={styles.businessType}>Fashion</span>
+              <span style={styles.businessType}>Jewelry</span>
+              <span style={styles.businessType}>Home Decor</span>
               <span style={styles.businessType}>Electronics</span>
+              <span style={styles.businessType}>Books</span>
+              <span style={styles.businessType}>Health & Beauty</span>
             </div>
           </div>
         </div>
@@ -178,8 +295,8 @@ export default function AboutPage() {
           <div style={styles.trustGrid}>
             <TrustCard
               icon={<Shield size={24} />}
-              title="Secure Payments"
-              text="Safe and secure payment processing"
+              title="Secure Platform"
+              text="Safe and secure for both buyers and sellers"
               color="#10b981"
             />
             <TrustCard
@@ -190,27 +307,66 @@ export default function AboutPage() {
             />
             <TrustCard
               icon={<Zap size={24} />}
-              title="Fast Setup"
-              text="Get online in less than 10 minutes"
+              title="Fast & Easy"
+              text="Quick setup for sellers, easy shopping for buyers"
               color="#f59e0b"
             />
+            <TrustCard
+              icon={<MapPin size={24} />}
+              title="Kerala Focus"
+              text="Dedicated to supporting local Kerala businesses"
+              color="#ef4444"
+            />
+          </div>
+        </div>
+
+        {/* Our Mission */}
+        <div style={styles.section} data-animate id="mission">
+          <div style={styles.missionCard}>
+            <h2 style={styles.missionTitle}>Our Mission</h2>
+            <p style={styles.missionText}>
+              To empower Kerala's local businesses by providing them with a digital platform 
+              to reach customers while maintaining their unique identity and keeping their 
+              hard-earned profits. We believe in supporting the entrepreneurial spirit of 
+              Kerala while connecting buyers with authentic, quality products from trusted sellers.
+            </p>
+            <div style={styles.missionValues}>
+              <div style={styles.valueItem}>
+                <CheckCircle size={20} color="#10b981" />
+                <span>Zero Commission Policy</span>
+              </div>
+              <div style={styles.valueItem}>
+                <CheckCircle size={20} color="#10b981" />
+                <span>Supporting Local Businesses</span>
+              </div>
+              <div style={styles.valueItem}>
+                <CheckCircle size={20} color="#10b981" />
+                <span>Building Trust & Transparency</span>
+              </div>
+              <div style={styles.valueItem}>
+                <CheckCircle size={20} color="#10b981" />
+                <span>Promoting Kerala Culture</span>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* CTA Section */}
         <div style={styles.ctaSection} data-animate id="cta">
           <div style={styles.ctaContent}>
-            <h2 style={styles.ctaTitle}>Ready to Start Selling Online?</h2>
+            <h2 style={styles.ctaTitle}>Join the Kerala Sellers Community</h2>
             <p style={styles.ctaText}>
-              Join thousands of successful sellers on Kerala's most trusted marketplace
+              Whether you want to sell your products or discover authentic Kerala goods, 
+              we're here to connect you with the right people.
             </p>
             <div style={styles.ctaButtons}>
               <Link href="/register/seller" style={styles.ctaPrimary}>
-                <span>Start Free Trial</span>
-                <ArrowRight size={18} />
+                <Store size={18} />
+                <span>Become a Seller</span>
               </Link>
-              <Link href="/contact" style={styles.ctaSecondary}>
-                Contact Support
+              <Link href="/" style={styles.ctaSecondary}>
+                <ShoppingBag size={18} />
+                <span>Start Shopping</span>
               </Link>
             </div>
           </div>
@@ -299,7 +455,7 @@ export default function AboutPage() {
           }
           
           .hero-stats {
-            flex-direction: column !important;
+            grid-template-columns: repeat(2, 1fr) !important;
             gap: 16px !important;
           }
           
@@ -311,6 +467,10 @@ export default function AboutPage() {
           .features-grid {
             grid-template-columns: 1fr !important;
             gap: 16px !important;
+          }
+          
+          .overview-grid {
+            grid-template-columns: 1fr !important;
           }
           
           .steps-grid {
@@ -333,6 +493,10 @@ export default function AboutPage() {
           
           .business-types {
             justify-content: center !important;
+          }
+
+          .mission-values {
+            grid-template-columns: 1fr !important;
           }
         }
         
@@ -472,13 +636,12 @@ const styles = {
     fontWeight: '600',
     fontSize: '1.05rem',
     transition: 'all 0.3s ease',
-    boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.1)',
-    ':hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: '0 8px 25px 0 rgba(0, 0, 0, 0.15)'
-    }
+    boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.1)'
   },
   secondaryButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
     padding: '16px 32px',
     backgroundColor: 'transparent',
     color: '#ffffff',
@@ -487,16 +650,12 @@ const styles = {
     fontWeight: '600',
     fontSize: '1.05rem',
     border: '2px solid rgba(255, 255, 255, 0.3)',
-    transition: 'all 0.3s ease',
-    ':hover': {
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-      borderColor: 'rgba(255, 255, 255, 0.5)'
-    }
+    transition: 'all 0.3s ease'
   },
   heroStats: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '48px',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+    gap: '24px',
     marginTop: '32px'
   },
   statItem: {
@@ -537,6 +696,44 @@ const styles = {
     maxWidth: '600px',
     margin: '0 auto'
   },
+  overviewGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+    gap: '24px'
+  },
+  overviewCard: {
+    backgroundColor: '#ffffff',
+    padding: '32px',
+    borderRadius: '16px',
+    textAlign: 'center',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+    border: '1px solid #e5e7eb',
+    transition: 'all 0.3s ease'
+  },
+  overviewIcon: {
+    marginBottom: '16px'
+  },
+  overviewTitle: {
+    fontSize: '1.5rem',
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: '12px'
+  },
+  overviewText: {
+    color: '#6b7280',
+    lineHeight: '1.6',
+    fontSize: '1rem',
+    marginBottom: '20px'
+  },
+  overviewLink: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    color: '#3b82f6',
+    textDecoration: 'none',
+    fontWeight: '600',
+    transition: 'all 0.2s'
+  },
   featuresGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
@@ -549,11 +746,7 @@ const styles = {
     textAlign: 'center',
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
     border: '1px solid #e5e7eb',
-    transition: 'all 0.3s ease',
-    ':hover': {
-      transform: 'translateY(-4px)',
-      boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1)'
-    }
+    transition: 'all 0.3s ease'
   },
   featureIcon: {
     marginBottom: '16px'
@@ -585,11 +778,7 @@ const styles = {
     textAlign: 'center',
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
     border: '1px solid #e5e7eb',
-    transition: 'all 0.3s ease',
-    ':hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: '0 8px 15px -3px rgba(0, 0, 0, 0.1)'
-    }
+    transition: 'all 0.3s ease'
   },
   stepNumber: {
     width: '48px',
@@ -686,6 +875,42 @@ const styles = {
     fontSize: '0.875rem',
     color: '#6b7280'
   },
+  missionCard: {
+    backgroundColor: '#f8fafc',
+    padding: '48px',
+    borderRadius: '20px',
+    textAlign: 'center',
+    border: '1px solid #e5e7eb'
+  },
+  missionTitle: {
+    fontSize: '2rem',
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: '24px'
+  },
+  missionText: {
+    fontSize: '1.125rem',
+    color: '#374151',
+    lineHeight: '1.7',
+    marginBottom: '32px',
+    maxWidth: '800px',
+    margin: '0 auto 32px'
+  },
+  missionValues: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px',
+    maxWidth: '600px',
+    margin: '0 auto'
+  },
+  valueItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '0.95rem',
+    fontWeight: '500',
+    color: '#374151'
+  },
   ctaSection: {
     background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
     borderRadius: '20px',
@@ -724,13 +949,12 @@ const styles = {
     textDecoration: 'none',
     borderRadius: '12px',
     fontWeight: '600',
-    transition: 'all 0.3s ease',
-    ':hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: '0 8px 25px 0 rgba(0, 0, 0, 0.15)'
-    }
+    transition: 'all 0.3s ease'
   },
   ctaSecondary: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
     padding: '16px 32px',
     backgroundColor: 'transparent',
     color: '#ffffff',
@@ -738,9 +962,6 @@ const styles = {
     borderRadius: '12px',
     fontWeight: '600',
     border: '2px solid rgba(255, 255, 255, 0.3)',
-    transition: 'all 0.3s ease',
-    ':hover': {
-      backgroundColor: 'rgba(255, 255, 255, 0.1)'
-    }
+    transition: 'all 0.3s ease'
   }
 };

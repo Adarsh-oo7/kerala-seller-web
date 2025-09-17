@@ -42,6 +42,29 @@ const API_URL = `${API_BASE_URL}/user/store/shops/`;
 
 console.log('Shop API URL configured:', API_URL);
 
+// ✅ SEO-friendly URL generator
+const generateShopSlug = (shop) => {
+  const shopName = (shop.name || '').toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-')         // Replace spaces with hyphens
+    .replace(/-+/g, '-')          // Replace multiple hyphens with single
+    .trim('-');                   // Remove leading/trailing hyphens
+  
+  const location = (shop.seller_address || shop.address || shop.city || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim('-')
+    .split('-')[0]; // Take first word of location
+  
+  // Combine shop name with location
+  const slug = location ? `${shopName}-${location}` : shopName;
+  
+  // Fallback to phone if slug is too short
+  return slug.length >= 3 ? slug : `shop-${shop.seller_phone || shop.id}`;
+};
+
 function useMediaQuery(query) {
   const [matches, setMatches] = useState(false);
 
@@ -122,7 +145,9 @@ export default function ShopPage() {
         shop.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shop.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shop.tagline?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        shop.category?.toLowerCase().includes(searchTerm.toLowerCase())
+        shop.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shop.seller_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shop.address?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -136,6 +161,8 @@ export default function ShopPage() {
           return (b.average_rating || 0) - (a.average_rating || 0);
         case 'products':
           return (b.products_count || 0) - (a.products_count || 0);
+        case 'location':
+          return (a.seller_address || a.address || '').localeCompare(b.seller_address || b.address || '');
         default:
           return 0;
       }
@@ -190,15 +217,15 @@ export default function ShopPage() {
       {/* Hero Section */}
       <div style={styles.heroSection}>
         <div style={styles.heroContent}>
-          <h1 style={styles.heroTitle}>Discover Local Shops</h1>
-          <p style={styles.heroSubtitle}>Shop from trusted sellers across Kerala</p>
+          <h1 style={styles.heroTitle}>Discover Local Shops in Kerala</h1>
+          <p style={styles.heroSubtitle}>Shop from trusted sellers across God's Own Country</p>
           
           <div style={styles.searchContainer}>
             <div style={styles.searchBox}>
               <Search size={18} style={styles.searchIcon} />
               <input
                 type="text"
-                placeholder="Search shops..."
+                placeholder="Search shops by name, location, or category..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={styles.searchInput}
@@ -261,6 +288,7 @@ export default function ShopPage() {
               </div>
               {[
                 { value: 'name', label: 'Name A-Z' },
+                { value: 'location', label: 'Location' },
                 { value: 'newest', label: 'Newest First' },
                 { value: 'rating', label: 'Highest Rated' },
                 { value: 'products', label: 'Most Products' }
@@ -295,7 +323,7 @@ export default function ShopPage() {
           )}
         </div>
 
-        {/* ✅ ENHANCED: Mobile-optimized Grid with better field mapping */}
+        {/* ✅ ENHANCED: SEO-friendly shop cards with slugs */}
         {filteredShops.length > 0 ? (
           <div style={{
             ...styles.shopsContainer,
@@ -311,6 +339,9 @@ export default function ShopPage() {
                                  shop.contact_phone ||
                                  shop.whatsapp_number;
               
+              // ✅ Generate SEO-friendly slug
+              const shopSlug = generateShopSlug(shop);
+              
               return (
                 <div key={`shop-${shop.id}-${index}`} style={styles.shopCard}>
                   {/* ✅ Logo and basic info always shown */}
@@ -322,7 +353,7 @@ export default function ShopPage() {
                         shop.image ||
                         'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' + encodeURIComponent(shop.name?.charAt(0) || 'S')
                       }
-                      alt={shop.name || 'Shop'} 
+                      alt={`${shop.name} - ${shop.seller_address || shop.address || 'Kerala'}`} 
                       style={styles.shopLogo}
                       onError={(e) => {
                         e.target.src = 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' + 
@@ -347,16 +378,16 @@ export default function ShopPage() {
                       </p>
                     )}
 
-                    {/* Compact Shop Info */}
+                    {/* Enhanced Shop Info with Location Priority */}
                     <div style={styles.shopInfoContainer}>
                       {(shop.seller_address || shop.seller?.address || shop.address) && (
                         <div style={styles.shopInfoItem}>
                           <MapPin size={12} />
-                          <span>
+                          <span style={styles.locationText}>
                             {(() => {
                               const address = shop.seller_address || shop.seller?.address || shop.address;
-                              return address.length > 20 
-                                ? address.substring(0, 20) + '...' 
+                              return address.length > 25 
+                                ? address.substring(0, 25) + '...' 
                                 : address;
                             })()}
                           </span>
@@ -386,13 +417,17 @@ export default function ShopPage() {
                     </div>
                   </div>
 
-                  {/* Action Button */}
+                  {/* ✅ ENHANCED: SEO-friendly action button with proper data */}
                   <div style={styles.shopActions}>
                     {sellerPhone ? (
-                      <Link href={`/shop/${sellerPhone}`} style={styles.linkButton}>
+                      <Link 
+                        href={`/shop/${shopSlug}?id=${sellerPhone}`} 
+                        style={styles.linkButton}
+                        title={`Visit ${shop.name} in ${shop.seller_address || shop.address || 'Kerala'}`}
+                      >
                         <button style={styles.viewShopButton}>
                           <Store size={14} />
-                          <span>View Shop</span>
+                          <span>Visit Store</span>
                         </button>
                       </Link>
                     ) : (
@@ -412,7 +447,7 @@ export default function ShopPage() {
             <h3>No shops found</h3>
             <p>
               {searchTerm 
-                ? `No shops match "${searchTerm}". Try different search terms.`
+                ? `No shops match "${searchTerm}". Try different search terms or browse by location.`
                 : "No shops available at the moment."}
             </p>
             <button onClick={clearAllFilters} style={styles.clearFiltersButton}>
@@ -445,7 +480,7 @@ export default function ShopPage() {
   );
 }
 
-// ✅ ENHANCED: Improved styles with better mobile optimization
+// ✅ Enhanced styles with location emphasis
 const styles = {
   pageContainer: {
     minHeight: '100vh',
@@ -496,27 +531,27 @@ const styles = {
   },
 
   heroSection: {
-    background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
-    padding: '40px 20px 30px 20px',
+    background: 'linear-gradient(135deg, #16a34a 0%, #059669 100%)',
+    padding: '50px 20px 40px 20px',
     textAlign: 'center',
     color: 'white'
   },
   
   heroContent: {
-    maxWidth: '600px',
+    maxWidth: '700px',
     margin: '0 auto'
   },
   
   heroTitle: {
-    fontSize: '2rem',
+    fontSize: '2.2rem',
     fontWeight: '700',
-    marginBottom: '12px',
+    marginBottom: '16px',
     lineHeight: '1.2'
   },
   
   heroSubtitle: {
-    fontSize: '1rem',
-    marginBottom: '24px',
+    fontSize: '1.1rem',
+    marginBottom: '32px',
     opacity: 0.9
   },
 
@@ -553,12 +588,12 @@ const styles = {
   
   searchInput: {
     width: '100%',
-    padding: '14px 48px 14px 44px',
+    padding: '16px 48px 16px 44px',
     fontSize: '16px',
     border: 'none',
     borderRadius: '12px',
     outline: 'none',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
     backgroundColor: 'white',
     color: '#1e293b'
   },
@@ -788,6 +823,12 @@ const styles = {
     color: '#64748b'
   },
 
+  // ✅ Enhanced location text with emphasis
+  locationText: {
+    fontWeight: '600',
+    color: '#059669'
+  },
+
   shopActions: {
     padding: '12px',
     borderTop: '1px solid #e5e7eb',
@@ -806,7 +847,7 @@ const styles = {
     gap: '6px',
     width: '100%',
     padding: '10px 12px',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#059669',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
@@ -841,7 +882,7 @@ const styles = {
   clearFiltersButton: {
     marginTop: '20px',
     padding: '12px 24px',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#059669',
     color: 'white',
     border: 'none',
     borderRadius: '8px',

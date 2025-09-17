@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import axios from 'axios';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Star, 
@@ -27,29 +27,120 @@ import {
 } from 'lucide-react';
 import SHeader from '../../../../components/common/SHeader';
 
-// ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const API_URL = `${API_BASE_URL}/user/store/`;
+// ✅ Enhanced environment variable handling
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
+  }
+  
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  
+  return 'https://keralaseller-backend.onrender.com';
+};
 
-export default function StoreAboutPage() {
+// ✅ FIXED: Helper function to extract phone from slug or query params with null safety
+const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
+  console.log('🔍 Extracting phone from:', { shopSlug, searchParams: searchParams?.toString() });
+  
+  // ✅ Add null/undefined checks
+  if (!shopSlug) {
+    console.log('❌ Missing shopSlug');
+    return null;
+  }
+  
+  // ✅ NEW: Check if shopSlug is already a phone number (old URL format)
+  if (typeof shopSlug === 'string' && /^[6-9]\d{9}$/.test(shopSlug)) {
+    console.log('✅ Direct phone URL detected:', shopSlug);
+    return shopSlug;
+  }
+  
+  // Try to get phone from query params first (for SEO URLs)
+  const phoneFromParams = searchParams?.get('id');
+  console.log('📱 Phone from params:', phoneFromParams);
+  
+  if (phoneFromParams) {
+    // ✅ More flexible validation for development
+    if (process.env.NODE_ENV === 'development') {
+      // Allow any numeric string with 3+ digits for testing
+      if (/^\d{3,}$/.test(phoneFromParams)) {
+        console.log('✅ Valid phone found (dev mode):', phoneFromParams);
+        return phoneFromParams;
+      }
+    } else {
+      // ✅ Production: strict Indian mobile validation
+      if (/^[6-9]\d{9}$/.test(phoneFromParams)) {
+        console.log('✅ Valid Indian mobile number:', phoneFromParams);
+        return phoneFromParams;
+      }
+    }
+  }
+  
+  // Extract phone from compound slug (e.g., "raj-electronics-kochi-9544344339")
+  if (typeof shopSlug === 'string') {
+    const phoneMatch = shopSlug.match(/[6-9]\d{9}$/);
+    if (phoneMatch) {
+      console.log('✅ Phone extracted from compound slug:', phoneMatch[0]);
+      return phoneMatch[0];
+    }
+  }
+  
+  console.log('❌ No valid phone number found');
+  return null;
+};
+
+// ✅ SEO-friendly URL generator (same as in shop listing)
+const generateShopSlug = (shop) => {
+  if (!shop) return 'shop';
+  
+  const shopName = (shop.name || '').toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim('-');
+  
+  const location = (shop.seller_address || shop.address || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim('-')
+    .split('-')[0];
+  
+  const slug = location ? `${shopName}-${location}` : shopName;
+  return slug.length >= 3 ? slug : `shop-${shop.seller_phone || 'store'}`;
+};
+
+function StoreAboutContent() {
   const [storeData, setStoreData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const params = useParams();
-  const router = useRouter();
   
-  // Get sellerPhone from params with proper validation
-  const sellerPhone = params?.sellerPhone;
-
-  // Debug logging
-  console.log('📍 About page params:', params);
-  console.log('📞 Seller phone:', sellerPhone);
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { shopSlug } = params;
+  
+  // ✅ Extract seller phone from slug or query params
+  const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams);
+  
+  console.log('📍 About page params:', { shopSlug, sellerPhone });
 
   useEffect(() => {
     // Check login status
-    const token = localStorage.getItem('buyerAccessToken');
-    setIsLoggedIn(!!token);
+    try {
+      const token = localStorage.getItem('buyerAccessToken') || 
+                   localStorage.getItem('access_token') ||
+                   localStorage.getItem('accessToken');
+      setIsLoggedIn(!!token);
+    } catch (error) {
+      console.warn('localStorage access error:', error);
+      setIsLoggedIn(false);
+    }
   }, []);
 
   const fetchStoreData = async () => {
@@ -64,17 +155,41 @@ export default function StoreAboutPage() {
     setError('');
     
     try {
-      console.log('🔍 Fetching store data for phone:', sellerPhone);
-      const response = await axios.get(`${API_URL}${sellerPhone}/about/`);
+      console.log('🔍 Fetching store about data for phone:', sellerPhone);
       
-      console.log('✅ Store data received:', response.data);
+      // Try the about endpoint first, fallback to main shop endpoint
+      let response;
+      try {
+        response = await axios.get(`${getApiBaseUrl()}/user/store/${sellerPhone}/about/`, {
+          timeout: 15000
+        });
+        console.log('✅ About endpoint successful:', response.data);
+      } catch (aboutError) {
+        console.log('⚠️ About endpoint failed, trying main shop endpoint');
+        response = await axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/`, {
+          timeout: 15000
+        });
+        console.log('✅ Shop endpoint successful:', response.data);
+        
+        // Transform shop data to about format if needed
+        if (response.data.store) {
+          setStoreData(response.data.store);
+        } else {
+          setStoreData(response.data);
+        }
+        setIsLoading(false);
+        return;
+      }
+      
       setStoreData(response.data);
     } catch (error) {
       console.error("❌ Failed to fetch store about data:", error);
       if (error.response?.status === 404) {
-        setError('Store not found. This store may no longer exist.');
+        setError('Store not found. This store may no longer exist or the URL is incorrect.');
       } else if (error.response?.status >= 500) {
         setError('Server error. Please try again later.');
+      } else if (error.code === 'ECONNABORTED') {
+        setError('Request timed out. Please check your connection and try again.');
       } else {
         setError('Failed to load store information. Please try again.');
       }
@@ -88,16 +203,11 @@ export default function StoreAboutPage() {
     fetchStoreData();
   }, [sellerPhone]);
 
-  // Navigation handler for going back to store home
-  const handleNavigateToStore = () => {
-    if (sellerPhone) {
-      const storeUrl = `/shop/${sellerPhone}`;
-      console.log('🏠 Navigating to store home:', storeUrl);
-      router.push(storeUrl);
-    } else {
-      console.error('❌ Cannot navigate: sellerPhone is undefined');
-      router.push('/');
-    }
+  // ✅ Enhanced: Generate SEO-friendly shop URL for navigation
+  const getShopUrl = () => {
+    if (!storeData || !sellerPhone) return `/shop`;
+    const shopSlug = generateShopSlug(storeData);
+    return `/shop/${shopSlug}?id=${sellerPhone}`;
   };
 
   const formatJoinDate = (dateString) => {
@@ -124,7 +234,6 @@ export default function StoreAboutPage() {
         <SHeader 
           store={null} 
           isLoggedIn={isLoggedIn} 
-          sellerPhone={sellerPhone}
         />
         <div style={styles.loadingContainer}>
           <div style={styles.spinner}></div>
@@ -140,15 +249,20 @@ export default function StoreAboutPage() {
         <SHeader 
           store={null} 
           isLoggedIn={isLoggedIn} 
-          sellerPhone={sellerPhone}
         />
         <div style={styles.errorContainer}>
           <Store size={64} style={styles.errorIcon} />
           <h2 style={styles.errorTitle}>Invalid Store URL</h2>
-          <p style={styles.errorText}>The store phone number is missing from the URL.</p>
-          <Link href="/" style={styles.backLink}>
+          <p style={styles.errorText}>The store information is missing from the URL.</p>
+          <div style={styles.errorDebug}>
+            <strong>Debug Info:</strong><br/>
+            Shop Slug: <code>{shopSlug}</code><br/>
+            Phone: <code>{sellerPhone || 'null'}</code><br/>
+            URL: <code>{typeof window !== 'undefined' ? window.location.href : 'N/A'}</code>
+          </div>
+          <Link href="/shop" style={styles.backLink}>
             <ArrowLeft size={16} />
-            Back to Home
+            Browse All Shops
           </Link>
         </div>
       </div>
@@ -158,7 +272,7 @@ export default function StoreAboutPage() {
   if (error) {
     return (
       <div style={styles.pageContainer}>
-        <SHeader store={null} isLoggedIn={isLoggedIn} sellerPhone={sellerPhone} />
+        <SHeader store={null} isLoggedIn={isLoggedIn} />
         <div style={styles.errorContainer}>
           <AlertCircle size={64} style={styles.errorIcon} />
           <h2 style={styles.errorTitle}>Something went wrong</h2>
@@ -168,7 +282,7 @@ export default function StoreAboutPage() {
               <RefreshCw size={16} />
               Try Again
             </button>
-            <Link href={`/shop/${sellerPhone}`} style={styles.backLink}>
+            <Link href={getShopUrl()} style={styles.backLink}>
               <ArrowLeft size={16} />
               Back to Store
             </Link>
@@ -181,14 +295,14 @@ export default function StoreAboutPage() {
   if (!storeData) {
     return (
       <div style={styles.pageContainer}>
-        <SHeader store={null} isLoggedIn={isLoggedIn} sellerPhone={sellerPhone} />
+        <SHeader store={null} isLoggedIn={isLoggedIn} />
         <div style={styles.errorContainer}>
           <Store size={64} style={styles.errorIcon} />
           <h2 style={styles.errorTitle}>Store Not Found</h2>
           <p style={styles.errorText}>Could not find this store. It may have been removed or the URL is incorrect.</p>
-          <Link href={`/shop/${sellerPhone}`} style={styles.backLink}>
+          <Link href="/shop" style={styles.backLink}>
             <ArrowLeft size={16} />
-            Back to Store
+            Browse All Shops
           </Link>
         </div>
       </div>
@@ -200,29 +314,37 @@ export default function StoreAboutPage() {
       <SHeader 
         store={storeData} 
         isLoggedIn={isLoggedIn} 
-        sellerPhone={sellerPhone}
       />
       
-      {/* Navigation breadcrumb */}
+      {/* ✅ Enhanced Navigation breadcrumb with SEO URLs */}
       <div style={styles.breadcrumbContainer}>
         <div style={styles.container}>
           <nav style={styles.breadcrumb}>
-            <Link href={`/shop/${sellerPhone}`} style={styles.breadcrumbLink}>
+            <Link href="/" style={styles.breadcrumbLink}>
               <Home size={16} />
-              Store Home
+              Kerala Sellers
             </Link>
-            <span style={styles.breadcrumbSeparator}>/</span>
+            <span style={styles.breadcrumbSeparator}>›</span>
+            <Link href="/shop" style={styles.breadcrumbLink}>
+              Shops
+            </Link>
+            <span style={styles.breadcrumbSeparator}>›</span>
+            <Link href={getShopUrl()} style={styles.breadcrumbLink}>
+              <Store size={16} />
+              {storeData.name}
+            </Link>
+            <span style={styles.breadcrumbSeparator}>›</span>
             <span style={styles.breadcrumbCurrent}>About</span>
           </nav>
         </div>
       </div>
       
       <div style={styles.container}>
-        {/* Back button */}
-        <button onClick={handleNavigateToStore} style={styles.backButton}>
+        {/* ✅ Enhanced Back button with SEO URL */}
+        <Link href={getShopUrl()} style={styles.backButton}>
           <ArrowLeft size={16} />
           Back to Store
-        </button>
+        </Link>
 
         {/* Store Header */}
         <div style={styles.storeHeader}>
@@ -255,7 +377,7 @@ export default function StoreAboutPage() {
               )}
               <span style={styles.badge}>
                 <Users size={12} />
-                Trusted Seller
+                Trusted Kerala Seller
               </span>
               {storeData.date_joined && (
                 <span style={styles.badge}>
@@ -325,14 +447,14 @@ export default function StoreAboutPage() {
                   </div>
                 </div>
               )}
-              {storeData.owner_name && (
+              {(storeData.owner_name || storeData.seller_name) && (
                 <div style={styles.businessItem}>
                   <div style={styles.businessIcon}>
                     <Users size={20} />
                   </div>
                   <div>
                     <span style={styles.businessLabel}>Owner</span>
-                    <p style={styles.businessValue}>{storeData.owner_name}</p>
+                    <p style={styles.businessValue}>{storeData.owner_name || storeData.seller_name}</p>
                   </div>
                 </div>
               )}
@@ -345,7 +467,7 @@ export default function StoreAboutPage() {
           <h2 style={styles.sectionTitle}>About Our Store</h2>
           <div style={styles.card}>
             <p style={styles.description}>
-              {storeData.description || `Welcome to ${storeData.name}! We are committed to providing you with the best products and exceptional customer service. Our team works hard to ensure quality and satisfaction with every purchase.`}
+              {storeData.description || `Welcome to ${storeData.name}! We are a trusted Kerala-based business committed to providing you with the best products and exceptional customer service. Our team works hard to ensure quality and satisfaction with every purchase.`}
             </p>
           </div>
         </div>
@@ -355,7 +477,7 @@ export default function StoreAboutPage() {
           <h2 style={styles.sectionTitle}>Contact & Location</h2>
           <div style={styles.card}>
             <div style={styles.contactGrid}>
-              {(storeData.business_address || storeData.address) && (
+              {(storeData.business_address || storeData.address || storeData.seller_address) && (
                 <div style={styles.contactItem}>
                   <div style={styles.contactIcon}>
                     <MapPin size={20} />
@@ -363,7 +485,7 @@ export default function StoreAboutPage() {
                   <div style={styles.contactInfo}>
                     <span style={styles.contactLabel}>Business Address</span>
                     <p style={styles.contactValue}>
-                      {storeData.business_address || storeData.address}
+                      {storeData.business_address || storeData.address || storeData.seller_address}
                     </p>
                   </div>
                 </div>
@@ -418,7 +540,7 @@ export default function StoreAboutPage() {
                   {storeData.delivery_time_local && (
                     <div style={styles.deliveryItem}>
                       <Clock size={16} />
-                      <span>Local: {storeData.delivery_time_local}</span>
+                      <span>Local Kerala: {storeData.delivery_time_local}</span>
                     </div>
                   )}
                   {storeData.delivery_time_national && (
@@ -464,9 +586,9 @@ export default function StoreAboutPage() {
           </div>
         </div>
 
-        {/* Quick Actions */}
+        {/* ✅ Enhanced Quick Actions with SEO URL */}
         <div style={styles.quickActionsSection}>
-          <Link href={`/shop/${sellerPhone}`} style={styles.primaryButton}>
+          <Link href={getShopUrl()} style={styles.primaryButton}>
             <Package size={16} />
             View All Products
           </Link>
@@ -501,6 +623,35 @@ function StatCard({ icon, value, label, color = '#3b82f6' }) {
   );
 }
 
+// ✅ Main Export with Suspense Boundary
+export default function StoreAboutPage() {
+  return (
+    <Suspense fallback={
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '60vh',
+        gap: '20px'
+      }}>
+        <div style={{
+          width: '40px',
+          height: '40px',
+          border: '4px solid #f3f3f3',
+          borderTop: '4px solid #3b82f6',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }}></div>
+        <h3>Loading store information...</h3>
+      </div>
+    }>
+      <StoreAboutContent />
+    </Suspense>
+  );
+}
+
+// ✅ Enhanced styles with better error display
 const styles = {
   pageContainer: {
     minHeight: '100vh',
@@ -557,7 +708,18 @@ const styles = {
     color: '#6b7280',
     fontSize: '16px',
     margin: 0,
-    maxWidth: '400px'
+    maxWidth: '400px',
+    lineHeight: '1.5'
+  },
+
+  errorDebug: {
+    marginTop: '20px',
+    padding: '15px',
+    backgroundColor: '#f5f5f5',
+    borderRadius: '8px',
+    fontSize: '14px',
+    maxWidth: '600px',
+    textAlign: 'left'
   },
   
   errorActions: {
@@ -607,7 +769,8 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    fontSize: '14px'
+    fontSize: '14px',
+    flexWrap: 'wrap'
   },
   
   breadcrumbLink: {
@@ -633,12 +796,10 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    background: 'none',
-    border: 'none',
     color: '#3b82f6',
+    textDecoration: 'none',
     fontSize: '14px',
     fontWeight: '500',
-    cursor: 'pointer',
     padding: '8px 0',
     marginBottom: '16px',
     transition: 'color 0.2s'
@@ -664,7 +825,8 @@ const styles = {
     border: '1px solid #e5e7eb',
     display: 'flex',
     alignItems: 'center',
-    gap: '24px'
+    gap: '24px',
+    flexWrap: 'wrap'
   },
   
   logoContainer: {
@@ -696,18 +858,19 @@ const styles = {
   },
   
   storeInfo: {
-    flex: 1
+    flex: 1,
+    minWidth: '250px'
   },
   
   storeName: {
-    fontSize: '32px',
+    fontSize: '2rem',
     fontWeight: '700',
     color: '#1f2937',
     margin: '0 0 8px 0'
   },
   
   tagline: {
-    fontSize: '18px',
+    fontSize: '1.125rem',
     color: '#6b7280',
     margin: '0 0 16px 0',
     lineHeight: '1.5'
@@ -739,7 +902,7 @@ const styles = {
   },
   
   sectionTitle: {
-    fontSize: '24px',
+    fontSize: '1.5rem',
     fontWeight: '700',
     color: '#1f2937',
     margin: 0

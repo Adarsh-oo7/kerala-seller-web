@@ -11,7 +11,7 @@ import TopCategory from "../components/home/TopCategory";
 import ProductCard from "../components/common/ProductCard";
 import ProductFilters from "../components/products/ProductFilters";
 import Skeleton from "../components/common/Skeleton";
-import { Search, X, Filter, Grid, AlertCircle, Package } from 'lucide-react';
+import { Search, X, Filter, Grid, AlertCircle, Package, Heart } from 'lucide-react';
 
 const bannerImages = [
   { src: "/assets/images/Banner/5.png", alt: "Kerala Sellers - Local Products" },
@@ -21,31 +21,45 @@ const bannerImages = [
   { src: "/assets/images/Banner/3.png", alt: "Trusted Kerala Sellers" },
 ];
 
-// ✅ Enhanced environment variable handling
+// ✅ Enhanced API base URL handling with environment variables
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  
-  console.log('Environment check:', {
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    NODE_ENV: process.env.NODE_ENV
-  });
-  
-  if (envUrl && envUrl !== 'undefined') {
-    return envUrl;
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
   }
-  
-  // Fallback based on environment
-  return process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:8000' 
-    : 'https://api.keralasellers.in';
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  return 'https://keralaseller-backend.onrender.com';
 };
 
 const API_BASE_URL = getApiBaseUrl();
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
+const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
+const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 
-console.log('API URLs configured:', { API_BASE_URL, PRODUCTS_API_URL, CATEGORIES_API_URL });
+console.log('API URLs configured:', { 
+  API_BASE_URL, 
+  PRODUCTS_API_URL, 
+  CATEGORIES_API_URL,
+  WISHLIST_TOGGLE_API,
+  WISHLIST_CHECK_API 
+});
+
+// ✅ Enhanced token handling function
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('access_token') || 
+                localStorage.getItem('buyerAccessToken');
+  
+  if (!token) {
+    console.error('❌ No authentication token found');
+    return null;
+  }
+  
+  console.log('🔍 Using token:', token.substring(0, 30) + '...');
+  return { 'Authorization': `Bearer ${token}` };
+};
 
 // Custom hook for media queries
 function useMediaQuery(query) {
@@ -95,6 +109,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [error, setError] = useState('');
+  const [wishlistLoading, setWishlistLoading] = useState(new Set());
   
   const { addToCart } = useCart();
 
@@ -256,6 +271,135 @@ export default function Home() {
     return filtered;
   };
 
+  // ✅ Enhanced wishlist functionality
+  const handleToggleWishlist = async (productId) => {
+    console.log('🔍 Toggle wishlist for product:', productId);
+    
+    const headers = getAuthHeaders();
+    if (!headers) {
+      alert('Please login to add items to wishlist');
+      return;
+    }
+
+    // Prevent multiple requests for the same product
+    if (wishlistLoading.has(productId)) {
+      console.log('⏳ Wishlist request already in progress for product:', productId);
+      return;
+    }
+
+    // Add to loading set
+    setWishlistLoading(prev => new Set([...prev, productId]));
+
+    try {
+      console.log('🔄 Sending wishlist toggle request...');
+      const response = await axios.post(WISHLIST_TOGGLE_API, {
+        product_id: productId
+      }, { 
+        headers,
+        timeout: 10000
+      });
+
+      console.log('✅ Wishlist toggle response:', response.data);
+
+      // Update the product's wishlist status in your local state
+      const updateProducts = (prevProducts) => 
+        prevProducts.map(product => 
+          product.id === productId 
+            ? { ...product, isWishlisted: response.data.is_wishlisted }
+            : product
+        );
+
+      setProducts(updateProducts);
+      setFilteredProducts(updateProducts);
+
+      // Show user feedback
+      const action = response.data.is_wishlisted ? 'added to' : 'removed from';
+      const productName = response.data.product_name || 'Product';
+      console.log(`✅ ${productName} ${action} wishlist`);
+      
+      // Optional: Show visual feedback (you can customize this)
+      showWishlistFeedback(productId, response.data.is_wishlisted, productName);
+
+    } catch (error) {
+      console.error('❌ Wishlist toggle error:', error);
+      
+      if (error.response?.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('buyerAccessToken');
+        alert('Session expired. Please login again.');
+      } else if (error.code === 'ECONNABORTED') {
+        alert('Request timeout. Please check your connection and try again.');
+      } else {
+        const errorMessage = error.response?.data?.error || 'Failed to update wishlist. Please try again.';
+        alert(errorMessage);
+      }
+    } finally {
+      // Remove from loading set
+      setWishlistLoading(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(productId);
+        return newSet;
+      });
+    }
+  };
+
+  // ✅ Visual feedback for wishlist actions
+  const showWishlistFeedback = (productId, isWishlisted, productName) => {
+    // Find the heart button for this product and show visual feedback
+    const heartButton = document.querySelector(`[data-product-id="${productId}"] .wishlist-heart`);
+    if (heartButton) {
+      const originalColor = heartButton.style.color;
+      heartButton.style.color = isWishlisted ? '#dc2626' : '#6b7280';
+      heartButton.style.transform = 'scale(1.2)';
+      
+      setTimeout(() => {
+        heartButton.style.transform = 'scale(1)';
+      }, 200);
+    }
+
+    // Optional: Show toast notification (you can implement a toast system)
+    const action = isWishlisted ? 'added to' : 'removed from';
+    console.log(`💖 ${productName} ${action} wishlist!`);
+  };
+
+  // ✅ Check wishlist status for products when they load
+  const checkWishlistStatus = async (productIds) => {
+    const headers = getAuthHeaders();
+    if (!headers || productIds.length === 0) return;
+
+    try {
+      console.log('🔍 Checking wishlist status for products:', productIds.length);
+      
+      // Check wishlist status for multiple products
+      const promises = productIds.slice(0, 10).map(id => // Limit to 10 to avoid too many requests
+        axios.get(`${WISHLIST_CHECK_API}?product_id=${id}`, { headers, timeout: 5000 })
+          .then(response => ({ id, isWishlisted: response.data.is_wishlisted }))
+          .catch(error => {
+            console.warn(`Failed to check wishlist for product ${id}:`, error);
+            return { id, isWishlisted: false };
+          })
+      );
+
+      const results = await Promise.all(promises);
+      console.log('✅ Wishlist status results:', results);
+      
+      // Update products with wishlist status
+      const updateProductsWithWishlist = (prevProducts) => 
+        prevProducts.map(product => {
+          const wishlistInfo = results.find(r => r.id === product.id);
+          return wishlistInfo 
+            ? { ...product, isWishlisted: wishlistInfo.isWishlisted }
+            : product;
+        });
+
+      setProducts(updateProductsWithWishlist);
+      setFilteredProducts(updateProductsWithWishlist);
+
+    } catch (error) {
+      console.warn('Error checking wishlist status:', error);
+    }
+  };
+
   // ✅ Improved responsive grid
   const gridColumns = useMemo(() => {
     if (isMobile) return 'repeat(2, 1fr)';
@@ -281,6 +425,14 @@ export default function Home() {
       fetchProducts(1, newFilters);
     }
   }, [debouncedSearchTerm]);
+
+  // ✅ Check wishlist status when products are loaded
+  useEffect(() => {
+    if (filteredProducts.length > 0 && currentPage === 1) {
+      const productIds = filteredProducts.map(p => p.id);
+      checkWishlistStatus(productIds);
+    }
+  }, [filteredProducts.length, currentPage]);
 
   useEffect(() => {
     fetchCategories();
@@ -367,11 +519,6 @@ export default function Home() {
       alert("Could not add to cart: seller information is missing.");
       console.log('Product data:', product);
     }
-  };
-
-  const handleToggleWishlist = (productId) => {
-    console.log('Toggle wishlist for product:', productId);
-    // TODO: Implement wishlist functionality
   };
 
   const loadMoreProducts = () => {
@@ -512,40 +659,42 @@ export default function Home() {
               <div style={dynamicStyles.productsGrid}>
                 {filteredProducts.map((product, index) => {
                   return (
-                    <ProductCard
-                      key={`product-${product.id}-${index}`}
-                      id={product.id}
-                      title={product.name || 'Product Name'}
-                      price={product.price || 0}
-                      mrp={product.mrp || null}
-                      rating={product.average_rating || 0}
-                      reviewCount={product.review_count || 0}
-                      primaryImage={
-                        product.main_image_url || 
-                        product.image_url || 
-                        product.images?.[0]?.url ||
-                        "/placeholder.svg"
-                      }
-                      hoverImage={
-                        product.sub_images?.[0]?.image_url || 
-                        product.images?.[1]?.url || 
-                        product.main_image_url || 
-                        product.image_url || 
-                        "/placeholder.svg"
-                      }
-                      onlineStock={product.online_stock || 0}
-                      storeName={
-                        product.store?.name || 
-                        product.seller_name || 
-                        product.shop_name ||
-                        'Store'
-                      }
-                      modelName={product.model_name || ''}
-                      isWishlisted={product.isWishlisted || false}
-                      onAddToCart={(e) => handleAddToCart(e, product)}
-                      onToggleWishlist={() => handleToggleWishlist(product.id)}
-                      className={product.online_stock === 0 ? "out-of-stock" : ""}
-                    />
+                    <div key={`product-${product.id}-${index}`} data-product-id={product.id}>
+                      <ProductCard
+                        id={product.id}
+                        title={product.name || 'Product Name'}
+                        price={product.price || 0}
+                        mrp={product.mrp || null}
+                        rating={product.average_rating || 0}
+                        reviewCount={product.review_count || 0}
+                        primaryImage={
+                          product.main_image_url || 
+                          product.image_url || 
+                          product.images?.[0]?.url ||
+                          "/placeholder.svg"
+                        }
+                        hoverImage={
+                          product.sub_images?.[0]?.image_url || 
+                          product.images?.[1]?.url || 
+                          product.main_image_url || 
+                          product.image_url || 
+                          "/placeholder.svg"
+                        }
+                        onlineStock={product.online_stock || 0}
+                        storeName={
+                          product.store?.name || 
+                          product.seller_name || 
+                          product.shop_name ||
+                          'Store'
+                        }
+                        modelName={product.model_name || ''}
+                        isWishlisted={product.isWishlisted || false}
+                        isWishlistLoading={wishlistLoading.has(product.id)}
+                        onAddToCart={(e) => handleAddToCart(e, product)}
+                        onToggleWishlist={() => handleToggleWishlist(product.id)}
+                        className={product.online_stock === 0 ? "out-of-stock" : ""}
+                      />
+                    </div>
                   );
                 })}
               </div>
@@ -603,6 +752,24 @@ export default function Home() {
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.7; }
+        }
+
+        @keyframes heartBeat {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.2); }
+          100% { transform: scale(1); }
+        }
+
+        .wishlist-heart {
+          transition: all 0.2s ease;
+        }
+
+        .wishlist-heart:hover {
+          transform: scale(1.1);
+        }
+
+        .wishlist-loading {
+          animation: pulse 1s infinite;
         }
       `}</style>
     </div>

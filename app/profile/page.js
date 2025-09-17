@@ -41,6 +41,13 @@ const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const ORDERS_COUNT_API = `${API_BASE_URL}/api/buyer/orders/count/`;
 
+console.log('🌐 Profile API URLs configured:', { 
+  API_BASE_URL, 
+  PROFILE_API, 
+  WISHLIST_API, 
+  ORDERS_COUNT_API 
+});
+
 export default function ProfilePage() {
   const [buyer, setBuyer] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,6 +55,8 @@ export default function ProfilePage() {
   const [wishlistCount, setWishlistCount] = useState(0);
   const [ordersCount, setOrdersCount] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
+  const [storeData, setStoreData] = useState(null);
   const router = useRouter();
 
   // ✅ Enhanced token handling - supports both Google login and regular login
@@ -65,17 +74,19 @@ export default function ProfilePage() {
     return { 'Authorization': `Bearer ${token}` };
   }, [router]);
 
-  // ✅ Universal logout function that clears ALL authentication data
+  // ✅ Enhanced logout function that clears ALL authentication data
   const clearAuthAndLogout = useCallback(() => {
     console.log('🔄 Clearing all authentication data...');
     
-    // Clear all possible token keys
+    // Clear all possible token and data keys
     const keysToRemove = [
       'access_token',
       'buyerAccessToken', 
       'refresh_token',
+      'userInfo',
       'user',
       'wishlist',
+      'multiCarts',
       'cart',
       'cameFromLogin',
       'preLoginPath'
@@ -87,50 +98,143 @@ export default function ProfilePage() {
     });
     
     console.log('✅ Authentication data cleared');
-    router.push('/login/buyer');
+    
+    // Redirect to appropriate login page based on store context
+    const { isInStore, storeId } = getCurrentStoreInfo();
+    if (isInStore && storeId) {
+      router.push(`/store/${storeId}/login`);
+    } else {
+      router.push('/login/buyer');
+    }
   }, [router]);
 
+  // ✅ Enhanced: Get current store info from URL
+  const getCurrentStoreInfo = useCallback(() => {
+    if (typeof window === 'undefined') return { storeId: null, isInStore: false };
+    
+    const currentPath = window.location.pathname;
+    const storeMatch = currentPath.match(/\/store\/([^\/]+)/);
+    return {
+      storeId: storeMatch ? storeMatch[1] : null,
+      isInStore: !!storeMatch
+    };
+  }, []);
+
+  // ✅ Enhanced: Fetch store data when in store context
+  const fetchStoreData = useCallback(async (storeId, headers) => {
+    try {
+      console.log('🏪 Fetching store data for:', storeId);
+      const storeResponse = await axios.get(`${API_BASE_URL}/api/stores/${storeId}/`, { 
+        headers,
+        timeout: 10000
+      });
+      
+      console.log('✅ Store data received:', storeResponse.data);
+      setStoreData(storeResponse.data);
+      
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch store data:', error);
+      // Don't fail the whole profile load if store data fails
+      setStoreData(null);
+    }
+  }, []);
+
+  // ✅ Enhanced: Store-specific wishlist count with better error handling
   const fetchWishlistCount = useCallback(async (headers) => {
     try {
       console.log('🔍 Fetching wishlist count...');
-      const wishlistResponse = await axios.get(WISHLIST_API, { headers });
+      
+      // Get current store context
+      const { storeId, isInStore } = getCurrentStoreInfo();
+      
+      // Build wishlist URL with store filter if in store context
+      const wishlistUrl = isInStore && storeId 
+        ? `${WISHLIST_API}?store_id=${storeId}` 
+        : WISHLIST_API;
+      
+      console.log('🔍 Fetching wishlist from:', wishlistUrl);
+      
+      const wishlistResponse = await axios.get(wishlistUrl, { 
+        headers,
+        timeout: 10000
+      });
       const wishlistData = wishlistResponse.data;
       
-      console.log('Wishlist data received:', wishlistData);
+      console.log('✅ Wishlist data received:', wishlistData);
       
-      if (wishlistData && wishlistData.items && Array.isArray(wishlistData.items)) {
-        setWishlistCount(wishlistData.items.length);
-      } else if (wishlistData && wishlistData.items_count !== undefined) {
-        setWishlistCount(wishlistData.items_count);
-      } else if (Array.isArray(wishlistData)) {
-        setWishlistCount(wishlistData.length);
-      } else {
-        setWishlistCount(0);
+      // ✅ Enhanced: Better handling of different response formats
+      let count = 0;
+      if (wishlistData) {
+        if (Array.isArray(wishlistData)) {
+          count = wishlistData.length;
+        } else if (wishlistData.items && Array.isArray(wishlistData.items)) {
+          count = wishlistData.items.length;
+        } else if (wishlistData.results && Array.isArray(wishlistData.results)) {
+          count = wishlistData.results.length;
+        } else if (typeof wishlistData.count === 'number') {
+          count = wishlistData.count;
+        } else if (typeof wishlistData.items_count === 'number') {
+          count = wishlistData.items_count;
+        }
       }
+      
+      console.log('📊 Setting wishlist count:', count);
+      setWishlistCount(count);
+      
     } catch (wishlistError) {
-      console.log("Wishlist API error:", wishlistError.response?.status, wishlistError.response?.data);
-      // Fallback to localStorage wishlist count
-      try {
-        const localWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-        setWishlistCount(localWishlist.length);
-      } catch {
+      console.warn("⚠️ Wishlist API error:", wishlistError.response?.status, wishlistError.response?.data);
+      
+      // ✅ Enhanced: Better fallback handling
+      if (wishlistError.response?.status === 401) {
+        // Don't fallback to localStorage on auth error - this indicates session expired
+        console.warn('🔐 Auth error for wishlist - session may be expired');
         setWishlistCount(0);
+      } else {
+        // Fallback to localStorage only for other errors (network, server issues)
+        try {
+          const localWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+          const fallbackCount = Array.isArray(localWishlist) ? localWishlist.length : 0;
+          console.log('📱 Using localStorage fallback count:', fallbackCount);
+          setWishlistCount(fallbackCount);
+        } catch (localError) {
+          console.warn('❌ localStorage fallback failed:', localError);
+          setWishlistCount(0);
+        }
       }
     }
-  }, []);
+  }, [getCurrentStoreInfo]);
 
+  // ✅ Enhanced: Store-specific orders count with better error handling
   const fetchOrdersCount = useCallback(async (headers) => {
     try {
       console.log('🔍 Fetching orders count...');
-      const ordersResponse = await axios.get(ORDERS_COUNT_API, { headers });
-      setOrdersCount(ordersResponse.data.count || 0);
-      console.log('✅ Orders count:', ordersResponse.data.count || 0);
+      
+      // Get current store context
+      const { storeId, isInStore } = getCurrentStoreInfo();
+      
+      // Build orders URL with store filter if in store context
+      const ordersUrl = isInStore && storeId 
+        ? `${ORDERS_COUNT_API}?store_id=${storeId}` 
+        : ORDERS_COUNT_API;
+      
+      console.log('🔍 Fetching orders from:', ordersUrl);
+      
+      const ordersResponse = await axios.get(ordersUrl, { 
+        headers,
+        timeout: 10000
+      });
+      
+      const count = ordersResponse.data.count || ordersResponse.data.total || 0;
+      console.log('📊 Setting orders count:', count);
+      setOrdersCount(count);
+      
     } catch (ordersError) {
-      console.log("Orders count API error:", ordersError.response?.status, ordersError.response?.data);
+      console.warn("⚠️ Orders count API error:", ordersError.response?.status, ordersError.response?.data);
       setOrdersCount(0);
     }
-  }, []);
+  }, [getCurrentStoreInfo]);
 
+  // ✅ Enhanced: Main profile fetch function with parallel data loading
   const fetchProfile = useCallback(async (showRefreshing = false) => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -146,16 +250,39 @@ export default function ProfilePage() {
       console.log('🔍 Fetching profile from:', PROFILE_API);
       console.log('🔍 Using headers:', headers);
       
-      const response = await axios.get(PROFILE_API, { headers });
+      // Fetch profile data
+      const response = await axios.get(PROFILE_API, { 
+        headers,
+        timeout: 15000
+      });
       
       console.log('✅ Profile data received:', response.data);
       setBuyer(response.data);
       
-      // Fetch additional data in parallel
-      await Promise.all([
+      // Store user info for header component
+      try {
+        localStorage.setItem('userInfo', JSON.stringify(response.data));
+      } catch (storageError) {
+        console.warn('⚠️ Failed to store user info:', storageError);
+      }
+      
+      // ✅ Update current store info
+      const storeInfo = getCurrentStoreInfo();
+      setCurrentStoreInfo(storeInfo);
+      
+      // ✅ Fetch additional data in parallel
+      const dataPromises = [
         fetchWishlistCount(headers),
         fetchOrdersCount(headers)
-      ]);
+      ];
+      
+      // Add store data fetch if in store context
+      if (storeInfo.isInStore && storeInfo.storeId) {
+        dataPromises.push(fetchStoreData(storeInfo.storeId, headers));
+      }
+      
+      await Promise.allSettled(dataPromises);
+      console.log('✅ All profile data loaded');
       
     } catch (error) {
       console.error("❌ Failed to fetch profile:", error.response?.status, error.response?.data);
@@ -163,26 +290,48 @@ export default function ProfilePage() {
       if (error.response?.status === 401) {
         console.error('❌ 401 Unauthorized - clearing all auth data');
         clearAuthAndLogout();
+      } else if (error.code === 'ECONNABORTED') {
+        setError('Request timed out. Please check your connection and try again.');
       } else {
-        setError(`Failed to load profile data: ${error.response?.data?.error || error.message}`);
+        const errorMessage = error.response?.data?.error || 
+                           error.response?.data?.detail || 
+                           error.message || 
+                           'Unknown error occurred';
+        setError(`Failed to load profile data: ${errorMessage}`);
       }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [getAuthHeaders, fetchWishlistCount, fetchOrdersCount, clearAuthAndLogout]);
+  }, [getAuthHeaders, fetchWishlistCount, fetchOrdersCount, fetchStoreData, clearAuthAndLogout, getCurrentStoreInfo]);
 
+  // ✅ Load profile on component mount
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
 
+  // ✅ Enhanced logout with confirmation
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
+    const { isInStore, storeId } = currentStoreInfo;
+    const context = isInStore ? `store ${storeId}` : 'your account';
+    
+    if (window.confirm(`Are you sure you want to logout from ${context}?`)) {
       clearAuthAndLogout();
     }
   };
 
+  // ✅ Enhanced: Store-aware back navigation
   const handleBackClick = () => {
+    // Get current store context
+    const { storeId, isInStore } = getCurrentStoreInfo();
+    
+    if (isInStore && storeId) {
+      // If we're in a store, go back to that store's main page
+      router.push(`/store/${storeId}`);
+      return;
+    }
+    
+    // Original logic for non-store pages
     const preLoginPath = sessionStorage.getItem('preLoginPath');
     
     if (preLoginPath && preLoginPath !== '/profile') {
@@ -225,43 +374,168 @@ export default function ProfilePage() {
     }
   };
 
+  // ✅ Enhanced: Store-aware menu links with smart URLs
+  const renderMenuLinks = () => {
+    const { storeId, isInStore } = currentStoreInfo;
+    
+    // ✅ Generate store-aware URLs
+    const getStoreAwareUrl = (basePath) => {
+      return isInStore && storeId ? `/store/${storeId}${basePath}` : basePath;
+    };
+    
+    return (
+      <div style={styles.menuGrid}>
+        <Link href={getStoreAwareUrl('/profile/edit')} style={styles.menuItem}>
+          <div style={styles.menuItemContent}>
+            <div style={styles.menuIcon}>
+              <Edit3 size={24} />
+            </div>
+            <div style={styles.menuInfo}>
+              <span style={styles.menuLabel}>Edit Profile</span>
+              <p style={styles.menuDesc}>Update personal information and address</p>
+            </div>
+          </div>
+          <ChevronRight size={20} style={styles.chevron} />
+        </Link>
+
+        <Link href={getStoreAwareUrl('/profile/orders')} style={styles.menuItem}>
+          <div style={styles.menuItemContent}>
+            <div style={styles.menuIcon}>
+              <Package size={24} />
+            </div>
+            <div style={styles.menuInfo}>
+              <span style={styles.menuLabel}>
+                {isInStore ? 'Orders from this Store' : 'My Orders'}
+              </span>
+              <p style={styles.menuDesc}>
+                {ordersCount > 0 
+                  ? `${ordersCount} order${ordersCount !== 1 ? 's' : ''} • Track and manage`
+                  : 'Track orders and view purchase history'
+                }
+              </p>
+            </div>
+          </div>
+          <ChevronRight size={20} style={styles.chevron} />
+        </Link>
+
+        <Link href={getStoreAwareUrl('/profile/wishlist')} style={styles.menuItem}>
+          <div style={styles.menuItemContent}>
+            <div style={{...styles.menuIcon, color: '#ef4444'}}>
+              <Heart size={24} />
+            </div>
+            <div style={styles.menuInfo}>
+              <span style={styles.menuLabel}>
+                {isInStore ? 'Wishlist from this Store' : 'My Wishlist'}
+              </span>
+              <p style={styles.menuDesc}>
+                {wishlistCount > 0 
+                  ? `${wishlistCount} item${wishlistCount !== 1 ? 's' : ''} saved for later`
+                  : 'Save products for later purchase'
+                }
+              </p>
+            </div>
+          </div>
+          <ChevronRight size={20} style={styles.chevron} />
+        </Link>
+
+        <Link href={getStoreAwareUrl('/profile/verification')} style={styles.menuItem}>
+          <div style={styles.menuItemContent}>
+            <div style={{
+              ...styles.menuIcon, 
+              color: buyer?.phone_verified ? '#10b981' : '#f59e0b'
+            }}>
+              <Shield size={24} />
+            </div>
+            <div style={styles.menuInfo}>
+              <span style={styles.menuLabel}>Account Security</span>
+              <p style={styles.menuDesc}>
+                {buyer?.phone_verified 
+                  ? 'Your account is verified ✓' 
+                  : 'Verify your phone number for security'
+                }
+              </p>
+            </div>
+          </div>
+          <ChevronRight size={20} style={styles.chevron} />
+        </Link>
+
+        <Link href="/profile/settings" style={styles.menuItem}>
+          <div style={styles.menuItemContent}>
+            <div style={styles.menuIcon}>
+              <Settings size={24} />
+            </div>
+            <div style={styles.menuInfo}>
+              <span style={styles.menuLabel}>Account Settings</span>
+              <p style={styles.menuDesc}>Manage privacy, notifications, and preferences</p>
+            </div>
+          </div>
+          <ChevronRight size={20} style={styles.chevron} />
+        </Link>
+      </div>
+    );
+  };
+
+  // ✅ Enhanced date formatting
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    try {
+      return new Date(dateString).toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.warn('Date formatting error:', error);
+      return 'N/A';
+    }
   };
 
+  // ✅ Enhanced initials generation
   const getInitials = (name) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    if (!name || typeof name !== 'string') return 'U';
+    return name.split(' ')
+      .filter(n => n.length > 0)
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
+  // ✅ Loading state
   if (isLoading) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
         <p>Loading your profile...</p>
+        <p style={{fontSize: '12px', color: '#666'}}>
+          🌐 Connected to: {API_BASE_URL}
+        </p>
       </div>
     );
   }
 
+  // ✅ Error state
   if (error && !buyer) {
     return (
       <div style={styles.errorContainer}>
         <AlertCircle size={48} color="#ef4444" />
         <h2>Something went wrong</h2>
         <p>{error}</p>
-        <button onClick={() => fetchProfile()} style={styles.retryButton}>
-          <RefreshCw size={18} />
-          Try Again
-        </button>
+        <div style={{display: 'flex', gap: '12px', marginTop: '20px'}}>
+          <button onClick={() => fetchProfile()} style={styles.retryButton}>
+            <RefreshCw size={18} />
+            Try Again
+          </button>
+          <button onClick={clearAuthAndLogout} style={styles.logoutButtonError}>
+            <LogOut size={18} />
+            Logout & Login Again
+          </button>
+        </div>
       </div>
     );
   }
 
+  // ✅ No profile state
   if (!buyer) {
     return (
       <div style={styles.errorContainer}>
@@ -282,18 +556,23 @@ export default function ProfilePage() {
         <div style={styles.headerContainer}>
           <button onClick={handleBackClick} style={styles.backButton}>
             <ArrowLeft size={20} />
-            <span style={styles.backText}>Back</span>
+            <span style={styles.backText}>
+              {currentStoreInfo.isInStore ? 'Back to Store' : 'Back'}
+            </span>
           </button>
-          <h1 style={styles.headerTitle}>My Account</h1>
+          <h1 style={styles.headerTitle}>
+            {currentStoreInfo.isInStore ? 'Store Profile' : 'My Account'}
+          </h1>
           <div style={styles.headerActions}>
             <button 
               onClick={() => fetchProfile(true)} 
               style={styles.refreshButton}
               disabled={isRefreshing}
+              title="Refresh profile data"
             >
               <RefreshCw size={16} style={isRefreshing ? {animation: 'spin 1s linear infinite'} : {}} />
             </button>
-            <button onClick={handleLogout} style={styles.logoutButton}>
+            <button onClick={handleLogout} style={styles.logoutButton} title="Logout">
               <LogOut size={18} />
               <span style={styles.logoutText}>Logout</span>
             </button>
@@ -303,6 +582,25 @@ export default function ProfilePage() {
 
       <div style={styles.container}>
         <div style={styles.content}>
+          {/* ✅ Enhanced store context indicator */}
+          {currentStoreInfo.isInStore && (
+            <div style={styles.storeIndicator}>
+              <Globe size={16} />
+              <div style={styles.storeIndicatorContent}>
+                <span style={styles.storeIndicatorTitle}>
+                  Store Profile Context
+                </span>
+                <span style={styles.storeIndicatorSubtitle}>
+                  {storeData ? (
+                    <>Viewing profile for <strong>{storeData.name}</strong> • ID: {currentStoreInfo.storeId}</>
+                  ) : (
+                    <>Store ID: {currentStoreInfo.storeId}</>
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Profile Card */}
           <div style={styles.profileCard}>
             <div style={styles.avatarSection}>
@@ -335,7 +633,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Quick Stats */}
+          {/* ✅ Enhanced Quick Stats */}
           <div style={styles.statsGrid}>
             <div style={styles.statCard}>
               <div style={styles.statIcon}>
@@ -343,7 +641,9 @@ export default function ProfilePage() {
               </div>
               <div style={styles.statContent}>
                 <span style={styles.statNumber}>{ordersCount}</span>
-                <span style={styles.statLabel}>Orders</span>
+                <span style={styles.statLabel}>
+                  {currentStoreInfo.isInStore ? 'Orders from Store' : 'Total Orders'}
+                </span>
               </div>
             </div>
             
@@ -353,7 +653,9 @@ export default function ProfilePage() {
               </div>
               <div style={styles.statContent}>
                 <span style={styles.statNumber}>{wishlistCount}</span>
-                <span style={styles.statLabel}>Wishlist Items</span>
+                <span style={styles.statLabel}>
+                  {currentStoreInfo.isInStore ? 'Store Wishlist' : 'Wishlist Items'}
+                </span>
               </div>
             </div>
           </div>
@@ -386,99 +688,19 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Action Menu */}
+          {/* ✅ Enhanced menu section */}
           <div style={styles.menuSection}>
-            <h3 style={styles.menuTitle}>Account Management</h3>
-            
-            <div style={styles.menuGrid}>
-              <Link href="/profile/edit" style={styles.menuItem}>
-                <div style={styles.menuItemContent}>
-                  <div style={styles.menuIcon}>
-                    <Edit3 size={24} />
-                  </div>
-                  <div style={styles.menuInfo}>
-                    <span style={styles.menuLabel}>Edit Profile</span>
-                    <p style={styles.menuDesc}>Update personal information and address</p>
-                  </div>
-                </div>
-                <ChevronRight size={20} style={styles.chevron} />
-              </Link>
-
-              <Link href="/profile/orders" style={styles.menuItem}>
-                <div style={styles.menuItemContent}>
-                  <div style={styles.menuIcon}>
-                    <Package size={24} />
-                  </div>
-                  <div style={styles.menuInfo}>
-                    <span style={styles.menuLabel}>My Orders</span>
-                    <p style={styles.menuDesc}>
-                      {ordersCount > 0 
-                        ? `${ordersCount} order${ordersCount !== 1 ? 's' : ''} • Track and manage`
-                        : 'Track orders and view purchase history'
-                      }
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight size={20} style={styles.chevron} />
-              </Link>
-
-              <Link href="/profile/wishlist" style={styles.menuItem}>
-                <div style={styles.menuItemContent}>
-                  <div style={{...styles.menuIcon, color: '#ef4444'}}>
-                    <Heart size={24} />
-                  </div>
-                  <div style={styles.menuInfo}>
-                    <span style={styles.menuLabel}>My Wishlist</span>
-                    <p style={styles.menuDesc}>
-                      {wishlistCount > 0 
-                        ? `${wishlistCount} item${wishlistCount !== 1 ? 's' : ''} saved for later`
-                        : 'Save products for later purchase'
-                      }
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight size={20} style={styles.chevron} />
-              </Link>
-
-              <Link href="/profile/verification" style={styles.menuItem}>
-                <div style={styles.menuItemContent}>
-                  <div style={{
-                    ...styles.menuIcon, 
-                    color: buyer.phone_verified ? '#10b981' : '#f59e0b'
-                  }}>
-                    <Shield size={24} />
-                  </div>
-                  <div style={styles.menuInfo}>
-                    <span style={styles.menuLabel}>Account Security</span>
-                    <p style={styles.menuDesc}>
-                      {buyer.phone_verified 
-                        ? 'Your account is verified ✓' 
-                        : 'Verify your phone number for security'
-                      }
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight size={20} style={styles.chevron} />
-              </Link>
-
-              <Link href="/profile/settings" style={styles.menuItem}>
-                <div style={styles.menuItemContent}>
-                  <div style={styles.menuIcon}>
-                    <Settings size={24} />
-                  </div>
-                  <div style={styles.menuInfo}>
-                    <span style={styles.menuLabel}>Account Settings</span>
-                    <p style={styles.menuDesc}>Manage privacy, notifications, and preferences</p>
-                  </div>
-                </div>
-                <ChevronRight size={20} style={styles.chevron} />
-              </Link>
-            </div>
+            <h3 style={styles.menuTitle}>
+              {currentStoreInfo.isInStore ? 'Store Account Management' : 'Account Management'}
+            </h3>
+            {renderMenuLinks()}
           </div>
 
-          {/* Account Summary */}
+          {/* ✅ Enhanced Account Summary */}
           <div style={styles.summaryCard}>
-            <h3 style={styles.summaryTitle}>Account Overview</h3>
+            <h3 style={styles.summaryTitle}>
+              {currentStoreInfo.isInStore ? 'Store Account Overview' : 'Account Overview'}
+            </h3>
             <div style={styles.summaryGrid}>
               <div style={styles.summaryItem}>
                 <span style={styles.summaryLabel}>Account Status</span>
@@ -487,11 +709,15 @@ export default function ProfilePage() {
                 </span>
               </div>
               <div style={styles.summaryItem}>
-                <span style={styles.summaryLabel}>Total Orders</span>
+                <span style={styles.summaryLabel}>
+                  {currentStoreInfo.isInStore ? 'Store Orders' : 'Total Orders'}
+                </span>
                 <span style={styles.summaryValue}>{ordersCount}</span>
               </div>
               <div style={styles.summaryItem}>
-                <span style={styles.summaryLabel}>Wishlist Items</span>
+                <span style={styles.summaryLabel}>
+                  {currentStoreInfo.isInStore ? 'Store Wishlist' : 'Wishlist Items'}
+                </span>
                 <span style={{...styles.summaryValue, color: '#ef4444'}}>
                   {wishlistCount}
                 </span>
@@ -541,7 +767,38 @@ export default function ProfilePage() {
   );
 }
 
+// ✅ Enhanced styles with new store indicator styles
 const styles = {
+  // ✅ Enhanced store context indicator
+  storeIndicator: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px',
+    padding: '16px 20px',
+    backgroundColor: '#dbeafe',
+    border: '1px solid #3b82f6',
+    borderRadius: '12px',
+    marginBottom: '24px'
+  },
+
+  storeIndicatorContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px'
+  },
+
+  storeIndicatorTitle: {
+    fontSize: '14px',
+    color: '#1e40af',
+    fontWeight: '600'
+  },
+
+  storeIndicatorSubtitle: {
+    fontSize: '13px',
+    color: '#3730a3',
+    lineHeight: '1.4'
+  },
+
   pageContainer: {
     minHeight: '100vh',
     backgroundColor: '#f8fafc'
@@ -583,6 +840,21 @@ const styles = {
     gap: '8px',
     padding: '12px 24px',
     backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: '500',
+    transition: 'all 0.2s'
+  },
+
+  logoutButtonError: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 24px',
+    backgroundColor: '#ef4444',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
@@ -636,10 +908,7 @@ const styles = {
   },
   
   backText: {
-    display: 'none',
-    '@media (min-width: 640px)': {
-      display: 'inline'
-    }
+    display: 'none'
   },
   
   headerTitle: {
@@ -685,10 +954,7 @@ const styles = {
   },
   
   logoutText: {
-    display: 'none',
-    '@media (min-width: 640px)': {
-      display: 'inline'
-    }
+    display: 'none'
   },
 
   container: {
@@ -715,11 +981,7 @@ const styles = {
   avatarSection: {
     display: 'flex',
     alignItems: 'center',
-    gap: '24px',
-    '@media (max-width: 640px)': {
-      flexDirection: 'column',
-      textAlign: 'center'
-    }
+    gap: '24px'
   },
   
   avatar: {

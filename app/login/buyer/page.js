@@ -5,99 +5,215 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import { ArrowLeft, Mail, Lock, AlertCircle, User } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Mail, 
+  Lock, 
+  AlertCircle, 
+  User, 
+  Eye, 
+  EyeOff,
+  Globe,
+  Shield,
+  CheckCircle 
+} from 'lucide-react';
 
-// ==============================================================================
-// CONSTANTS (Using Environment Variables)
-// ==============================================================================
+// ✅ Enhanced API configuration
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
+  }
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  return 'https://keralaseller-backend.onrender.com';
+};
+
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = getApiBaseUrl();
 const GOOGLE_LOGIN_API = `${API_BASE_URL}/user/buyer/login/google/`;
 const EMAIL_LOGIN_API = `${API_BASE_URL}/user/buyer/login/`;
 
-// ==============================================================================
-// SUB-COMPONENTS
-// ==============================================================================
-function EmailLoginForm({ onLoginSuccess }) {
+console.log('🌐 Buyer Login API URLs configured:', { 
+  API_BASE_URL, 
+  GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'Not configured' 
+});
+
+// ✅ Enhanced EmailLoginForm with better UX
+function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState({});
     
     const validateEmail = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     };
 
+    const validatePassword = (password) => {
+        return password.length >= 6;
+    };
+
+    const handleFieldChange = (field, value) => {
+        if (field === 'email') {
+            setEmail(value);
+            if (fieldErrors.email && validateEmail(value)) {
+                setFieldErrors(prev => ({ ...prev, email: '' }));
+            }
+        } else if (field === 'password') {
+            setPassword(value);
+            if (fieldErrors.password && validatePassword(value)) {
+                setFieldErrors(prev => ({ ...prev, password: '' }));
+            }
+        }
+        
+        // Clear general error when user starts typing
+        if (error) setError('');
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setFieldErrors({});
         
-        if (!email || !password) {
-            setError('Email and password are required.');
-            return;
+        // Enhanced validation
+        const newFieldErrors = {};
+        
+        if (!email.trim()) {
+            newFieldErrors.email = 'Email is required';
+        } else if (!validateEmail(email.trim())) {
+            newFieldErrors.email = 'Please enter a valid email address';
         }
         
-        if (!validateEmail(email)) {
-            setError('Please enter a valid email address.');
+        if (!password) {
+            newFieldErrors.password = 'Password is required';
+        } else if (!validatePassword(password)) {
+            newFieldErrors.password = 'Password must be at least 6 characters';
+        }
+        
+        if (Object.keys(newFieldErrors).length > 0) {
+            setFieldErrors(newFieldErrors);
             return;
         }
         
         setIsLoading(true);
         
         try {
-            const response = await axios.post(EMAIL_LOGIN_API, { email, password });
-            // ✅ Fixed: Handle different token field names
-            const token = response.data.token || response.data.access_token;
-            onLoginSuccess(token);
+            console.log('🔐 Attempting buyer login for:', email.trim());
+            
+            const response = await axios.post(EMAIL_LOGIN_API, { 
+                email: email.trim().toLowerCase(), 
+                password: password 
+            }, {
+                timeout: 15000
+            });
+            
+            console.log('✅ Login successful:', response.data);
+            
+            // Handle different token field names
+            const token = response.data.access_token || 
+                         response.data.token || 
+                         response.data.access;
+            
+            if (!token) {
+                throw new Error('No token received from server');
+            }
+            
+            onLoginSuccess(token, response.data);
+            
         } catch (err) {
-            console.error('Login error:', err);
-            const errorMessage = err.response?.data?.error || 
-                               err.response?.data?.message || 
-                               'Invalid credentials. Please try again.';
+            console.error('❌ Login error:', err);
+            
+            let errorMessage = 'Login failed. Please try again.';
+            
+            if (err.response?.status === 401) {
+                errorMessage = 'Invalid email or password. Please check your credentials.';
+            } else if (err.response?.status === 404) {
+                errorMessage = 'No account found with this email. Please create an account first.';
+            } else if (err.response?.status === 403) {
+                errorMessage = 'Account is not verified. Please check your email for verification instructions.';
+            } else if (err.code === 'ECONNABORTED') {
+                errorMessage = 'Request timed out. Please check your connection and try again.';
+            } else if (err.response?.data) {
+                errorMessage = err.response.data.error || 
+                             err.response.data.message || 
+                             err.response.data.detail || 
+                             errorMessage;
+            }
+            
             setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Rest of EmailLoginForm remains the same...
     return (
         <form onSubmit={handleSubmit} style={styles.form}>
+            {/* ✅ Store context indicator */}
+            {currentStoreInfo.isInStore && (
+                <div style={styles.storeNotice}>
+                    <Globe size={16} />
+                    <span>Logging in for store: {currentStoreInfo.storeId}</span>
+                </div>
+            )}
+
             <div style={styles.inputGroup}>
+                <label style={styles.label}>Email Address</label>
                 <div style={styles.inputWrapper}>
                     <Mail size={18} style={styles.inputIcon} />
                     <input 
                         type="email" 
                         value={email} 
-                        onChange={e => setEmail(e.target.value)} 
+                        onChange={e => handleFieldChange('email', e.target.value)}
                         placeholder="Enter your email address" 
                         required 
                         style={{
                             ...styles.input,
-                            ...(error && !validateEmail(email) && email ? styles.inputError : {})
+                            ...(fieldErrors.email ? styles.inputError : {})
                         }}
                         disabled={isLoading}
+                        autoFocus
+                        autoComplete="email"
                     />
                 </div>
+                {fieldErrors.email && (
+                    <span style={styles.fieldError}>{fieldErrors.email}</span>
+                )}
             </div>
             
             <div style={styles.inputGroup}>
+                <label style={styles.label}>Password</label>
                 <div style={styles.inputWrapper}>
                     <Lock size={18} style={styles.inputIcon} />
                     <input 
-                        type="password" 
+                        type={showPassword ? "text" : "password"}
                         value={password} 
-                        onChange={e => setPassword(e.target.value)} 
+                        onChange={e => handleFieldChange('password', e.target.value)}
                         placeholder="Enter your password" 
                         required 
                         style={{
-                            ...styles.input,
-                            ...(error && password.length < 6 && password ? styles.inputError : {})
+                            ...styles.passwordInput,
+                            ...(fieldErrors.password ? styles.inputError : {})
                         }}
                         disabled={isLoading}
+                        autoComplete="current-password"
                     />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={styles.eyeButton}
+                        tabIndex={-1}
+                    >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
                 </div>
+                {fieldErrors.password && (
+                    <span style={styles.fieldError}>{fieldErrors.password}</span>
+                )}
             </div>
             
             {error && (
@@ -113,17 +229,17 @@ function EmailLoginForm({ onLoginSuccess }) {
                     ...styles.button,
                     ...(isLoading ? styles.buttonLoading : {})
                 }} 
-                disabled={isLoading}
+                disabled={isLoading || !email || !password}
             >
                 {isLoading ? (
                     <span style={styles.buttonContent}>
                         <div style={styles.spinner}></div>
-                        Logging in...
+                        Signing in...
                     </span>
                 ) : (
                     <span style={styles.buttonContent}>
                         <User size={18} />
-                        Login
+                        Sign In
                     </span>
                 )}
             </button>
@@ -131,76 +247,143 @@ function EmailLoginForm({ onLoginSuccess }) {
     );
 }
 
-// ✅ Component that uses useSearchParams - wrapped separately
+// ✅ Enhanced LoginContent with store awareness
 function LoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
     
-    const handleLoginSuccess = useCallback((token) => {
-        // ✅ Store token properly for API calls
-        localStorage.setItem('access_token', token);
-        localStorage.setItem('buyerAccessToken', token); // Keep both for compatibility
+    // ✅ Get current store info from URL
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const currentPath = window.location.pathname;
+            const storeMatch = currentPath.match(/\/store\/([^\/]+)/);
+            setCurrentStoreInfo({
+                storeId: storeMatch ? storeMatch[1] : null,
+                isInStore: !!storeMatch
+            });
+        }
+    }, []);
+    
+    const handleLoginSuccess = useCallback((token, userData = {}) => {
+        console.log('🎉 Login successful, storing token and redirecting...');
         
+        // Store token with multiple keys for compatibility
+        localStorage.setItem('access_token', token);
+        localStorage.setItem('buyerAccessToken', token);
+        
+        // Store user data if provided
+        if (userData.user) {
+            localStorage.setItem('userInfo', JSON.stringify(userData.user));
+        }
+        
+        // ✅ Store-aware redirect logic
         const redirectTo = searchParams.get('redirect');
         
         if (redirectTo) {
             router.push(decodeURIComponent(redirectTo));
+        } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
+            // Redirect to store if in store context
+            router.push(`/store/${currentStoreInfo.storeId}`);
         } else {
+            // Default to profile
             router.push('/profile');
         }
-    }, [router, searchParams]);
+    }, [router, searchParams, currentStoreInfo]);
     
+    // ✅ Check for existing token on mount
     useEffect(() => {
         const token = localStorage.getItem('buyerAccessToken') || localStorage.getItem('access_token');
         if (token) {
+            console.log('🔍 Existing token found, redirecting...');
             handleLoginSuccess(token);
         }
-    }, [router, handleLoginSuccess]);
+    }, [handleLoginSuccess]);
 
-    // ✅ FIXED: Google Login Handler - Send JWT credential, not decoded data
+    // ✅ Enhanced Google Login Handler
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
-            console.log('🔍 Google credential received');
+            console.log('🔍 Google credential received, processing...');
             
-            // ✅ Send the raw JWT credential to Django backend
             const response = await axios.post(GOOGLE_LOGIN_API, {
-                credential: credentialResponse.credential  // Send JWT token
+                credential: credentialResponse.credential,
+                store_context: currentStoreInfo.isInStore ? currentStoreInfo.storeId : null
             }, {
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                withCredentials: true
+                timeout: 15000
             });
             
             console.log('✅ Google login response:', response.data);
             
-            // ✅ Handle Django response format
-            const token = response.data.access_token || response.data.token;
+            const token = response.data.access_token || 
+                         response.data.token || 
+                         response.data.access;
+            
             if (token) {
-                handleLoginSuccess(token);
+                handleLoginSuccess(token, response.data);
             } else {
                 throw new Error('No token received from server');
             }
             
         } catch (error) {
             console.error("❌ Google login failed:", error);
-            const errorMessage = error.response?.data?.error || 'Google login failed. Please try again.';
+            
+            let errorMessage = 'Google login failed. Please try again.';
+            
+            if (error.response?.status === 400) {
+                errorMessage = 'Invalid Google credential. Please try again.';
+            } else if (error.response?.status === 403) {
+                errorMessage = 'Google account not verified. Please complete your account setup.';
+            } else if (error.code === 'ECONNABORTED') {
+                errorMessage = 'Request timed out. Please try again.';
+            } else if (error.response?.data) {
+                errorMessage = error.response.data.error || 
+                             error.response.data.message || 
+                             errorMessage;
+            }
+            
             alert(errorMessage);
         }
     };
 
-    const handleGoogleError = () => {
-        console.log('Google login failed');
-        alert('Google login failed. Please try again.');
+    const handleGoogleError = (error) => {
+        console.error('❌ Google login error:', error);
+        alert('Google login failed. Please try again or use email login.');
     };
 
+    // ✅ Store-aware back navigation
     const handleBackClick = () => {
-        if (window.history.length > 1) {
+        const redirectTo = searchParams.get('redirect');
+        
+        if (redirectTo) {
+            router.push(decodeURIComponent(redirectTo));
+        } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
+            router.push(`/store/${currentStoreInfo.storeId}`);
+        } else if (window.history.length > 1) {
             router.back();
         } else {
             router.push('/');
         }
+    };
+
+    // ✅ Store-aware links
+    const getForgotPasswordLink = () => {
+        const redirectParam = searchParams.get('redirect') ? `?redirect=${encodeURIComponent(searchParams.get('redirect'))}` : '';
+        if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
+            return `/store/${currentStoreInfo.storeId}/forgot-password${redirectParam}`;
+        }
+        return `/forgot-password/buyer${redirectParam}`;
+    };
+
+    const getRegisterLink = () => {
+        const redirectParam = searchParams.get('redirect') ? `?redirect=${encodeURIComponent(searchParams.get('redirect'))}` : '';
+        if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
+            return `/store/${currentStoreInfo.storeId}/register${redirectParam}`;
+        }
+        return `/register/buyer${redirectParam}`;
     };
 
     return (
@@ -211,7 +394,9 @@ function LoginContent() {
                         <ArrowLeft size={20} />
                         <span style={styles.backText}>Back</span>
                     </button>
-                    <h1 style={styles.headerTitle}>Sign In</h1>
+                    <h1 style={styles.headerTitle}>
+                        {currentStoreInfo.isInStore ? 'Store Sign In' : 'Sign In'}
+                    </h1>
                     <div style={styles.headerSpacer}></div>
                 </div>
             </header>
@@ -222,13 +407,21 @@ function LoginContent() {
                         <div style={styles.iconContainer}>
                             <User size={32} color="#3b82f6" />
                         </div>
-                        <h2 style={styles.cardTitle}>Welcome Back!</h2>
+                        <h2 style={styles.cardTitle}>
+                            {currentStoreInfo.isInStore ? 'Store Access' : 'Welcome Back!'}
+                        </h2>
                         <p style={styles.cardSubtitle}>
-                            Sign in to your account to continue shopping
+                            {currentStoreInfo.isInStore 
+                                ? `Sign in to access ${currentStoreInfo.storeId} store features`
+                                : 'Sign in to your account to continue shopping'
+                            }
                         </p>
                     </div>
                     
-                    <EmailLoginForm onLoginSuccess={handleLoginSuccess} />
+                    <EmailLoginForm 
+                        onLoginSuccess={handleLoginSuccess} 
+                        currentStoreInfo={currentStoreInfo}
+                    />
                     
                     <div style={styles.divider}>
                         <span style={styles.dividerLine}></span>
@@ -237,25 +430,44 @@ function LoginContent() {
                     </div>
                     
                     <div style={styles.googleButtonWrapper}>
-                        {/* ✅ FIXED: Use pixel width instead of percentage */}
                         <GoogleLogin 
                             onSuccess={handleGoogleSuccess} 
                             onError={handleGoogleError}
                             theme="outline"
                             size="large"
-                            width="350"  // ✅ Changed from "100%" to pixel value
+                            width="350"
                             text="signin_with"
                             shape="rectangular"
                         />
                     </div>
                     
+                    {/* ✅ Security badges */}
+                    <div style={styles.securityBadges}>
+                        <div style={styles.securityBadge}>
+                            <Shield size={14} />
+                            <span>Secure Login</span>
+                        </div>
+                        <div style={styles.securityBadge}>
+                            <CheckCircle size={14} />
+                            <span>Verified Platform</span>
+                        </div>
+                    </div>
+                    
                     <div style={styles.footerLinks}>
-                        <Link href="/forgot-password/buyer" style={styles.link}>
+                        <Link href={getForgotPasswordLink()} style={styles.link}>
                             Forgot Password?
                         </Link>
                         <span style={styles.linkDivider}> | </span>
-                        <Link href="/register/buyer" style={styles.link}>
+                        <Link href={getRegisterLink()} style={styles.link}>
                             Create an Account
+                        </Link>
+                    </div>
+                    
+                    {/* ✅ Seller login link */}
+                    <div style={styles.sellerLink}>
+                        <p style={styles.sellerText}>Are you a seller?</p>
+                        <Link href="/login/seller" style={styles.sellerLinkButton}>
+                            Sign in as Seller
                         </Link>
                     </div>
                 </div>
@@ -264,7 +476,7 @@ function LoginContent() {
     );
 }
 
-// ✅ Loading component for Suspense fallback
+// ✅ Enhanced Loading component
 function LoginLoading() {
     return (
         <div style={styles.pageContainer}>
@@ -283,7 +495,8 @@ function LoginLoading() {
                 <div style={styles.card}>
                     <div style={styles.loadingContainer}>
                         <div style={styles.spinner}></div>
-                        <p>Loading login form...</p>
+                        <p>Loading sign in form...</p>
+                        <p style={styles.loadingSubtext}>🌐 Connected to: {API_BASE_URL}</p>
                     </div>
                 </div>
             </div>
@@ -291,19 +504,38 @@ function LoginLoading() {
     );
 }
 
-// ==============================================================================
-// MAIN LOGIN PAGE WITH SUSPENSE WRAPPER
-// ==============================================================================
+// ✅ Enhanced main component with better error handling
 export default function BuyerLoginPage() {
-    // Check if Google Client ID is available
+    const [configError, setConfigError] = useState('');
+
+    useEffect(() => {
+        // Check configuration
+        if (!GOOGLE_CLIENT_ID) {
+            console.warn('Google Client ID not found. Google login will be disabled.');
+            setConfigError('Google login is not configured');
+        }
+    }, []);
+
+    // Show error for missing configuration
     if (!GOOGLE_CLIENT_ID) {
-        console.warn('Google Client ID not found. Google login will not work.');
         return (
-            <div style={styles.container}>
-                <div style={styles.card}>
-                    <div style={styles.errorContainer}>
-                        <AlertCircle size={16} />
-                        <span>Google login is not configured. Please contact support.</span>
+            <div style={styles.pageContainer}>
+                <div style={styles.container}>
+                    <div style={styles.card}>
+                        <div style={styles.cardHeader}>
+                            <div style={styles.iconContainer}>
+                                <AlertCircle size={32} color="#ef4444" />
+                            </div>
+                            <h2 style={styles.cardTitle}>Configuration Error</h2>
+                            <p style={styles.cardSubtitle}>
+                                Google authentication is not properly configured. Please contact support.
+                            </p>
+                        </div>
+                        
+                        {/* Still allow email login */}
+                        <Suspense fallback={<LoginLoading />}>
+                            <EmailLoginForm onLoginSuccess={() => {}} currentStoreInfo={{ isInStore: false }} />
+                        </Suspense>
                     </div>
                 </div>
             </div>
@@ -319,11 +551,8 @@ export default function BuyerLoginPage() {
     );
 }
 
-// ==============================================================================
-// ENHANCED STYLES (keeping all your existing styles)
-// ==============================================================================
+// ✅ Enhanced styles with new components
 const styles = {
-    // ... (all your existing styles remain the same)
     pageContainer: { 
         minHeight: '100vh', 
         backgroundColor: '#f8fafc' 
@@ -422,6 +651,20 @@ const styles = {
         lineHeight: '1.5',
         margin: 0
     },
+
+    // ✅ Store notice
+    storeNotice: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '12px 16px',
+        backgroundColor: '#dbeafe',
+        border: '1px solid #3b82f6',
+        borderRadius: '8px',
+        fontSize: '0.9rem',
+        color: '#1e40af',
+        marginBottom: '20px'
+    },
     
     form: {
         display: 'flex',
@@ -432,6 +675,13 @@ const styles = {
     inputGroup: {
         display: 'flex',
         flexDirection: 'column'
+    },
+
+    label: {
+        fontSize: '0.9rem',
+        fontWeight: '600',
+        color: '#374151',
+        marginBottom: '8px'
     },
     
     inputWrapper: {
@@ -458,9 +708,38 @@ const styles = {
         transition: 'all 0.2s ease',
         outline: 'none'
     },
+
+    passwordInput: {
+        width: '100%', 
+        padding: '14px 48px 14px 48px', 
+        border: '1px solid #d1d5db', 
+        borderRadius: '8px', 
+        boxSizing: 'border-box', 
+        fontSize: '16px',
+        backgroundColor: '#ffffff',
+        transition: 'all 0.2s ease',
+        outline: 'none'
+    },
+
+    eyeButton: {
+        position: 'absolute',
+        right: '16px',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        color: '#6b7280',
+        padding: '4px',
+        borderRadius: '4px'
+    },
     
     inputError: {
         borderColor: '#ef4444'
+    },
+
+    fieldError: {
+        color: '#ef4444',
+        fontSize: '0.8rem',
+        marginTop: '4px'
     },
     
     errorContainer: {
@@ -538,6 +817,25 @@ const styles = {
         justifyContent: 'center', 
         marginBottom: '24px' 
     },
+
+    // ✅ Security badges
+    securityBadges: {
+        display: 'flex',
+        justifyContent: 'center',
+        gap: '16px',
+        marginBottom: '24px',
+        paddingTop: '16px',
+        borderTop: '1px solid #f1f5f9'
+    },
+
+    securityBadge: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        fontSize: '0.8rem',
+        color: '#059669',
+        fontWeight: '500'
+    },
     
     footerLinks: { 
         marginTop: '24px', 
@@ -556,6 +854,34 @@ const styles = {
     linkDivider: {
         color: '#d1d5db'
     },
+
+    // ✅ Seller link section
+    sellerLink: {
+        marginTop: '24px',
+        padding: '16px',
+        backgroundColor: '#f8fafc',
+        borderRadius: '8px',
+        textAlign: 'center',
+        border: '1px solid #e2e8f0'
+    },
+
+    sellerText: {
+        fontSize: '0.9rem',
+        color: '#6b7280',
+        margin: '0 0 8px 0'
+    },
+
+    sellerLinkButton: {
+        display: 'inline-block',
+        padding: '8px 16px',
+        backgroundColor: '#059669',
+        color: 'white',
+        textDecoration: 'none',
+        borderRadius: '6px',
+        fontSize: '0.9rem',
+        fontWeight: '500',
+        transition: 'background-color 0.2s'
+    },
     
     loadingContainer: {
         display: 'flex',
@@ -564,10 +890,16 @@ const styles = {
         justifyContent: 'center',
         minHeight: '200px',
         gap: '16px'
+    },
+
+    loadingSubtext: {
+        fontSize: '0.8rem',
+        color: '#9ca3af',
+        margin: 0
     }
 };
 
-// ✅ Add CSS animations
+// ✅ Enhanced CSS animations
 if (typeof document !== 'undefined') {
     const style = document.createElement('style');
     style.textContent = `
@@ -578,6 +910,20 @@ if (typeof document !== 'undefined') {
         
         @media (max-width: 640px) {
             .back-text { display: none !important; }
+        }
+        
+        .input:focus, .passwordInput:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        }
+        
+        .button:hover:not(:disabled) {
+            background-color: #2563eb !important;
+            transform: translateY(-1px);
+        }
+        
+        .sellerLinkButton:hover {
+            background-color: #047857 !important;
         }
     `;
     document.head.appendChild(style);

@@ -17,27 +17,69 @@ import {
   IndianRupee,
   AlertCircle,
   CheckCircle,
-  RefreshCw
+  RefreshCw,
+  Globe
 } from 'lucide-react';
 
-// API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// ✅ Enhanced API Configuration
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
+  }
+  
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  
+  return 'https://keralaseller-backend.onrender.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
 const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
 
-// Frontend base URL for store links
-const FRONTEND_BASE_URL = process.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'http://localhost:3000';
+// ✅ Enhanced Frontend base URL for store links
+const getFrontendBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol}//${window.location.host}`;
+  }
+  return process.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'http://localhost:3000';
+};
 
-// Setup Store Prompt Component
+// ✅ SEO-friendly URL generator (same as in other components)
+const generateShopSlug = (shop) => {
+  if (!shop || !shop.name) return 'shop';
+  
+  const shopName = shop.name.toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim('-');
+  
+  const location = (shop.seller_address || shop.address || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim('-')
+    .split('-')[0];
+  
+  const slug = location ? `${shopName}-${location}` : shopName;
+  return slug.length >= 3 ? slug : `shop-${shop.seller_phone || 'store'}`;
+};
+
+// ✅ Enhanced Setup Store Prompt Component
 function SetupStorePrompt() {
     return (
         <div style={styles.setupCard}>
             <div style={styles.setupIconContainer}>
                 <Store size={32} color="#f59e0b" />
             </div>
-            <h3 style={styles.setupTitle}>Your store is not yet active!</h3>
+            <h3 style={styles.setupTitle}>Your Kerala store is not yet active!</h3>
             <p style={styles.setupDescription}>
-                Complete your store setup to start selling and make your shop visible to customers.
+                Complete your store setup to start selling and make your shop visible to customers across Kerala and India.
             </p>
             <div style={styles.setupActions}>
                 <Link href="/dashboard/seller/settings" style={styles.setupButton}>
@@ -56,9 +98,88 @@ function SetupStorePrompt() {
                 </div>
                 <div style={styles.benefit}>
                     <CheckCircle size={16} />
+                    <span>SEO-optimized shop pages</span>
+                </div>
+                <div style={styles.benefit}>
+                    <CheckCircle size={16} />
                     <span>Easy product management</span>
                 </div>
             </div>
+        </div>
+    );
+}
+
+// ✅ Enhanced Store Link Component
+function StoreLink({ storeData, phone, copySuccess, onCopy, onVisit }) {
+    // Generate SEO-friendly shop URL
+    const getShopUrl = () => {
+        if (!phone) return `${getFrontendBaseUrl()}/shop`;
+        
+        if (storeData && storeData.name) {
+            const shopSlug = generateShopSlug(storeData);
+            return `${getFrontendBaseUrl()}/shop/${shopSlug}?id=${phone}`;
+        }
+        
+        // Fallback to direct phone URL for incomplete profiles
+        return `${getFrontendBaseUrl()}/shop/shop-${phone}?id=${phone}`;
+    };
+
+    const shopUrl = getShopUrl();
+
+    return (
+        <div style={styles.card}>
+            <div style={styles.cardHeader}>
+                <h3 style={styles.cardTitle}>
+                    <Globe size={20} />
+                    Your Public Storefront
+                </h3>
+            </div>
+            <p style={styles.cardDescription}>
+                Share this SEO-optimized link with your customers to showcase your products across Kerala and beyond.
+            </p>
+            <div style={styles.linkBox}>
+                <div style={styles.urlPreview}>
+                    <span style={styles.urlLabel}>Your Store URL:</span>
+                    <span style={styles.storeUrl}>{shopUrl}</span>
+                </div>
+                <div style={styles.linkActions}>
+                    <button 
+                        onClick={() => onCopy(shopUrl)} 
+                        style={{
+                            ...styles.copyButton,
+                            ...(copySuccess ? styles.copySuccessButton : {})
+                        }}
+                        disabled={copySuccess}
+                    >
+                        {copySuccess ? (
+                            <>
+                                <CheckCircle size={16} />
+                                Copied!
+                            </>
+                        ) : (
+                            <>
+                                <Copy size={16} />
+                                Copy Link
+                            </>
+                        )}
+                    </button>
+                    <button onClick={() => onVisit(shopUrl)} style={styles.visitButton}>
+                        <ExternalLink size={16} />
+                        Visit Store
+                    </button>
+                </div>
+            </div>
+            {storeData && storeData.name && (
+                <div style={styles.seoInfo}>
+                    <div style={styles.seoTag}>
+                        <CheckCircle size={14} />
+                        <span>SEO Optimized</span>
+                    </div>
+                    <span style={styles.seoDescription}>
+                        Your store URL includes your business name and location for better search rankings
+                    </span>
+                </div>
+            )}
         </div>
     );
 }
@@ -74,11 +195,13 @@ export default function SellerDashboardOverview() {
 
   // Get authentication headers
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('accessToken') || 
+                 localStorage.getItem('buyerAccessToken') ||
+                 localStorage.getItem('access_token');
     return token ? { Authorization: `Bearer ${token}` } : null;
   }, []);
 
-  // Fetch real data from your APIs
+  // ✅ Enhanced fetch function with better error handling
   const fetchDashboardData = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) {
@@ -90,22 +213,31 @@ export default function SellerDashboardOverview() {
     setError('');
 
     try {
+      console.log('🔍 Fetching dashboard data...');
+      
       // Fetch both dashboard and store profile data
       const [dashboardRes, storeRes] = await Promise.all([
-        axios.get(DASHBOARD_API_URL, { headers }),
-        axios.get(PROFILE_API_URL, { headers }).catch(() => null) // Don't fail if profile doesn't exist
+        axios.get(DASHBOARD_API_URL, { headers, timeout: 15000 }),
+        axios.get(PROFILE_API_URL, { headers, timeout: 15000 }).catch(() => null) // Don't fail if profile doesn't exist
       ]);
 
+      console.log('✅ Dashboard data received:', dashboardRes.data);
+      console.log('✅ Store profile data:', storeRes?.data);
+
       setDashboardData(dashboardRes.data);
-      setStoreData(storeRes?.data || null);
+      setStoreData(storeRes?.data?.store_profile || storeRes?.data || null);
 
     } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
+      console.error('❌ Failed to fetch dashboard data:', error);
       if (error.response?.status === 401) {
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('buyerAccessToken');
+        localStorage.removeItem('access_token');
         router.push('/login/seller?message=Session expired');
+      } else if (error.code === 'ECONNABORTED') {
+        setError('Request timed out. Please check your connection and try again.');
       } else {
-        setError('Failed to load dashboard data. Please try again.');
+        setError(error.response?.data?.error || 'Failed to load dashboard data. Please try again.');
       }
     } finally {
       setIsLoading(false);
@@ -116,18 +248,18 @@ export default function SellerDashboardOverview() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  const copyStoreLink = async () => {
-    const phone = dashboardData?.seller?.phone || storeData?.seller?.phone;
-    if (!phone) return;
+  // ✅ Enhanced copy function that handles SEO URLs
+  const copyStoreLink = async (url) => {
+    if (!url) return;
     
-    const storeUrl = `${FRONTEND_BASE_URL}/shop/${phone}`;
     try {
-        await navigator.clipboard.writeText(storeUrl);
+        await navigator.clipboard.writeText(url);
         setCopySuccess(true);
         setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
+        // Fallback for browsers that don't support clipboard API
         const textArea = document.createElement('textarea');
-        textArea.value = storeUrl;
+        textArea.value = url;
         document.body.appendChild(textArea);
         textArea.select();
         document.execCommand('copy');
@@ -137,18 +269,17 @@ export default function SellerDashboardOverview() {
     }
   };
 
-  const visitStore = () => {
-    const phone = dashboardData?.seller?.phone || storeData?.seller?.phone;
-    if (!phone) return;
-    const storeUrl = `${FRONTEND_BASE_URL}/shop/${phone}`;
-    window.open(storeUrl, '_blank');
+  // ✅ Enhanced visit store function
+  const visitStore = (url) => {
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   if (isLoading) {
     return (
         <div style={styles.loadingContainer}>
             <div style={styles.spinner}></div>
-            <p>Loading your dashboard...</p>
+            <p>Loading your Kerala Sellers dashboard...</p>
         </div>
     );
   }
@@ -174,26 +305,27 @@ export default function SellerDashboardOverview() {
             <p>No dashboard data available</p>
             <button onClick={fetchDashboardData} style={styles.retryButton}>
                 <RefreshCw size={18} />
-                Reload
+                Reload Dashboard
             </button>
         </div>
     );
   }
 
   // Determine if store profile is complete
-  const hasStoreProfile = dashboardData.has_store_profile || (storeData && storeData.is_profile_complete);
-  const sellerName = dashboardData.seller?.name || storeData?.seller?.name || 'Seller';
+  const hasStoreProfile = dashboardData.has_store_profile || (storeData && storeData.name);
+  const sellerName = dashboardData.seller?.name || storeData?.seller?.name || storeData?.name || 'Kerala Seller';
+  const sellerPhone = dashboardData.seller?.phone || storeData?.seller?.phone || storeData?.phone;
 
   return (
     <div style={styles.dashboardContainer}>
-        {/* Header */}
+        {/* ✅ Enhanced Header */}
         <div style={styles.header}>
             <div>
                 <h1 style={styles.welcomeTitle}>
-                    Welcome back, {sellerName}!
+                    Welcome back, {sellerName}! 🌴
                 </h1>
                 <p style={styles.welcomeSubtitle}>
-                    Here's what's happening with your store today
+                    Here's what's happening with your Kerala store today
                 </p>
             </div>
             <div style={styles.headerActions}>
@@ -210,7 +342,7 @@ export default function SellerDashboardOverview() {
 
         {hasStoreProfile ? (
             <>
-                {/* Statistics Cards */}
+                {/* ✅ Enhanced Statistics Cards */}
                 <div style={styles.statsContainer}>
                     <StatCard 
                         title="Total Revenue" 
@@ -242,51 +374,16 @@ export default function SellerDashboardOverview() {
                     />
                 </div>
 
-                {/* Main Content Grid */}
+                {/* ✅ Enhanced Main Content Grid */}
                 <div style={styles.gridContainer}>
-                    {/* Store Link Card */}
-                    <div style={styles.card}>
-                        <div style={styles.cardHeader}>
-                            <h3 style={styles.cardTitle}>
-                                <Store size={20} />
-                                Your Public Storefront
-                            </h3>
-                        </div>
-                        <p style={styles.cardDescription}>
-                            Share this link with your customers to showcase your products.
-                        </p>
-                        <div style={styles.linkBox}>
-                            <span style={styles.storeUrl}>
-                                {`${FRONTEND_BASE_URL}/shop/${dashboardData.seller?.phone || storeData?.seller?.phone || 'your-phone'}`}
-                            </span>
-                            <div style={styles.linkActions}>
-                                <button 
-                                    onClick={copyStoreLink} 
-                                    style={{
-                                        ...styles.copyButton,
-                                        ...(copySuccess ? styles.copySuccessButton : {})
-                                    }}
-                                    disabled={copySuccess}
-                                >
-                                    {copySuccess ? (
-                                        <>
-                                            <CheckCircle size={16} />
-                                            Copied!
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Copy size={16} />
-                                            Copy
-                                        </>
-                                    )}
-                                </button>
-                                <button onClick={visitStore} style={styles.visitButton}>
-                                    <ExternalLink size={16} />
-                                    Visit
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    {/* ✅ Enhanced Store Link Card with SEO URLs */}
+                    <StoreLink 
+                        storeData={storeData}
+                        phone={sellerPhone}
+                        copySuccess={copySuccess}
+                        onCopy={copyStoreLink}
+                        onVisit={visitStore}
+                    />
 
                     {/* Top Selling Products */}
                     <div style={styles.card}>
@@ -303,10 +400,10 @@ export default function SellerDashboardOverview() {
                                         <div style={styles.productRank}>#{index + 1}</div>
                                         <div style={styles.productInfo}>
                                             <span style={styles.productName}>
-                                                {item.product__name}
+                                                {item.product__name || item.name || 'Product'}
                                             </span>
                                             <span style={styles.productSales}>
-                                                {item.total_sold} sold
+                                                {item.total_sold || item.sold_count || 0} sold
                                             </span>
                                         </div>
                                     </div>
@@ -315,16 +412,16 @@ export default function SellerDashboardOverview() {
                         ) : (
                             <div style={styles.emptyState}>
                                 <BarChart3 size={32} />
-                                <p>No sales data yet</p>
+                                <h4>No sales data yet</h4>
                                 <p style={styles.emptyHint}>
-                                    Start adding products and sharing your store link!
+                                    Start adding products and sharing your Kerala store link to see analytics!
                                 </p>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Quick Actions */}
+                {/* ✅ Enhanced Quick Actions */}
                 <div style={styles.quickActionsContainer}>
                     <h3 style={styles.sectionTitle}>Quick Actions</h3>
                     <div style={styles.quickActionsGrid}>
@@ -340,17 +437,38 @@ export default function SellerDashboardOverview() {
                             <Settings size={24} />
                             <span>Store Settings</span>
                         </Link>
+                        <Link href="/dashboard/seller/analytics" style={styles.quickActionCard}>
+                            <BarChart3 size={24} />
+                            <span>View Analytics</span>
+                        </Link>
                     </div>
                 </div>
             </>
         ) : (
             <SetupStorePrompt />
         )}
+
+        {/* ✅ CSS Animations */}
+        <style jsx>{`
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            .dashboard-container {
+                animation: fadeIn 0.6s ease-out;
+            }
+        `}</style>
     </div>
   );
 }
 
-// StatCard component
+// ✅ Enhanced StatCard component
 function StatCard({ title, value, icon, color, bgColor }) {
     return (
         <div style={styles.statCard}>
@@ -365,11 +483,13 @@ function StatCard({ title, value, icon, color, bgColor }) {
     );
 }
 
+// ✅ Enhanced styles with better visual hierarchy
 const styles = {
     dashboardContainer: {
         padding: '24px',
         maxWidth: '1200px',
-        margin: '0 auto'
+        margin: '0 auto',
+        minHeight: '100vh'
     },
     
     loadingContainer: {
@@ -377,7 +497,7 @@ const styles = {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '400px',
+        minHeight: '60vh',
         gap: '20px',
         textAlign: 'center',
         color: '#6b7280'
@@ -397,7 +517,7 @@ const styles = {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '400px',
+        minHeight: '60vh',
         gap: '20px',
         textAlign: 'center',
         color: '#ef4444'
@@ -414,7 +534,8 @@ const styles = {
         borderRadius: '8px',
         cursor: 'pointer',
         fontSize: '16px',
-        fontWeight: '500'
+        fontWeight: '500',
+        transition: 'all 0.2s'
     },
     
     header: {
@@ -436,12 +557,14 @@ const styles = {
     welcomeSubtitle: {
         fontSize: '1rem',
         color: '#6b7280',
-        margin: 0
+        margin: 0,
+        lineHeight: '1.5'
     },
     
     headerActions: {
         display: 'flex',
-        gap: '12px'
+        gap: '12px',
+        flexWrap: 'wrap'
     },
     
     quickAction: {
@@ -454,7 +577,8 @@ const styles = {
         borderRadius: '8px',
         textDecoration: 'none',
         fontSize: '14px',
-        fontWeight: '500'
+        fontWeight: '500',
+        transition: 'all 0.2s'
     },
     
     refreshButton: {
@@ -468,72 +592,78 @@ const styles = {
         borderRadius: '8px',
         cursor: 'pointer',
         fontSize: '14px',
-        fontWeight: '500'
+        fontWeight: '500',
+        transition: 'all 0.2s'
     },
     
-    // Setup Card
+    // ✅ Enhanced Setup Card
     setupCard: { 
         backgroundColor: '#fefce8', 
         border: '2px solid #facc15', 
         borderRadius: '16px', 
-        padding: '32px', 
+        padding: '40px 32px', 
         margin: '20px 0', 
         textAlign: 'center'
     },
     
     setupIconContainer: {
-        width: '64px',
-        height: '64px',
+        width: '80px',
+        height: '80px',
         backgroundColor: '#fef3c7',
         borderRadius: '50%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        margin: '0 auto 16px auto'
+        margin: '0 auto 24px auto',
+        boxShadow: '0 4px 12px rgba(245, 158, 11, 0.2)'
     },
     
     setupTitle: {
-        fontSize: '1.5rem',
+        fontSize: '1.75rem',
         fontWeight: '700',
         color: '#92400e',
-        margin: '0 0 12px 0'
+        margin: '0 0 16px 0'
     },
     
     setupDescription: {
-        fontSize: '1rem',
+        fontSize: '1.1rem',
         color: '#a16207',
-        marginBottom: '24px',
-        lineHeight: '1.5'
+        marginBottom: '32px',
+        lineHeight: '1.6',
+        maxWidth: '600px',
+        margin: '0 auto 32px auto'
     },
     
     setupActions: {
-        marginBottom: '24px'
+        marginBottom: '32px'
     },
     
     setupButton: { 
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '8px',
-        padding: '14px 24px', 
+        gap: '10px',
+        padding: '16px 32px', 
         backgroundColor: '#3b82f6', 
         color: 'white', 
         textDecoration: 'none', 
-        borderRadius: '8px', 
+        borderRadius: '12px', 
         fontWeight: '600',
-        fontSize: '16px'
+        fontSize: '16px',
+        transition: 'all 0.2s',
+        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
     },
     
     setupBenefits: {
-        display: 'flex',
-        justifyContent: 'center',
-        gap: '24px',
-        flexWrap: 'wrap'
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '16px',
+        marginTop: '24px'
     },
     
     benefit: {
         display: 'flex',
         alignItems: 'center',
-        gap: '6px',
+        gap: '8px',
         color: '#059669',
         fontSize: '14px',
         fontWeight: '500'
@@ -555,7 +685,8 @@ const styles = {
         padding: '24px', 
         borderRadius: '12px', 
         border: '1px solid #e5e7eb',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        transition: 'all 0.2s'
     },
     
     statIcon: {
@@ -575,7 +706,9 @@ const styles = {
         margin: '0 0 8px 0', 
         fontSize: '14px', 
         color: '#6b7280',
-        fontWeight: '500'
+        fontWeight: '500',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
     },
     
     statValue: { 
@@ -598,7 +731,8 @@ const styles = {
         backgroundColor: 'white', 
         borderRadius: '12px', 
         border: '1px solid #e5e7eb',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        transition: 'all 0.2s'
     },
     
     cardHeader: {
@@ -608,7 +742,7 @@ const styles = {
     cardTitle: {
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '10px',
         margin: '0 0 8px 0',
         fontSize: '18px',
         fontWeight: '600',
@@ -618,44 +752,65 @@ const styles = {
     cardDescription: {
         fontSize: '14px',
         color: '#6b7280',
-        margin: '0 0 16px 0',
+        margin: '0 0 20px 0',
         lineHeight: '1.5'
     },
     
+    // ✅ Enhanced Link Box
     linkBox: { 
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px',
+        gap: '16px',
         backgroundColor: '#f8fafc', 
-        padding: '16px', 
-        borderRadius: '8px', 
+        padding: '20px', 
+        borderRadius: '12px', 
         border: '1px solid #e2e8f0'
+    },
+
+    urlPreview: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px'
+    },
+
+    urlLabel: {
+        fontSize: '12px',
+        color: '#6b7280',
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
     },
     
     storeUrl: {
         fontSize: '14px',
         color: '#374151',
         wordBreak: 'break-all',
-        fontFamily: 'monospace'
+        fontFamily: 'monospace',
+        backgroundColor: 'white',
+        padding: '12px',
+        borderRadius: '8px',
+        border: '1px solid #d1d5db'
     },
     
     linkActions: {
         display: 'flex',
-        gap: '8px'
+        gap: '12px',
+        flexWrap: 'wrap'
     },
     
     copyButton: { 
         display: 'flex',
         alignItems: 'center',
-        gap: '6px',
-        padding: '8px 12px', 
+        gap: '8px',
+        padding: '10px 16px', 
         border: '1px solid #d1d5db', 
         cursor: 'pointer', 
         backgroundColor: 'white',
-        borderRadius: '6px',
+        borderRadius: '8px',
         fontSize: '14px',
         fontWeight: '500',
-        color: '#374151'
+        color: '#374151',
+        transition: 'all 0.2s'
     },
     
     copySuccessButton: {
@@ -667,15 +822,43 @@ const styles = {
     visitButton: {
         display: 'flex',
         alignItems: 'center',
-        gap: '6px',
-        padding: '8px 12px',
+        gap: '8px',
+        padding: '10px 16px',
         backgroundColor: '#3b82f6',
         color: 'white',
         border: 'none',
-        borderRadius: '6px',
+        borderRadius: '8px',
         cursor: 'pointer',
         fontSize: '14px',
-        fontWeight: '500'
+        fontWeight: '500',
+        transition: 'all 0.2s'
+    },
+
+    // ✅ New SEO Info
+    seoInfo: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        marginTop: '16px',
+        padding: '12px',
+        backgroundColor: '#ecfdf5',
+        borderRadius: '8px',
+        border: '1px solid #10b981'
+    },
+
+    seoTag: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        color: '#059669',
+        fontSize: '12px',
+        fontWeight: '600'
+    },
+
+    seoDescription: {
+        fontSize: '12px',
+        color: '#047857',
+        flex: 1
     },
     
     // Products
@@ -688,16 +871,17 @@ const styles = {
     productItem: {
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
-        padding: '12px',
+        gap: '16px',
+        padding: '16px',
         backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        border: '1px solid #e2e8f0'
+        borderRadius: '10px',
+        border: '1px solid #e2e8f0',
+        transition: 'all 0.2s'
     },
     
     productRank: {
-        width: '32px',
-        height: '32px',
+        width: '36px',
+        height: '36px',
         backgroundColor: '#3b82f6',
         color: 'white',
         borderRadius: '50%',
@@ -705,19 +889,20 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: '14px',
-        fontWeight: '600'
+        fontWeight: '700',
+        flexShrink: 0
     },
     
     productInfo: {
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        gap: '2px'
+        gap: '4px'
     },
     
     productName: {
         fontSize: '14px',
-        fontWeight: '500',
+        fontWeight: '600',
         color: '#1f2937'
     },
     
@@ -728,46 +913,48 @@ const styles = {
     
     emptyState: {
         textAlign: 'center',
-        padding: '32px',
+        padding: '40px 20px',
         color: '#6b7280'
     },
     
     emptyHint: {
         fontSize: '14px',
         color: '#9ca3af',
-        margin: '8px 0 0 0'
+        margin: '12px 0 0 0',
+        lineHeight: '1.5'
     },
     
     // Quick Actions
     quickActionsContainer: {
-        marginTop: '32px'
+        marginTop: '40px'
     },
     
     sectionTitle: {
-        fontSize: '18px',
+        fontSize: '20px',
         fontWeight: '600',
         color: '#1f2937',
-        marginBottom: '16px'
+        marginBottom: '20px'
     },
     
     quickActionsGrid: {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '16px'
+        gap: '20px'
     },
     
     quickActionCard: {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '12px',
-        padding: '24px',
+        gap: '16px',
+        padding: '32px 24px',
         backgroundColor: 'white',
         border: '1px solid #e5e7eb',
         borderRadius: '12px',
         textDecoration: 'none',
         color: '#374151',
         transition: 'all 0.2s ease',
-        textAlign: 'center'
+        textAlign: 'center',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
     }
 };
