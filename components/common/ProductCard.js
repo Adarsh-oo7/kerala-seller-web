@@ -29,7 +29,7 @@ export default function ProductCard({
   onAddToCart,
   onToggleWishlist,
   isWishlisted = false,
-  isWishlistLoading = false, // ✅ Added loading prop from parent
+  isWishlistLoading = false,
   onlineStock = 1,
   storeName,
   modelName,
@@ -41,6 +41,7 @@ export default function ProductCard({
   const [wishlistState, setWishlistState] = useState(isWishlisted)
   const [localWishlistLoading, setLocalWishlistLoading] = useState(false)
 
+  // ✅ FIXED: Sync with parent state properly
   useEffect(() => {
     setWishlistState(isWishlisted)
   }, [isWishlisted])
@@ -57,10 +58,12 @@ export default function ProductCard({
     }, 2000)
   }
 
-  // ✅ Enhanced wishlist toggle with improved error handling
+  // ✅ SIMPLIFIED: Just call parent handler, don't duplicate logic
   const handleWishlistToggle = async (e) => {
     e.preventDefault()
     e.stopPropagation()
+    
+    console.log('🔍 ProductCard wishlist button clicked for product:', id);
     
     // Prevent multiple clicks
     if (isWishlistLoading || localWishlistLoading) {
@@ -68,115 +71,13 @@ export default function ProductCard({
       return
     }
     
-    // Check for authentication first
-    const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken')
-    
-    if (!token) {
-      console.log('🔐 No authentication token found, prompting user to login')
-      
-      // Show login prompt
-      const shouldLogin = window.confirm('Please login to add items to your wishlist. Would you like to login now?')
-      if (shouldLogin) {
-        window.location.href = '/login/buyer'
-      }
-      return
+    // ✅ SIMPLIFIED: Just call parent handler
+    if (onToggleWishlist) {
+      console.log('📞 Calling parent wishlist handler for product:', id);
+      await onToggleWishlist(id);
+    } else {
+      console.warn('⚠️ No onToggleWishlist handler provided to ProductCard');
     }
-
-    setLocalWishlistLoading(true)
-    const previousState = wishlistState
-    const newWishlistState = !wishlistState
-    
-    // Optimistic update
-    setWishlistState(newWishlistState)
-    
-    try {
-      console.log('🔄 Making wishlist API call for product:', id)
-      
-      const response = await fetch(`${getApiBaseUrl()}/api/wishlist/toggle_product/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ product_id: id }),
-        timeout: 10000 // 10 second timeout
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        console.log('✅ Wishlist API response:', data)
-        
-        // Update with server response
-        setWishlistState(data.is_wishlisted)
-        
-        // Call parent callback if provided
-        if (onToggleWishlist) {
-          onToggleWishlist(id, data.is_wishlisted, data.action || (data.is_wishlisted ? 'added' : 'removed'))
-        }
-        
-        // Show success feedback
-        const action = data.is_wishlisted ? 'added to' : 'removed from'
-        console.log(`✅ ${title} ${action} wishlist`)
-        
-        // Visual feedback
-        showWishlistFeedback(newWishlistState)
-        
-      } else {
-        // Revert optimistic update
-        setWishlistState(previousState)
-        
-        if (response.status === 401) {
-          console.log('🔄 Authentication failed, clearing tokens and redirecting')
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('buyerAccessToken')
-          
-          const shouldLogin = window.confirm('Your session has expired. Please login again to continue.')
-          if (shouldLogin) {
-            window.location.href = '/login/buyer'
-          }
-        } else {
-          const errorData = await response.json().catch(() => ({}))
-          console.error('❌ Wishlist API error:', errorData.error || `HTTP ${response.status}`)
-          
-          // Show user-friendly error
-          showErrorFeedback('Failed to update wishlist. Please try again.')
-        }
-      }
-      
-    } catch (error) {
-      // Revert optimistic update
-      setWishlistState(previousState)
-      console.error('❌ Network error:', error)
-      
-      if (error.name === 'AbortError') {
-        showErrorFeedback('Request timed out. Please check your connection.')
-      } else if (!navigator.onLine) {
-        showErrorFeedback('No internet connection. Please check your network.')
-      } else {
-        showErrorFeedback('Failed to update wishlist. Please try again.')
-      }
-      
-    } finally {
-      setLocalWishlistLoading(false)
-    }
-  }
-
-  // ✅ Visual feedback functions
-  const showWishlistFeedback = (isAdded) => {
-    // Find the wishlist button and add visual feedback
-    const button = document.querySelector(`[data-product-id="${id}"] .wishlist-btn`)
-    if (button) {
-      button.style.transform = 'scale(1.2)'
-      setTimeout(() => {
-        button.style.transform = 'scale(1)'
-      }, 200)
-    }
-  }
-
-  const showErrorFeedback = (message) => {
-    // You could implement a toast system here
-    // For now, just console log the error
-    console.warn('⚠️ Wishlist error:', message)
   }
 
   // ✅ Enhanced add to cart handler
@@ -185,19 +86,19 @@ export default function ProductCard({
     e.stopPropagation()
     
     if (onlineStock === 0) {
-      showErrorFeedback('This item is currently out of stock.')
+      console.warn('⚠️ Attempted to add out-of-stock item to cart')
       return
     }
     
     try {
       if (onAddToCart) {
         const productData = {
-          id,
+          id: parseInt(id),
           name: title,
           price: parseFloat(price) || 0,
           mrp: mrp ? parseFloat(mrp) : null,
           main_image_url: primaryImage,
-          image_url: primaryImage, // Fallback
+          image_url: primaryImage,
           online_stock: onlineStock,
           seller_phone: sellerPhone,
           store: storeName ? { name: storeName } : null,
@@ -206,11 +107,11 @@ export default function ProductCard({
           review_count: reviewCount
         }
         
+        console.log('🛒 Adding to cart:', productData)
         await onAddToCart(e, productData)
       }
     } catch (error) {
       console.error('❌ Add to cart error:', error)
-      showErrorFeedback('Failed to add item to cart. Please try again.')
     }
   }
 
@@ -241,12 +142,10 @@ export default function ProductCard({
       const storeMatch = currentPath.match(/\/store\/([^\/]+)/)
       
       if (storeMatch) {
-        // If we're in a store context, maintain it
         return `/store/${storeMatch[1]}/product/${id}`
       }
     }
     
-    // Default product URL
     if (sellerPhone) {
       return `/shop/${sellerPhone}/product/${id}`
     }
@@ -257,17 +156,14 @@ export default function ProductCard({
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return "/placeholder.svg"
     
-    // Handle relative URLs
     if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
       return `${getApiBaseUrl()}${imageUrl}`
     }
     
-    // Handle absolute URLs
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl
     }
     
-    // Handle other relative paths
     if (imageUrl.startsWith('/')) {
       return `${getApiBaseUrl()}${imageUrl}`
     }
@@ -275,7 +171,7 @@ export default function ProductCard({
     return imageUrl || "/placeholder.svg"
   }
 
-  // Determine if wishlist is loading (from parent or local)
+  // Determine if wishlist is loading
   const isWishlistCurrentlyLoading = isWishlistLoading || localWishlistLoading
 
   return (
@@ -308,6 +204,7 @@ export default function ProductCard({
               aria-label={wishlistState ? "Remove from wishlist" : "Add to wishlist"}
               type="button"
               disabled={isWishlistCurrentlyLoading}
+              data-product-id={id}
             >
               {isWishlistCurrentlyLoading ? (
                 <div className="loading-spinner"></div>
@@ -414,7 +311,6 @@ export default function ProductCard({
       </div>
 
       <style jsx>{`
-        /* Enhanced styles with better mobile responsiveness */
         .product-card {
           display: flex;
           flex-direction: column;
@@ -777,7 +673,6 @@ export default function ProductCard({
           margin-top: 4px;
         }
 
-        /* Enhanced mobile responsiveness */
         @media (max-width: 768px) {
           .product-card {
             border-radius: 10px;

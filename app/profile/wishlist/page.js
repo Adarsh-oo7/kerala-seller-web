@@ -19,10 +19,23 @@ import {
   List
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// ✅ Enhanced API base URL function
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
+  }
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  return 'https://keralaseller-backend.onrender.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const CART_API = `${API_BASE_URL}/api/cart/add/`;
+
+console.log('🔍 Wishlist API URLs:', { API_BASE_URL, WISHLIST_API, CART_API });
 
 export default function WishlistPage() {
   const [wishlistItems, setWishlistItems] = useState([]);
@@ -34,54 +47,133 @@ export default function WishlistPage() {
   const [isUpdating, setIsUpdating] = useState({});
   const router = useRouter();
 
+  // ✅ FIXED: Better token detection
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('buyerAccessToken');
+    const token = localStorage.getItem('access_token') || 
+                  localStorage.getItem('buyerAccessToken') ||
+                  localStorage.getItem('buyerToken') ||
+                  localStorage.getItem('accessToken');
+                  
+    console.log('🔍 Auth token found:', !!token);
+    
     if (!token) {
       return null;
     }
     return { 'Authorization': `Bearer ${token}` };
   }, []);
 
+  // ✅ FIXED: Proper image URL construction
+  const getImageUrl = useCallback((imageUrl) => {
+    if (!imageUrl) {
+      return 'https://via.placeholder.com/300x300/e9ecef/6c757d?text=No+Image';
+    }
+
+    // If it's already a full URL, use it as is
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+
+    // If it's a relative URL starting with /media/ or /static/
+    if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
+      const fullUrl = `${API_BASE_URL}${imageUrl}`;
+      console.log('🖼️ Constructed image URL:', fullUrl);
+      return fullUrl;
+    }
+
+    // If it's any other relative path
+    if (imageUrl.startsWith('/')) {
+      return `${API_BASE_URL}${imageUrl}`;
+    }
+
+    // Fallback - assume it needs the base URL
+    return `${API_BASE_URL}/${imageUrl}`;
+  }, []);
+
   const loadWishlistFromAPI = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) {
+      console.log('❌ No auth headers, loading from localStorage');
       loadWishlistFromLocalStorage();
       return;
     }
 
     try {
-      console.log('Loading wishlist from API:', WISHLIST_API);
+      console.log('🔍 Loading wishlist from API:', WISHLIST_API);
       const response = await axios.get(WISHLIST_API, { headers });
       
       const wishlistData = response.data;
-      console.log('Wishlist API response:', wishlistData);
+      console.log('✅ Wishlist API response:', wishlistData);
       
       let items = [];
+      
+      // ✅ ENHANCED: Better data extraction
       if (wishlistData && wishlistData.items && Array.isArray(wishlistData.items)) {
-        items = wishlistData.items.map(item => item.product || item);
+        items = wishlistData.items.map(item => {
+          const product = item.product || item;
+          return {
+            ...product,
+            // ✅ FIXED: Ensure proper image URL construction
+            main_image_url: getImageUrl(product.main_image_url || product.image_url || product.image),
+            image_url: getImageUrl(product.image_url || product.main_image_url || product.image)
+          };
+        });
       } else if (Array.isArray(wishlistData)) {
-        items = wishlistData;
+        items = wishlistData.map(item => ({
+          ...item,
+          main_image_url: getImageUrl(item.main_image_url || item.image_url || item.image),
+          image_url: getImageUrl(item.image_url || item.main_image_url || item.image)
+        }));
+      } else if (wishlistData.results && Array.isArray(wishlistData.results)) {
+        items = wishlistData.results.map(item => {
+          const product = item.product || item;
+          return {
+            ...product,
+            main_image_url: getImageUrl(product.main_image_url || product.image_url || product.image),
+            image_url: getImageUrl(product.image_url || product.main_image_url || product.image)
+          };
+        });
       }
       
+      console.log('✅ Processed wishlist items:', items.length, items);
       setWishlistItems(items);
+      
       // Sync with localStorage
       localStorage.setItem('wishlist', JSON.stringify(items));
       
     } catch (error) {
-      console.log('API wishlist failed, falling back to localStorage:', error);
+      console.error('❌ API wishlist failed:', error);
+      if (error.response?.status === 401) {
+        console.log('🔐 Authentication failed, clearing tokens');
+        ['access_token', 'buyerAccessToken', 'buyerToken', 'accessToken'].forEach(key => {
+          localStorage.removeItem(key);
+        });
+      }
       loadWishlistFromLocalStorage();
     }
-  }, [getAuthHeaders]);
+  }, [getAuthHeaders, getImageUrl]);
 
   const loadWishlistFromLocalStorage = () => {
     try {
+      console.log('🔍 Loading wishlist from localStorage');
       const savedWishlist = localStorage.getItem('wishlist');
       if (savedWishlist) {
         const parsedWishlist = JSON.parse(savedWishlist);
-        setWishlistItems(Array.isArray(parsedWishlist) ? parsedWishlist : []);
+        const items = Array.isArray(parsedWishlist) ? parsedWishlist : [];
+        
+        // ✅ FIXED: Ensure image URLs are properly constructed even from localStorage
+        const itemsWithImages = items.map(item => ({
+          ...item,
+          main_image_url: getImageUrl(item.main_image_url || item.image_url || item.image),
+          image_url: getImageUrl(item.image_url || item.main_image_url || item.image)
+        }));
+        
+        setWishlistItems(itemsWithImages);
+        console.log('✅ Loaded from localStorage:', itemsWithImages.length, 'items');
+      } else {
+        setWishlistItems([]);
       }
     } catch (error) {
-      console.error('Error loading wishlist from localStorage:', error);
+      console.error('❌ Error loading wishlist from localStorage:', error);
       setWishlistItems([]);
     }
   };
@@ -93,7 +185,7 @@ export default function WishlistPage() {
     try {
       await loadWishlistFromAPI();
     } catch (error) {
-      console.error('Error loading wishlist:', error);
+      console.error('❌ Error loading wishlist:', error);
       setError('Failed to load wishlist. Please try again.');
     } finally {
       setIsLoading(false);
@@ -104,6 +196,7 @@ export default function WishlistPage() {
     loadWishlist();
   }, [loadWishlist]);
 
+  // ✅ ENHANCED: Better removal with API integration
   const removeFromWishlist = async (productId) => {
     setIsUpdating(prev => ({ ...prev, [productId]: 'removing' }));
     
@@ -111,11 +204,25 @@ export default function WishlistPage() {
       const headers = getAuthHeaders();
       
       if (headers) {
-        // Try to remove from API
         try {
-          await axios.delete(`${WISHLIST_API}${productId}/`, { headers });
+          console.log('🗑️ Removing from API wishlist:', productId);
+          
+          // Try different API endpoints for removal
+          try {
+            await axios.post(`${API_BASE_URL}/api/wishlist/toggle_product/`, {
+              product_id: productId
+            }, { headers });
+            console.log('✅ Removed via toggle API');
+          } catch (toggleError) {
+            // Fallback to direct removal
+            await axios.delete(`${WISHLIST_API}remove_product/`, {
+              headers,
+              data: { product_id: productId }
+            });
+            console.log('✅ Removed via remove_product API');
+          }
         } catch (apiError) {
-          console.warn('API removal failed, continuing with local removal:', apiError);
+          console.warn('⚠️ API removal failed, continuing with local removal:', apiError);
         }
       }
       
@@ -123,9 +230,10 @@ export default function WishlistPage() {
       const updatedWishlist = wishlistItems.filter(item => item.id !== productId);
       setWishlistItems(updatedWishlist);
       localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
+      console.log('✅ Item removed from wishlist');
       
     } catch (error) {
-      console.error('Error removing from wishlist:', error);
+      console.error('❌ Error removing from wishlist:', error);
       setError('Failed to remove item. Please try again.');
     } finally {
       setIsUpdating(prev => ({ ...prev, [productId]: null }));
@@ -141,21 +249,22 @@ export default function WishlistPage() {
       const headers = getAuthHeaders();
       
       if (headers) {
-        // Try to add to cart via API
         try {
+          console.log('🛒 Adding to cart via API:', product.id);
           await axios.post(CART_API, {
             product_id: product.id,
             quantity: 1
           }, { headers });
           
-          // Show success feedback
           alert('Added to cart successfully!');
+          console.log('✅ Added to cart via API');
         } catch (apiError) {
-          console.warn('API add to cart failed:', apiError);
+          console.warn('⚠️ API add to cart failed:', apiError);
           alert('Added to cart locally. Please login to sync with server.');
         }
       } else {
         // Handle cart without authentication (local storage)
+        console.log('🛒 Adding to local cart:', product.id);
         const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
         const existingItem = cartItems.find(item => item.id === product.id);
         
@@ -170,7 +279,7 @@ export default function WishlistPage() {
       }
       
     } catch (error) {
-      console.error('Error adding to cart:', error);
+      console.error('❌ Error adding to cart:', error);
       setError('Failed to add to cart. Please try again.');
     } finally {
       setIsUpdating(prev => ({ ...prev, [product.id]: null }));
@@ -272,7 +381,7 @@ export default function WishlistPage() {
               Save products you love to your wishlist and never lose track of them
             </p>
             <div style={styles.emptyActions}>
-              <Link href="/shop" style={styles.browseButton}>
+              <Link href="/" style={styles.browseButton}>
                 <Package size={18} />
                 Browse Products
               </Link>
@@ -340,6 +449,14 @@ export default function WishlistPage() {
                 const isRemoving = isUpdating[product.id] === 'removing';
                 const isAddingToCart = isUpdating[product.id] === 'adding_to_cart';
 
+                // ✅ FIXED: Better image URL handling
+                const imageUrl = product.main_image_url || 
+                                product.image_url || 
+                                product.image || 
+                                getImageUrl(null);
+
+                console.log('🖼️ Product image URL for', product.name, ':', imageUrl);
+
                 return (
                   <div 
                     key={product.id} 
@@ -352,11 +469,13 @@ export default function WishlistPage() {
                     <Link href={`/product/${product.id}`} style={styles.productLink}>
                       <div style={styles.imageContainer}>
                         <img 
-                          src={product.main_image_url || product.image_url || product.image || 'https://via.placeholder.com/200x200/e9ecef/6c757d?text=No+Image'} 
-                          alt={product.name}
+                          src={imageUrl}
+                          alt={product.name || 'Product'}
                           style={styles.productImage}
+                          onLoad={() => console.log('✅ Image loaded:', imageUrl)}
                           onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/200x200/e9ecef/6c757d?text=No+Image';
+                            console.warn('❌ Image failed to load:', imageUrl);
+                            e.target.src = 'https://via.placeholder.com/300x300/e9ecef/6c757d?text=No+Image';
                           }}
                         />
                         {isOutOfStock && (
@@ -472,11 +591,37 @@ export default function WishlistPage() {
           from { opacity: 1; transform: translateX(0); }
           to { opacity: 0.5; transform: translateX(-10px); }
         }
+        
+        /* Responsive grid styles */
+        @media (max-width: 640px) {
+          .wishlist-grid {
+            grid-template-columns: repeat(1, 1fr) !important;
+          }
+        }
+        
+        @media (min-width: 641px) and (max-width: 768px) {
+          .wishlist-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .wishlist-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+          }
+        }
+        
+        @media (min-width: 1025px) {
+          .wishlist-grid {
+            grid-template-columns: repeat(4, 1fr) !important;
+          }
+        }
       `}</style>
     </div>
   );
 }
 
+// Keep all your existing styles but add responsive grid class
 const styles = {
   pageContainer: {
     minHeight: '100vh',
@@ -759,19 +904,12 @@ const styles = {
     boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
   },
 
-  // Wishlist Grid/List
+  // ✅ FIXED: Responsive Wishlist Grid
   wishlistGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, 1fr)',
     gap: '16px',
-    '@media (min-width: 768px)': {
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: '20px'
-    },
-    '@media (min-width: 1024px)': {
-      gridTemplateColumns: 'repeat(4, 1fr)',
-      gap: '24px'
-    }
+    className: 'wishlist-grid'
   },
   
   wishlistList: {
@@ -818,7 +956,8 @@ const styles = {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    transition: 'transform 0.3s ease'
+    transition: 'transform 0.3s ease',
+    backgroundColor: '#f3f4f6' // Fallback background while loading
   },
 
   outOfStockBadge: {
