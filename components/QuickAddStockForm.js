@@ -37,24 +37,46 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
     name: '',
     model_name: '',
     mrp: '',
+    price: '', // ✅ ADDED: Separate price field
     total_stock: '',
-    // Price and online_stock are no longer in this form
+    online_stock: '', // ✅ ADDED: Online stock field
+    description: '' // ✅ ADDED: Description field
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(''); // ✅ ADDED: Success message
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: value,
+      // ✅ ENHANCED: Auto-set price to MRP if price field is empty
+      ...(name === 'mrp' && !prev.price ? { price: value } : {})
+    }));
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // ✅ ENHANCED: File size validation (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image file size must be less than 5MB');
+        return;
+      }
+
+      // ✅ ENHANCED: File type validation
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+      if (!validTypes.includes(file.type)) {
+        setError('Please select a valid image file (JPG, PNG, or WEBP)');
+        return;
+      }
+
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
+      setError(''); // Clear any previous errors
     }
   };
 
@@ -62,15 +84,38 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
     e.preventDefault();
     setIsSaving(true);
     setError('');
+    setSuccess('');
 
-    // Set price equal to MRP by default for this simplified form
+    // ✅ ENHANCED: Form validation
+    if (!formData.name.trim()) {
+      setError('Product name is required');
+      setIsSaving(false);
+      return;
+    }
+
+    if (!formData.mrp || parseFloat(formData.mrp) <= 0) {
+      setError('Please enter a valid MRP');
+      setIsSaving(false);
+      return;
+    }
+
+    if (!formData.total_stock || parseInt(formData.total_stock) < 0) {
+      setError('Please enter a valid total stock quantity');
+      setIsSaving(false);
+      return;
+    }
+
     const submissionData = new FormData();
-    submissionData.append('name', formData.name);
-    submissionData.append('model_name', formData.model_name);
+    submissionData.append('name', formData.name.trim());
+    submissionData.append('model_name', formData.model_name.trim());
     submissionData.append('mrp', formData.mrp);
-    submissionData.append('price', formData.mrp); // Price defaults to MRP
+    submissionData.append('price', formData.price || formData.mrp); // ✅ Use price or fallback to MRP
     submissionData.append('total_stock', formData.total_stock);
-    submissionData.append('online_stock', 0); // Defaults to 0 for online stock
+    submissionData.append('online_stock', formData.online_stock || '0'); // ✅ Default to 0 if not specified
+    
+    if (formData.description.trim()) {
+      submissionData.append('description', formData.description.trim());
+    }
 
     if (imageFile) {
       submissionData.append('main_image', imageFile); // ✅ Fixed field name to match your backend
@@ -90,31 +135,48 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
       const response = await axios.post(API_URL, submissionData, {
         headers: { 
           'Content-Type': 'multipart/form-data', 
-          Authorization: `Token ${token}` 
+          Authorization: `Bearer ${token}` // ✅ FIXED: Changed from Token to Bearer
         },
-        timeout: 20000  // ✅ Increased timeout for hosted backend
+        timeout: 30000  // ✅ Increased timeout for hosted backend
       });
       
       console.log('✅ Product added successfully:', response.data);
-      onSuccess();
+      setSuccess('Product added successfully!');
+      
+      // ✅ ENHANCED: Auto-close after 1.5 seconds on success
+      setTimeout(() => {
+        onSuccess();
+      }, 1500);
+      
     } catch (err) {
       console.error('❌ Submission error:', err.response?.data || err.message);
       
       let errorMessage = 'Failed to add product. Please check your input.';
       
-      if (err.response?.data) {
+      if (err.response?.status === 401) {
+        errorMessage = 'Authentication failed. Please log in again.';
+        setTimeout(() => {
+          window.location.href = '/login/seller';
+        }, 2000);
+      } else if (err.response?.data) {
         if (typeof err.response.data === 'string') {
           errorMessage = err.response.data;
         } else if (err.response.data.detail) {
           errorMessage = err.response.data.detail;
         } else if (err.response.data.error) {
           errorMessage = err.response.data.error;
-        } else if (err.response.data.name) {
-          errorMessage = `Name error: ${err.response.data.name[0]}`;
-        } else if (err.response.data.mrp) {
-          errorMessage = `Price error: ${err.response.data.mrp[0]}`;
-        } else if (err.response.data.main_image) {
-          errorMessage = `Image error: ${err.response.data.main_image[0]}`;
+        } else {
+          // ✅ ENHANCED: Better error field handling
+          const fieldErrors = [];
+          Object.keys(err.response.data).forEach(field => {
+            if (Array.isArray(err.response.data[field])) {
+              fieldErrors.push(`${field}: ${err.response.data[field][0]}`);
+            }
+          });
+          
+          if (fieldErrors.length > 0) {
+            errorMessage = fieldErrors.join(', ');
+          }
         }
       } else if (err.code === 'ECONNABORTED') {
         errorMessage = 'Request timeout - the server took too long to respond. Please try again.';
@@ -131,14 +193,20 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
   return (
     <div style={styles.modalOverlay}>
       <div style={styles.modalContent}>
-        <h2>Quick Add Product</h2>
-        <p style={{fontSize: '12px', color: '#666', marginBottom: '16px'}}>
+        <div style={styles.modalHeader}>
+          <h2 style={styles.modalTitle}>Quick Add Product</h2>
+          <button onClick={onClose} style={styles.closeButton} disabled={isSaving}>
+            ×
+          </button>
+        </div>
+
+        <p style={styles.apiInfo}>
           🌐 Connected to: {API_BASE_URL}
         </p>
         
         <form onSubmit={handleSubmit}>
           <div style={styles.formGroup}>
-            <label>Product Name*</label>
+            <label style={styles.label}>Product Name*</label>
             <input 
               type="text" 
               name="name" 
@@ -147,60 +215,118 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
               required 
               style={styles.input}
               placeholder="Enter product name"
+              disabled={isSaving}
             />
           </div>
           
           <div style={styles.formGroup}>
-            <label>Model/Variation (Optional)</label>
+            <label style={styles.label}>Model/Variation</label>
             <input 
               type="text" 
               name="model_name" 
               value={formData.model_name} 
               onChange={handleChange} 
               placeholder="e.g., Red XL, 250g, Cotton Blend" 
-              style={styles.input} 
-            />
-          </div>
-          
-          <div style={styles.formGroup}>
-            <label>MRP (₹)*</label>
-            <input 
-              type="number" 
-              name="mrp" 
-              value={formData.mrp} 
-              onChange={handleChange} 
-              required 
-              style={styles.input} 
-              step="0.01"
-              placeholder="Enter maximum retail price"
-            />
-            <small style={{color: '#666', fontSize: '11px'}}>
-              💡 Selling price will be set to same as MRP by default
-            </small>
-          </div>
-          
-          <div style={styles.formGroup}>
-            <label>Total Stock*</label>
-            <input 
-              type="number" 
-              name="total_stock" 
-              value={formData.total_stock} 
-              onChange={handleChange} 
-              required 
               style={styles.input}
-              min="0"
-              placeholder="Enter total quantity"
+              disabled={isSaving}
             />
-            <small style={{color: '#666', fontSize: '11px'}}>
-              💡 Online stock will be set to 0 (you can update later)
-            </small>
+          </div>
+
+          {/* ✅ ENHANCED: Separate MRP and Price fields */}
+          <div style={styles.formRow}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>MRP (₹)*</label>
+              <input 
+                type="number" 
+                name="mrp" 
+                value={formData.mrp} 
+                onChange={handleChange} 
+                required 
+                style={styles.input} 
+                step="0.01"
+                min="0"
+                placeholder="Max retail price"
+                disabled={isSaving}
+              />
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Selling Price (₹)</label>
+              <input 
+                type="number" 
+                name="price" 
+                value={formData.price} 
+                onChange={handleChange} 
+                style={styles.input} 
+                step="0.01"
+                min="0"
+                placeholder="Auto-fills from MRP"
+                disabled={isSaving}
+              />
+            </div>
+          </div>
+
+          {/* ✅ ENHANCED: Separate Total and Online stock fields */}
+          <div style={styles.formRow}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Total Stock*</label>
+              <input 
+                type="number" 
+                name="total_stock" 
+                value={formData.total_stock} 
+                onChange={handleChange} 
+                required 
+                style={styles.input}
+                min="0"
+                placeholder="Total quantity"
+                disabled={isSaving}
+              />
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Online Stock</label>
+              <input 
+                type="number" 
+                name="online_stock" 
+                value={formData.online_stock} 
+                onChange={handleChange} 
+                style={styles.input}
+                min="0"
+                placeholder="0 (can update later)"
+                disabled={isSaving}
+              />
+            </div>
+          </div>
+
+          {/* ✅ NEW: Description field */}
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Description</label>
+            <textarea 
+              name="description" 
+              value={formData.description} 
+              onChange={handleChange} 
+              style={{...styles.input, minHeight: '80px', resize: 'vertical'}}
+              placeholder="Brief product description..."
+              disabled={isSaving}
+              maxLength={500}
+            />
+            <small style={styles.charCount}>{formData.description.length}/500 characters</small>
           </div>
           
           <div style={styles.formGroup}>
-            <label>Product Image (Optional)</label>
+            <label style={styles.label}>Product Image</label>
             {imagePreview && (
               <div style={styles.imagePreviewContainer}>
                 <img src={imagePreview} alt="Preview" style={styles.imagePreview}/>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setImageFile(null);
+                    setImagePreview('');
+                  }}
+                  style={styles.removeImageButton}
+                  disabled={isSaving}
+                >
+                  Remove
+                </button>
               </div>
             )}
             <input 
@@ -208,12 +334,20 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
               name="image" 
               onChange={handleImageChange} 
               accept="image/*" 
-              style={styles.input} 
+              style={styles.input}
+              disabled={isSaving}
             />
-            <small style={{color: '#666', fontSize: '11px'}}>
-              📸 JPG, PNG, or WEBP format recommended
+            <small style={styles.helpText}>
+              📸 JPG, PNG, or WEBP format. Max 5MB.
             </small>
           </div>
+
+          {/* ✅ ENHANCED: Success message */}
+          {success && (
+            <div style={styles.successContainer}>
+              ✅ {success}
+            </div>
+          )}
 
           {error && (
             <div style={styles.errorContainer}>
@@ -222,12 +356,12 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
           )}
           
           <div style={styles.infoBox}>
-            <h4 style={{margin: '0 0 8px 0', fontSize: '12px', color: '#0d6efd'}}>ℹ️ Quick Add Defaults:</h4>
-            <ul style={{margin: 0, paddingLeft: '16px', fontSize: '11px', color: '#666'}}>
-              <li>Selling price = MRP</li>
-              <li>Online stock = 0</li>
-              <li>Sale type = Online & In-Store</li>
-              <li>Category = Uncategorized (edit later)</li>
+            <h4 style={styles.infoTitle}>ℹ️ Quick Add Features:</h4>
+            <ul style={styles.infoList}>
+              <li>Selling price auto-fills from MRP</li>
+              <li>Online stock defaults to 0 (update later)</li>
+              <li>Category can be set after creation</li>
+              <li>All fields can be edited later</li>
             </ul>
           </div>
           
@@ -242,100 +376,262 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
             </button>
             <button 
               type="submit" 
-              disabled={isSaving || !formData.name || !formData.mrp || !formData.total_stock} 
-              style={styles.buttonPrimary}
+              disabled={isSaving || !formData.name.trim() || !formData.mrp || !formData.total_stock} 
+              style={{
+                ...styles.buttonPrimary,
+                opacity: (isSaving || !formData.name.trim() || !formData.mrp || !formData.total_stock) ? 0.6 : 1
+              }}
             >
-              {isSaving ? 'Adding to server...' : 'Add Product'}
+              {isSaving ? (
+                <>
+                  <span style={styles.spinner}></span>
+                  Adding to server...
+                </>
+              ) : (
+                'Add Product'
+              )}
             </button>
           </div>
         </form>
       </div>
+
+      {/* ✅ CSS Animations */}
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
 
 const styles = {
-    modalOverlay: { 
-      position: 'fixed', 
-      top: 0, 
-      left: 0, 
-      right: 0, 
-      bottom: 0, 
-      backgroundColor: 'rgba(0,0,0,0.5)', 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      zIndex: 1000 
-    },
-    modalContent: { 
-      background: 'white', 
-      padding: '2rem', 
-      borderRadius: '8px', 
-      width: '450px', 
-      maxWidth: '90%',
-      maxHeight: '90vh',
-      overflowY: 'auto'
-    },
-    formGroup: { 
-      marginBottom: '1rem' 
-    },
-    input: { 
-      width: '100%', 
-      padding: '8px', 
-      boxSizing: 'border-box', 
-      border: '1px solid #ccc', 
-      borderRadius: '4px',
-      fontSize: '14px'
-    },
-    imagePreviewContainer: {
-      marginBottom: '10px'
-    },
-    imagePreview: {
-      width: '100px',
-      height: '100px',
-      objectFit: 'cover',
-      borderRadius: '4px',
-      border: '1px solid #ddd'
-    },
-    errorContainer: {
-      color: '#dc3545',
-      fontSize: '14px',
-      marginBottom: '16px',
-      padding: '10px',
-      backgroundColor: '#f8d7da',
-      border: '1px solid #f5c6cb',
-      borderRadius: '4px'
-    },
-    infoBox: {
-      backgroundColor: '#e7f3ff',
-      border: '1px solid #b8daff',
-      borderRadius: '4px',
-      padding: '12px',
-      marginBottom: '16px'
-    },
-    buttonContainer: { 
-      display: 'flex', 
-      justifyContent: 'flex-end', 
-      gap: '10px', 
-      marginTop: '1.5rem' 
-    },
-    buttonPrimary: { 
-      padding: '10px 20px', 
-      backgroundColor: '#0d6efd', 
-      color: 'white', 
-      border: 'none', 
-      borderRadius: '5px', 
-      cursor: 'pointer',
-      fontSize: '14px',
-      fontWeight: '500'
-    },
-    buttonSecondary: { 
-      padding: '10px 20px', 
-      backgroundColor: '#6c757d', 
-      color: 'white', 
-      border: 'none', 
-      borderRadius: '5px', 
-      cursor: 'pointer',
-      fontSize: '14px'
-    }
+  modalOverlay: { 
+    position: 'fixed', 
+    top: 0, 
+    left: 0, 
+    right: 0, 
+    bottom: 0, 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    zIndex: 1000,
+    padding: '20px',
+    animation: 'fadeIn 0.3s ease-out'
+  },
+
+  modalContent: { 
+    background: 'white', 
+    borderRadius: '12px', 
+    width: '500px', 
+    maxWidth: '90%',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+    animation: 'slideIn 0.3s ease-out'
+  },
+
+  modalHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '20px 24px 16px 24px',
+    borderBottom: '1px solid #e5e7eb'
+  },
+
+  modalTitle: {
+    fontSize: '20px',
+    fontWeight: '600',
+    color: '#1f2937',
+    margin: 0
+  },
+
+  closeButton: {
+    background: 'none',
+    border: 'none',
+    fontSize: '24px',
+    cursor: 'pointer',
+    color: '#6b7280',
+    padding: '4px 8px',
+    borderRadius: '4px'
+  },
+
+  apiInfo: {
+    fontSize: '12px', 
+    color: '#6b7280', 
+    padding: '0 24px',
+    marginBottom: '16px',
+    fontFamily: 'monospace'
+  },
+
+  formGroup: { 
+    marginBottom: '16px',
+    padding: '0 24px'
+  },
+
+  // ✅ NEW: Form row for side-by-side fields
+  formRow: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '16px',
+    padding: '0 24px',
+    marginBottom: '16px'
+  },
+
+  label: {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: '6px'
+  },
+
+  input: { 
+    width: '100%', 
+    padding: '10px 12px', 
+    boxSizing: 'border-box', 
+    border: '1px solid #d1d5db', 
+    borderRadius: '8px',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'border-color 0.2s'
+  },
+
+  helpText: {
+    fontSize: '12px', 
+    color: '#6b7280',
+    display: 'block',
+    marginTop: '4px'
+  },
+
+  charCount: {
+    fontSize: '12px',
+    color: '#6b7280',
+    marginTop: '4px',
+    textAlign: 'right',
+    display: 'block'
+  },
+
+  imagePreviewContainer: {
+    marginBottom: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px'
+  },
+
+  imagePreview: {
+    width: '80px',
+    height: '80px',
+    objectFit: 'cover',
+    borderRadius: '8px',
+    border: '1px solid #d1d5db'
+  },
+
+  removeImageButton: {
+    padding: '6px 12px',
+    backgroundColor: '#ef4444',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '12px'
+  },
+
+  successContainer: {
+    color: '#065f46',
+    fontSize: '14px',
+    padding: '12px 24px',
+    backgroundColor: '#ecfdf5',
+    border: '1px solid #10b981',
+    borderRadius: '8px',
+    margin: '0 24px 16px 24px'
+  },
+
+  errorContainer: {
+    color: '#dc2626',
+    fontSize: '14px',
+    padding: '12px 24px',
+    backgroundColor: '#fef2f2',
+    border: '1px solid #ef4444',
+    borderRadius: '8px',
+    margin: '0 24px 16px 24px'
+  },
+
+  infoBox: {
+    backgroundColor: '#eff6ff',
+    border: '1px solid #bfdbfe',
+    borderRadius: '8px',
+    padding: '16px',
+    margin: '0 24px 20px 24px'
+  },
+
+  infoTitle: {
+    margin: '0 0 8px 0', 
+    fontSize: '13px', 
+    color: '#1d4ed8',
+    fontWeight: '600'
+  },
+
+  infoList: {
+    margin: 0, 
+    paddingLeft: '16px', 
+    fontSize: '12px', 
+    color: '#374151'
+  },
+
+  buttonContainer: { 
+    display: 'flex', 
+    justifyContent: 'flex-end', 
+    gap: '12px', 
+    padding: '20px 24px',
+    borderTop: '1px solid #e5e7eb'
+  },
+
+  buttonPrimary: { 
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 20px', 
+    backgroundColor: '#3b82f6', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '8px', 
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'background-color 0.2s'
+  },
+
+  buttonSecondary: { 
+    padding: '12px 20px', 
+    backgroundColor: '#6b7280', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '8px', 
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500'
+  },
+
+  spinner: {
+    width: '14px',
+    height: '14px',
+    border: '2px solid rgba(255, 255, 255, 0.3)',
+    borderTop: '2px solid #ffffff',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+    display: 'inline-block'
+  }
 };

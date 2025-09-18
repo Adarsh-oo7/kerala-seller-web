@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { useCart } from '../../context/CartContext';
 import SHeader from '../../../components/common/SHeader';
 import Footer from '../../../components/common/Footer';
+// ✅ Import the new ShopProductCard component
+import ShopProductCard from '../../../components/common/ShopProductCard';
 import { 
   ShoppingCart, 
   User, 
@@ -40,9 +42,6 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react';
-
-// ✅ Comment out if you don't have this CSS file
-// import './EnhancedSellerStorefrontPage.css';
 
 // ✅ Helper function to get API base URL with environment variable handling
 const getApiBaseUrl = () => {
@@ -665,183 +664,7 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
   );
 }
 
-// Product Card Component
-function EnhancedProductCard({ product, onAddToCart, isLoading = false, sellerPhone, storeId, cartItems }) {
-  const [imageError, setImageError] = useState(false);
-  const [isWishlisted, setIsWishlisted] = useState(false);
-
-  if (!product) return null;
-
-  const isInCart = cartItems?.some(item => 
-    item.product_id === product.id && item.seller_phone === sellerPhone
-  ) || false;
-
-  const getCartQuantity = () => {
-    const cartItem = cartItems?.find(item => 
-      item.product_id === product.id && item.seller_phone === sellerPhone
-    );
-    return cartItem?.quantity || 0;
-  };
-
-  const formatPrice = (price) => {
-    if (!price || isNaN(price)) return '₹0';
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0
-    }).format(price);
-  };
-
-  const getDiscountPercentage = () => {
-    if (product.mrp && product.mrp > product.price && product.price) {
-      return Math.round(((product.mrp - product.price) / product.mrp) * 100);
-    }
-    return 0;
-  };
-
-  const getStockStatus = () => {
-    const stock = product.online_stock || 0;
-    if (stock === 0) return 'out-of-stock';
-    if (stock <= 5) return 'low-stock';
-    return 'in-stock';
-  };
-
-  const getProductUrl = () => {
-    if (!product.id) return '#';
-    return `/product/${product.id}`;
-  };
-
-  // ✅ Enhanced image URL function
-  const getImageUrl = (product) => {
-    if (!product) return 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
-    
-    const imageUrl = product.main_image_url || product.image_url;
-    
-    if (imageUrl && imageUrl.startsWith('/media/')) {
-      return `${getApiBaseUrl()}${imageUrl}`;
-    }
-    
-    return imageUrl || 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
-  };
-
-  return (
-    <div className={`enhanced-product-card ${getStockStatus()}`} style={styles.productCard}>
-      <Link 
-        href={getProductUrl()} 
-        className="product-link-enhanced" 
-        style={styles.productLink}
-        aria-label={`View ${product.name || 'product'}`}
-      >
-        <div className="product-image-wrapper" style={styles.productImageWrapper}>
-          <img
-            src={imageError ? 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image' : getImageUrl(product)}
-            alt={product.name || 'Product image'}
-            className="product-image-enhanced"
-            style={styles.productImage}
-            loading="lazy"
-            onError={() => setImageError(true)}
-          />
-          <div className="product-badges" style={styles.productBadges}>
-            {getDiscountPercentage() > 0 && (
-              <span className="badge discount" style={styles.badgeDiscount}>{getDiscountPercentage()}% OFF</span>
-            )}
-            {(product.online_stock || 0) <= 5 && (product.online_stock || 0) > 0 && (
-              <span className="badge low-stock" style={styles.badgeLowStock}>Only {product.online_stock} left</span>
-            )}
-            {(product.online_stock || 0) === 0 && (
-              <span className="badge out-of-stock" style={styles.badgeOutOfStock}>Out of Stock</span>
-            )}
-          </div>
-          <div className="quick-actions" style={styles.quickActions}>
-            <button
-              className={`quick-action-btn ${isWishlisted ? 'active' : ''}`}
-              style={styles.quickActionBtn}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsWishlisted(!isWishlisted);
-              }}
-              aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-            >
-              <Heart size={14} fill={isWishlisted ? 'currentColor' : 'none'} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-        
-        <div className="product-info-enhanced" style={styles.productInfo}>
-          <div className="product-header" style={styles.productHeader}>
-            <h3 className="product-name-enhanced" style={styles.productName}>{product.name || 'Unnamed Product'}</h3>
-            {product.model_name && (
-              <p className="product-model-enhanced" style={styles.productModel}>{product.model_name}</p>
-            )}
-          </div>
-          <div className="product-pricing-enhanced" style={styles.productPricing}>
-            <div className="price-section" style={styles.priceSection}>
-              <span className="current-price-enhanced" style={styles.currentPrice}>{formatPrice(product.price)}</span>
-              {product.mrp && product.mrp > product.price && (
-                <span className="original-price-enhanced" style={styles.originalPrice}>{formatPrice(product.mrp)}</span>
-              )}
-            </div>
-            {getDiscountPercentage() > 0 && (
-              <div className="savings-info" style={styles.savingsInfo}>
-                Save {formatPrice((product.mrp || 0) - (product.price || 0))}
-              </div>
-            )}
-          </div>
-          <div className="stock-info" style={styles.stockInfo}>
-            {(product.online_stock || 0) > 0 ? (
-              <span className="stock-available" style={styles.stockAvailable}>✓ In Stock</span>
-            ) : (
-              <span className="stock-unavailable" style={styles.stockUnavailable}>✗ Out of Stock</span>
-            )}
-          </div>
-        </div>
-      </Link>
-      
-      <div className="product-actions" style={styles.productActions}>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (onAddToCart) {
-              onAddToCart(e, product);
-            }
-          }}
-          className={`add-to-cart-enhanced ${(product.online_stock || 0) === 0 ? 'disabled' : ''} ${isLoading ? 'loading' : ''} ${isInCart ? 'in-cart' : ''}`}
-          style={styles.addToCartBtn}
-          disabled={(product.online_stock || 0) === 0 || isLoading}
-          aria-label={(product.online_stock || 0) > 0 ? 
-            (isInCart ? `Add more ${product.name || 'product'} to cart (${getCartQuantity()} in cart)` : `Add ${product.name || 'product'} to cart`) : 
-            'Out of stock'}
-        >
-          {isLoading ? (
-            <>
-              <RefreshCw size={16} className="spinning" aria-hidden="true" />
-              <span>Adding...</span>
-            </>
-          ) : (product.online_stock || 0) === 0 ? (
-            <>
-              <X size={16} aria-hidden="true" />
-              <span>Out of Stock</span>
-            </>
-          ) : isInCart ? (
-            <>
-              <ShoppingCart size={16} fill="currentColor" aria-hidden="true" />
-              <span>Add More ({getCartQuantity()})</span>
-            </>
-          ) : (
-            <>
-              <ShoppingCart size={16} aria-hidden="true" />
-              <span>Add to Cart</span>
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ✅ MAIN COMPONENT - Updated for SEO URLs with null safety
+// ✅ MAIN COMPONENT - Updated for SEO URLs with new ShopProductCard
 function EnhancedSellerStorefrontPage() {
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
@@ -1136,14 +959,17 @@ function EnhancedSellerStorefrontPage() {
               {filteredProducts.map((product) => {
                 if (!product?.id) return null;
                 return (
-                  <EnhancedProductCard
+                  // ✅ Use the new ShopProductCard component
+                  <ShopProductCard
                     key={product.id}
                     product={product}
+                    store={store}
+                    shopSlug={shopSlug}
+                    sellerPhone={sellerPhone}
                     onAddToCart={handleAddToCart}
                     isLoading={loadingProducts[product.id] || false}
-                    sellerPhone={sellerPhone}
-                    storeId={store?.id}
                     cartItems={cartItems || []}
+                    showStoreName={false} // Don't show store name since we're in the store
                   />
                 );
               }).filter(Boolean)}
@@ -1809,177 +1635,6 @@ const styles = {
     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
     gap: '20px',
     marginBottom: '40px'
-  },
-  
-  // Product Card Styles
-  productCard: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb',
-    transition: 'all 0.3s ease'
-  },
-  
-  productLink: {
-    textDecoration: 'none',
-    color: 'inherit',
-    display: 'block'
-  },
-  
-  productImageWrapper: {
-    position: 'relative',
-    overflow: 'hidden'
-  },
-  
-  productImage: {
-    width: '100%',
-    height: '200px',
-    objectFit: 'cover'
-  },
-  
-  productBadges: {
-    position: 'absolute',
-    top: '8px',
-    left: '8px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px'
-  },
-  
-  badgeDiscount: {
-    padding: '4px 8px',
-    backgroundColor: '#dc2626',
-    color: 'white',
-    fontSize: '0.75rem',
-    borderRadius: '4px',
-    fontWeight: '600'
-  },
-
-  badgeLowStock: {
-    padding: '4px 8px',
-    backgroundColor: '#f59e0b',
-    color: 'white',
-    fontSize: '0.75rem',
-    borderRadius: '4px',
-    fontWeight: '600'
-  },
-
-  badgeOutOfStock: {
-    padding: '4px 8px',
-    backgroundColor: '#6b7280',
-    color: 'white',
-    fontSize: '0.75rem',
-    borderRadius: '4px',
-    fontWeight: '600'
-  },
-  
-  quickActions: {
-    position: 'absolute',
-    top: '8px',
-    right: '8px'
-  },
-  
-  quickActionBtn: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    border: 'none',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#6b7280'
-  },
-  
-  productInfo: {
-    padding: '16px'
-  },
-  
-  productHeader: {
-    marginBottom: '8px'
-  },
-  
-  productName: {
-    fontSize: '1.1rem',
-    fontWeight: '600',
-    color: '#1f2937',
-    margin: '0 0 4px 0',
-    lineHeight: '1.2'
-  },
-  
-  productModel: {
-    fontSize: '0.9rem',
-    color: '#6b7280',
-    margin: 0
-  },
-  
-  productPricing: {
-    marginBottom: '8px'
-  },
-  
-  priceSection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '4px'
-  },
-  
-  currentPrice: {
-    fontSize: '1.25rem',
-    fontWeight: '700',
-    color: '#059669'
-  },
-  
-  originalPrice: {
-    fontSize: '1rem',
-    color: '#9ca3af',
-    textDecoration: 'line-through'
-  },
-  
-  savingsInfo: {
-    fontSize: '0.8rem',
-    color: '#059669',
-    fontWeight: '500'
-  },
-  
-  stockInfo: {
-    marginBottom: '12px'
-  },
-  
-  stockAvailable: {
-    color: '#059669',
-    fontSize: '0.85rem',
-    fontWeight: '500'
-  },
-  
-  stockUnavailable: {
-    color: '#ef4444',
-    fontSize: '0.85rem',
-    fontWeight: '500'
-  },
-  
-  productActions: {
-    padding: '16px',
-    borderTop: '1px solid #f3f4f6'
-  },
-  
-  addToCartBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px',
-    width: '100%',
-    padding: '10px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '0.9rem',
-    fontWeight: '500',
-    cursor: 'pointer',
-    transition: 'all 0.2s'
   },
   
   emptyState: {

@@ -4,8 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Header from '../../../../components/common/Header';
-import Footer from '../../../../components/common/Footer';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -22,7 +20,10 @@ import {
   CreditCard,
   Wallet,
   Eye,
-  Globe
+  Globe,
+  Mail,
+  Home,
+  Store
 } from 'lucide-react';
 
 // ✅ Enhanced API base URL handling with environment variables
@@ -51,7 +52,8 @@ export default function OrderDetailPage() {
     // ✅ Enhanced token handling - supports both Google login and regular login
     const getAuthHeaders = useCallback(() => {
         const token = localStorage.getItem('access_token') || 
-                      localStorage.getItem('buyerAccessToken');
+                      localStorage.getItem('buyerAccessToken') ||
+                      localStorage.getItem('accessToken');
         
         if (!token) {
             console.error('❌ No authentication token found');
@@ -68,7 +70,7 @@ export default function OrderDetailPage() {
         if (typeof window === 'undefined') return { storeId: null, isInStore: false };
         
         const currentPath = window.location.pathname;
-        const storeMatch = currentPath.match(/\/store\/([^\/]+)/);
+        const storeMatch = currentPath.match(/\/shop\/([^\/]+)/) || currentPath.match(/\/store\/([^\/]+)/);
         return {
             storeId: storeMatch ? storeMatch[1] : null,
             isInStore: !!storeMatch
@@ -92,7 +94,10 @@ export default function OrderDetailPage() {
             const storeInfo = getCurrentStoreInfo();
             setCurrentStoreInfo(storeInfo);
             
-            const response = await axios.get(`${ORDER_DETAIL_API_URL}${orderId}/`, { headers });
+            const response = await axios.get(`${ORDER_DETAIL_API_URL}${orderId}/`, { 
+                headers,
+                timeout: 15000 
+            });
             
             console.log('Order details received:', response.data);
             setOrder(response.data);
@@ -110,11 +115,14 @@ export default function OrderDetailPage() {
                 // Clear tokens and redirect
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('buyerAccessToken');
+                localStorage.removeItem('accessToken');
                 router.push('/login/buyer');
             } else if (err.response?.status === 404) {
                 setError('Order not found or you do not have permission to view it.');
+            } else if (err.code === 'ECONNABORTED') {
+                setError('Request timed out. Please check your connection and try again.');
             } else {
-                setError('Failed to load order details. Please try again.');
+                setError(err.response?.data?.message || 'Failed to load order details. Please try again.');
             }
         } finally {
             setIsLoading(false);
@@ -163,30 +171,33 @@ export default function OrderDetailPage() {
         return (parseFloat(price || 0) * quantity).toFixed(2);
     };
 
-    // ✅ Store-aware back navigation
+    // ✅ Enhanced: Smart back navigation that works with different URL structures
     const getBackUrl = () => {
-        return currentStoreInfo.isInStore && currentStoreInfo.storeId
-            ? `/store/${currentStoreInfo.storeId}/profile/orders`
-            : '/profile/orders';
+        if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
+            // Check if it's a shop URL structure
+            if (window.location.pathname.includes('/shop/')) {
+                return `/shop/${currentStoreInfo.storeId}/orders`;
+            }
+            return `/store/${currentStoreInfo.storeId}/orders`;
+        }
+        return '/profile/orders';
     };
 
     if (isLoading) {
         return (
-            <div>
-                <Header />
+            <div style={styles.pageContainer}>
                 <div style={styles.loadingContainer}>
                     <div style={styles.spinner}></div>
-                    <p>Loading order details...</p>
+                    <h3>Loading order details...</h3>
+                    <p>Please wait while we fetch your order information</p>
                 </div>
-                <Footer />
             </div>
         );
     }
 
     if (error) {
         return (
-            <div>
-                <Header />
+            <div style={styles.pageContainer}>
                 <div style={styles.errorContainer}>
                     <AlertCircle size={48} color="#ef4444" />
                     <h2>Something went wrong</h2>
@@ -202,15 +213,13 @@ export default function OrderDetailPage() {
                         </Link>
                     </div>
                 </div>
-                <Footer />
             </div>
         );
     }
     
     if (!order) {
         return (
-            <div>
-                <Header />
+            <div style={styles.pageContainer}>
                 <div style={styles.errorContainer}>
                     <Package size={48} color="#6b7280" />
                     <h2>Order not found</h2>
@@ -220,7 +229,6 @@ export default function OrderDetailPage() {
                         Back to Orders
                     </Link>
                 </div>
-                <Footer />
             </div>
         );
     }
@@ -230,8 +238,8 @@ export default function OrderDetailPage() {
 
     return (
         <div style={styles.pageContainer}>
-            <Header />
             <div style={styles.container}>
+                {/* ✅ Enhanced back navigation */}
                 <Link href={getBackUrl()} style={styles.backLink}>
                     <ArrowLeft size={20}/> 
                     <span>
@@ -240,10 +248,10 @@ export default function OrderDetailPage() {
                 </Link>
 
                 {/* ✅ Show store context indicator */}
-                {currentStoreInfo.isInStore && (
+                {currentStoreInfo.isInStore && order.store && (
                     <div style={styles.storeIndicator}>
-                        <Globe size={16} />
-                        <span>Viewing order from Store ID: {currentStoreInfo.storeId}</span>
+                        <Store size={16} />
+                        <span>Order from: {order.store.name || `Store #${currentStoreInfo.storeId}`}</span>
                     </div>
                 )}
 
@@ -319,7 +327,7 @@ export default function OrderDetailPage() {
                                 )}
                                 {order.customer_email && (
                                     <div style={styles.infoItem}>
-                                        <span>📧</span>
+                                        <Mail size={16} />
                                         <span>{order.customer_email}</span>
                                     </div>
                                 )}
@@ -450,10 +458,13 @@ export default function OrderDetailPage() {
                             <Phone size={16} />
                             Contact Support
                         </button>
+                        <Link href="/" style={styles.homeButton}>
+                            <Home size={16} />
+                            Back to Home
+                        </Link>
                     </div>
                 </div>
             </div>
-            <Footer />
 
             {/* CSS Animations */}
             <style jsx>{`
@@ -471,23 +482,79 @@ export default function OrderDetailPage() {
     );
 }
 
+
 const styles = {
-    // ✅ NEW: Store context indicator
+    // ✅ NEW: Minimal header styles
+    minimalHeader: {
+        backgroundColor: 'white',
+        borderBottom: '1px solid #e5e7eb',
+        padding: '16px 20px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    },
+
+    headerContent: {
+        maxWidth: '1000px',
+        margin: '0 auto',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+    },
+
+    siteTitle: {
+        fontSize: '24px',
+        fontWeight: '700',
+        color: '#3b82f6',
+        textDecoration: 'none'
+    },
+
+    pagePath: {
+        color: '#6b7280',
+        fontSize: '16px'
+    },
+
+    // ✅ NEW: Simple footer
+    simpleFooter: {
+        backgroundColor: '#f8fafc',
+        borderTop: '1px solid #e5e7eb',
+        padding: '20px',
+        textAlign: 'center',
+        color: '#6b7280',
+        fontSize: '14px',
+        marginTop: 'auto'
+    },
+
+    // ✅ NEW: Home button in actions
+    homeButton: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '12px 20px',
+        backgroundColor: '#6b7280',
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        textDecoration: 'none',
+        fontSize: '14px',
+        fontWeight: '500',
+        transition: 'all 0.2s'
+    },
+
+    // ✅ Enhanced: Store context indicator
     storeIndicator: {
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
         padding: '12px 16px',
-        backgroundColor: '#dbeafe',
-        border: '1px solid #3b82f6',
+        backgroundColor: '#ecfdf5',
+        border: '1px solid #10b981',
         borderRadius: '8px',
         fontSize: '14px',
-        color: '#1e40af',
+        color: '#065f46',
         fontWeight: '500',
         marginBottom: '24px'
     },
 
-    // ✅ NEW: Store info in order header
+    // Store info in order header
     storeInfo: {
         display: 'flex',
         alignItems: 'center',
@@ -510,7 +577,7 @@ const styles = {
         borderRadius: '6px'
     },
 
-    // ✅ NEW: Payment ID styling
+    // Payment ID styling
     paymentId: {
         fontFamily: 'monospace',
         backgroundColor: '#f3f4f6',
@@ -519,7 +586,7 @@ const styles = {
         fontSize: '13px'
     },
 
-    // ✅ NEW: Error actions container
+    // Error actions container
     errorActions: {
         display: 'flex',
         gap: '12px',
@@ -529,7 +596,9 @@ const styles = {
 
     pageContainer: {
         minHeight: '100vh',
-        backgroundColor: '#f8fafc'
+        backgroundColor: '#f8fafc',
+        display: 'flex',
+        flexDirection: 'column'
     },
 
     // Loading and Error States
@@ -538,8 +607,9 @@ const styles = {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '400px',
-        gap: '20px'
+        minHeight: '60vh',
+        gap: '20px',
+        flex: 1
     },
 
     spinner: {
@@ -556,10 +626,11 @@ const styles = {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '400px',
+        minHeight: '60vh',
         gap: '20px',
         textAlign: 'center',
-        padding: '40px'
+        padding: '40px',
+        flex: 1
     },
 
     retryButton: {
@@ -592,7 +663,8 @@ const styles = {
     container: { 
         maxWidth: '1000px', 
         margin: '0 auto', 
-        padding: '24px 20px'
+        padding: '24px 20px',
+        flex: 1
     },
 
     backLink: { 
@@ -708,17 +780,13 @@ const styles = {
         borderRadius: '4px'
     },
 
-    // Info Grid
+    // Info Grid - Enhanced mobile responsiveness
     infoGrid: {
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
         gap: '24px',
         padding: '32px',
-        borderBottom: '1px solid #f3f4f6',
-        '@media (max-width: 768px)': {
-            gridTemplateColumns: '1fr',
-            gap: '16px'
-        }
+        borderBottom: '1px solid #f3f4f6'
     },
 
     infoCard: {
@@ -787,7 +855,6 @@ const styles = {
         fontWeight: '600'
     },
 
-    // Items Section
     itemsSection: {
         padding: '32px'
     },
@@ -805,7 +872,8 @@ const styles = {
         padding: '20px',
         backgroundColor: '#f8fafc', 
         borderRadius: '12px',
-        border: '1px solid #e2e8f0'
+        border: '1px solid #e2e8f0',
+        flexWrap: 'wrap'
     },
 
     itemImage: { 
@@ -813,14 +881,16 @@ const styles = {
         height: '80px', 
         objectFit: 'cover', 
         borderRadius: '8px',
-        border: '1px solid #e5e7eb'
+        border: '1px solid #e5e7eb',
+        flexShrink: 0
     },
 
     itemDetails: { 
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        gap: '4px'
+        gap: '4px',
+        minWidth: '200px'
     },
 
     itemName: {
@@ -856,7 +926,8 @@ const styles = {
         fontSize: '18px',
         fontWeight: '700',
         color: '#059669',
-        textAlign: 'right'
+        textAlign: 'right',
+        flexShrink: 0
     },
 
     noItems: {
@@ -894,12 +965,13 @@ const styles = {
         color: '#059669'
     },
 
-    // Action Buttons
+    // Action Buttons - Enhanced mobile responsiveness
     actionButtons: {
         display: 'flex',
         gap: '12px',
         padding: '24px 32px',
-        justifyContent: 'flex-end'
+        justifyContent: 'flex-end',
+        flexWrap: 'wrap'
     },
 
     reorderButton: {

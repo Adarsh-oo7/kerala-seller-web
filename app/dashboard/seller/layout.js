@@ -22,6 +22,7 @@ import {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
 const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
+const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/count/`;
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -30,90 +31,228 @@ export default function DashboardLayout({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const hasInitialized = useRef(false);
+  const isLoggingOut = useRef(false); // ✅ CRITICAL: Prevent logout loops
   
   const [notificationCounts, setNotificationCounts] = useState({
     orders: 0,
     notifications: 0
   });
 
-  // ✅ CRITICAL FIX: Change Token to Bearer
+  // ✅ FIXED: Better auth headers with validation
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('accessToken');
-    return token ? { Authorization: `Bearer ${token}` } : null;
+    if (isLoggingOut.current) return null; // Don't try to get headers if logging out
+    
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token || token === 'null' || token === 'undefined') {
+        console.log('No valid auth token found');
+        return null;
+      }
+      return { Authorization: `Bearer ${token}` };
+    } catch (error) {
+      console.error('Error accessing localStorage:', error);
+      return null;
+    }
   }, []);
 
-  const fetchDashboardData = useCallback(async () => {
-    if (hasInitialized.current) return;
-    hasInitialized.current = true;
+  // ✅ FIXED: Fetch notification counts with better error handling
+  const fetchNotificationCounts = useCallback(async () => {
+    if (isLoggingOut.current) return; // Don't fetch if logging out
+    
+    const headers = getAuthHeaders();
+    if (!headers) return;
 
+    try {
+      const response = await axios.get(NOTIFICATIONS_API_URL, { 
+        headers,
+        timeout: 8000 // 8 second timeout
+      });
+      
+      if (!isLoggingOut.current) { // Only update if not logging out
+        setNotificationCounts(prev => ({
+          ...prev,
+          notifications: response.data.unread_count || 0
+        }));
+      }
+    } catch (error) {
+      if (error.response?.status !== 401 && !isLoggingOut.current) {
+        console.error('Failed to fetch notification counts:', error);
+      }
+    }
+  }, [getAuthHeaders]);
+
+  // ✅ FIXED: Dashboard data fetching with proper cleanup
+  const fetchDashboardData = useCallback(async () => {
+    if (hasInitialized.current || isLoggingOut.current) return;
+    
     const headers = getAuthHeaders();
     if (!headers) {
-      router.replace('/login/seller');
+      console.log('No auth headers, redirecting to login');
+      if (!isLoggingOut.current) {
+        isLoggingOut.current = true;
+        router.replace('/login/seller');
+      }
       return;
     }
 
+    hasInitialized.current = true;
     setIsLoading(true);
     setError('');
 
     try {
-      // Fetch both profile and dashboard data
-      const [profileRes, dashRes] = await Promise.all([
-        axios.get(PROFILE_API_URL, { headers }),
-        axios.get(DASHBOARD_API_URL, { headers })
-      ]);
+      console.log('Fetching dashboard data...');
+      
+      // Fetch profile data with timeout
+      const profileRes = await axios.get(PROFILE_API_URL, { 
+        headers,
+        timeout: 12000 // 12 second timeout
+      });
+
+      // Only proceed if not logging out
+      if (isLoggingOut.current) return;
+
+      console.log('Profile data received successfully');
 
       // Handle seller name from multiple possible response structures
-      setSellerName(
-        profileRes.data.seller?.name ||
-        profileRes.data.store_profile?.name ||
-        profileRes.data.name ||
-        dashRes.data.seller?.name ||
-        'Seller'
-      );
+      const name = profileRes.data.seller?.name ||
+                   profileRes.data.store_profile?.name ||
+                   profileRes.data.name ||
+                   'Seller';
       
-      // Set notification counts from dashboard data
-      if (dashRes.data.analytics) {
-        setNotificationCounts({
-          orders: dashRes.data.analytics.new_orders_count || 0,
-          notifications: dashRes.data.analytics.unread_notifications_count || 0,
+      setSellerName(name);
+
+      // Try to fetch dashboard data (optional)
+      try {
+        const dashRes = await axios.get(DASHBOARD_API_URL, { 
+          headers,
+          timeout: 8000
         });
+        
+        if (dashRes.data.analytics && !isLoggingOut.current) {
+          setNotificationCounts({
+            orders: dashRes.data.analytics.new_orders_count || 0,
+            notifications: dashRes.data.analytics.unread_notifications_count || 0,
+          });
+        }
+      } catch (dashError) {
+        console.warn('Dashboard API failed (non-critical):', dashError.message);
       }
 
-      // Enhanced profile completion check
+      // Fetch notification counts separately
+      if (!isLoggingOut.current) {
+        fetchNotificationCounts();
+      }
+
+      // Profile completion check
       const isComplete = profileRes.data.is_profile_complete || 
                          (profileRes.data.store_profile && profileRes.data.store_profile.is_profile_complete);
       const isOnSettingsPage = pathname === '/dashboard/seller/settings';
       
-      if (!isComplete && !isOnSettingsPage) {
+      if (!isComplete && !isOnSettingsPage && !isLoggingOut.current) {
+        console.log('Profile incomplete, redirecting to settings');
         router.replace('/dashboard/seller/settings?setup=true');
       }
       
     } catch (error) {
+      console.error('Dashboard fetch error:', error);
+      
       if (error.response?.status === 401) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('sellerInfo');
-        router.replace('/login/seller?message=Session expired');
-      } else {
-        setError('Failed to load dashboard data');
+        console.log('Authentication failed, logging out');
+        handleLogout();
+      } else if (!isLoggingOut.current) {
+        if (error.code === 'ECONNABORTED') {
+          setError('Connection timeout. Please check your internet connection and try again.');
+        } else if (error.request) {
+          setError('Unable to connect to server. Please check your connection.');
+        } else {
+          setError('Failed to load dashboard data. Please refresh the page.');
+        }
       }
     } finally {
-      setIsLoading(false);
+      if (!isLoggingOut.current) {
+        setIsLoading(false);
+      }
     }
-  }, [getAuthHeaders, pathname, router]);
+  }, [getAuthHeaders, pathname, router, fetchNotificationCounts]);
 
-  useEffect(() => {
+  // ✅ CRITICAL FIX: Proper logout handling to prevent infinite loops
+  const handleLogout = useCallback(() => {
+    if (isLoggingOut.current) {
+      console.log('Logout already in progress, ignoring');
+      return;
+    }
+
+    console.log('🔐 Starting logout process...');
+    isLoggingOut.current = true;
     hasInitialized.current = false;
-    fetchDashboardData();
+
+    try {
+      // Clear all auth data
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('sellerInfo');
+      localStorage.removeItem('refreshToken');
+      
+      // Clear component state
+      setSellerName('');
+      setNotificationCounts({ orders: 0, notifications: 0 });
+      setError('');
+      setIsLoading(false);
+
+      console.log('✅ Cleared all data, performing hard redirect...');
+      
+      // Use window.location for hard redirect to break any React routing loops
+      setTimeout(() => {
+        window.location.href = '/login/seller';
+      }, 100); // Small delay to ensure state is cleared
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Emergency fallback
+      window.location.reload();
+    }
+  }, []);
+
+  // ✅ FIXED: Notification updates with cleanup
+  useEffect(() => {
+    if (isLoggingOut.current) return;
+
+    const interval = setInterval(() => {
+      if (!isLoggingOut.current) {
+        fetchNotificationCounts();
+      }
+    }, 30000); // Every 30 seconds
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [fetchNotificationCounts]);
+
+  // ✅ FIXED: Initialize data with proper cleanup
+  useEffect(() => {
+    if (!isLoggingOut.current) {
+      hasInitialized.current = false;
+      fetchDashboardData();
+    }
+
+    // Cleanup function
+    return () => {
+      if (isLoggingOut.current) {
+        hasInitialized.current = false;
+      }
+    };
   }, [pathname, fetchDashboardData]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('sellerInfo');
-    hasInitialized.current = false;
-    router.replace('/login/seller');
-  };
+  // ✅ NEW: Reset logout flag on component mount
+  useEffect(() => {
+    isLoggingOut.current = false;
+    
+    return () => {
+      // Don't reset on unmount if logging out
+    };
+  }, []);
 
-  if (isLoading) {
+  // Show loading only if not logging out
+  if (isLoading && !isLoggingOut.current) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
@@ -122,17 +261,34 @@ export default function DashboardLayout({ children }) {
     );
   }
 
-  if (error) {
+  // Show error only if not logging out
+  if (error && !isLoggingOut.current) {
     return (
       <div style={styles.errorContainer}>
         <h2>Something went wrong</h2>
         <p>{error}</p>
-        <button onClick={() => {
-          hasInitialized.current = false;
-          fetchDashboardData();
-        }} style={styles.retryButton}>
-          Try Again
-        </button>
+        <div style={styles.errorActions}>
+          <button onClick={() => {
+            hasInitialized.current = false;
+            setError('');
+            fetchDashboardData();
+          }} style={styles.retryButton}>
+            Try Again
+          </button>
+          <button onClick={handleLogout} style={styles.logoutButtonError}>
+            Logout & Login Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render dashboard if logging out
+  if (isLoggingOut.current) {
+    return (
+      <div style={styles.loadingContainer}>
+        <div style={styles.spinner}></div>
+        <p>Logging out...</p>
       </div>
     );
   }
@@ -213,16 +369,24 @@ export default function DashboardLayout({ children }) {
             icon={<Crown size={18} />}
           />
           
-          <button onClick={handleLogout} style={styles.logoutButton}>
+          <button 
+            onClick={handleLogout} 
+            style={styles.logoutButton}
+            disabled={isLoggingOut.current} // ✅ Prevent multiple clicks
+          >
             <LogOut size={18} />
-            <span>Logout</span>
+            <span>{isLoggingOut.current ? 'Logging out...' : 'Logout'}</span>
           </button>
         </div>
       </div>
 
       {/* Main Content */}
       <div style={styles.mainContentWrapper}>
-        <DashboardHeader sellerName={sellerName} />
+        <DashboardHeader 
+          sellerName={sellerName} 
+          notificationCount={notificationCounts.notifications}
+          onNotificationUpdate={fetchNotificationCounts}
+        />
         <main style={styles.mainContent}>
           {children}
         </main>
@@ -237,6 +401,11 @@ export default function DashboardLayout({ children }) {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
         }
       `}</style>
     </div>
@@ -259,7 +428,10 @@ function NavItem({ href, name, pathname, count = 0, icon }) {
             <span>{name}</span>
           </div>
           {count > 0 && (
-            <span style={styles.indicator}>
+            <span style={{
+              ...styles.indicator,
+              animation: count > 0 ? 'pulse 2s infinite' : 'none'
+            }}>
               {count > 99 ? '99+' : count}
             </span>
           )}
@@ -302,12 +474,33 @@ const styles = {
     gap: '20px',
     textAlign: 'center',
     color: '#ef4444',
-    backgroundColor: '#f8fafc'
+    backgroundColor: '#f8fafc',
+    padding: '20px'
+  },
+
+  // ✅ NEW: Error actions container
+  errorActions: {
+    display: 'flex',
+    gap: '12px',
+    flexWrap: 'wrap',
+    justifyContent: 'center'
   },
   
   retryButton: {
     padding: '12px 24px',
     backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: '500'
+  },
+
+  // ✅ NEW: Logout button for error state
+  logoutButtonError: {
+    padding: '12px 24px',
+    backgroundColor: '#ef4444',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
@@ -323,7 +516,10 @@ const styles = {
     borderRight: '1px solid #e5e7eb', 
     display: 'flex', 
     flexDirection: 'column',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    position: 'fixed',
+    height: '100vh',
+    overflowY: 'auto'
   },
   
   sidebarHeader: {
@@ -439,6 +635,7 @@ const styles = {
     flex: 1, 
     display: 'flex', 
     flexDirection: 'column',
+    marginLeft: '280px',
     overflow: 'hidden'
   },
   

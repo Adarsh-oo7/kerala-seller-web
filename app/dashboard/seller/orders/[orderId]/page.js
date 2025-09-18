@@ -20,18 +20,100 @@ import {
   AlertCircle,
   X,
   CheckCircle,
-  RefreshCw
+  RefreshCw,
+  Download,
+  MessageSquare,
+  Star,
+  Copy
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
 
+// ✅ NEW: Order Timeline Component
+function OrderTimeline({ order }) {
+  const timelineSteps = [
+    { 
+      key: 'PENDING', 
+      label: 'Order Placed', 
+      icon: <CheckCircle size={16} />, 
+      completed: ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) 
+    },
+    { 
+      key: 'PROCESSING', 
+      label: 'Processing', 
+      icon: <Package size={16} />, 
+      completed: ['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) 
+    },
+    { 
+      key: 'SHIPPED', 
+      label: 'Shipped', 
+      icon: <Truck size={16} />, 
+      completed: ['SHIPPED', 'DELIVERED'].includes(order.status) 
+    },
+    { 
+      key: 'DELIVERED', 
+      label: 'Delivered', 
+      icon: <Star size={16} />, 
+      completed: order.status === 'DELIVERED' 
+    }
+  ];
+
+  if (order.status === 'CANCELLED') {
+    return (
+      <div style={styles.timelineContainer}>
+        <div style={styles.cancelledTimeline}>
+          <AlertCircle size={20} color="#ef4444" />
+          <span>Order was cancelled on {new Date(order.updated_at || order.created_at).toLocaleDateString()}</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.timelineContainer}>
+      <div style={styles.timeline}>
+        {timelineSteps.map((step, index) => (
+          <div key={step.key} style={styles.timelineStep}>
+            <div style={{
+              ...styles.timelineIcon,
+              backgroundColor: step.completed ? '#10b981' : '#e5e7eb',
+              color: step.completed ? 'white' : '#6b7280'
+            }}>
+              {step.icon}
+            </div>
+            <div style={styles.timelineContent}>
+              <div style={{
+                ...styles.timelineLabel,
+                color: step.completed ? '#1f2937' : '#6b7280',
+                fontWeight: step.completed ? '600' : '400'
+              }}>
+                {step.label}
+              </div>
+              {step.key === order.status && (
+                <div style={styles.currentStep}>Current Status</div>
+              )}
+            </div>
+            {index < timelineSteps.length - 1 && (
+              <div style={{
+                ...styles.timelineConnector,
+                backgroundColor: step.completed ? '#10b981' : '#e5e7eb'
+              }} />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Enhanced Update Status Modal with better validation and UX
 function UpdateStatusModal({ order, onClose, onUpdate }) {
     const [status, setStatus] = useState(order.status);
     const [trackingId, setTrackingId] = useState(order.tracking_id || '');
     const [shippingProvider, setShippingProvider] = useState(order.shipping_provider || '');
+    const [notes, setNotes] = useState(''); // ✅ NEW: Add notes field
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
 
@@ -56,6 +138,10 @@ function UpdateStatusModal({ order, onClose, onUpdate }) {
             }
             updateData.tracking_id = trackingId.trim();
             updateData.shipping_provider = shippingProvider.trim();
+        }
+
+        if (notes.trim()) {
+            updateData.notes = notes.trim();
         }
 
         try {
@@ -156,6 +242,23 @@ function UpdateStatusModal({ order, onClose, onUpdate }) {
                             </div>
                         </>
                     )}
+
+                    {/* ✅ NEW: Notes field */}
+                    <div style={styles.formGroup}>
+                        <label style={styles.label}>
+                            <MessageSquare size={16} />
+                            Additional Notes (Optional)
+                        </label>
+                        <textarea 
+                            value={notes} 
+                            onChange={e => setNotes(e.target.value)} 
+                            style={{...styles.input, minHeight: '80px', resize: 'vertical'}}
+                            placeholder="Add any additional information or instructions..."
+                            disabled={isSaving}
+                            maxLength={500}
+                        />
+                        <small style={styles.charCount}>{notes.length}/500 characters</small>
+                    </div>
                 </div>
 
                 <div style={styles.modalFooter}>
@@ -195,6 +298,7 @@ export default function OrderDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false); // ✅ NEW: Copy tracking ID state
   const { orderId } = useParams();
   const router = useRouter();
   
@@ -241,6 +345,17 @@ export default function OrderDetailPage() {
     fetchOrderDetails();
   }, [fetchOrderDetails]);
 
+  // ✅ NEW: Copy tracking ID to clipboard
+  const copyTrackingId = async (trackingId) => {
+    try {
+      await navigator.clipboard.writeText(trackingId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy tracking ID:', err);
+    }
+  };
+
   const handleGenerateBill = async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -266,6 +381,35 @@ export default function OrderDetailPage() {
         setError(errorMessage);
         setTimeout(() => setError(''), 3000);
       }
+    }
+  };
+
+  // ✅ NEW: Download PDF bill
+  const handleDownloadBill = async () => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+    
+    const billUrl = `${API_BASE_URL}/user/orders/${order.id}/download-bill/`;
+    
+    try {
+      const response = await axios.get(billUrl, { 
+        headers, 
+        responseType: 'blob' 
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bill_${order.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Bill download failed:', error);
+      setError('Could not download the bill. Please try again.');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
@@ -376,6 +520,10 @@ export default function OrderDetailPage() {
           </div>
         </div>
         <div style={styles.headerActions}>
+          <button onClick={handleDownloadBill} style={styles.buttonTertiary}>
+            <Download size={16}/>
+            Download PDF
+          </button>
           <button onClick={handleGenerateBill} style={styles.buttonSecondary}>
             <FileText size={16}/>
             View Bill
@@ -385,6 +533,15 @@ export default function OrderDetailPage() {
             Update Status
           </button>
         </div>
+      </div>
+
+      {/* ✅ NEW: Order Timeline */}
+      <div style={styles.timelineCard}>
+        <h3 style={styles.cardTitle}>
+          <Truck size={20}/>
+          Order Progress
+        </h3>
+        <OrderTimeline order={order} />
       </div>
 
       <div style={styles.grid}>
@@ -409,6 +566,17 @@ export default function OrderDetailPage() {
               <span>{order.shipping_address}</span>
             </div>
           )}
+          {/* ✅ NEW: Order type indicator */}
+          <div style={styles.detailItem}>
+            <strong>Order Type:</strong>
+            <span style={{
+              ...styles.orderType,
+              backgroundColor: order.order_type === 'LOCAL' ? '#fef3c7' : '#dbeafe',
+              color: order.order_type === 'LOCAL' ? '#92400e' : '#1e40af'
+            }}>
+              {order.order_type === 'LOCAL' ? '🏪 Local Bill' : '🛒 Online Order'}
+            </span>
+          </div>
         </div>
 
         <div style={styles.card}>
@@ -431,7 +599,17 @@ export default function OrderDetailPage() {
           {order.tracking_id && (
             <div style={styles.detailItem}>
               <strong>Tracking ID:</strong>
-              <span style={styles.trackingId}>{order.tracking_id}</span>
+              <div style={styles.trackingIdContainer}>
+                <span style={styles.trackingId}>{order.tracking_id}</span>
+                <button
+                  onClick={() => copyTrackingId(order.tracking_id)}
+                  style={styles.copyButton}
+                  title="Copy tracking ID"
+                >
+                  <Copy size={14} />
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -457,6 +635,11 @@ export default function OrderDetailPage() {
               </span>
             </div>
           )}
+          {/* ✅ NEW: Total amount highlight */}
+          <div style={styles.detailItem}>
+            <strong>Total Amount:</strong>
+            <span style={styles.totalAmountHighlight}>₹{parseFloat(order.total_amount).toFixed(2)}</span>
+          </div>
         </div>
       </div>
 
@@ -539,7 +722,6 @@ export default function OrderDetailPage() {
   );
 }
 
-// ... (all styles remain exactly the same)
 const styles = {
   pageContainer: {
     padding: '24px',
@@ -667,6 +849,81 @@ const styles = {
     gap: '12px',
     flexWrap: 'wrap'
   },
+
+  // ✅ NEW: Timeline styles
+  timelineCard: {
+    border: '1px solid #e5e7eb', 
+    borderRadius: '12px', 
+    padding: '24px', 
+    backgroundColor: '#fff', 
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    marginBottom: '32px'
+  },
+
+  timelineContainer: {
+    marginTop: '16px'
+  },
+
+  timeline: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    position: 'relative'
+  },
+
+  timelineStep: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    flex: 1,
+    position: 'relative'
+  },
+
+  timelineIcon: {
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '8px',
+    transition: 'all 0.3s ease'
+  },
+
+  timelineContent: {
+    textAlign: 'center'
+  },
+
+  timelineLabel: {
+    fontSize: '14px',
+    fontWeight: '500',
+    marginBottom: '4px'
+  },
+
+  currentStep: {
+    fontSize: '12px',
+    color: '#3b82f6',
+    fontWeight: '600'
+  },
+
+  timelineConnector: {
+    position: 'absolute',
+    top: '20px',
+    left: '50%',
+    right: '-50%',
+    height: '2px',
+    zIndex: -1
+  },
+
+  cancelledTimeline: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '16px',
+    backgroundColor: '#fef2f2',
+    borderRadius: '8px',
+    color: '#991b1b'
+  },
   
   grid: { 
     display: 'grid', 
@@ -711,17 +968,53 @@ const styles = {
     marginBottom: '12px',
     fontSize: '14px'
   },
+
+  // ✅ NEW: Order type styling
+  orderType: {
+    padding: '4px 8px',
+    borderRadius: '12px',
+    fontSize: '12px',
+    fontWeight: '600'
+  },
+
+  // ✅ NEW: Total amount highlight
+  totalAmountHighlight: {
+    fontSize: '16px',
+    fontWeight: '700',
+    color: '#059669'
+  },
   
   statusSection: {
     marginBottom: '16px'
+  },
+
+  // ✅ ENHANCED: Tracking ID with copy button
+  trackingIdContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
   },
   
   trackingId: {
     fontFamily: 'monospace',
     backgroundColor: '#f3f4f6',
-    padding: '2px 6px',
+    padding: '4px 8px',
     borderRadius: '4px',
     fontSize: '13px'
+  },
+
+  copyButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '4px 8px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '500'
   },
   
   paymentStatus: {
@@ -902,6 +1195,14 @@ const styles = {
     outline: 'none',
     transition: 'border-color 0.2s'
   },
+
+  // ✅ NEW: Character count styling
+  charCount: {
+    fontSize: '12px',
+    color: '#6b7280',
+    marginTop: '4px',
+    textAlign: 'right'
+  },
   
   modalFooter: {
     display: 'flex',
@@ -933,6 +1234,22 @@ const styles = {
     gap: '8px', 
     padding: '12px 20px', 
     backgroundColor: '#6b7280', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '8px', 
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'background-color 0.2s'
+  },
+
+  // ✅ NEW: Tertiary button style
+  buttonTertiary: {
+    display: 'inline-flex', 
+    alignItems: 'center', 
+    gap: '8px', 
+    padding: '12px 20px', 
+    backgroundColor: '#059669', 
     color: 'white', 
     border: 'none', 
     borderRadius: '8px', 

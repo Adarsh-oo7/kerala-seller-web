@@ -4,8 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Header from '../../../components/common/Header';
-import Footer from '../../../components/common/Footer';
 import { 
   Package, 
   ArrowLeft, 
@@ -20,7 +18,9 @@ import {
   Truck,
   X,
   Filter,
-  Globe
+  Globe,
+  Home,
+  Store
 } from 'lucide-react';
 
 // ✅ Enhanced API base URL handling with environment variables
@@ -52,7 +52,8 @@ export default function BuyerOrdersPage() {
     // ✅ Enhanced token handling - supports both Google login and regular login
     const getAuthHeaders = useCallback(() => {
         const token = localStorage.getItem('access_token') || 
-                      localStorage.getItem('buyerAccessToken');
+                      localStorage.getItem('buyerAccessToken') ||
+                      localStorage.getItem('accessToken');
         
         if (!token) {
             console.error('❌ No authentication token found');
@@ -64,12 +65,13 @@ export default function BuyerOrdersPage() {
         return { 'Authorization': `Bearer ${token}` };
     }, [router]);
 
-    // ✅ Get current store info from URL
+    // ✅ Enhanced: Get current store info from URL - supports both shop and store structures
     const getCurrentStoreInfo = useCallback(() => {
         if (typeof window === 'undefined') return { storeId: null, isInStore: false };
         
         const currentPath = window.location.pathname;
-        const storeMatch = currentPath.match(/\/store\/([^\/]+)/);
+        // Support both /shop/[slug] and /store/[id] URL patterns
+        const storeMatch = currentPath.match(/\/shop\/([^\/]+)/) || currentPath.match(/\/store\/([^\/]+)/);
         return {
             storeId: storeMatch ? storeMatch[1] : null,
             isInStore: !!storeMatch
@@ -97,7 +99,10 @@ export default function BuyerOrdersPage() {
             }
             
             console.log('Fetching orders from:', apiUrl);
-            const response = await axios.get(apiUrl, { headers });
+            const response = await axios.get(apiUrl, { 
+                headers,
+                timeout: 15000 
+            });
             
             const orderData = response.data.results || response.data || [];
             console.log('Orders received:', orderData);
@@ -110,9 +115,12 @@ export default function BuyerOrdersPage() {
                 // Clear tokens and redirect
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('buyerAccessToken');
+                localStorage.removeItem('accessToken');
                 router.push('/login/buyer');
+            } else if (err.code === 'ECONNABORTED') {
+                setError('Request timed out. Please check your connection and try again.');
             } else {
-                setError('Failed to load orders. Please try again.');
+                setError(err.response?.data?.message || 'Failed to load orders. Please try again.');
             }
         } finally {
             setIsLoading(false);
@@ -204,40 +212,48 @@ export default function BuyerOrdersPage() {
         });
     };
 
-    // ✅ Store-aware back navigation
+    // ✅ Enhanced: Smart back navigation that works with different URL structures
     const getBackUrl = () => {
-        return currentStoreInfo.isInStore && currentStoreInfo.storeId
-            ? `/store/${currentStoreInfo.storeId}/profile`
-            : '/profile';
+        if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
+            // Check if it's a shop URL structure
+            if (window.location.pathname.includes('/shop/')) {
+                return `/shop/${currentStoreInfo.storeId}`;
+            }
+            return `/store/${currentStoreInfo.storeId}`;
+        }
+        return '/profile';
     };
 
     if (isLoading) {
         return (
-            <div>
-                <Header />
+            <div style={styles.pageContainer}>
                 <div style={styles.loadingContainer}>
                     <div style={styles.spinner}></div>
-                    <p>Loading your orders...</p>
+                    <h3>Loading orders...</h3>
+                    <p>Please wait while we fetch your order history</p>
                 </div>
-                <Footer />
             </div>
         );
     }
 
     if (error) {
         return (
-            <div>
-                <Header />
+            <div style={styles.pageContainer}>
                 <div style={styles.errorContainer}>
-                    <AlertCircle size={48} />
+                    <AlertCircle size={48} color="#ef4444" />
                     <h2>Something went wrong</h2>
                     <p>{error}</p>
-                    <button onClick={fetchOrders} style={styles.retryButton}>
-                        <RefreshCw size={18} />
-                        Try Again
-                    </button>
+                    <div style={styles.errorActions}>
+                        <button onClick={fetchOrders} style={styles.retryButton}>
+                            <RefreshCw size={18} />
+                            Try Again
+                        </button>
+                        <Link href={getBackUrl()} style={styles.backToProfileLink}>
+                            <ArrowLeft size={18} />
+                            Go Back
+                        </Link>
+                    </div>
                 </div>
-                <Footer />
             </div>
         );
     }
@@ -246,13 +262,12 @@ export default function BuyerOrdersPage() {
 
     return (
         <div style={styles.pageContainer}>
-            <Header />
             <div style={styles.container}>
                 <div style={styles.header}>
                     <Link href={getBackUrl()} style={styles.backLink}>
                         <ArrowLeft size={20}/>
                         <span>
-                            {currentStoreInfo.isInStore ? 'Back to Store Profile' : 'Back to Profile'}
+                            {currentStoreInfo.isInStore ? 'Back to Store' : 'Back to Profile'}
                         </span>
                     </Link>
                     <div style={styles.titleSection}>
@@ -263,7 +278,7 @@ export default function BuyerOrdersPage() {
                         <p style={styles.subtitle}>
                             {currentStoreInfo.isInStore 
                                 ? 'Orders from this store only'
-                                : 'Track and manage all your orders in one place'
+                                : 'Track and manage all your orders'
                             }
                         </p>
                     </div>
@@ -275,8 +290,8 @@ export default function BuyerOrdersPage() {
                 {/* ✅ Show store context indicator */}
                 {currentStoreInfo.isInStore && (
                     <div style={styles.storeIndicator}>
-                        <Globe size={16} />
-                        <span>Showing orders from Store ID: {currentStoreInfo.storeId}</span>
+                        <Store size={16} />
+                        <span>Viewing orders from Store: {currentStoreInfo.storeId}</span>
                     </div>
                 )}
 
@@ -354,16 +369,22 @@ export default function BuyerOrdersPage() {
                             </button>
                         )}
                         {!searchQuery && statusFilter === 'all' && (
-                            <Link 
-                                href={currentStoreInfo.isInStore 
-                                    ? `/store/${currentStoreInfo.storeId}` 
-                                    : "/shop"
-                                } 
-                                style={styles.shopButton}
-                            >
-                                <ShoppingBag size={18} />
-                                {currentStoreInfo.isInStore ? 'Browse Store' : 'Start Shopping'}
-                            </Link>
+                            <div style={styles.emptyActions}>
+                                <Link 
+                                    href={currentStoreInfo.isInStore 
+                                        ? `/shop/${currentStoreInfo.storeId}` 
+                                        : "/shop"
+                                    } 
+                                    style={styles.shopButton}
+                                >
+                                    <ShoppingBag size={18} />
+                                    {currentStoreInfo.isInStore ? 'Browse Store' : 'Start Shopping'}
+                                </Link>
+                                <Link href="/" style={styles.homeButton}>
+                                    <Home size={18} />
+                                    Back to Home
+                                </Link>
+                            </div>
                         )}
                     </div>
                 ) : (
@@ -460,10 +481,7 @@ export default function BuyerOrdersPage() {
                                     <div style={styles.cardFooter}>
                                         <div style={styles.cardActions}>
                                             <Link 
-                                                href={currentStoreInfo.isInStore 
-                                                    ? `/store/${currentStoreInfo.storeId}/profile/orders/${order.id}`
-                                                    : `/profile/orders/${order.id}`
-                                                } 
+                                                href={`/profile/orders/${order.id}`}
                                                 style={styles.viewButton}
                                             >
                                                 <Eye size={16} />
@@ -495,7 +513,6 @@ export default function BuyerOrdersPage() {
                     </div>
                 )}
             </div>
-            <Footer />
 
             {/* CSS Animations */}
             <style jsx>{`
@@ -514,22 +531,22 @@ export default function BuyerOrdersPage() {
 }
 
 const styles = {
-    // ✅ NEW: Store context indicator
+    // ✅ Enhanced: Store context indicator
     storeIndicator: {
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
         padding: '12px 16px',
-        backgroundColor: '#dbeafe',
-        border: '1px solid #3b82f6',
+        backgroundColor: '#ecfdf5',
+        border: '1px solid #10b981',
         borderRadius: '8px',
         fontSize: '14px',
-        color: '#1e40af',
+        color: '#065f46',
         fontWeight: '500',
         marginBottom: '24px'
     },
 
-    // ✅ NEW: Store info in order cards
+    // Store info in order cards
     storeInfo: {
         display: 'flex',
         alignItems: 'center',
@@ -554,7 +571,9 @@ const styles = {
 
     pageContainer: {
         minHeight: '100vh',
-        backgroundColor: '#f8fafc'
+        backgroundColor: '#f8fafc',
+        display: 'flex',
+        flexDirection: 'column'
     },
 
     // Loading and Error States
@@ -563,8 +582,9 @@ const styles = {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '400px',
-        gap: '20px'
+        minHeight: '60vh',
+        gap: '20px',
+        flex: 1
     },
 
     spinner: {
@@ -581,10 +601,30 @@ const styles = {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '400px',
+        minHeight: '60vh',
         gap: '20px',
         textAlign: 'center',
-        color: '#ef4444'
+        padding: '40px',
+        flex: 1
+    },
+
+    errorActions: {
+        display: 'flex',
+        gap: '12px',
+        flexWrap: 'wrap',
+        justifyContent: 'center'
+    },
+
+    backToProfileLink: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        textDecoration: 'none',
+        color: '#3b82f6',
+        fontWeight: '500',
+        padding: '10px 16px',
+        borderRadius: '8px',
+        backgroundColor: '#eff6ff'
     },
 
     retryButton: {
@@ -605,7 +645,8 @@ const styles = {
     container: { 
         maxWidth: '1000px', 
         margin: '0 auto', 
-        padding: '24px 20px'
+        padding: '24px 20px',
+        flex: 1
     },
 
     header: { 
@@ -627,6 +668,7 @@ const styles = {
         fontWeight: '500',
         padding: '8px 12px',
         borderRadius: '6px',
+        backgroundColor: '#eff6ff',
         transition: 'all 0.2s'
     },
 
@@ -779,6 +821,27 @@ const styles = {
         marginTop: '16px'
     },
 
+    emptyActions: {
+        display: 'flex',
+        gap: '12px',
+        marginTop: '16px',
+        justifyContent: 'center',
+        flexWrap: 'wrap'
+    },
+
+    homeButton: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '12px 24px',
+        backgroundColor: '#6b7280',
+        color: 'white',
+        textDecoration: 'none',
+        borderRadius: '8px',
+        fontSize: '16px',
+        fontWeight: '500'
+    },
+
     shopButton: {
         display: 'inline-flex',
         alignItems: 'center',
@@ -789,8 +852,7 @@ const styles = {
         textDecoration: 'none',
         borderRadius: '8px',
         fontSize: '16px',
-        fontWeight: '500',
-        marginTop: '16px'
+        fontWeight: '500'
     },
 
     // Order List
@@ -837,7 +899,8 @@ const styles = {
         alignItems: 'center',
         gap: '8px',
         color: '#6b7280',
-        fontSize: '14px'
+        fontSize: '14px',
+        flexWrap: 'wrap'
     },
 
     orderTime: {
@@ -967,7 +1030,8 @@ const styles = {
     cardActions: {
         display: 'flex',
         gap: '12px',
-        justifyContent: 'flex-end'
+        justifyContent: 'flex-end',
+        flexWrap: 'wrap'
     },
 
     viewButton: { 

@@ -92,7 +92,8 @@ export default function BillingPage() {
   }, [fetchProducts]);
 
   const addToBill = (product) => {
-    if (product.online_stock <= 0) {
+    // ✅ FIXED: Check total_stock instead of online_stock for local billing
+    if (product.total_stock <= 0) {
       setError(`${product.name} is out of stock`);
       setTimeout(() => setError(''), 3000);
       return;
@@ -102,8 +103,9 @@ export default function BillingPage() {
       const existingItem = prev.find(item => item.id === product.id);
       if (existingItem) {
         const newQuantity = existingItem.quantity + 1;
-        if (newQuantity > product.online_stock) {
-          setError(`Only ${product.online_stock} units available for ${product.name}`);
+        // ✅ FIXED: Check against total_stock for local billing
+        if (newQuantity > product.total_stock) {
+          setError(`Only ${product.total_stock} units available for ${product.name}`);
           setTimeout(() => setError(''), 3000);
           return prev;
         }
@@ -123,8 +125,9 @@ export default function BillingPage() {
     const newQty = Math.max(1, parseInt(quantity, 10) || 1);
     const product = products.find(p => p.id === productId);
     
-    if (product && newQty > product.online_stock) {
-      setError(`Only ${product.online_stock} units available for ${product.name}`);
+    // ✅ FIXED: Check against total_stock for local billing
+    if (product && newQty > product.total_stock) {
+      setError(`Only ${product.total_stock} units available for ${product.name}`);
       setTimeout(() => setError(''), 3000);
       return;
     }
@@ -171,21 +174,25 @@ export default function BillingPage() {
     }
     
     try {
+      // ✅ FIXED: Correct order data for local billing
       const orderData = {
         customer_name: customer.name || 'Local Customer',
-        customer_phone: customer.phone || '',
+        customer_phone: customer.phone || 'N/A',
         items: billItems.map(item => ({ 
           id: item.id, 
           quantity: item.quantity,
           price: item.price 
         })),
-        payment_method: 'CASH', // Local billing is typically cash
-        order_type: 'LOCAL_BILLING'
+        payment_method: 'COD', // ✅ FIXED: Use 'COD' instead of 'CASH'
+        // ✅ REMOVED: order_type - let backend set it automatically based on user type
       };
 
-      console.log('Creating order:', orderData);
+      console.log('Creating local bill order:', orderData);
       const orderResponse = await axios.post(CREATE_ORDER_URL, orderData, { headers });
       const orderId = orderResponse.data.order_id;
+
+      console.log('✅ Local bill created with ID:', orderId);
+      console.log('Order type should be LOCAL for seller-created orders');
 
       // Generate and open bill
       const billUrl = `${API_BASE_URL}/user/orders/${orderId}/generate-bill/`;
@@ -204,6 +211,9 @@ export default function BillingPage() {
       setCustomer({ name: '', phone: '' });
       setSuccess('Bill generated successfully!');
       setTimeout(() => setSuccess(''), 3000);
+      
+      // ✅ Refresh products to get updated stock
+      fetchProducts();
       
     } catch (error) {
       console.error('Billing error:', error);
@@ -287,7 +297,8 @@ export default function BillingPage() {
                   onClick={() => addToBill(product)} 
                   style={{
                     ...styles.productItem,
-                    ...(product.online_stock <= 0 ? styles.outOfStock : {})
+                    // ✅ FIXED: Check total_stock for local billing
+                    ...(product.total_stock <= 0 ? styles.outOfStock : {})
                   }}
                 >
                   <div style={styles.productInfo}>
@@ -299,7 +310,11 @@ export default function BillingPage() {
                     </div>
                     <div style={styles.productPrice}>₹{parseFloat(product.price).toFixed(2)}</div>
                     <div style={styles.productStock}>
-                      Stock: {product.online_stock || 0}
+                      {/* ✅ FIXED: Show total_stock for local billing */}
+                      Total Stock: {product.total_stock || 0}
+                      {product.online_stock !== undefined && (
+                        <span style={styles.onlineStock}> | Online: {product.online_stock}</span>
+                      )}
                     </div>
                   </div>
                   <div style={styles.addButton}>
@@ -390,12 +405,12 @@ export default function BillingPage() {
                             onChange={e => updateQuantity(item.id, e.target.value)} 
                             style={styles.quantityInput}
                             min={1}
-                            max={item.online_stock}
+                            max={item.total_stock} // ✅ FIXED: Use total_stock
                           />
                           <button 
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             style={styles.quantityButton}
-                            disabled={item.quantity >= item.online_stock}
+                            disabled={item.quantity >= item.total_stock} // ✅ FIXED: Use total_stock
                           >
                             <Plus size={12} />
                           </button>
@@ -437,6 +452,9 @@ export default function BillingPage() {
                 <div style={styles.billItems}>
                   {billItems.length} item{billItems.length !== 1 ? 's' : ''}
                 </div>
+                <div style={styles.billType}>
+                  <small>📋 Local Bill (In-store purchase)</small>
+                </div>
               </div>
               
               <button 
@@ -452,7 +470,7 @@ export default function BillingPage() {
                 ) : (
                   <span style={styles.buttonContent}>
                     <Receipt size={18} />
-                    Generate Bill
+                    Generate Local Bill
                   </span>
                 )}
               </button>
@@ -477,7 +495,7 @@ export default function BillingPage() {
   );
 }
 
-// ... (all styles remain exactly the same)
+// ✅ Updated styles with new additions
 const styles = {
   pageContainer: {
     padding: '24px',
@@ -677,6 +695,12 @@ const styles = {
     color: '#6b7280'
   },
   
+  // ✅ NEW: Online stock indicator
+  onlineStock: {
+    fontSize: '11px',
+    color: '#8b5cf6'
+  },
+  
   addButton: {
     width: '32px',
     height: '32px',
@@ -843,7 +867,15 @@ const styles = {
   
   billItems: {
     fontSize: '14px',
-    color: '#6b7280'
+    color: '#6b7280',
+    marginBottom: '4px'
+  },
+  
+  // ✅ NEW: Bill type indicator
+  billType: {
+    fontSize: '12px',
+    color: '#8b5cf6',
+    fontStyle: 'italic'
   },
   
   generateButton: { 

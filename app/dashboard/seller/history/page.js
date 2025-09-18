@@ -11,7 +11,10 @@ import {
   Filter,
   Download,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  User,
+  FileText,
+  Search
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
@@ -52,6 +55,7 @@ export default function HistoryPage() {
       
       const historyData = response.data.results || response.data || [];
       console.log('History data received:', historyData.length, 'records');
+      console.log('Sample record:', historyData[0]); // ✅ Debug log
       
       setHistory(historyData);
       setFilteredHistory(historyData);
@@ -59,12 +63,10 @@ export default function HistoryPage() {
       console.error('Failed to fetch history:', error);
       if (error.response?.status === 401) {
         setError('Session expired. Please log in again.');
-        // Optionally redirect to login
         setTimeout(() => {
           window.location.href = '/login/seller';
         }, 2000);
       } else if (error.response?.status === 404) {
-        // Handle case where history API might not exist yet
         setError('Stock history service not available.');
         setHistory([]);
         setFilteredHistory([]);
@@ -85,11 +87,15 @@ export default function HistoryPage() {
       filtered = filtered.filter(item => item.action === filters.action);
     }
 
-    // Filter by product name
+    // ✅ FIXED: Filter by product name - handle different field structures
     if (filters.product.trim()) {
-      filtered = filtered.filter(item => 
-        item.product?.toLowerCase().includes(filters.product.toLowerCase())
-      );
+      filtered = filtered.filter(item => {
+        const productName = item.product?.name || 
+                           item.product_name || 
+                           item.product || 
+                           'Unknown Product';
+        return productName.toLowerCase().includes(filters.product.toLowerCase());
+      });
     }
 
     // Filter by date range
@@ -99,7 +105,7 @@ export default function HistoryPage() {
       cutoffDate.setDate(cutoffDate.getDate() - days);
       
       filtered = filtered.filter(item => 
-        new Date(item.timestamp) >= cutoffDate
+        new Date(item.timestamp).getTime() >= cutoffDate.getTime()
       );
     }
 
@@ -116,15 +122,11 @@ export default function HistoryPage() {
 
   const getActionIcon = (action) => {
     switch (action) {
-      case 'stock_in':
-      case 'increase':
-      case 'restock':
-      case 'added':
+      case 'CREATED':
+      case 'UPDATED':
+      case 'RETURN':
         return <TrendingUp size={16} color="#059669" />;
-      case 'stock_out':
-      case 'decrease':
-      case 'sale':
-      case 'sold':
+      case 'SALE':
         return <TrendingDown size={16} color="#dc2626" />;
       default:
         return <Package size={16} color="#6b7280" />;
@@ -133,28 +135,30 @@ export default function HistoryPage() {
 
   const getActionLabel = (action) => {
     switch (action) {
-      case 'stock_in':
-        return 'Stock In';
-      case 'stock_out':
-        return 'Stock Out';
-      case 'increase':
-        return 'Increased';
-      case 'decrease':
-        return 'Decreased';
-      case 'adjustment':
-        return 'Adjustment';
-      case 'sale':
+      case 'CREATED':
+        return 'Product Created';
+      case 'UPDATED':
+        return 'Manual Update';
+      case 'SALE':
         return 'Sale';
-      case 'sold':
-        return 'Sold';
-      case 'return':
+      case 'RETURN':
         return 'Return';
-      case 'restock':
-        return 'Restocked';
-      case 'added':
-        return 'Added';
       default:
         return action?.charAt(0)?.toUpperCase() + action?.slice(1) || 'Unknown';
+    }
+  };
+
+  const getActionColor = (action) => {
+    switch (action) {
+      case 'CREATED':
+      case 'RETURN':
+        return '#059669'; // Green
+      case 'SALE':
+        return '#dc2626'; // Red
+      case 'UPDATED':
+        return '#3b82f6'; // Blue
+      default:
+        return '#6b7280'; // Gray
     }
   };
 
@@ -168,6 +172,25 @@ export default function HistoryPage() {
     });
   };
 
+  // ✅ ENHANCED: Get product name from different possible structures
+  const getProductName = (item) => {
+    return item.product?.name || 
+           item.product_name || 
+           item.product || 
+           'Unknown Product';
+  };
+
+  // ✅ ENHANCED: Get user who made the change
+  const getUserName = (item) => {
+    if (item.user) {
+      return item.user.full_name || 
+             item.user.email || 
+             item.user.name || 
+             'System User';
+    }
+    return 'System';
+  };
+
   const exportHistory = () => {
     if (filteredHistory.length === 0) {
       alert('No history records to export');
@@ -175,13 +198,14 @@ export default function HistoryPage() {
     }
 
     const csvContent = [
-      ['Date', 'Product', 'Action', 'Total Change', 'Online Change', 'Note'],
+      ['Date', 'Product', 'Action', 'Total Change', 'Online Change', 'User', 'Note'],
       ...filteredHistory.map(item => [
         formatDate(item.timestamp),
-        item.product || 'Unknown Product',
+        getProductName(item),
         getActionLabel(item.action),
         item.change_total || 0,
         item.change_online || 0,
+        getUserName(item),
         item.note || '-'
       ])
     ].map(row => row.join(',')).join('\n');
@@ -196,6 +220,34 @@ export default function HistoryPage() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  // ✅ NEW: Statistics calculation
+  const getStats = () => {
+    const stats = filteredHistory.reduce((acc, item) => {
+      acc.totalChanges += Math.abs(item.change_total || 0);
+      acc.totalOnlineChanges += Math.abs(item.change_online || 0);
+      
+      if ((item.change_total || 0) > 0) {
+        acc.stockIncreases++;
+      } else if ((item.change_total || 0) < 0) {
+        acc.stockDecreases++;
+      }
+      
+      acc.actionCounts[item.action] = (acc.actionCounts[item.action] || 0) + 1;
+      
+      return acc;
+    }, {
+      totalChanges: 0,
+      totalOnlineChanges: 0,
+      stockIncreases: 0,
+      stockDecreases: 0,
+      actionCounts: {}
+    });
+    
+    return stats;
+  };
+
+  const stats = getStats();
 
   if (isLoading) {
     return (
@@ -245,6 +297,48 @@ export default function HistoryPage() {
         </div>
       </div>
 
+      {/* ✅ NEW: Statistics Cards */}
+      {filteredHistory.length > 0 && (
+        <div style={styles.statsContainer}>
+          <div style={styles.statCard}>
+            <div style={styles.statIcon}>
+              <TrendingUp size={20} color="#059669" />
+            </div>
+            <div style={styles.statContent}>
+              <div style={styles.statValue}>{stats.stockIncreases}</div>
+              <div style={styles.statLabel}>Stock Increases</div>
+            </div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statIcon}>
+              <TrendingDown size={20} color="#dc2626" />
+            </div>
+            <div style={styles.statContent}>
+              <div style={styles.statValue}>{stats.stockDecreases}</div>
+              <div style={styles.statLabel}>Stock Decreases</div>
+            </div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statIcon}>
+              <Package size={20} color="#3b82f6" />
+            </div>
+            <div style={styles.statContent}>
+              <div style={styles.statValue}>{stats.totalChanges}</div>
+              <div style={styles.statLabel}>Total Units Moved</div>
+            </div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statIcon}>
+              <FileText size={20} color="#8b5cf6" />
+            </div>
+            <div style={styles.statContent}>
+              <div style={styles.statValue}>{filteredHistory.length}</div>
+              <div style={styles.statLabel}>Total Records</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
       <div style={styles.filtersContainer}>
         <div style={styles.filtersHeader}>
@@ -262,14 +356,10 @@ export default function HistoryPage() {
               style={styles.filterSelect}
             >
               <option value="all">All Actions</option>
-              <option value="stock_in">Stock In</option>
-              <option value="stock_out">Stock Out</option>
-              <option value="increase">Increase</option>
-              <option value="decrease">Decrease</option>
-              <option value="adjustment">Adjustment</option>
-              <option value="sale">Sale</option>
-              <option value="return">Return</option>
-              <option value="restock">Restock</option>
+              <option value="CREATED">Product Created</option>
+              <option value="UPDATED">Manual Update</option>
+              <option value="SALE">Sale</option>
+              <option value="RETURN">Return</option>
             </select>
           </div>
 
@@ -281,6 +371,7 @@ export default function HistoryPage() {
               style={styles.filterSelect}
             >
               <option value="all">All Time</option>
+              <option value="1">Today</option>
               <option value="7">Last 7 days</option>
               <option value="30">Last 30 days</option>
               <option value="90">Last 3 months</option>
@@ -289,29 +380,18 @@ export default function HistoryPage() {
 
           <div style={styles.filterGroup}>
             <label style={styles.filterLabel}>Product Name</label>
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={filters.product}
-              onChange={(e) => setFilters({...filters, product: e.target.value})}
-              style={styles.filterInput}
-            />
+            <div style={styles.searchContainer}>
+              <Search size={16} style={styles.searchIcon} />
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={filters.product}
+                onChange={(e) => setFilters({...filters, product: e.target.value})}
+                style={styles.searchInput}
+              />
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Results Summary */}
-      <div style={styles.summaryContainer}>
-        <div style={styles.summaryItem}>
-          <span style={styles.summaryLabel}>Total Records:</span>
-          <span style={styles.summaryValue}>{filteredHistory.length}</span>
-        </div>
-        {filteredHistory.length !== history.length && (
-          <div style={styles.summaryItem}>
-            <span style={styles.summaryLabel}>Filtered from:</span>
-            <span style={styles.summaryValue}>{history.length} total records</span>
-          </div>
-        )}
       </div>
 
       {/* History Table */}
@@ -324,16 +404,26 @@ export default function HistoryPage() {
                   <Calendar size={16} />
                   Date & Time
                 </th>
-                <th style={styles.th}>Product</th>
+                <th style={styles.th}>
+                  <Package size={16} />
+                  Product
+                </th>
                 <th style={styles.th}>Action</th>
                 <th style={styles.th}>Total Change</th>
                 <th style={styles.th}>Online Change</th>
-                <th style={styles.th}>Note / Reason</th>
+                <th style={styles.th}>
+                  <User size={16} />
+                  User
+                </th>
+                <th style={styles.th}>
+                  <FileText size={16} />
+                  Note
+                </th>
               </tr>
             </thead>
             <tbody>
-              {filteredHistory.map(log => (
-                <tr key={log.id} style={styles.tableRow}>
+              {filteredHistory.map((log, index) => (
+                <tr key={log.id || index} style={styles.tableRow}>
                   <td style={styles.td}>
                     <div style={styles.dateCell}>
                       <div style={styles.dateMain}>
@@ -344,11 +434,14 @@ export default function HistoryPage() {
                   <td style={styles.td}>
                     <div style={styles.productCell}>
                       <Package size={16} />
-                      <span>{log.product || 'Unknown Product'}</span>
+                      <span>{getProductName(log)}</span>
                     </div>
                   </td>
                   <td style={styles.td}>
-                    <div style={styles.actionCell}>
+                    <div style={{
+                      ...styles.actionCell,
+                      color: getActionColor(log.action)
+                    }}>
                       {getActionIcon(log.action)}
                       <span>{getActionLabel(log.action)}</span>
                     </div>
@@ -370,6 +463,12 @@ export default function HistoryPage() {
                     <strong>
                       {(log.change_online || 0) > 0 ? `+${log.change_online || 0}` : (log.change_online || 0)}
                     </strong>
+                  </td>
+                  <td style={styles.td}>
+                    <div style={styles.userCell}>
+                      <User size={14} />
+                      <span>{getUserName(log)}</span>
+                    </div>
                   </td>
                   <td style={styles.td}>
                     <div style={styles.noteCell}>
@@ -418,7 +517,6 @@ export default function HistoryPage() {
   );
 }
 
-// ... (all styles remain exactly the same)
 const styles = {
   pageContainer: {
     padding: '24px',
@@ -527,6 +625,53 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500'
   },
+
+  // ✅ NEW: Statistics cards
+  statsContainer: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px',
+    marginBottom: '24px'
+  },
+
+  statCard: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    padding: '20px',
+    border: '1px solid #e5e7eb',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px'
+  },
+
+  statIcon: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '12px',
+    backgroundColor: '#f8fafc',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+
+  statContent: {
+    display: 'flex',
+    flexDirection: 'column'
+  },
+
+  statValue: {
+    fontSize: '24px',
+    fontWeight: '700',
+    color: '#1f2937',
+    lineHeight: '1.2'
+  },
+
+  statLabel: {
+    fontSize: '14px',
+    color: '#6b7280',
+    marginTop: '2px'
+  },
   
   filtersContainer: {
     backgroundColor: 'white',
@@ -579,37 +724,27 @@ const styles = {
     outline: 'none',
     backgroundColor: 'white'
   },
-  
-  filterInput: {
-    padding: '10px 12px',
+
+  // ✅ NEW: Enhanced search input
+  searchContainer: {
+    position: 'relative'
+  },
+
+  searchIcon: {
+    position: 'absolute',
+    left: '12px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    color: '#6b7280'
+  },
+
+  searchInput: {
+    padding: '10px 12px 10px 36px',
     border: '1px solid #d1d5db',
     borderRadius: '8px',
     fontSize: '14px',
-    outline: 'none'
-  },
-  
-  summaryContainer: {
-    display: 'flex',
-    gap: '24px',
-    marginBottom: '24px',
-    flexWrap: 'wrap'
-  },
-  
-  summaryItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  },
-  
-  summaryLabel: {
-    fontSize: '14px',
-    color: '#6b7280'
-  },
-  
-  summaryValue: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#1f2937'
+    outline: 'none',
+    width: '100%'
   },
   
   tableContainer: {
@@ -676,17 +811,28 @@ const styles = {
   actionCell: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px'
+    gap: '8px',
+    fontWeight: '500'
   },
   
   changeCell: {
     fontWeight: '600',
     fontSize: '15px'
   },
+
+  // ✅ NEW: User cell styling
+  userCell: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '13px',
+    color: '#6b7280'
+  },
   
   noteCell: {
     maxWidth: '200px',
-    wordBreak: 'break-word'
+    wordBreak: 'break-word',
+    fontSize: '13px'
   },
   
   noNote: {

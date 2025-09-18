@@ -17,12 +17,143 @@ import {
   Search,
   AlertCircle,
   TrendingUp,
-  ShoppingCart
+  ShoppingCart,
+  Bell,
+  BellRing,
+  X,
+  Calendar,
+  DollarSign,
+  MapPin
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
+const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/`;
+
+// ✅ NEW: Notification Badge Component
+function NotificationBell({ count, onClick }) {
+  return (
+    <div style={styles.notificationContainer} onClick={onClick}>
+      {count > 0 ? <BellRing size={20} /> : <Bell size={20} />}
+      {count > 0 && (
+        <span style={styles.notificationBadge}>
+          {count > 99 ? '99+' : count}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ✅ NEW: Advanced Filters Component
+function AdvancedFilters({ 
+  statusFilter, 
+  setStatusFilter, 
+  paymentFilter, 
+  setPaymentFilter,
+  dateFilter,
+  setDateFilter,
+  minAmount,
+  setMinAmount,
+  maxAmount,
+  setMaxAmount,
+  orderStats,
+  onClearFilters 
+}) {
+  return (
+    <div style={styles.advancedFilters}>
+      {/* Status Filter */}
+      <div style={styles.filterGroup}>
+        <label style={styles.filterLabel}>Status</label>
+        <div style={styles.filterButtonGroup}>
+          <button 
+            onClick={() => setStatusFilter('')} 
+            style={!statusFilter ? styles.activeFilter : styles.filterButton}
+          >
+            All {orderStats.total && `(${orderStats.total})`}
+          </button>
+          {['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map(status => (
+            <button 
+              key={status}
+              onClick={() => setStatusFilter(status)} 
+              style={statusFilter === status ? styles.activeFilter : styles.filterButton}
+            >
+              {status} {orderStats[status] && `(${orderStats[status]})`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Payment Filter */}
+      <div style={styles.filterGroup}>
+        <label style={styles.filterLabel}>Payment Method</label>
+        <div style={styles.filterButtonGroup}>
+          <button 
+            onClick={() => setPaymentFilter('')} 
+            style={!paymentFilter ? styles.activeFilter : styles.filterButton}
+          >
+            All
+          </button>
+          {['ONLINE', 'COD'].map(method => (
+            <button 
+              key={method}
+              onClick={() => setPaymentFilter(method)} 
+              style={paymentFilter === method ? styles.activeFilter : styles.filterButton}
+            >
+              {method === 'ONLINE' ? 'Online Payment' : 'Cash on Delivery'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Amount Range Filter */}
+      <div style={styles.filterGroup}>
+        <label style={styles.filterLabel}>Amount Range</label>
+        <div style={styles.amountFilterGroup}>
+          <input
+            type="number"
+            placeholder="Min ₹"
+            value={minAmount}
+            onChange={(e) => setMinAmount(e.target.value)}
+            style={styles.amountInput}
+          />
+          <span>to</span>
+          <input
+            type="number"
+            placeholder="Max ₹"
+            value={maxAmount}
+            onChange={(e) => setMaxAmount(e.target.value)}
+            style={styles.amountInput}
+          />
+        </div>
+      </div>
+
+      {/* Date Filter */}
+      <div style={styles.filterGroup}>
+        <label style={styles.filterLabel}>Date Range</label>
+        <select 
+          value={dateFilter} 
+          onChange={(e) => setDateFilter(e.target.value)}
+          style={styles.dateSelect}
+        >
+          <option value="">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+          <option value="quarter">Last 3 Months</option>
+        </select>
+      </div>
+
+      {/* Clear Filters */}
+      {(statusFilter || paymentFilter || minAmount || maxAmount || dateFilter) && (
+        <button onClick={onClearFilters} style={styles.clearFiltersBtn}>
+          <X size={16} />
+          Clear All Filters
+        </button>
+      )}
+    </div>
+  );
+}
 
 // Enhanced OrderCard component with better styling and features
 function OrderCard({ order, getStatusStyle, getPaymentStatusStyle }) {
@@ -133,14 +264,26 @@ function OrderCard({ order, getStatusStyle, getPaymentStatusStyle }) {
 }
 
 export default function OrdersListPage() {
+  // ✅ EXISTING STATE
   const [orders, setOrders] = useState([]);
-  const [filteredOrders, setFilteredOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
   const [orderStats, setOrderStats] = useState({});
   const router = useRouter();
+
+  // ✅ ENHANCED FILTER STATE
+  const [statusFilter, setStatusFilter] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [minAmount, setMinAmount] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // ✅ NEW: NOTIFICATION STATE
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   // ✅ FIXED: Changed Token to Bearer authentication
   const getAuthHeaders = useCallback(() => {
@@ -152,6 +295,25 @@ export default function OrdersListPage() {
     return { 'Authorization': `Bearer ${token}` };
   }, [router]);
 
+  // ✅ NEW: Fetch Notifications
+  const fetchNotifications = useCallback(async () => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
+    try {
+      const [countResponse, listResponse] = await Promise.all([
+        axios.get(`${NOTIFICATIONS_API_URL}count/`, { headers }),
+        axios.get(`${NOTIFICATIONS_API_URL}`, { headers })
+      ]);
+      
+      setNotificationCount(countResponse.data.unread_count || 0);
+      setNotifications(listResponse.data.results || listResponse.data || []);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    }
+  }, [getAuthHeaders]);
+
+  // ✅ ENHANCED: Advanced Order Fetching with Backend Filtering
   const fetchOrders = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -161,8 +323,47 @@ export default function OrdersListPage() {
 
     try {
       let url = ORDERS_API_URL;
-      if (statusFilter) {
-        url += `?status=${statusFilter}`;
+      const params = new URLSearchParams();
+      
+      // ✅ BACKEND FILTERS
+      if (statusFilter) params.append('status', statusFilter);
+      if (paymentFilter) params.append('payment_method', paymentFilter);
+      if (searchTerm.trim()) params.append('search', searchTerm.trim());
+      
+      // ✅ NEW: Amount filters
+      if (minAmount) params.append('min_amount', minAmount);
+      if (maxAmount) params.append('max_amount', maxAmount);
+      
+      // ✅ NEW: Date filters
+      if (dateFilter) {
+        const now = new Date();
+        let startDate;
+        
+        switch (dateFilter) {
+          case 'today':
+            startDate = new Date(now.setHours(0, 0, 0, 0));
+            break;
+          case 'week':
+            startDate = new Date(now.setDate(now.getDate() - 7));
+            break;
+          case 'month':
+            startDate = new Date(now.setMonth(now.getMonth() - 1));
+            break;
+          case 'quarter':
+            startDate = new Date(now.setMonth(now.getMonth() - 3));
+            break;
+        }
+        
+        if (startDate) {
+          params.append('created_at__gte', startDate.toISOString());
+        }
+      }
+      
+      // ✅ ORDERING
+      params.append('ordering', '-created_at');
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
       }
 
       console.log('Fetching orders from:', url);
@@ -172,7 +373,6 @@ export default function OrdersListPage() {
       console.log('Orders fetched:', orderData.length);
       
       setOrders(orderData);
-      setFilteredOrders(orderData);
       
       // Calculate order statistics
       const stats = orderData.reduce((acc, order) => {
@@ -193,26 +393,42 @@ export default function OrdersListPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [statusFilter, getAuthHeaders, router]);
+  }, [statusFilter, paymentFilter, dateFilter, searchTerm, minAmount, maxAmount, getAuthHeaders, router]);
 
-  // Apply search filter
-  useEffect(() => {
-    let filtered = [...orders];
-    
-    if (searchTerm.trim()) {
-      filtered = filtered.filter(order => 
-        order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.id.toString().includes(searchTerm) ||
-        order.customer_phone?.includes(searchTerm)
-      );
+  // ✅ NEW: Mark notification as read
+  const markNotificationAsRead = async (notificationId) => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
+    try {
+      await axios.patch(`${NOTIFICATIONS_API_URL}${notificationId}/mark-as-read/`, {}, { headers });
+      fetchNotifications(); // Refresh notifications
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
     }
-    
-    setFilteredOrders(filtered);
-  }, [orders, searchTerm]);
+  };
 
+  // ✅ NEW: Clear all filters
+  const clearAllFilters = () => {
+    setStatusFilter('');
+    setPaymentFilter('');
+    setDateFilter('');
+    setSearchTerm('');
+    setMinAmount('');
+    setMaxAmount('');
+  };
+
+  // ✅ EFFECTS
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  useEffect(() => {
+    fetchNotifications();
+    // ✅ Real-time notification updates every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
   const getStatusStyle = (status) => {
     const statusStyles = {
@@ -238,14 +454,14 @@ export default function OrdersListPage() {
   };
 
   const handleExportOrders = () => {
-    if (filteredOrders.length === 0) {
+    if (orders.length === 0) {
       alert('No orders to export');
       return;
     }
 
     const csvContent = [
       ['Order ID', 'Date', 'Customer', 'Phone', 'Amount', 'Status', 'Payment Status', 'Items Count'],
-      ...filteredOrders.map(order => [
+      ...orders.map(order => [
         order.id,
         new Date(order.created_at).toLocaleString(),
         order.customer_name || 'Guest',
@@ -306,6 +522,12 @@ export default function OrdersListPage() {
           <p style={styles.pageSubtitle}>View and manage all your customer orders</p>
         </div>
         <div style={styles.headerActions}>
+          {/* ✅ NEW: Notification Bell */}
+          <NotificationBell 
+            count={notificationCount} 
+            onClick={() => setShowNotifications(!showNotifications)}
+          />
+          
           <button onClick={handleExportOrders} style={styles.exportButton}>
             <Download size={18} />
             Export CSV
@@ -317,7 +539,38 @@ export default function OrdersListPage() {
         </div>
       </div>
 
-      {/* Search */}
+      {/* ✅ NEW: Notifications Dropdown */}
+      {showNotifications && (
+        <div style={styles.notificationsDropdown}>
+          <div style={styles.notificationsHeader}>
+            <h3>Notifications</h3>
+            <button onClick={() => setShowNotifications(false)}>
+              <X size={18} />
+            </button>
+          </div>
+          <div style={styles.notificationsList}>
+            {notifications.length > 0 ? (
+              notifications.slice(0, 5).map(notification => (
+                <div 
+                  key={notification.id} 
+                  style={styles.notificationItem}
+                  onClick={() => markNotificationAsRead(notification.id)}
+                >
+                  <p style={styles.notificationMessage}>{notification.message}</p>
+                  <small style={styles.notificationTime}>
+                    {new Date(notification.created_at).toLocaleString()}
+                  </small>
+                  {!notification.is_read && <div style={styles.unreadDot}></div>}
+                </div>
+              ))
+            ) : (
+              <p style={styles.noNotifications}>No notifications</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ✅ ENHANCED: Search Bar */}
       <div style={styles.searchContainer}>
         <Search size={18} style={styles.searchIcon} />
         <input
@@ -327,31 +580,37 @@ export default function OrdersListPage() {
           onChange={(e) => setSearchTerm(e.target.value)}
           style={styles.searchInput}
         />
+        <button 
+          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          style={styles.filterToggle}
+        >
+          <Filter size={18} />
+          Filters
+        </button>
       </div>
       
-      {/* Status Filter Buttons */}
-      <div style={styles.filterContainer}>
-        <button 
-          onClick={() => setStatusFilter('')} 
-          style={!statusFilter ? styles.activeFilter : styles.filterButton}
-        >
-          All {orderStats.total && `(${orderStats.total})`}
-        </button>
-        {['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map(status => (
-          <button 
-            key={status}
-            onClick={() => setStatusFilter(status)} 
-            style={statusFilter === status ? styles.activeFilter : styles.filterButton}
-          >
-            {status} {orderStats[status] && `(${orderStats[status]})`}
-          </button>
-        ))}
-      </div>
+      {/* ✅ NEW: Advanced Filters */}
+      {showAdvancedFilters && (
+        <AdvancedFilters 
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          paymentFilter={paymentFilter}
+          setPaymentFilter={setPaymentFilter}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+          minAmount={minAmount}
+          setMinAmount={setMinAmount}
+          maxAmount={maxAmount}
+          setMaxAmount={setMaxAmount}
+          orderStats={orderStats}
+          onClearFilters={clearAllFilters}
+        />
+      )}
 
       {/* Orders List */}
       <div style={styles.orderGrid}>
-        {filteredOrders.length > 0 ? (
-          filteredOrders.map(order => (
+        {orders.length > 0 ? (
+          orders.map(order => (
             <OrderCard 
               key={order.id}
               order={order}
@@ -364,22 +623,14 @@ export default function OrdersListPage() {
             <Package size={48} />
             <h3>No orders found</h3>
             <p>
-              {searchTerm 
-                ? `No orders match "${searchTerm}". Try different search terms.`
-                : statusFilter
-                ? `No orders found with status "${statusFilter}".`
+              {searchTerm || statusFilter || paymentFilter || dateFilter || minAmount || maxAmount
+                ? `No orders match your current filters.`
                 : 'No orders have been placed at your store yet.'
               }
             </p>
-            {(searchTerm || statusFilter) && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setStatusFilter('');
-                }}
-                style={styles.clearFiltersButton}
-              >
-                Clear Filters
+            {(searchTerm || statusFilter || paymentFilter || dateFilter || minAmount || maxAmount) && (
+              <button onClick={clearAllFilters} style={styles.clearFiltersButton}>
+                Clear All Filters
               </button>
             )}
           </div>
@@ -396,6 +647,11 @@ export default function OrdersListPage() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
         }
       `}</style>
     </div>
@@ -489,7 +745,101 @@ const styles = {
   
   headerActions: {
     display: 'flex',
+    alignItems: 'center',
     gap: '12px'
+  },
+
+  // ✅ NEW: Notification Styles
+  notificationContainer: {
+    position: 'relative',
+    cursor: 'pointer',
+    padding: '8px',
+    borderRadius: '8px',
+    border: '1px solid #d1d5db',
+    backgroundColor: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+
+  notificationBadge: {
+    position: 'absolute',
+    top: '-6px',
+    right: '-6px',
+    backgroundColor: '#ef4444',
+    color: 'white',
+    borderRadius: '50%',
+    width: '18px',
+    height: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '10px',
+    fontWeight: 'bold',
+    animation: 'pulse 2s infinite'
+  },
+
+  notificationsDropdown: {
+    position: 'absolute',
+    top: '100%',
+    right: '0',
+    backgroundColor: 'white',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+    width: '320px',
+    zIndex: 1000,
+    maxHeight: '400px',
+    overflow: 'hidden'
+  },
+
+  notificationsHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '16px',
+    borderBottom: '1px solid #f3f4f6'
+  },
+
+  notificationsList: {
+    maxHeight: '300px',
+    overflowY: 'auto'
+  },
+
+  notificationItem: {
+    padding: '12px 16px',
+    borderBottom: '1px solid #f3f4f6',
+    cursor: 'pointer',
+    position: 'relative',
+    transition: 'background-color 0.2s'
+  },
+
+  notificationMessage: {
+    margin: '0 0 4px 0',
+    fontSize: '14px',
+    color: '#374151'
+  },
+
+  notificationTime: {
+    color: '#6b7280',
+    fontSize: '12px'
+  },
+
+  unreadDot: {
+    position: 'absolute',
+    top: '12px',
+    right: '16px',
+    width: '8px',
+    height: '8px',
+    backgroundColor: '#3b82f6',
+    borderRadius: '50%'
+  },
+
+  noNotifications: {
+    padding: '20px',
+    textAlign: 'center',
+    color: '#6b7280',
+    fontStyle: 'italic'
   },
   
   exportButton: {
@@ -522,26 +872,105 @@ const styles = {
   
   searchContainer: {
     position: 'relative',
-    marginBottom: '20px'
+    marginBottom: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px'
   },
   
   searchIcon: {
     position: 'absolute',
     left: '12px',
-    top: '50%',
-    transform: 'translateY(-50%)',
     color: '#6b7280',
     zIndex: 1
   },
   
   searchInput: {
-    width: '100%',
+    flex: 1,
     padding: '12px 12px 12px 40px',
     border: '1px solid #d1d5db',
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
     transition: 'border-color 0.2s'
+  },
+
+  filterToggle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 16px',
+    backgroundColor: '#f3f4f6',
+    color: '#374151',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500'
+  },
+
+  // ✅ NEW: Advanced Filter Styles
+  advancedFilters: {
+    backgroundColor: '#f8fafc',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
+    padding: '20px',
+    marginBottom: '20px'
+  },
+
+  filterGroup: {
+    marginBottom: '16px'
+  },
+
+  filterLabel: {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: '8px'
+  },
+
+  filterButtonGroup: {
+    display: 'flex',
+    gap: '8px',
+    flexWrap: 'wrap'
+  },
+
+  amountFilterGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap'
+  },
+
+  amountInput: {
+    padding: '8px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    width: '120px'
+  },
+
+  dateSelect: {
+    padding: '8px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    backgroundColor: 'white'
+  },
+
+  clearFiltersBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 16px',
+    backgroundColor: '#ef4444',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500'
   },
   
   filterContainer: { 

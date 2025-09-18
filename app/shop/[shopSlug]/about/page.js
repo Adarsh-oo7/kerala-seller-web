@@ -42,9 +42,13 @@ const getApiBaseUrl = () => {
   return 'https://keralaseller-backend.onrender.com';
 };
 
-// ✅ FIXED: Helper function to extract phone from slug or query params with null safety
+// ✅ FIXED: Helper function to extract phone from slug or query params
 const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
-  console.log('🔍 Extracting phone from:', { shopSlug, searchParams: searchParams?.toString() });
+  console.log('🔍 About page - Extracting phone from:', { 
+    shopSlug, 
+    searchParams: searchParams?.toString(),
+    isDev: process.env.NODE_ENV === 'development'
+  });
   
   // ✅ Add null/undefined checks
   if (!shopSlug) {
@@ -52,28 +56,39 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
     return null;
   }
   
-  // ✅ NEW: Check if shopSlug is already a phone number (old URL format)
-  if (typeof shopSlug === 'string' && /^[6-9]\d{9}$/.test(shopSlug)) {
-    console.log('✅ Direct phone URL detected:', shopSlug);
-    return shopSlug;
+  // ✅ First: Check if shopSlug is already a phone number (direct phone URL)
+  if (typeof shopSlug === 'string') {
+    // In development, be more flexible with phone validation
+    if (process.env.NODE_ENV === 'development') {
+      // Allow any numeric string with 1+ digits for testing (very flexible for dev)
+      if (/^\d+$/.test(shopSlug)) {
+        console.log('✅ Direct phone URL detected (dev mode):', shopSlug);
+        return shopSlug;
+      }
+    } else {
+      // Production: strict Indian mobile validation
+      if (/^[6-9]\d{9}$/.test(shopSlug)) {
+        console.log('✅ Direct phone URL detected (production):', shopSlug);
+        return shopSlug;
+      }
+    }
   }
   
-  // Try to get phone from query params first (for SEO URLs)
+  // Try to get phone from query params (for SEO URLs)
   const phoneFromParams = searchParams?.get('id');
   console.log('📱 Phone from params:', phoneFromParams);
   
   if (phoneFromParams) {
-    // ✅ More flexible validation for development
     if (process.env.NODE_ENV === 'development') {
-      // Allow any numeric string with 3+ digits for testing
-      if (/^\d{3,}$/.test(phoneFromParams)) {
-        console.log('✅ Valid phone found (dev mode):', phoneFromParams);
+      // Allow any numeric string with 1+ digits for testing
+      if (/^\d+$/.test(phoneFromParams)) {
+        console.log('✅ Valid phone found from params (dev mode):', phoneFromParams);
         return phoneFromParams;
       }
     } else {
-      // ✅ Production: strict Indian mobile validation
+      // Production: strict Indian mobile validation
       if (/^[6-9]\d{9}$/.test(phoneFromParams)) {
-        console.log('✅ Valid Indian mobile number:', phoneFromParams);
+        console.log('✅ Valid Indian mobile number from params:', phoneFromParams);
         return phoneFromParams;
       }
     }
@@ -81,10 +96,20 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
   
   // Extract phone from compound slug (e.g., "raj-electronics-kochi-9544344339")
   if (typeof shopSlug === 'string') {
-    const phoneMatch = shopSlug.match(/[6-9]\d{9}$/);
-    if (phoneMatch) {
-      console.log('✅ Phone extracted from compound slug:', phoneMatch[0]);
-      return phoneMatch[0];
+    if (process.env.NODE_ENV === 'development') {
+      // Look for any sequence of digits at the end
+      const phoneMatch = shopSlug.match(/\d+$/);
+      if (phoneMatch) {
+        console.log('✅ Phone extracted from compound slug (dev):', phoneMatch[0]);
+        return phoneMatch[0];
+      }
+    } else {
+      // Production: look for valid Indian mobile numbers
+      const phoneMatch = shopSlug.match(/[6-9]\d{9}$/);
+      if (phoneMatch) {
+        console.log('✅ Phone extracted from compound slug (production):', phoneMatch[0]);
+        return phoneMatch[0];
+      }
     }
   }
   
@@ -92,7 +117,7 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
   return null;
 };
 
-// ✅ SEO-friendly URL generator (same as in shop listing)
+// ✅ SEO-friendly URL generator (same as other components)
 const generateShopSlug = (shop) => {
   if (!shop) return 'shop';
   
@@ -128,7 +153,11 @@ function StoreAboutContent() {
   // ✅ Extract seller phone from slug or query params
   const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams);
   
-  console.log('📍 About page params:', { shopSlug, sellerPhone });
+  console.log('📍 About page debug:', { 
+    shopSlug, 
+    sellerPhone, 
+    url: typeof window !== 'undefined' ? window.location.href : 'SSR'
+  });
 
   useEffect(() => {
     // Check login status
@@ -145,7 +174,7 @@ function StoreAboutContent() {
 
   const fetchStoreData = async () => {
     if (!sellerPhone) {
-      console.error('❌ No sellerPhone provided');
+      console.error('❌ No sellerPhone provided:', { shopSlug, sellerPhone });
       setError('Invalid store URL - phone number is missing');
       setIsLoading(false);
       return;
@@ -206,8 +235,15 @@ function StoreAboutContent() {
   // ✅ Enhanced: Generate SEO-friendly shop URL for navigation
   const getShopUrl = () => {
     if (!storeData || !sellerPhone) return `/shop`;
-    const shopSlug = generateShopSlug(storeData);
-    return `/shop/${shopSlug}?id=${sellerPhone}`;
+    
+    // If we have full store data, create SEO-friendly URL
+    if (storeData.name) {
+      const shopSlug = generateShopSlug(storeData);
+      return `/shop/${shopSlug}?id=${sellerPhone}`;
+    }
+    
+    // Fallback: use direct phone URL
+    return `/shop/${sellerPhone}`;
   };
 
   const formatJoinDate = (dateString) => {
@@ -254,12 +290,33 @@ function StoreAboutContent() {
           <Store size={64} style={styles.errorIcon} />
           <h2 style={styles.errorTitle}>Invalid Store URL</h2>
           <p style={styles.errorText}>The store information is missing from the URL.</p>
+          
+          {/* ✅ Enhanced Debug Info */}
           <div style={styles.errorDebug}>
             <strong>Debug Info:</strong><br/>
-            Shop Slug: <code>{shopSlug}</code><br/>
+            Shop Slug: <code>{shopSlug || 'undefined'}</code><br/>
             Phone: <code>{sellerPhone || 'null'}</code><br/>
-            URL: <code>{typeof window !== 'undefined' ? window.location.href : 'N/A'}</code>
+            URL: <code>{typeof window !== 'undefined' ? window.location.href : 'N/A'}</code><br/>
+            Environment: <code>{process.env.NODE_ENV || 'unknown'}</code>
           </div>
+
+          {/* ✅ Helpful suggestions */}
+          <div style={styles.errorSuggestions}>
+            <h4>Try these URLs instead:</h4>
+            <ul style={styles.suggestionsList}>
+              <li>
+                <Link href={`/shop/${shopSlug}?id=${shopSlug}`} style={styles.suggestionLink}>
+                  /shop/{shopSlug}?id={shopSlug}
+                </Link>
+              </li>
+              <li>
+                <Link href={`/shop/${shopSlug}`} style={styles.suggestionLink}>
+                  /shop/{shopSlug} (direct access)
+                </Link>
+              </li>
+            </ul>
+          </div>
+          
           <Link href="/shop" style={styles.backLink}>
             <ArrowLeft size={16} />
             Browse All Shops
@@ -340,7 +397,7 @@ function StoreAboutContent() {
       </div>
       
       <div style={styles.container}>
-        {/* ✅ Enhanced Back button with SEO URL */}
+        {/* ✅ Enhanced Back button with correct URL */}
         <Link href={getShopUrl()} style={styles.backButton}>
           <ArrowLeft size={16} />
           Back to Store
@@ -586,7 +643,7 @@ function StoreAboutContent() {
           </div>
         </div>
 
-        {/* ✅ Enhanced Quick Actions with SEO URL */}
+        {/* ✅ Enhanced Quick Actions with correct URL */}
         <div style={styles.quickActionsSection}>
           <Link href={getShopUrl()} style={styles.primaryButton}>
             <Package size={16} />
@@ -719,7 +776,29 @@ const styles = {
     borderRadius: '8px',
     fontSize: '14px',
     maxWidth: '600px',
-    textAlign: 'left'
+    textAlign: 'left',
+    fontFamily: 'monospace'
+  },
+
+  // ✅ New: Error suggestions
+  errorSuggestions: {
+    marginTop: '20px',
+    padding: '20px',
+    backgroundColor: '#eff6ff',
+    borderRadius: '8px',
+    border: '1px solid #3b82f6'
+  },
+
+  suggestionsList: {
+    textAlign: 'left',
+    margin: '10px 0 0 20px'
+  },
+
+  suggestionLink: {
+    color: '#3b82f6',
+    textDecoration: 'none',
+    fontFamily: 'monospace',
+    fontSize: '14px'
   },
   
   errorActions: {

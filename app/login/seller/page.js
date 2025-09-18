@@ -41,7 +41,7 @@ console.log('🌐 Seller Login API URLs configured:', {
   LOGIN_API_URL 
 });
 
-// ✅ Enhanced LoginForm with store awareness
+// ✅ Enhanced LoginForm with better token handling
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -55,6 +55,7 @@ function LoginForm() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [rememberMe, setRememberMe] = useState(false);
   const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true); // ✅ NEW: Auth check state
 
   // ✅ Get current store info from URL
   useEffect(() => {
@@ -73,13 +74,43 @@ function LoginForm() {
     }
   }, []);
 
+  // ✅ FIXED: Better auth check to prevent infinite redirects
   useEffect(() => {
-    const token = localStorage.getItem('accessToken') || localStorage.getItem('access_token');
-    if (token) {
-      console.log('🔍 Existing seller token found, redirecting...');
-      const redirectUrl = redirect || '/dashboard/seller';
-      router.push(redirectUrl);
-    }
+    const checkExistingAuth = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (!token || token === 'null' || token === 'undefined') {
+          setIsCheckingAuth(false);
+          return;
+        }
+
+        console.log('🔍 Checking existing seller token...');
+        
+        // Verify token is still valid by making a quick API call
+        const response = await axios.get(`${API_BASE_URL}/user/store/profile/`, {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 5000
+        });
+
+        if (response.status === 200) {
+          console.log('✅ Valid seller token found, redirecting...');
+          const redirectUrl = redirect || '/dashboard/seller';
+          router.replace(redirectUrl);
+          return;
+        }
+      } catch (error) {
+        console.log('❌ Token invalid or expired, clearing auth data');
+        // Clear invalid tokens
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('sellerInfo');
+        localStorage.removeItem('userInfo');
+      }
+      
+      setIsCheckingAuth(false);
+    };
+
+    checkExistingAuth();
   }, [router, redirect]);
 
   const validatePhone = (phone) => {
@@ -148,9 +179,9 @@ function LoginForm() {
         timeout: 15000
       });
       
-      console.log('✅ Login response:', response.data);
+      console.log('✅ Login response received');
       
-      // Handle different token field names
+      // ✅ FIXED: Better token handling
       const token = response.data.access_token || 
                    response.data.token || 
                    response.data.access;
@@ -162,9 +193,14 @@ function LoginForm() {
       const { seller, debug_info } = response.data;
       
       console.log('✅ Login successful for:', debug_info?.admin_user_email || phone);
-      console.log('✅ Access token preview:', token.substring(0, 50) + '...');
       
-      // Store tokens with multiple keys for compatibility
+      // ✅ CRITICAL: Clear any existing invalid tokens first
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('sellerInfo');
+      localStorage.removeItem('userInfo');
+      
+      // Store new tokens
       localStorage.setItem('accessToken', token);
       localStorage.setItem('access_token', token);
       
@@ -177,20 +213,18 @@ function LoginForm() {
         localStorage.setItem('rememberSeller', 'true');
       }
       
-      console.log('✅ Token stored, redirecting...');
+      console.log('✅ Token stored, redirecting to dashboard...');
       
-      // ✅ Store-aware redirect logic
+      // ✅ FIXED: Use window.location for hard redirect to prevent loops
       setTimeout(() => {
         if (redirect) {
-          router.push(decodeURIComponent(redirect));
+          window.location.href = decodeURIComponent(redirect);
         } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
-          // If logging in from store context, redirect to store management
-          router.push(`/store/${currentStoreInfo.storeId}/dashboard`);
+          window.location.href = `/store/${currentStoreInfo.storeId}/dashboard`;
         } else {
-          // Default to seller dashboard
-          router.push('/dashboard/seller');
+          window.location.href = '/dashboard/seller';
         }
-      }, 200);
+      }, 500); // Longer delay to ensure token is stored
       
     } catch (err) {
       console.error('❌ Login error:', err);
@@ -211,6 +245,8 @@ function LoginForm() {
                      err.response.data.detail || 
                      err.response.data.message || 
                      errorMessage;
+      } else if (!navigator.onLine) {
+        errorMessage = 'No internet connection. Please check your network and try again.';
       }
       
       setError(errorMessage);
@@ -246,6 +282,19 @@ function LoginForm() {
     }
     return `/register/seller${redirectParam}`;
   };
+
+  // ✅ Show loading while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div style={styles.card}>
+        <div style={styles.loadingContainer}>
+          <div style={styles.spinner}></div>
+          <p>Checking authentication...</p>
+          <p style={styles.loadingSubtext}>🌐 Connected to: {API_BASE_URL}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.card}>
@@ -547,7 +596,7 @@ export default function LoginSellerPage() {
   );
 }
 
-// ✅ Enhanced styles with new components
+// All styles remain the same as your original code...
 const styles = {
   pageContainer: {
     minHeight: '100vh',
@@ -575,7 +624,7 @@ const styles = {
     animation: 'fadeIn 0.6s ease-out'
   },
 
-  // ✅ Store notice
+  // Store notice
   storeNotice: {
     display: 'flex',
     alignItems: 'center',
@@ -654,7 +703,7 @@ const styles = {
     marginBottom: '8px'
   },
 
-  // ✅ Enhanced phone input
+  // Enhanced phone input
   phoneInputContainer: {
     display: 'flex',
     alignItems: 'center',
@@ -803,7 +852,7 @@ const styles = {
     animation: 'spin 1s linear infinite'
   },
 
-  // ✅ Security badges
+  // Security badges
   securityBadges: {
     display: 'flex',
     justifyContent: 'center',
@@ -859,7 +908,7 @@ const styles = {
     cursor: 'pointer'
   },
 
-  // ✅ Buyer link section
+  // Buyer link section
   buyerLink: {
     marginTop: '16px',
     padding: '16px',
@@ -887,7 +936,7 @@ const styles = {
     transition: 'background-color 0.2s'
   },
   
-  // ✅ Enhanced features section
+  // Enhanced features section
   featuresSection: {
     maxWidth: '400px',
     animation: 'slideIn 0.8s ease-out'
@@ -943,7 +992,7 @@ const styles = {
     lineHeight: '1.4'
   },
 
-  // ✅ Success stats
+  // Success stats
   statsSection: {
     padding: '20px',
     backgroundColor: '#f0fdf4',
