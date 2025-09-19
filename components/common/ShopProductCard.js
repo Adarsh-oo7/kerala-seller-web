@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import axios from 'axios';
 import { 
   ShoppingCart, 
   Heart, 
@@ -25,7 +26,11 @@ const getApiBaseUrl = () => {
   return 'https://keralaseller-backend.onrender.com';
 };
 
-// ✅ SEO-friendly URL generator (same as other components)
+const API_BASE_URL = getApiBaseUrl();
+const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
+const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
+
+// ✅ SEO-friendly URL generator
 const generateShopSlug = (store) => {
   if (!store || !store.name) return 'shop';
   
@@ -47,9 +52,21 @@ const generateShopSlug = (store) => {
   return slug.length >= 3 ? slug : `shop-${store.seller_phone || 'store'}`;
 };
 
+// ✅ Enhanced token handling function
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('access_token') || 
+                localStorage.getItem('buyerAccessToken') ||
+                localStorage.getItem('buyerToken') ||
+                localStorage.getItem('accessToken');
+                
+  if (!token) {
+    return null;
+  }
+  return { 'Authorization': `Bearer ${token}` };
+};
+
 /**
- * ShopProductCard - Product card specifically designed for shop pages
- * This component creates shop-specific product URLs and maintains shop context
+ * ShopProductCard - Product card with integrated wishlist functionality
  */
 export default function ShopProductCard({ 
   product, 
@@ -59,10 +76,19 @@ export default function ShopProductCard({
   onAddToCart, 
   isLoading = false, 
   cartItems = [],
-  showStoreName = false // Option to show store name on card
+  showStoreName = false,
+  // ✅ NEW: Wishlist props
+  isWishlisted = false,
+  onWishlistUpdate = null // Callback to update parent state
 }) {
   const [imageError, setImageError] = useState(false);
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [localWishlistState, setLocalWishlistState] = useState(isWishlisted);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+
+  // ✅ Sync with parent wishlist state
+  useEffect(() => {
+    setLocalWishlistState(isWishlisted);
+  }, [isWishlisted]);
 
   if (!product) return null;
 
@@ -70,12 +96,10 @@ export default function ShopProductCard({
   const getProductUrl = () => {
     if (!product.id || !sellerPhone) return '#';
     
-    // If we have store data, use SEO-friendly URL
     if (store && store.name && shopSlug) {
       return `/shop/${shopSlug}/product/${product.id}?id=${sellerPhone}`;
     }
     
-    // Fallback: use phone-based URL
     return `/shop/${sellerPhone}/product/${product.id}`;
   };
 
@@ -86,10 +110,93 @@ export default function ShopProductCard({
     const imageUrl = product.main_image_url || product.image_url;
     
     if (imageUrl && imageUrl.startsWith('/media/')) {
-      return `${getApiBaseUrl()}${imageUrl}`;
+      return `${API_BASE_URL}${imageUrl}`;
     }
     
     return imageUrl || 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
+  };
+
+  // ✅ FIXED: Proper wishlist toggle integration
+  const handleWishlistToggle = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const headers = getAuthHeaders();
+    if (!headers) {
+      const shouldLogin = window.confirm('Please login to add items to your wishlist. Would you like to login now?');
+      if (shouldLogin) {
+        window.location.href = '/login/buyer';
+      }
+      return;
+    }
+
+    if (isWishlistLoading) {
+      console.log('⏳ Wishlist request already in progress for product:', product.id);
+      return;
+    }
+
+    setIsWishlistLoading(true);
+    const previousState = localWishlistState;
+    
+    // Optimistic update
+    setLocalWishlistState(!localWishlistState);
+    
+    try {
+      console.log('🔄 Toggling wishlist for product:', product.id);
+      
+      const response = await axios.post(WISHLIST_TOGGLE_API, {
+        product_id: product.id
+      }, { 
+        headers,
+        timeout: 10000
+      });
+
+      console.log('✅ Wishlist toggle response:', response.data);
+
+      const newWishlistState = response.data.is_wishlisted ?? response.data.wishlisted;
+      setLocalWishlistState(newWishlistState);
+      
+      // ✅ Notify parent component about wishlist change
+      if (onWishlistUpdate) {
+        onWishlistUpdate(product.id, newWishlistState);
+      }
+
+      // Show user feedback
+      const action = newWishlistState ? 'added to' : 'removed from';
+      console.log(`✅ ${product.name} ${action} wishlist`);
+      
+      // Visual feedback
+      showWishlistFeedback(newWishlistState);
+
+    } catch (error) {
+      console.error('❌ Wishlist toggle error:', error);
+      
+      // Revert optimistic update
+      setLocalWishlistState(previousState);
+      
+      if (error.response?.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('buyerAccessToken');
+        alert('Session expired. Please login again.');
+      } else {
+        const errorMessage = error.response?.data?.error || 'Failed to update wishlist. Please try again.';
+        alert(errorMessage);
+      }
+    } finally {
+      setIsWishlistLoading(false);
+    }
+  };
+
+  // ✅ Visual feedback for wishlist actions
+  const showWishlistFeedback = (isAdded) => {
+    // Find the heart button and add visual feedback
+    const heartButton = document.querySelector(`[data-product-id="${product.id}"] .wishlist-heart`);
+    if (heartButton) {
+      heartButton.style.transform = 'scale(1.2)';
+      setTimeout(() => {
+        heartButton.style.transform = 'scale(1)';
+      }, 200);
+    }
   };
 
   // Cart functionality
@@ -129,8 +236,11 @@ export default function ShopProductCard({
   };
 
   return (
-    <div className={`shop-product-card ${getStockStatus()}`} style={styles.shopProductCard}>
-      {/* ✅ Fixed: Product link now goes to shop-specific product page */}
+    <div 
+      className={`shop-product-card ${getStockStatus()}`} 
+      style={styles.shopProductCard}
+      data-product-id={product.id}
+    >
       <Link 
         href={getProductUrl()} 
         className="shop-product-link" 
@@ -166,19 +276,28 @@ export default function ShopProductCard({
             )}
           </div>
           
-          {/* Quick actions */}
+          {/* ✅ FIXED: Wishlist button with real functionality */}
           <div className="quick-actions" style={styles.quickActions}>
             <button
-              className={`quick-action-btn ${isWishlisted ? 'active' : ''}`}
-              style={styles.quickActionBtn}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsWishlisted(!isWishlisted);
+              className={`quick-action-btn wishlist-heart ${localWishlistState ? 'active' : ''} ${isWishlistLoading ? 'loading' : ''}`}
+              style={{
+                ...styles.quickActionBtn,
+                ...(localWishlistState ? styles.quickActionBtnActive : {}),
+                ...(isWishlistLoading ? styles.quickActionBtnLoading : {})
               }}
-              aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+              onClick={handleWishlistToggle}
+              disabled={isWishlistLoading}
+              aria-label={localWishlistState ? 'Remove from wishlist' : 'Add to wishlist'}
             >
-              <Heart size={14} fill={isWishlisted ? 'currentColor' : 'none'} />
+              {isWishlistLoading ? (
+                <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
+              ) : (
+                <Heart 
+                  size={14} 
+                  fill={localWishlistState ? '#ef4444' : 'none'} 
+                  color={localWishlistState ? '#ef4444' : 'currentColor'}
+                />
+              )}
             </button>
           </div>
         </div>
@@ -253,6 +372,14 @@ export default function ShopProductCard({
               </span>
             )}
           </div>
+          
+          {/* ✅ Wishlist indicator (optional) */}
+          {localWishlistState && (
+            <div className="wishlist-indicator" style={styles.wishlistIndicator}>
+              <Heart size={12} fill="#ef4444" color="#ef4444" />
+              <span>In Wishlist</span>
+            </div>
+          )}
         </div>
       </Link>
       
@@ -300,7 +427,7 @@ export default function ShopProductCard({
   );
 }
 
-// ✅ Styles for ShopProductCard
+// ✅ Enhanced styles with wishlist states
 const styles = {
   shopProductCard: {
     backgroundColor: 'white',
@@ -374,7 +501,7 @@ const styles = {
     position: 'absolute',
     top: '8px',
     right: '8px',
-    zIndex: 2
+    zIndex: 3
   },
   
   quickActionBtn: {
@@ -389,7 +516,21 @@ const styles = {
     justifyContent: 'center',
     color: '#6b7280',
     transition: 'all 0.2s',
-    backdropFilter: 'blur(4px)'
+    backdropFilter: 'blur(4px)',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+  },
+  
+  // ✅ NEW: Active wishlist button style
+  quickActionBtnActive: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    color: '#ef4444',
+    borderColor: 'rgba(239, 68, 68, 0.3)'
+  },
+  
+  // ✅ NEW: Loading wishlist button style
+  quickActionBtnLoading: {
+    cursor: 'not-allowed',
+    opacity: 0.7
   },
   
   productInfo: {
@@ -481,7 +622,7 @@ const styles = {
   },
   
   stockInfo: {
-    marginBottom: 'auto'
+    marginBottom: '8px'
   },
   
   stockAvailable: {
@@ -494,6 +635,17 @@ const styles = {
     color: '#ef4444',
     fontSize: '0.85rem',
     fontWeight: '500'
+  },
+  
+  // ✅ NEW: Wishlist indicator in product info
+  wishlistIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '0.8rem',
+    color: '#ef4444',
+    fontWeight: '500',
+    marginBottom: '8px'
   },
   
   productActions: {

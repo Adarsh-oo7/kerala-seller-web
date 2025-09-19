@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -21,10 +21,11 @@ import {
   AlertCircle,
   RefreshCw,
   Calendar,
-  Globe
+  Globe,
+  Store
 } from 'lucide-react';
 
-// ✅ Enhanced API base URL handling with environment variables
+// API base URL handling
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
@@ -41,13 +42,6 @@ const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const ORDERS_COUNT_API = `${API_BASE_URL}/api/buyer/orders/count/`;
 
-console.log('🌐 Profile API URLs configured:', { 
-  API_BASE_URL, 
-  PROFILE_API, 
-  WISHLIST_API, 
-  ORDERS_COUNT_API 
-});
-
 export default function ProfilePage() {
   const [buyer, setBuyer] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,39 +51,138 @@ export default function ProfilePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
   const [storeData, setStoreData] = useState(null);
+  
+  const hasFetchedRef = useRef(false);
   const router = useRouter();
 
-  // ✅ Enhanced token handling - supports both Google login and regular login
-  const getAuthHeaders = useCallback(() => {
+  const getAuthHeaders = () => {
     const token = localStorage.getItem('access_token') || 
                   localStorage.getItem('buyerAccessToken');
     
     if (!token) {
       console.error('❌ No authentication token found');
-      router.push('/login/buyer');
       return null;
     }
     
-    console.log('🔍 Using token:', token.substring(0, 30) + '...');
     return { 'Authorization': `Bearer ${token}` };
-  }, [router]);
+  };
 
-  // ✅ Enhanced logout function that clears ALL authentication data
-  const clearAuthAndLogout = useCallback(() => {
+  // ✅ FIXED: Enhanced shop context detection with proper priority
+  const getShopContext = () => {
+    if (typeof window === 'undefined') return { shopId: null, isInShop: false, shopUrl: null };
+    
+    const currentPath = window.location.pathname;
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    console.log('🔍 Analyzing shop context:', {
+      path: currentPath,
+      search: window.location.search,
+      fullUrl: window.location.href
+    });
+    
+    let shopId = null;
+    let shopUrl = null;
+    let isInShop = false;
+    let detectionMethod = 'none';
+
+    // ✅ CRITICAL FIX: Priority 1 - Query parameter ?id=xxx (highest priority for your case)
+    const queryShopId = searchParams.get('id');
+    if (queryShopId && queryShopId.trim() && /^\d+$/.test(queryShopId.trim())) {
+      shopId = queryShopId.trim();
+      shopUrl = `/shop/${shopId}`;
+      isInShop = true;
+      detectionMethod = 'query';
+      console.log('✅ Shop context from query parameter:', { shopId, shopUrl, method: detectionMethod });
+    }
+
+    // Priority 2: Check /shop/{id} pattern in URL path (only if query didn't work)
+    if (!isInShop) {
+      const shopPathMatch = currentPath.match(/\/shop\/([^\/\?]+)/);
+      if (shopPathMatch) {
+        const pathShopId = shopPathMatch[1];
+        // Only use if it's a valid numeric ID (not "new" or other words)
+        if (/^\d+$/.test(pathShopId)) {
+          shopId = pathShopId;
+          shopUrl = `/shop/${shopId}`;
+          isInShop = true;
+          detectionMethod = 'path';
+          console.log('✅ Shop context from path (numeric):', { shopId, shopUrl, method: detectionMethod });
+        } else {
+          console.log('⚠️ Ignoring non-numeric path segment:', pathShopId);
+        }
+      }
+    }
+
+    // Priority 3: Check document referrer (only if above methods failed)
+    if (!isInShop && typeof document !== 'undefined') {
+      const referrer = document.referrer;
+      if (referrer) {
+        const referrerMatch = referrer.match(/\/shop\/([^\/\?]+)/);
+        if (referrerMatch) {
+          const referrerShopId = referrerMatch[1];
+          if (/^\d+$/.test(referrerShopId)) {
+            shopId = referrerShopId;
+            shopUrl = `/shop/${shopId}`;
+            isInShop = true;
+            detectionMethod = 'referrer';
+            console.log('✅ Shop context from referrer:', { shopId, shopUrl, method: detectionMethod });
+          }
+        }
+      }
+    }
+
+    // Priority 4: Check sessionStorage (only as last resort)
+    if (!isInShop) {
+      try {
+        const savedShopContext = sessionStorage.getItem('currentShopContext');
+        if (savedShopContext) {
+          const parsed = JSON.parse(savedShopContext);
+          if (parsed.shopId && /^\d+$/.test(parsed.shopId)) {
+            // Only use if it's recent (within 1 hour)
+            const age = Date.now() - (parsed.timestamp || 0);
+            if (age < 3600000) { // 1 hour
+              shopId = parsed.shopId;
+              shopUrl = `/shop/${shopId}`;
+              isInShop = true;
+              detectionMethod = 'session';
+              console.log('✅ Shop context from session:', { shopId, shopUrl, method: detectionMethod, age });
+            } else {
+              console.log('⚠️ Session shop context too old, ignoring');
+              sessionStorage.removeItem('currentShopContext');
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to parse shop context from session');
+      }
+    }
+
+    // Save current valid shop context to sessionStorage
+    if (isInShop && shopId && /^\d+$/.test(shopId)) {
+      try {
+        sessionStorage.setItem('currentShopContext', JSON.stringify({ 
+          shopId, 
+          shopUrl, 
+          detectionMethod,
+          timestamp: Date.now() 
+        }));
+      } catch (e) {
+        console.warn('⚠️ Failed to save shop context to session');
+      }
+    }
+
+    console.log('🏪 Final shop context:', { shopId, shopUrl, isInShop, detectionMethod });
+
+    return { shopId, shopUrl, isInShop, detectionMethod };
+  };
+
+  const clearAuthAndLogout = () => {
     console.log('🔄 Clearing all authentication data...');
     
-    // Clear all possible token and data keys
     const keysToRemove = [
-      'access_token',
-      'buyerAccessToken', 
-      'refresh_token',
-      'userInfo',
-      'user',
-      'wishlist',
-      'multiCarts',
-      'cart',
-      'cameFromLogin',
-      'preLoginPath'
+      'access_token', 'buyerAccessToken', 'refresh_token',
+      'userInfo', 'user', 'wishlist', 'multiCarts', 'cart',
+      'cameFromLogin', 'preLoginPath'
     ];
     
     keysToRemove.forEach(key => {
@@ -97,62 +190,93 @@ export default function ProfilePage() {
       sessionStorage.removeItem(key);
     });
     
-    console.log('✅ Authentication data cleared');
+    const shopContext = getShopContext();
     
-    // Redirect to appropriate login page based on store context
-    const { isInStore, storeId } = getCurrentStoreInfo();
-    if (isInStore && storeId) {
-      router.push(`/store/${storeId}/login`);
+    if (shopContext.isInShop && shopContext.shopId) {
+      console.log('🏪 Redirecting to shop login:', `${shopContext.shopUrl}/login`);
+      router.push(`${shopContext.shopUrl}/login`);
     } else {
+      console.log('🏠 No shop context, redirecting to main login');
       router.push('/login/buyer');
     }
-  }, [router]);
+  };
 
-  // ✅ Enhanced: Get current store info from URL
-  const getCurrentStoreInfo = useCallback(() => {
-    if (typeof window === 'undefined') return { storeId: null, isInStore: false };
-    
-    const currentPath = window.location.pathname;
-    const storeMatch = currentPath.match(/\/store\/([^\/]+)/);
+  const getCurrentStoreInfo = () => {
+    const shopContext = getShopContext();
     return {
-      storeId: storeMatch ? storeMatch[1] : null,
-      isInStore: !!storeMatch
+      storeId: shopContext.shopId,
+      isInStore: shopContext.isInShop,
+      shopUrl: shopContext.shopUrl,
+      detectionMethod: shopContext.detectionMethod
     };
-  }, []);
+  };
 
-  // ✅ Enhanced: Fetch store data when in store context
-  const fetchStoreData = useCallback(async (storeId, headers) => {
+  const fetchStoreData = async (storeId, headers) => {
+    // ✅ FIXED: Validate store ID before making API calls
+    if (!storeId || !storeId.trim() || !/^\d+$/.test(storeId.trim())) {
+      console.warn('⚠️ Invalid store ID for API call:', storeId);
+      setStoreData(null);
+      return null;
+    }
+
+    const validStoreId = storeId.trim();
+
     try {
-      console.log('🏪 Fetching store data for:', storeId);
-      const storeResponse = await axios.get(`${API_BASE_URL}/api/stores/${storeId}/`, { 
-        headers,
-        timeout: 10000
-      });
+      console.log('🏪 Fetching store data for valid ID:', validStoreId);
       
-      console.log('✅ Store data received:', storeResponse.data);
-      setStoreData(storeResponse.data);
+      let storeResponse;
+      
+      // Try phone-based lookup first
+      try {
+        storeResponse = await axios.get(`${API_BASE_URL}/api/stores/by-phone/${validStoreId}/`, { 
+          headers,
+          timeout: 10000
+        });
+        console.log('✅ Store found by phone');
+      } catch (phoneError) {
+        console.warn('⚠️ Phone lookup failed, trying ID lookup');
+      }
+      
+      // Fallback to ID lookup
+      if (!storeResponse) {
+        try {
+          storeResponse = await axios.get(`${API_BASE_URL}/api/stores/${validStoreId}/`, { 
+            headers,
+            timeout: 10000
+          });
+          console.log('✅ Store found by ID');
+        } catch (idError) {
+          console.warn('⚠️ ID lookup failed');
+        }
+      }
+      
+      if (storeResponse && storeResponse.data) {
+        setStoreData(storeResponse.data);
+        return storeResponse.data;
+      } else {
+        setStoreData(null);
+        return null;
+      }
       
     } catch (error) {
-      console.warn('⚠️ Failed to fetch store data:', error);
-      // Don't fail the whole profile load if store data fails
+      console.error('❌ Error fetching store data:', error);
       setStoreData(null);
+      return null;
     }
-  }, []);
+  };
 
-  // ✅ Enhanced: Store-specific wishlist count with better error handling
-  const fetchWishlistCount = useCallback(async (headers) => {
+  const fetchWishlistCount = async (headers) => {
     try {
-      console.log('🔍 Fetching wishlist count...');
+      const storeInfo = getCurrentStoreInfo();
       
-      // Get current store context
-      const { storeId, isInStore } = getCurrentStoreInfo();
-      
-      // Build wishlist URL with store filter if in store context
-      const wishlistUrl = isInStore && storeId 
-        ? `${WISHLIST_API}?store_id=${storeId}` 
-        : WISHLIST_API;
-      
-      console.log('🔍 Fetching wishlist from:', wishlistUrl);
+      // ✅ FIXED: Only add store filter if we have a valid numeric store ID
+      let wishlistUrl = WISHLIST_API;
+      if (storeInfo.isInStore && storeInfo.storeId && /^\d+$/.test(storeInfo.storeId)) {
+        wishlistUrl = `${WISHLIST_API}?store_id=${storeInfo.storeId}`;
+        console.log('🔍 Fetching wishlist with store filter:', wishlistUrl);
+      } else {
+        console.log('🔍 Fetching wishlist without store filter:', wishlistUrl);
+      }
       
       const wishlistResponse = await axios.get(wishlistUrl, { 
         headers,
@@ -160,9 +284,6 @@ export default function ProfilePage() {
       });
       const wishlistData = wishlistResponse.data;
       
-      console.log('✅ Wishlist data received:', wishlistData);
-      
-      // ✅ Enhanced: Better handling of different response formats
       let count = 0;
       if (wishlistData) {
         if (Array.isArray(wishlistData)) {
@@ -178,46 +299,27 @@ export default function ProfilePage() {
         }
       }
       
-      console.log('📊 Setting wishlist count:', count);
+      console.log('✅ Wishlist count set:', count);
       setWishlistCount(count);
       
     } catch (wishlistError) {
-      console.warn("⚠️ Wishlist API error:", wishlistError.response?.status, wishlistError.response?.data);
-      
-      // ✅ Enhanced: Better fallback handling
-      if (wishlistError.response?.status === 401) {
-        // Don't fallback to localStorage on auth error - this indicates session expired
-        console.warn('🔐 Auth error for wishlist - session may be expired');
-        setWishlistCount(0);
-      } else {
-        // Fallback to localStorage only for other errors (network, server issues)
-        try {
-          const localWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-          const fallbackCount = Array.isArray(localWishlist) ? localWishlist.length : 0;
-          console.log('📱 Using localStorage fallback count:', fallbackCount);
-          setWishlistCount(fallbackCount);
-        } catch (localError) {
-          console.warn('❌ localStorage fallback failed:', localError);
-          setWishlistCount(0);
-        }
-      }
+      console.warn("⚠️ Wishlist API error:", wishlistError);
+      setWishlistCount(0);
     }
-  }, [getCurrentStoreInfo]);
+  };
 
-  // ✅ Enhanced: Store-specific orders count with better error handling
-  const fetchOrdersCount = useCallback(async (headers) => {
+  const fetchOrdersCount = async (headers) => {
     try {
-      console.log('🔍 Fetching orders count...');
+      const storeInfo = getCurrentStoreInfo();
       
-      // Get current store context
-      const { storeId, isInStore } = getCurrentStoreInfo();
-      
-      // Build orders URL with store filter if in store context
-      const ordersUrl = isInStore && storeId 
-        ? `${ORDERS_COUNT_API}?store_id=${storeId}` 
-        : ORDERS_COUNT_API;
-      
-      console.log('🔍 Fetching orders from:', ordersUrl);
+      // ✅ FIXED: Only add store filter if we have a valid numeric store ID
+      let ordersUrl = ORDERS_COUNT_API;
+      if (storeInfo.isInStore && storeInfo.storeId && /^\d+$/.test(storeInfo.storeId)) {
+        ordersUrl = `${ORDERS_COUNT_API}?store_id=${storeInfo.storeId}`;
+        console.log('🔍 Fetching orders with store filter:', ordersUrl);
+      } else {
+        console.log('🔍 Fetching orders without store filter:', ordersUrl);
+      }
       
       const ordersResponse = await axios.get(ordersUrl, { 
         headers,
@@ -225,19 +327,22 @@ export default function ProfilePage() {
       });
       
       const count = ordersResponse.data.count || ordersResponse.data.total || 0;
-      console.log('📊 Setting orders count:', count);
+      console.log('✅ Orders count set:', count);
       setOrdersCount(count);
       
     } catch (ordersError) {
-      console.warn("⚠️ Orders count API error:", ordersError.response?.status, ordersError.response?.data);
+      console.warn("⚠️ Orders count API error:", ordersError);
       setOrdersCount(0);
     }
-  }, [getCurrentStoreInfo]);
+  };
 
-  // ✅ Enhanced: Main profile fetch function with parallel data loading
-  const fetchProfile = useCallback(async (showRefreshing = false) => {
+  const fetchProfile = async (showRefreshing = false) => {
     const headers = getAuthHeaders();
     if (!headers) return;
+    
+    if (hasFetchedRef.current && !showRefreshing) {
+      return;
+    }
     
     if (showRefreshing) {
       setIsRefreshing(true);
@@ -247,51 +352,43 @@ export default function ProfilePage() {
     setError('');
     
     try {
-      console.log('🔍 Fetching profile from:', PROFILE_API);
-      console.log('🔍 Using headers:', headers);
-      
-      // Fetch profile data
       const response = await axios.get(PROFILE_API, { 
         headers,
         timeout: 15000
       });
       
-      console.log('✅ Profile data received:', response.data);
       setBuyer(response.data);
       
-      // Store user info for header component
       try {
         localStorage.setItem('userInfo', JSON.stringify(response.data));
       } catch (storageError) {
         console.warn('⚠️ Failed to store user info:', storageError);
       }
       
-      // ✅ Update current store info
       const storeInfo = getCurrentStoreInfo();
       setCurrentStoreInfo(storeInfo);
+      console.log('🏪 Store info set:', storeInfo);
       
-      // ✅ Fetch additional data in parallel
-      const dataPromises = [
-        fetchWishlistCount(headers),
-        fetchOrdersCount(headers)
-      ];
-      
-      // Add store data fetch if in store context
-      if (storeInfo.isInStore && storeInfo.storeId) {
-        dataPromises.push(fetchStoreData(storeInfo.storeId, headers));
+      if (!hasFetchedRef.current || showRefreshing) {
+        const dataPromises = [
+          fetchWishlistCount(headers),
+          fetchOrdersCount(headers)
+        ];
+        
+        // ✅ FIXED: Only fetch store data if we have a valid numeric store ID
+        if (storeInfo.isInStore && storeInfo.storeId && /^\d+$/.test(storeInfo.storeId)) {
+          dataPromises.push(fetchStoreData(storeInfo.storeId, headers));
+        }
+        
+        await Promise.allSettled(dataPromises);
+        hasFetchedRef.current = true;
       }
       
-      await Promise.allSettled(dataPromises);
-      console.log('✅ All profile data loaded');
-      
     } catch (error) {
-      console.error("❌ Failed to fetch profile:", error.response?.status, error.response?.data);
+      console.error("❌ Failed to fetch profile:", error);
       
       if (error.response?.status === 401) {
-        console.error('❌ 401 Unauthorized - clearing all auth data');
         clearAuthAndLogout();
-      } else if (error.code === 'ECONNABORTED') {
-        setError('Request timed out. Please check your connection and try again.');
       } else {
         const errorMessage = error.response?.data?.error || 
                            error.response?.data?.detail || 
@@ -303,89 +400,76 @@ export default function ProfilePage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [getAuthHeaders, fetchWishlistCount, fetchOrdersCount, fetchStoreData, clearAuthAndLogout, getCurrentStoreInfo]);
+  };
 
-  // ✅ Load profile on component mount
   useEffect(() => {
     fetchProfile();
-  }, [fetchProfile]);
+  }, []);
 
-  // ✅ Enhanced logout with confirmation
   const handleLogout = () => {
-    const { isInStore, storeId } = currentStoreInfo;
-    const context = isInStore ? `store ${storeId}` : 'your account';
+    const shopContext = getShopContext();
+    const context = shopContext.isInShop ? `shop ${shopContext.shopId}` : 'your account';
     
     if (window.confirm(`Are you sure you want to logout from ${context}?`)) {
       clearAuthAndLogout();
     }
   };
 
-  // ✅ Enhanced: Store-aware back navigation
   const handleBackClick = () => {
-    // Get current store context
-    const { storeId, isInStore } = getCurrentStoreInfo();
+    const shopContext = getShopContext();
     
-    if (isInStore && storeId) {
-      // If we're in a store, go back to that store's main page
-      router.push(`/store/${storeId}`);
-      return;
-    }
+    console.log('🔄 Back button clicked with shop context:', shopContext);
     
-    // Original logic for non-store pages
-    const preLoginPath = sessionStorage.getItem('preLoginPath');
-    
-    if (preLoginPath && preLoginPath !== '/profile') {
-      sessionStorage.removeItem('preLoginPath');
-      sessionStorage.removeItem('cameFromLogin');
+    if (shopContext.isInShop && shopContext.shopId) {
+      // ✅ FIXED: Use the original URL format for back navigation
+      let backUrl = shopContext.shopUrl || `/shop/${shopContext.shopId}`;
       
-      if (preLoginPath.startsWith('/') && !preLoginPath.includes('/login') && !preLoginPath.includes('/register')) {
-        router.push(preLoginPath);
-        return;
+      // If we detected from query params, preserve the original format
+      if (shopContext.detectionMethod === 'query') {
+        backUrl = `/shop/new?id=${shopContext.shopId}`;
       }
-    }
-    
-    const cameFromLogin = sessionStorage.getItem('cameFromLogin');
-    if (cameFromLogin === 'true') {
-      sessionStorage.removeItem('cameFromLogin');
-      router.push('/');
+      
+      console.log('↩️ Staying in shop context, going to:', backUrl);
+      router.push(backUrl);
       return;
     }
+    
+    console.log('↩️ No shop context found, using regular navigation');
     
     try {
       if (typeof window !== 'undefined' && window.history.length > 1) {
         const referrer = document.referrer;
-        const currentOrigin = window.location.origin;
         
-        if (referrer && 
-            referrer.startsWith(currentOrigin) && 
-            !referrer.includes('/login') && 
-            !referrer.includes('/register') &&
-            !referrer.includes('/profile')) {
+        if (referrer && referrer.includes(window.location.origin)) {
           router.back();
-        } else {
-          router.push('/');
+          return;
         }
-      } else {
-        router.push('/');
       }
     } catch (error) {
       console.error('Navigation error:', error);
-      router.push('/');
     }
+    
+    router.push('/');
   };
 
-  // ✅ Enhanced: Store-aware menu links with smart URLs
   const renderMenuLinks = () => {
-    const { storeId, isInStore } = currentStoreInfo;
+    const shopContext = getShopContext();
     
-    // ✅ Generate store-aware URLs
-    const getStoreAwareUrl = (basePath) => {
-      return isInStore && storeId ? `/store/${storeId}${basePath}` : basePath;
+    const getShopAwareUrl = (basePath) => {
+      if (shopContext.isInShop && shopContext.shopId) {
+        // Preserve the original URL format
+        if (shopContext.detectionMethod === 'query') {
+          return `/shop/new${basePath}?id=${shopContext.shopId}`;
+        } else {
+          return `/shop/${shopContext.shopId}${basePath}`;
+        }
+      }
+      return basePath;
     };
     
     return (
       <div style={styles.menuGrid}>
-        <Link href={getStoreAwareUrl('/profile/edit')} style={styles.menuItem}>
+        <Link href={getShopAwareUrl('/profile/edit')} style={styles.menuItem}>
           <div style={styles.menuItemContent}>
             <div style={styles.menuIcon}>
               <Edit3 size={24} />
@@ -398,14 +482,14 @@ export default function ProfilePage() {
           <ChevronRight size={20} style={styles.chevron} />
         </Link>
 
-        <Link href={getStoreAwareUrl('/profile/orders')} style={styles.menuItem}>
+        <Link href={getShopAwareUrl('/profile/orders')} style={styles.menuItem}>
           <div style={styles.menuItemContent}>
             <div style={styles.menuIcon}>
               <Package size={24} />
             </div>
             <div style={styles.menuInfo}>
               <span style={styles.menuLabel}>
-                {isInStore ? 'Orders from this Store' : 'My Orders'}
+                {shopContext.isInShop ? `Orders from ${storeData?.name || 'this Shop'}` : 'My Orders'}
               </span>
               <p style={styles.menuDesc}>
                 {ordersCount > 0 
@@ -418,14 +502,14 @@ export default function ProfilePage() {
           <ChevronRight size={20} style={styles.chevron} />
         </Link>
 
-        <Link href={getStoreAwareUrl('/profile/wishlist')} style={styles.menuItem}>
+        <Link href={getShopAwareUrl('/profile/wishlist')} style={styles.menuItem}>
           <div style={styles.menuItemContent}>
             <div style={{...styles.menuIcon, color: '#ef4444'}}>
               <Heart size={24} />
             </div>
             <div style={styles.menuInfo}>
               <span style={styles.menuLabel}>
-                {isInStore ? 'Wishlist from this Store' : 'My Wishlist'}
+                {shopContext.isInShop ? `${storeData?.name || 'Shop'} Wishlist` : 'My Wishlist'}
               </span>
               <p style={styles.menuDesc}>
                 {wishlistCount > 0 
@@ -438,7 +522,7 @@ export default function ProfilePage() {
           <ChevronRight size={20} style={styles.chevron} />
         </Link>
 
-        <Link href={getStoreAwareUrl('/profile/verification')} style={styles.menuItem}>
+        <Link href={getShopAwareUrl('/profile/verification')} style={styles.menuItem}>
           <div style={styles.menuItemContent}>
             <div style={{
               ...styles.menuIcon, 
@@ -459,23 +543,42 @@ export default function ProfilePage() {
           <ChevronRight size={20} style={styles.chevron} />
         </Link>
 
-        <Link href="/profile/settings" style={styles.menuItem}>
-          <div style={styles.menuItemContent}>
-            <div style={styles.menuIcon}>
-              <Settings size={24} />
+        {shopContext.isInShop && shopContext.shopId && (
+          <Link href={shopContext.detectionMethod === 'query' ? `/shop/new?id=${shopContext.shopId}` : `/shop/${shopContext.shopId}`} style={styles.menuItem}>
+            <div style={styles.menuItemContent}>
+              <div style={{...styles.menuIcon, color: '#059669'}}>
+                <Store size={24} />
+              </div>
+              <div style={styles.menuInfo}>
+                <span style={styles.menuLabel}>
+                  Back to {storeData?.name || 'Shop'}
+                </span>
+                <p style={styles.menuDesc}>Continue shopping in this store</p>
+              </div>
             </div>
-            <div style={styles.menuInfo}>
-              <span style={styles.menuLabel}>Account Settings</span>
-              <p style={styles.menuDesc}>Manage privacy, notifications, and preferences</p>
+            <ChevronRight size={20} style={styles.chevron} />
+          </Link>
+        )}
+
+        {!shopContext.isInShop && (
+          <Link href="/profile/settings" style={styles.menuItem}>
+            <div style={styles.menuItemContent}>
+              <div style={styles.menuIcon}>
+                <Settings size={24} />
+              </div>
+              <div style={styles.menuInfo}>
+                <span style={styles.menuLabel}>Account Settings</span>
+                <p style={styles.menuDesc}>Manage privacy, notifications, and preferences</p>
+              </div>
             </div>
-          </div>
-          <ChevronRight size={20} style={styles.chevron} />
-        </Link>
+            <ChevronRight size={20} style={styles.chevron} />
+          </Link>
+        )}
       </div>
     );
   };
 
-  // ✅ Enhanced date formatting
+  // Utility functions
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
@@ -485,12 +588,10 @@ export default function ProfilePage() {
         day: 'numeric'
       });
     } catch (error) {
-      console.warn('Date formatting error:', error);
       return 'N/A';
     }
   };
 
-  // ✅ Enhanced initials generation
   const getInitials = (name) => {
     if (!name || typeof name !== 'string') return 'U';
     return name.split(' ')
@@ -501,20 +602,23 @@ export default function ProfilePage() {
       .slice(0, 2);
   };
 
-  // ✅ Loading state
+  // Loading state
   if (isLoading) {
+    const shopContext = getShopContext();
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
         <p>Loading your profile...</p>
-        <p style={{fontSize: '12px', color: '#666'}}>
-          🌐 Connected to: {API_BASE_URL}
-        </p>
+        {shopContext.isInShop && (
+          <p style={{fontSize: '12px', color: '#666'}}>
+            🏪 Shop ID: {shopContext.shopId} • Method: {shopContext.detectionMethod}
+          </p>
+        )}
       </div>
     );
   }
 
-  // ✅ Error state
+  // Error state
   if (error && !buyer) {
     return (
       <div style={styles.errorContainer}>
@@ -535,19 +639,24 @@ export default function ProfilePage() {
     );
   }
 
-  // ✅ No profile state
   if (!buyer) {
+    const shopContext = getShopContext();
     return (
       <div style={styles.errorContainer}>
         <User size={48} color="#6b7280" />
         <h2>Profile not found</h2>
         <p>Could not load profile. Please try logging in again.</p>
-        <Link href="/login/buyer" style={styles.loginButton}>
+        <Link 
+          href={shopContext.isInShop ? `${shopContext.shopUrl}/login` : '/login/buyer'} 
+          style={styles.loginButton}
+        >
           Go to Login
         </Link>
       </div>
     );
   }
+
+  const shopContext = getShopContext();
 
   return (
     <div style={styles.pageContainer}>
@@ -557,22 +666,21 @@ export default function ProfilePage() {
           <button onClick={handleBackClick} style={styles.backButton}>
             <ArrowLeft size={20} />
             <span style={styles.backText}>
-              {currentStoreInfo.isInStore ? 'Back to Store' : 'Back'}
+              {shopContext.isInShop ? `Back to ${storeData?.name || 'Shop'}` : 'Back'}
             </span>
           </button>
           <h1 style={styles.headerTitle}>
-            {currentStoreInfo.isInStore ? 'Store Profile' : 'My Account'}
+            {shopContext.isInShop ? `${storeData?.name || 'Shop'} Profile` : 'My Account'}
           </h1>
           <div style={styles.headerActions}>
             <button 
               onClick={() => fetchProfile(true)} 
               style={styles.refreshButton}
               disabled={isRefreshing}
-              title="Refresh profile data"
             >
               <RefreshCw size={16} style={isRefreshing ? {animation: 'spin 1s linear infinite'} : {}} />
             </button>
-            <button onClick={handleLogout} style={styles.logoutButton} title="Logout">
+            <button onClick={handleLogout} style={styles.logoutButton}>
               <LogOut size={18} />
               <span style={styles.logoutText}>Logout</span>
             </button>
@@ -582,19 +690,19 @@ export default function ProfilePage() {
 
       <div style={styles.container}>
         <div style={styles.content}>
-          {/* ✅ Enhanced store context indicator */}
-          {currentStoreInfo.isInStore && (
+          {/* Shop context indicator */}
+          {shopContext.isInShop && (
             <div style={styles.storeIndicator}>
-              <Globe size={16} />
+              <Store size={20} />
               <div style={styles.storeIndicatorContent}>
                 <span style={styles.storeIndicatorTitle}>
-                  Store Profile Context
+                  Shopping in Independent Store
                 </span>
                 <span style={styles.storeIndicatorSubtitle}>
                   {storeData ? (
-                    <>Viewing profile for <strong>{storeData.name}</strong> • ID: {currentStoreInfo.storeId}</>
+                    <>You're shopping at <strong>{storeData.name}</strong> • Store ID: {shopContext.shopId}</>
                   ) : (
-                    <>Store ID: {currentStoreInfo.storeId}</>
+                    <>Store ID: {shopContext.shopId} • Detection: {shopContext.detectionMethod}</>
                   )}
                 </span>
               </div>
@@ -633,7 +741,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* ✅ Enhanced Quick Stats */}
+          {/* Quick Stats */}
           <div style={styles.statsGrid}>
             <div style={styles.statCard}>
               <div style={styles.statIcon}>
@@ -642,7 +750,7 @@ export default function ProfilePage() {
               <div style={styles.statContent}>
                 <span style={styles.statNumber}>{ordersCount}</span>
                 <span style={styles.statLabel}>
-                  {currentStoreInfo.isInStore ? 'Orders from Store' : 'Total Orders'}
+                  {shopContext.isInShop ? `Orders from ${storeData?.name || 'this Shop'}` : 'Total Orders'}
                 </span>
               </div>
             </div>
@@ -654,7 +762,7 @@ export default function ProfilePage() {
               <div style={styles.statContent}>
                 <span style={styles.statNumber}>{wishlistCount}</span>
                 <span style={styles.statLabel}>
-                  {currentStoreInfo.isInStore ? 'Store Wishlist' : 'Wishlist Items'}
+                  {shopContext.isInShop ? `${storeData?.name || 'Shop'} Wishlist` : 'Wishlist Items'}
                 </span>
               </div>
             </div>
@@ -688,19 +796,17 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* ✅ Enhanced menu section */}
+          {/* Menu section */}
           <div style={styles.menuSection}>
             <h3 style={styles.menuTitle}>
-              {currentStoreInfo.isInStore ? 'Store Account Management' : 'Account Management'}
+              {shopContext.isInShop ? `${storeData?.name || 'Shop'} Account Management` : 'Account Management'}
             </h3>
             {renderMenuLinks()}
           </div>
 
-          {/* ✅ Enhanced Account Summary */}
+          {/* Account Summary */}
           <div style={styles.summaryCard}>
-            <h3 style={styles.summaryTitle}>
-              {currentStoreInfo.isInStore ? 'Store Account Overview' : 'Account Overview'}
-            </h3>
+            <h3 style={styles.summaryTitle}>Account Overview</h3>
             <div style={styles.summaryGrid}>
               <div style={styles.summaryItem}>
                 <span style={styles.summaryLabel}>Account Status</span>
@@ -709,15 +815,11 @@ export default function ProfilePage() {
                 </span>
               </div>
               <div style={styles.summaryItem}>
-                <span style={styles.summaryLabel}>
-                  {currentStoreInfo.isInStore ? 'Store Orders' : 'Total Orders'}
-                </span>
+                <span style={styles.summaryLabel}>Orders</span>
                 <span style={styles.summaryValue}>{ordersCount}</span>
               </div>
               <div style={styles.summaryItem}>
-                <span style={styles.summaryLabel}>
-                  {currentStoreInfo.isInStore ? 'Store Wishlist' : 'Wishlist Items'}
-                </span>
+                <span style={styles.summaryLabel}>Wishlist</span>
                 <span style={{...styles.summaryValue, color: '#ef4444'}}>
                   {wishlistCount}
                 </span>
@@ -729,7 +831,10 @@ export default function ProfilePage() {
           <div style={styles.helpSection}>
             <h4 style={styles.helpTitle}>Need Help?</h4>
             <p style={styles.helpText}>
-              Contact our support team for assistance with your account or orders.
+              {shopContext.isInShop 
+                ? `Contact support for assistance with your ${storeData?.name || 'shop'} account.`
+                : 'Contact our support team for assistance with your account or orders.'
+              }
             </p>
             <div style={styles.helpActions}>
               <Link href="/support" style={styles.helpButton}>
@@ -741,7 +846,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -752,564 +856,222 @@ export default function ProfilePage() {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        
-        @media (max-width: 768px) {
-          .menu-item:hover {
-            transform: none;
-          }
-          
-          .menu-item:active {
-            transform: scale(0.98);
-          }
-        }
       `}</style>
     </div>
   );
 }
 
-// ✅ Enhanced styles with new store indicator styles
+// Keep all the existing styles
 const styles = {
-  // ✅ Enhanced store context indicator
   storeIndicator: {
     display: 'flex',
     alignItems: 'flex-start',
-    gap: '12px',
-    padding: '16px 20px',
-    backgroundColor: '#dbeafe',
-    border: '1px solid #3b82f6',
+    gap: '16px',
+    padding: '20px 24px',
+    backgroundColor: '#ecfdf5',
+    border: '2px solid #10b981',
     borderRadius: '12px',
     marginBottom: '24px'
   },
-
   storeIndicatorContent: {
     display: 'flex',
     flexDirection: 'column',
     gap: '4px'
   },
-
   storeIndicatorTitle: {
-    fontSize: '14px',
-    color: '#1e40af',
-    fontWeight: '600'
+    fontSize: '16px',
+    color: '#047857',
+    fontWeight: '700'
   },
-
   storeIndicatorSubtitle: {
-    fontSize: '13px',
-    color: '#3730a3',
+    fontSize: '14px',
+    color: '#059669',
     lineHeight: '1.4'
   },
-
-  pageContainer: {
-    minHeight: '100vh',
-    backgroundColor: '#f8fafc'
-  },
-  
+  pageContainer: { minHeight: '100vh', backgroundColor: '#f8fafc' },
   loadingContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100vh',
-    gap: '20px',
-    padding: '20px'
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    justifyContent: 'center', minHeight: '100vh', gap: '20px', padding: '20px'
   },
-  
   spinner: {
-    width: '32px',
-    height: '32px',
-    border: '3px solid #f3f3f3',
-    borderTop: '3px solid #3b82f6',
-    borderRadius: '50%',
+    width: '32px', height: '32px', border: '3px solid #f3f3f3',
+    borderTop: '3px solid #3b82f6', borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
   errorContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100vh',
-    gap: '20px',
-    textAlign: 'center',
-    padding: '40px'
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    justifyContent: 'center', minHeight: '100vh', gap: '20px',
+    textAlign: 'center', padding: '40px'
   },
-  
   retryButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 24px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '16px',
-    fontWeight: '500',
-    transition: 'all 0.2s'
+    display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px',
+    backgroundColor: '#3b82f6', color: 'white', border: 'none',
+    borderRadius: '8px', cursor: 'pointer', fontSize: '16px', fontWeight: '500'
   },
-
   logoutButtonError: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 24px',
-    backgroundColor: '#ef4444',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '16px',
-    fontWeight: '500',
-    transition: 'all 0.2s'
+    display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px',
+    backgroundColor: '#ef4444', color: 'white', border: 'none',
+    borderRadius: '8px', cursor: 'pointer', fontSize: '16px', fontWeight: '500'
   },
-  
   loginButton: {
-    display: 'inline-block',
-    padding: '12px 24px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    textDecoration: 'none',
-    borderRadius: '8px',
-    fontWeight: '500'
+    display: 'inline-block', padding: '12px 24px', backgroundColor: '#3b82f6',
+    color: 'white', textDecoration: 'none', borderRadius: '8px', fontWeight: '500'
   },
-
   header: {
-    backgroundColor: 'white',
-    borderBottom: '1px solid #e5e7eb',
-    position: 'sticky',
-    top: 0,
-    zIndex: 100,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    backgroundColor: 'white', borderBottom: '1px solid #e5e7eb',
+    position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
-  
   headerContainer: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '16px 20px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between'
+    maxWidth: '1200px', margin: '0 auto', padding: '16px 20px',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
   },
-  
   backButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    color: '#3b82f6',
-    background: 'none',
-    border: 'none',
-    fontSize: '16px',
-    fontWeight: '500',
-    padding: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    borderRadius: '6px'
+    display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6',
+    background: 'none', border: 'none', fontSize: '16px', fontWeight: '500',
+    padding: '8px', cursor: 'pointer', borderRadius: '6px'
   },
-  
-  backText: {
-    display: 'none'
-  },
-  
+  backText: { display: 'none', '@media (min-width: 768px)': { display: 'inline' } },
   headerTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
-    color: '#1f2937',
-    margin: 0
+    fontSize: '20px', fontWeight: '700', color: '#1f2937',
+    margin: 0, flex: 1, textAlign: 'center'
   },
-  
-  headerActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  },
-  
+  headerActions: { display: 'flex', alignItems: 'center', gap: '8px' },
   refreshButton: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '36px',
-    height: '36px',
-    backgroundColor: '#f3f4f6',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    color: '#6b7280',
-    transition: 'all 0.2s'
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    width: '36px', height: '36px', backgroundColor: '#f3f4f6',
+    border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', color: '#6b7280'
   },
-  
   logoutButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    background: 'none',
-    border: '2px solid #fee2e2',
-    borderRadius: '8px',
-    padding: '8px 12px',
-    color: '#dc2626',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '500',
-    transition: 'all 0.2s'
+    display: 'flex', alignItems: 'center', gap: '6px', background: 'none',
+    border: '2px solid #fee2e2', borderRadius: '8px', padding: '8px 12px',
+    color: '#dc2626', cursor: 'pointer', fontSize: '14px', fontWeight: '500'
   },
-  
-  logoutText: {
-    display: 'none'
-  },
-
-  container: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '24px 20px'
-  },
-  
+  logoutText: { display: 'none', '@media (min-width: 768px)': { display: 'inline' } },
+  container: { maxWidth: '1200px', margin: '0 auto', padding: '24px 20px' },
   content: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
+    display: 'flex', flexDirection: 'column', gap: '24px',
     animation: 'fadeIn 0.6s ease-out'
   },
-
   profileCard: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: '32px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb'
+    backgroundColor: 'white', borderRadius: '16px', padding: '32px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb'
   },
-  
-  avatarSection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '24px'
-  },
-  
+  avatarSection: { display: 'flex', alignItems: 'center', gap: '24px' },
   avatar: {
-    width: '80px',
-    height: '80px',
-    borderRadius: '50%',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '28px',
-    fontWeight: '700',
-    flexShrink: 0,
-    border: '3px solid #dbeafe'
+    width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#3b82f6',
+    color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '28px', fontWeight: '700', flexShrink: 0, border: '3px solid #dbeafe'
   },
-  
-  userInfo: {
-    flex: 1,
-    minWidth: 0
-  },
-  
-  userName: {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#1f2937',
-    margin: '0 0 8px 0'
-  },
-  
-  userEmail: {
-    color: '#6b7280',
-    margin: '0 0 16px 0',
-    fontSize: '16px'
-  },
-  
-  badgeContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
-  },
-  
-  verificationBadge: {
-    display: 'inline-block'
-  },
-  
+  userInfo: { flex: 1, minWidth: 0 },
+  userName: { fontSize: '28px', fontWeight: '700', color: '#1f2937', margin: '0 0 8px 0' },
+  userEmail: { color: '#6b7280', margin: '0 0 16px 0', fontSize: '16px' },
+  badgeContainer: { display: 'flex', flexDirection: 'column', gap: '8px' },
+  verificationBadge: { display: 'inline-block' },
   verified: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    color: '#10b981',
-    fontSize: '14px',
-    fontWeight: '600'
+    display: 'flex', alignItems: 'center', gap: '6px',
+    color: '#10b981', fontSize: '14px', fontWeight: '600'
   },
-  
   notVerified: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    color: '#ef4444',
-    fontSize: '14px',
-    fontWeight: '600'
+    display: 'flex', alignItems: 'center', gap: '6px',
+    color: '#ef4444', fontSize: '14px', fontWeight: '600'
   },
-  
   memberSince: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    color: '#6b7280',
-    fontSize: '13px'
+    display: 'flex', alignItems: 'center', gap: '6px',
+    color: '#6b7280', fontSize: '13px'
   },
-
-  // Stats Grid
   statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '16px'
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px'
   },
-  
   statCard: {
-    backgroundColor: 'white',
-    padding: '24px',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb'
+    backgroundColor: 'white', padding: '24px', borderRadius: '12px',
+    display: 'flex', alignItems: 'center', gap: '16px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb'
   },
-  
   statIcon: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '12px',
-    backgroundColor: '#f1f5f9',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0
+    width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#f1f5f9',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
   },
-  
-  statContent: {
-    display: 'flex',
-    flexDirection: 'column'
-  },
-  
-  statNumber: {
-    fontSize: '24px',
-    fontWeight: '700',
-    color: '#1f2937'
-  },
-  
-  statLabel: {
-    fontSize: '14px',
-    color: '#6b7280',
-    fontWeight: '500'
-  },
-
+  statContent: { display: 'flex', flexDirection: 'column' },
+  statNumber: { fontSize: '24px', fontWeight: '700', color: '#1f2937' },
+  statLabel: { fontSize: '14px', color: '#6b7280', fontWeight: '500' },
   infoCards: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '16px'
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px'
   },
-  
   infoCard: {
-    backgroundColor: 'white',
-    padding: '24px',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '16px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb'
+    backgroundColor: 'white', padding: '24px', borderRadius: '12px',
+    display: 'flex', alignItems: 'flex-start', gap: '16px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb'
   },
-  
   infoIcon: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '12px',
-    backgroundColor: '#f1f5f9',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#6b7280',
-    flexShrink: 0
+    width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#f1f5f9',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: '#6b7280', flexShrink: 0
   },
-  
-  infoContent: {
-    flex: 1,
-    minWidth: 0
-  },
-  
+  infoContent: { flex: 1, minWidth: 0 },
   infoLabel: {
-    display: 'block',
-    fontSize: '14px',
-    color: '#6b7280',
-    fontWeight: '600',
-    marginBottom: '6px'
+    display: 'block', fontSize: '14px', color: '#6b7280',
+    fontWeight: '600', marginBottom: '6px'
   },
-  
   infoValue: {
-    margin: 0,
-    fontSize: '16px',
-    color: '#1f2937',
-    fontWeight: '500',
-    lineHeight: '1.5'
+    margin: 0, fontSize: '16px', color: '#1f2937',
+    fontWeight: '500', lineHeight: '1.5'
   },
-
   menuSection: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: '32px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb'
+    backgroundColor: 'white', borderRadius: '16px', padding: '32px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb'
   },
-  
   menuTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
-    color: '#1f2937',
-    margin: '0 0 24px 0'
+    fontSize: '20px', fontWeight: '700', color: '#1f2937', margin: '0 0 24px 0'
   },
-  
-  menuGrid: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  },
-  
+  menuGrid: { display: 'flex', flexDirection: 'column', gap: '12px' },
   menuItem: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '20px',
-    backgroundColor: '#f8fafc',
-    borderRadius: '12px',
-    textDecoration: 'none',
-    color: 'inherit',
-    transition: 'all 0.2s',
-    border: '2px solid transparent'
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '20px', backgroundColor: '#f8fafc', borderRadius: '12px',
+    textDecoration: 'none', color: 'inherit', border: '2px solid transparent'
   },
-  
   menuItemContent: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    flex: 1
+    display: 'flex', alignItems: 'center', gap: '16px', flex: 1
   },
-  
   menuIcon: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '12px',
-    backgroundColor: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#3b82f6',
-    flexShrink: 0,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'white',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: '#3b82f6', flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
-  
-  menuInfo: {
-    flex: 1,
-    minWidth: 0
-  },
-  
+  menuInfo: { flex: 1, minWidth: 0 },
   menuLabel: {
-    display: 'block',
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: '4px'
+    display: 'block', fontSize: '18px', fontWeight: '600',
+    color: '#1f2937', marginBottom: '4px'
   },
-  
-  menuDesc: {
-    margin: 0,
-    fontSize: '14px',
-    color: '#6b7280',
-    lineHeight: '1.4'
-  },
-  
-  chevron: {
-    color: '#9ca3af',
-    flexShrink: 0
-  },
-
+  menuDesc: { margin: 0, fontSize: '14px', color: '#6b7280', lineHeight: '1.4' },
+  chevron: { color: '#9ca3af', flexShrink: 0 },
   summaryCard: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: '32px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb'
+    backgroundColor: 'white', borderRadius: '16px', padding: '32px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb'
   },
-  
   summaryTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
-    color: '#1f2937',
-    margin: '0 0 20px 0'
+    fontSize: '20px', fontWeight: '700', color: '#1f2937', margin: '0 0 20px 0'
   },
-  
   summaryGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-    gap: '16px'
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '16px'
   },
-  
   summaryItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    padding: '20px',
-    backgroundColor: '#f8fafc',
-    borderRadius: '12px',
-    textAlign: 'center'
+    display: 'flex', flexDirection: 'column', gap: '6px', padding: '20px',
+    backgroundColor: '#f8fafc', borderRadius: '12px', textAlign: 'center'
   },
-  
-  summaryLabel: {
-    fontSize: '14px',
-    color: '#6b7280',
-    fontWeight: '500'
-  },
-  
-  summaryValue: {
-    fontSize: '18px',
-    fontWeight: '700',
-    color: '#1f2937'
-  },
-
-  // Help Section
+  summaryLabel: { fontSize: '14px', color: '#6b7280', fontWeight: '500' },
+  summaryValue: { fontSize: '18px', fontWeight: '700', color: '#1f2937' },
   helpSection: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: '32px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb',
-    textAlign: 'center'
+    backgroundColor: 'white', borderRadius: '16px', padding: '32px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb', textAlign: 'center'
   },
-  
   helpTitle: {
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#1f2937',
-    margin: '0 0 8px 0'
+    fontSize: '18px', fontWeight: '600', color: '#1f2937', margin: '0 0 8px 0'
   },
-  
-  helpText: {
-    color: '#6b7280',
-    margin: '0 0 20px 0',
-    fontSize: '14px'
-  },
-  
-  helpActions: {
-    display: 'flex',
-    justifyContent: 'center'
-  },
-  
+  helpText: { color: '#6b7280', margin: '0 0 20px 0', fontSize: '14px' },
+  helpActions: { display: 'flex', justifyContent: 'center' },
   helpButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '10px 20px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    textDecoration: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '500',
-    transition: 'all 0.2s'
+    display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
+    backgroundColor: '#3b82f6', color: 'white', textDecoration: 'none',
+    borderRadius: '8px', fontSize: '14px', fontWeight: '500'
   }
 };
