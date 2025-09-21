@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from 'next/link';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useCart } from '../../app/context/CartContext';
 import { usePathname } from "next/navigation";
 import { 
@@ -25,8 +25,8 @@ import {
 } from 'lucide-react';
 import styles from './SHeader.module.css';
 
-// Bottom Navigation Component with Fluid Tan Theme
-function BottomNav({ store, sellerPhone }) {
+// Bottom Navigation Component with Shop-Aware Navigation
+function BottomNav({ store, shopSlug, actualStoreId }) {
   const [show, setShow] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -34,31 +34,19 @@ function BottomNav({ store, sellerPhone }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Use sellerPhone parameter as fallback if store data is incomplete
-  const storePhone = sellerPhone || store?.seller_phone;
+  // ✅ FIXED: Use actualStoreId for cart and navigation
+  const storePhone = actualStoreId || shopSlug || store?.seller_phone;
 
-  console.log('BottomNav - sellerPhone:', sellerPhone);
-  console.log('BottomNav - store?.seller_phone:', store?.seller_phone);
-  console.log('BottomNav - final storePhone:', storePhone);
-
-  // Total cart items across all stores for main navigation
-  const totalCartItemCount = Object.values(carts || {})
-    .flat()
-    .reduce((count, item) => count + item.quantity, 0);
-
-  // Individual store cart count if store is provided
+  // Store cart count for this specific store
   const storeCartCount = storePhone ? (carts[storePhone] || []).reduce((count, item) => count + item.quantity, 0) : 0;
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
-      // Show bottom nav when scrolling down past 100px
       if (currentScrollY > 100 && currentScrollY > lastScrollY) {
         setShow(true);
-      }
-      // Hide when scrolling up or near top
-      else if (currentScrollY < lastScrollY || currentScrollY < 50) {
+      } else if (currentScrollY < lastScrollY || currentScrollY < 50) {
         setShow(false);
       }
       
@@ -67,7 +55,6 @@ function BottomNav({ store, sellerPhone }) {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     
-    // Initial check for page position
     if (window.scrollY > 100) {
       setShow(true);
     }
@@ -75,61 +62,73 @@ function BottomNav({ store, sellerPhone }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
-  // Update active index based on current path
+  // ✅ UPDATED: Active index tracking with query parameters
   useEffect(() => {
     if (storePhone) {
-      if (pathname === `/shop/${storePhone}`) setActiveIndex(0);
-      else if (pathname.includes('/cart/')) setActiveIndex(1);
-      else if (pathname.includes('/about')) setActiveIndex(2);
-      else if (pathname.includes('/profile')) setActiveIndex(3);
+      const basePath = actualStoreId ? `/shop/new` : `/shop/${storePhone}`;
+      
+      if (pathname === basePath) setActiveIndex(0);
+      else if (pathname.includes(`${basePath}/cart`)) setActiveIndex(1);
+      else if (pathname.includes(`${basePath}/about`)) setActiveIndex(2);
+      else if (pathname.includes(`${basePath}/profile`)) setActiveIndex(3);
       else setActiveIndex(0);
-    } else {
-      if (pathname === "/") setActiveIndex(0);
-      else if (pathname === "/cart") setActiveIndex(1);
-      else if (pathname === "/about") setActiveIndex(2);
-      else if (pathname === "/profile") setActiveIndex(3);
     }
-  }, [pathname, storePhone]);
+  }, [pathname, storePhone, actualStoreId]);
 
-  // Handle profile navigation with explicit routing
-  const handleProfileNavigation = (e) => {
+  // ✅ FIXED: Navigation handler that preserves query parameters
+  const handleNavigation = (targetPath, index, e) => {
     e.preventDefault();
-    console.log('Navigating to profile page');
-    router.push('/profile');
+    setActiveIndex(index);
+    
+    let finalUrl = targetPath;
+    
+    // Add query parameter for 'new' shopSlug pattern
+    if (actualStoreId && shopSlug === 'new') {
+      const separator = targetPath.includes('?') ? '&' : '?';
+      finalUrl = `${targetPath}${separator}id=${actualStoreId}`;
+    }
+    
+    console.log('🔄 Bottom nav navigating to:', finalUrl);
+    router.push(finalUrl);
   };
 
-  // Don't render if we don't have a valid storePhone
   if (!storePhone) {
-    console.warn('BottomNav: No valid storePhone available');
     return null;
   }
 
+  // ✅ UPDATED: Navigation items with proper URL generation
+  const getNavUrl = (path) => {
+    if (actualStoreId && shopSlug === 'new') {
+      return `/shop/new${path}`;
+    }
+    return `/shop/${storePhone}${path}`;
+  };
+
   const navItems = [
     { 
-      href: `/shop/${storePhone}`, 
+      href: getNavUrl(''), 
       icon: Home, 
       label: "Home", 
       color: "#D2691E" 
     },
     { 
-      href: `/cart/${storePhone}`, 
+      href: getNavUrl('/cart'),
       icon: ShoppingCart, 
       label: "Cart", 
       color: "#CD853F",
       badge: storeCartCount 
     },
     { 
-      href: `/shop/${storePhone}/about`, 
+      href: getNavUrl('/about'), 
       icon: Info, 
       label: "About", 
       color: "#DEB887" 
     },
     { 
-      href: "/profile", 
+      href: getNavUrl('/profile'),
       icon: User, 
       label: "Profile", 
-      color: "#F4A460",
-      onClick: handleProfileNavigation
+      color: "#F4A460"
     }
   ];
 
@@ -150,16 +149,10 @@ function BottomNav({ store, sellerPhone }) {
         const isActive = activeIndex === index;
         
         return (
-          <Link
+          <button
             key={item.href}
-            href={item.href}
             className={`${styles.bottomNavItem} ${isActive ? styles.active : ""}`}
-            onClick={(e) => {
-              setActiveIndex(index);
-              if (item.onClick) {
-                item.onClick(e);
-              }
-            }}
+            onClick={(e) => handleNavigation(item.href, index, e)}
             aria-label={`${item.label}${item.badge ? ` with ${item.badge} items` : ""}`}
           >
             <div className={styles.navIcon} style={{
@@ -179,14 +172,14 @@ function BottomNav({ store, sellerPhone }) {
             >
               {item.label}
             </span>
-          </Link>
+          </button>
         );
       })}
     </nav>
   );
 }
 
-export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
+export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -200,17 +193,37 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
   const searchDesktopRef = useRef(null);
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams(); // ✅ ADDED: Get search parameters
 
-  // Use multiple sources for sellerPhone with priority order
-  const finalSellerPhone = sellerPhone || params?.sellerPhone || store?.seller_phone;
+  // ✅ CRITICAL FIX: Extract actual store ID from query parameters
+  const actualStoreId = searchParams.get('id'); // Get the ?id= parameter
+  const finalShopSlug = shopSlug || params?.shopSlug || store?.seller_phone;
   
-  console.log('SHeader - sellerPhone prop:', sellerPhone);
-  console.log('SHeader - params?.sellerPhone:', params?.sellerPhone);
-  console.log('SHeader - store?.seller_phone:', store?.seller_phone);
-  console.log('SHeader - final sellerPhone:', finalSellerPhone);
+  // ✅ ENHANCED: Better store identification
+  const effectiveStoreId = actualStoreId || (finalShopSlug !== 'new' ? finalShopSlug : null);
+  
+  console.log('🔍 SHeader Debug:');
+  console.log('- shopSlug prop:', shopSlug);
+  console.log('- params?.shopSlug:', params?.shopSlug);
+  console.log('- searchParams id:', actualStoreId);
+  console.log('- effectiveStoreId:', effectiveStoreId);
+  console.log('- store?.seller_phone:', store?.seller_phone);
 
   // Get cart count for this specific store
-  const cartCount = finalSellerPhone ? (carts[finalSellerPhone] || []).reduce((count, item) => count + item.quantity, 0) : 0;
+  const cartCount = effectiveStoreId ? (carts[effectiveStoreId] || []).reduce((count, item) => count + item.quantity, 0) : 0;
+
+  // ✅ FIXED: URL generation helper that preserves query parameters
+  const generateShopUrl = (path = '') => {
+    if (actualStoreId && finalShopSlug === 'new') {
+      // Use the /shop/new pattern with ?id= parameter
+      const basePath = `/shop/new${path}`;
+      return path ? `${basePath}?id=${actualStoreId}` : `${basePath}?id=${actualStoreId}`;
+    } else if (effectiveStoreId) {
+      // Use the direct /shop/[storeId] pattern
+      return `/shop/${effectiveStoreId}${path}`;
+    }
+    return `/shop/${finalShopSlug}${path}`;
+  };
 
   useEffect(() => {
     let ticking = false;
@@ -221,7 +234,6 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
           const currentScrollY = window.scrollY;
           setHeaderScrolled(currentScrollY > 20);
           
-          // Improved scroll behavior
           if (currentScrollY > 150 && currentScrollY > lastScrollY + 5) {
             setHideTopBar(true);
           } else if (currentScrollY < lastScrollY - 5 || currentScrollY < 100) {
@@ -254,7 +266,6 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
     }
   }, [showMobileSearch]);
 
-  // Close mobile menu on escape key
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
@@ -269,7 +280,6 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
-    // Close search if menu opens
     if (!isMobileMenuOpen) {
       setShowMobileSearch(false);
     }
@@ -278,8 +288,8 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      console.log('Searching for:', searchQuery);
-      // Add your search logic here
+      const searchUrl = generateShopUrl(`?search=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(searchUrl);
       setShowMobileSearch(false);
     }
   };
@@ -289,32 +299,43 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
     setSearchQuery('');
   };
 
-  // Handle profile click with explicit navigation
+  // ✅ FIXED: Navigation handlers with query parameter preservation
   const handleProfileClick = (e) => {
     e.preventDefault();
-    console.log('Profile clicked, navigating to /profile');
-    router.push('/profile');
+    const profileUrl = generateShopUrl('/profile');
+    console.log('🔄 Profile click navigating to:', profileUrl);
+    router.push(profileUrl);
   };
 
-  // Handle phone click to prevent unwanted WhatsApp redirect
+  const handleCartClick = (e) => {
+    e.preventDefault();
+    const cartUrl = generateShopUrl('/cart');
+    console.log('🔄 Cart click navigating to:', cartUrl);
+    router.push(cartUrl);
+  };
+
   const handlePhoneClick = (e) => {
     e.preventDefault();
-    // Just show the phone number, don't redirect to WhatsApp
-    console.log('Phone number:', finalSellerPhone);
-    // Optionally show a modal or copy to clipboard instead
+    console.log('Phone number:', effectiveStoreId);
   };
 
-  // Don't render header if no seller phone is available
-  if (!finalSellerPhone) {
-    console.warn('SHeader: No valid sellerPhone available');
-    return null;
+  if (!effectiveStoreId) {
+    console.warn('⚠️ SHeader: No effective store ID found');
+    // Still render but with limited functionality
+    return (
+      <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#fef2f2', color: '#dc2626' }}>
+        <p>Store information not available. Please check the URL.</p>
+        <p style={{fontSize: '12px'}}>
+          shopSlug: {finalShopSlug} | id param: {actualStoreId}
+        </p>
+      </div>
+    );
   }
 
-  // Use store data if available, otherwise create minimal store object
   const storeData = store || { 
-    name: 'Store', 
-    seller_phone: finalSellerPhone,
-    tagline: 'Loading...'
+    name: `Store ${effectiveStoreId}`, 
+    seller_phone: effectiveStoreId,
+    tagline: 'Quality Products'
   };
 
   return (
@@ -326,7 +347,7 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
             <div className={styles.topLeft}>
               <div className={styles.contactInfo} onClick={handlePhoneClick}>
                 <Phone size={12} />
-                <span>{finalSellerPhone}</span>
+                <span>{effectiveStoreId}</span>
               </div>
               <div className={styles.locationInfo}>
                 <MapPin size={12} />
@@ -349,7 +370,6 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
         {/* Main Header */}
         <div className={styles.mainHeader}>
           <div className={styles.container}>
-            {/* Mobile Back/Menu Toggle */}
             <button 
               className={styles.mobileToggle} 
               onClick={toggleMobileMenu} 
@@ -359,8 +379,8 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
               <Menu size={22} />
             </button>
 
-            {/* Store Branding */}
-            <div className={styles.brand}>
+            {/* ✅ UPDATED: Store Branding with proper URL generation */}
+            <Link href={generateShopUrl()} className={styles.brand}>
               <div className={styles.logo}>
                 {storeData.logo_url ? (
                   <img src={storeData.logo_url} alt={`${storeData.name} logo`} />
@@ -375,33 +395,29 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
                 <h1>{storeData.name}</h1>
                 <p>{storeData.tagline || "Premium Quality Store"}</p>
               </div>
-            </div>
+            </Link>
 
-            {/* Desktop Navigation */}
+            {/* ✅ UPDATED: Desktop Navigation with proper URL generation */}
             <nav className={styles.desktopNav} role="navigation" aria-label="Store navigation">
-              <Link href={`/shop/${finalSellerPhone}`} className={styles.navLink}>
+              <Link href={generateShopUrl()} className={styles.navLink}>
                 <Home size={16} />
                 <span>Home</span>
               </Link>
-              <Link href={`/cart/${finalSellerPhone}`} className={styles.navLink}>
+              <button onClick={handleCartClick} className={styles.navLink}>
                 <ShoppingCart size={16} />
                 <span>Cart</span>
                 {cartCount > 0 && (
                   <span className={styles.navBadge}>{cartCount}</span>
                 )}
-              </Link>
-              <Link href={`/shop/${finalSellerPhone}/about`} className={styles.navLink}>
+              </button>
+              <Link href={generateShopUrl('/about')} className={styles.navLink}>
                 <Info size={16} />
                 <span>About</span>
               </Link>
-              <Link 
-                href="/profile" 
-                className={styles.navLink}
-                onClick={handleProfileClick}
-              >
+              <button onClick={handleProfileClick} className={styles.navLink}>
                 <User size={16} />
                 <span>Profile</span>
-              </Link>
+              </button>
             </nav>
 
             {/* Header Actions */}
@@ -436,7 +452,6 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
                 </div>
               </form>
 
-              {/* Mobile Search Toggle */}
               <button 
                 className={`${styles.searchMobile} ${showMobileSearch ? styles.active : ''}`}
                 onClick={() => setShowMobileSearch(!showMobileSearch)}
@@ -446,9 +461,8 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
                 <Search size={20} />
               </button>
 
-              {/* Cart Button for Desktop */}
-              <Link 
-                href={`/cart/${finalSellerPhone}`} 
+              <button 
+                onClick={handleCartClick}
                 className={`${styles.cartBtn} ${styles.desktop}`}
                 aria-label={`Cart with ${cartCount} items`}
               >
@@ -456,19 +470,19 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
                 {cartCount > 0 && (
                   <span className={styles.badge}>{cartCount}</span>
                 )}
-              </Link>
+              </button>
 
+              {/* ✅ UPDATED: Login/Profile with proper URL generation */}
               {isLoggedIn ? (
-                <Link 
-                  href="/profile" 
+                <button 
+                  onClick={handleProfileClick}
                   className={`${styles.actionBtn} ${styles.profileBtn}`} 
                   aria-label="Profile"
-                  onClick={handleProfileClick}
                 >
                   <User size={18} />
-                </Link>
+                </button>
               ) : (
-                <Link href="/login/buyer" className={styles.loginBtn}>
+                <Link href={generateShopUrl('/login')} className={styles.loginBtn}>
                   <User size={16} />
                   <span>Login</span>
                 </Link>
@@ -527,7 +541,7 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
         )}
       </header>
 
-      {/* Mobile Menu */}
+      {/* ✅ UPDATED: Mobile Menu with proper URL generation */}
       <div className={`${styles.mobileMenuOverlay} ${isMobileMenuOpen ? styles.active : ''}`}>
         <div className={styles.mobileOverlay} onClick={() => setIsMobileMenuOpen(false)} />
         <nav className={`${styles.mobileMenu} ${isMobileMenuOpen ? styles.active : ''}`} role="navigation" aria-label="Mobile menu">
@@ -551,14 +565,17 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
           </div>
           
           <div className={styles.menuItems}>
-            <Link href={`/shop/${finalSellerPhone}`} onClick={() => setIsMobileMenuOpen(false)}>
+            <Link href={generateShopUrl()} onClick={() => setIsMobileMenuOpen(false)}>
               <span>
                 <Home size={20} />
                 <span>Home</span>
               </span>
             </Link>
             
-            <Link href={`/cart/${finalSellerPhone}`} onClick={() => setIsMobileMenuOpen(false)}>
+            <button onClick={() => {
+              handleCartClick({ preventDefault: () => {} });
+              setIsMobileMenuOpen(false);
+            }} className={styles.menuButton}>
               <span>
                 <ShoppingCart size={20} />
                 <span>Cart</span>
@@ -566,30 +583,27 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
               {cartCount > 0 && (
                 <span className={styles.menuBadge}>{cartCount}</span>
               )}
-            </Link>
+            </button>
             
-            <Link href={`/shop/${finalSellerPhone}/about`} onClick={() => setIsMobileMenuOpen(false)}>
+            <Link href={generateShopUrl('/about')} onClick={() => setIsMobileMenuOpen(false)}>
               <span>
                 <Info size={20} />
                 <span>About</span>
               </span>
             </Link>
             
-            <Link 
-              href="/profile" 
-              onClick={(e) => {
-                handleProfileClick(e);
-                setIsMobileMenuOpen(false);
-              }}
-            >
+            <button onClick={() => {
+              handleProfileClick({ preventDefault: () => {} });
+              setIsMobileMenuOpen(false);
+            }} className={styles.menuButton}>
               <span>
                 <User size={20} />
                 <span>Profile</span>
               </span>
-            </Link>
+            </button>
             
             {!isLoggedIn && (
-              <Link href="/login/buyer" className={styles.menuLogin} onClick={() => setIsMobileMenuOpen(false)}>
+              <Link href={generateShopUrl('/login')} className={styles.menuLogin} onClick={() => setIsMobileMenuOpen(false)}>
                 <span>
                   <User size={20} />
                   <span>Sign In</span>
@@ -600,8 +614,12 @@ export default function SHeader({ store, isLoggedIn = false, sellerPhone }) {
         </nav>
       </div>
 
-      {/* Enhanced Bottom Navigation */}
-      <BottomNav store={storeData} sellerPhone={finalSellerPhone} />
+      {/* ✅ UPDATED: Bottom Navigation with proper parameters */}
+      <BottomNav 
+        store={storeData} 
+        shopSlug={finalShopSlug} 
+        actualStoreId={actualStoreId}
+      />
     </>
   );
 }

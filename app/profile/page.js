@@ -265,45 +265,100 @@ export default function ProfilePage() {
     }
   };
 
+  // ✅ ENHANCED: Fixed wishlist fetching with multiple fallback methods
   const fetchWishlistCount = async (headers) => {
     try {
       const storeInfo = getCurrentStoreInfo();
       
-      // ✅ FIXED: Only add store filter if we have a valid numeric store ID
-      let wishlistUrl = WISHLIST_API;
-      if (storeInfo.isInStore && storeInfo.storeId && /^\d+$/.test(storeInfo.storeId)) {
-        wishlistUrl = `${WISHLIST_API}?store_id=${storeInfo.storeId}`;
-        console.log('🔍 Fetching wishlist with store filter:', wishlistUrl);
-      } else {
-        console.log('🔍 Fetching wishlist without store filter:', wishlistUrl);
-      }
+      console.log('🔍 Fetching wishlist count...');
+      console.log('🔍 Store info:', storeInfo);
       
-      const wishlistResponse = await axios.get(wishlistUrl, { 
-        headers,
-        timeout: 10000
-      });
-      const wishlistData = wishlistResponse.data;
+      // ✅ FIXED: Try multiple wishlist endpoints
+      const wishlistEndpoints = [
+        // Method 1: With store filter if in shop
+        storeInfo.isInStore && storeInfo.storeId && /^\d+$/.test(storeInfo.storeId) 
+          ? `${WISHLIST_API}?store_id=${storeInfo.storeId}` 
+          : null,
+        // Method 2: Standard wishlist endpoint
+        WISHLIST_API,
+        // Method 3: Alternative endpoints
+        `${API_BASE_URL}/api/buyer/wishlist/`,
+        `${API_BASE_URL}/user/wishlist/`,
+        `${API_BASE_URL}/wishlist/`
+      ].filter(Boolean); // Remove null values
       
-      let count = 0;
-      if (wishlistData) {
-        if (Array.isArray(wishlistData)) {
-          count = wishlistData.length;
-        } else if (wishlistData.items && Array.isArray(wishlistData.items)) {
-          count = wishlistData.items.length;
-        } else if (wishlistData.results && Array.isArray(wishlistData.results)) {
-          count = wishlistData.results.length;
-        } else if (typeof wishlistData.count === 'number') {
-          count = wishlistData.count;
-        } else if (typeof wishlistData.items_count === 'number') {
-          count = wishlistData.items_count;
+      let wishlistData = null;
+      let successfulEndpoint = null;
+      
+      // Try each endpoint until one works
+      for (const endpoint of wishlistEndpoints) {
+        try {
+          console.log(`🔍 Trying wishlist endpoint: ${endpoint}`);
+          
+          const wishlistResponse = await axios.get(endpoint, { 
+            headers,
+            timeout: 10000
+          });
+          
+          if (wishlistResponse.data) {
+            wishlistData = wishlistResponse.data;
+            successfulEndpoint = endpoint;
+            console.log('✅ Wishlist data received from:', endpoint);
+            console.log('✅ Wishlist response:', wishlistData);
+            break;
+          }
+        } catch (endpointError) {
+          console.warn(`⚠️ Wishlist endpoint failed: ${endpoint}`, endpointError.response?.status);
+          continue;
         }
       }
       
-      console.log('✅ Wishlist count set:', count);
+      // ✅ ENHANCED: Parse wishlist count from various response formats
+      let count = 0;
+      if (wishlistData) {
+        if (Array.isArray(wishlistData)) {
+          // Direct array response
+          count = wishlistData.length;
+          console.log('✅ Wishlist count from array:', count);
+        } else if (wishlistData.items && Array.isArray(wishlistData.items)) {
+          // Response with items array
+          count = wishlistData.items.length;
+          console.log('✅ Wishlist count from items array:', count);
+        } else if (wishlistData.results && Array.isArray(wishlistData.results)) {
+          // Paginated response
+          count = wishlistData.results.length;
+          console.log('✅ Wishlist count from results array:', count);
+        } else if (typeof wishlistData.count === 'number') {
+          // Count field
+          count = wishlistData.count;
+          console.log('✅ Wishlist count from count field:', count);
+        } else if (typeof wishlistData.items_count === 'number') {
+          // Alternative count field
+          count = wishlistData.items_count;
+          console.log('✅ Wishlist count from items_count field:', count);
+        } else if (typeof wishlistData.total === 'number') {
+          // Total field
+          count = wishlistData.total;
+          console.log('✅ Wishlist count from total field:', count);
+        } else {
+          // Try to find any array in the response
+          const arrayKeys = Object.keys(wishlistData).filter(key => Array.isArray(wishlistData[key]));
+          if (arrayKeys.length > 0) {
+            count = wishlistData[arrayKeys[0]].length;
+            console.log(`✅ Wishlist count from ${arrayKeys[0]} array:`, count);
+          } else {
+            console.log('⚠️ Could not determine wishlist count from response structure:', wishlistData);
+          }
+        }
+      } else {
+        console.warn('⚠️ No wishlist data received from any endpoint');
+      }
+      
+      console.log('✅ Final wishlist count set:', count);
       setWishlistCount(count);
       
     } catch (wishlistError) {
-      console.warn("⚠️ Wishlist API error:", wishlistError);
+      console.warn("⚠️ All wishlist API attempts failed:", wishlistError);
       setWishlistCount(0);
     }
   };
@@ -371,7 +426,7 @@ export default function ProfilePage() {
       
       if (!hasFetchedRef.current || showRefreshing) {
         const dataPromises = [
-          fetchWishlistCount(headers),
+          fetchWishlistCount(headers),  // ✅ Enhanced wishlist fetching
           fetchOrdersCount(headers)
         ];
         
@@ -930,7 +985,7 @@ const styles = {
     background: 'none', border: 'none', fontSize: '16px', fontWeight: '500',
     padding: '8px', cursor: 'pointer', borderRadius: '6px'
   },
-  backText: { display: 'none', '@media (min-width: 768px)': { display: 'inline' } },
+  backText: { display: 'none' },
   headerTitle: {
     fontSize: '20px', fontWeight: '700', color: '#1f2937',
     margin: 0, flex: 1, textAlign: 'center'
@@ -946,7 +1001,7 @@ const styles = {
     border: '2px solid #fee2e2', borderRadius: '8px', padding: '8px 12px',
     color: '#dc2626', cursor: 'pointer', fontSize: '14px', fontWeight: '500'
   },
-  logoutText: { display: 'none', '@media (min-width: 768px)': { display: 'inline' } },
+  logoutText: { display: 'none' },
   container: { maxWidth: '1200px', margin: '0 auto', padding: '24px 20px' },
   content: {
     display: 'flex', flexDirection: 'column', gap: '24px',

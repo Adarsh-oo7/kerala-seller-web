@@ -17,10 +17,9 @@ const getApiBaseUrl = () => {
     return envUrl;
   }
   
-  // Updated fallback with your hosted backend URL
   return process.env.NODE_ENV === 'development' 
     ? 'http://localhost:8000' 
-    : 'https://keralaseller-backend.onrender.com';  // ✅ Your hosted backend
+    : 'https://keralaseller-backend.onrender.com';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -37,7 +36,7 @@ console.log('🌐 API URLs configured:', {
 // ✅ Create Axios instance with proper configuration for hosted backend
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 20000,  // Increased timeout for hosted backend operations
+  timeout: 20000,
   headers: {
     'Accept': 'application/json',
     'Content-Type': 'application/json'
@@ -49,7 +48,7 @@ apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;  // Changed from Token to Bearer
+      config.headers.Authorization = `Bearer ${token}`;
     }
     console.log('🔄 Making API request to:', `${config.baseURL}${config.url}`);
     return config;
@@ -74,7 +73,6 @@ apiClient.interceptors.response.use(
       data: error.response?.data
     });
     
-    // Handle 401 errors globally
     if (error.response?.status === 401) {
       console.log('🔓 Authentication failed, redirecting to login...');
       localStorage.removeItem('accessToken');
@@ -85,7 +83,7 @@ apiClient.interceptors.response.use(
   }
 );
 
-// CategorySelector Component (enhanced for production)
+// CategorySelector Component (keeping your existing implementation)
 const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesChange }) => {
   const [allCategories, setAllCategories] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
@@ -118,7 +116,6 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       
       setAllCategories(categories);
       
-      // Show root categories initially
       const rootCategories = categories.filter(cat => !cat.parent);
       setCurrentCategories(rootCategories);
     } catch (err) {
@@ -177,15 +174,12 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     const hasChildren = allCategories.some(cat => cat.parent === category.id);
     
     if (hasChildren) {
-      // Navigate deeper
       setCurrentPath([...currentPath, category]);
       setSelectedCategory(null);
     } else {
-      // Select this leaf category
       setSelectedCategory(category);
       onCategorySelect(category.id);
       
-      // Setup attributes for this category
       const newAttributes = {};
       if (category.default_attributes) {
         category.default_attributes.forEach(attr => {
@@ -229,15 +223,12 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       
       console.log('✅ Custom category created:', newCategory);
       
-      // Refresh categories
       await fetchCategories();
       
-      // Select the new category
       setSelectedCategory(newCategory);
       onCategorySelect(newCategory.id);
       onAttributesChange({});
       
-      // Reset form
       setCustomCategoryName('');
       setCustomCategoryDesc('');
       setShowCustomForm(false);
@@ -256,7 +247,6 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     }
   };
 
-  // Filter categories based on search
   const filteredCategories = searchTerm 
     ? currentCategories.filter(cat => 
         cat.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -773,6 +763,268 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
   );
 };
 
+// ✅ ENHANCED: Smart Stock Input Component with Quick Actions
+const SmartStockInput = ({ formData, setFormData }) => {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  
+  // ✅ Quick stock allocation functions
+  const setAllOnline = () => {
+    setFormData(prev => ({
+      ...prev,
+      online_stock: prev.total_stock
+    }));
+  };
+
+  const setHalfOnline = () => {
+    const half = Math.floor(formData.total_stock / 2);
+    setFormData(prev => ({
+      ...prev,
+      online_stock: half
+    }));
+  };
+
+  const setNoneOnline = () => {
+    setFormData(prev => ({
+      ...prev,
+      online_stock: 0
+    }));
+  };
+
+  const handleTotalStockChange = (e) => {
+    const newTotal = parseInt(e.target.value) || 0;
+    setFormData(prev => ({
+      ...prev,
+      total_stock: newTotal,
+      // ✅ Smart adjustment: if online stock exceeds new total, adjust it
+      online_stock: prev.online_stock > newTotal ? newTotal : prev.online_stock
+    }));
+  };
+
+  const handleOnlineStockChange = (e) => {
+    const newOnline = parseInt(e.target.value) || 0;
+    const maxOnline = formData.total_stock;
+    
+    setFormData(prev => ({
+      ...prev,
+      online_stock: newOnline > maxOnline ? maxOnline : newOnline
+    }));
+  };
+
+  const stockPercentage = formData.total_stock > 0 
+    ? Math.round((formData.online_stock / formData.total_stock) * 100) 
+    : 0;
+
+  const availableForOnline = formData.total_stock - formData.online_stock;
+
+  return (
+    <div style={styles.stockContainer}>
+      {/* Stock Header */}
+      <div style={styles.stockHeader}>
+        <h3 style={styles.stockTitle}>📦 Stock Management</h3>
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          style={styles.toggleButton}
+        >
+          {showAdvanced ? '📋 Simple' : '⚙️ Advanced'}
+        </button>
+      </div>
+
+      {/* Stock Summary Card */}
+      <div style={styles.stockSummary}>
+        <div style={styles.stockSummaryItem}>
+          <span style={styles.stockLabel}>Total Stock</span>
+          <span style={styles.stockValue}>{formData.total_stock}</span>
+        </div>
+        <div style={styles.stockSummaryItem}>
+          <span style={styles.stockLabel}>Online</span>
+          <span style={styles.stockValue}>{formData.online_stock}</span>
+        </div>
+        <div style={styles.stockSummaryItem}>
+          <span style={styles.stockLabel}>Available</span>
+          <span style={styles.stockValue}>{availableForOnline}</span>
+        </div>
+        <div style={styles.stockSummaryItem}>
+          <span style={styles.stockLabel}>Online %</span>
+          <span style={{
+            ...styles.stockValue,
+            color: stockPercentage === 100 ? '#28a745' : stockPercentage > 50 ? '#ffc107' : '#6c757d'
+          }}>
+            {stockPercentage}%
+          </span>
+        </div>
+      </div>
+
+      {/* Stock Progress Bar */}
+      <div style={styles.progressContainer}>
+        <div style={styles.progressLabel}>
+          Online Stock Allocation: {formData.online_stock}/{formData.total_stock}
+        </div>
+        <div style={styles.progressBar}>
+          <div 
+            style={{
+              ...styles.progressFill,
+              width: `${stockPercentage}%`,
+              backgroundColor: stockPercentage === 100 ? '#28a745' : stockPercentage > 50 ? '#ffc107' : '#0d6efd'
+            }}
+          />
+        </div>
+      </div>
+
+      {!showAdvanced ? (
+        /* ✅ SIMPLE MODE: Quick Actions */
+        <div style={styles.simpleMode}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Total Stock*</label>
+            <input 
+              type="number" 
+              name="total_stock" 
+              value={formData.total_stock} 
+              onChange={handleTotalStockChange}
+              required 
+              style={styles.input}
+              min="0"
+              placeholder="How many items do you have?"
+            />
+          </div>
+
+          <div style={styles.quickActionsContainer}>
+            <div style={styles.quickActionsHeader}>
+              <label style={styles.label}>Online Stock Allocation</label>
+              <span style={styles.helpText}>Choose how many to sell online:</span>
+            </div>
+            
+            <div style={styles.quickActions}>
+              <button
+                type="button"
+                onClick={setAllOnline}
+                disabled={formData.total_stock === 0}
+                style={{
+                  ...styles.quickActionButton,
+                  ...(formData.online_stock === formData.total_stock ? styles.quickActionActive : {})
+                }}
+              >
+                🌐 All Online<br/>
+                <small>({formData.total_stock})</small>
+              </button>
+              
+              <button
+                type="button"
+                onClick={setHalfOnline}
+                disabled={formData.total_stock === 0}
+                style={{
+                  ...styles.quickActionButton,
+                  ...(formData.online_stock === Math.floor(formData.total_stock / 2) ? styles.quickActionActive : {})
+                }}
+              >
+                ⚖️ Half Online<br/>
+                <small>({Math.floor(formData.total_stock / 2)})</small>
+              </button>
+              
+              <button
+                type="button"
+                onClick={setNoneOnline}
+                style={{
+                  ...styles.quickActionButton,
+                  ...(formData.online_stock === 0 ? styles.quickActionActive : {})
+                }}
+              >
+                🏪 Store Only<br/>
+                <small>(0 online)</small>
+              </button>
+            </div>
+
+            {/* Custom Online Amount */}
+            <div style={styles.customAmountContainer}>
+              <label style={styles.customAmountLabel}>Or set custom amount:</label>
+              <div style={styles.customAmountInput}>
+                <input
+                  type="number"
+                  value={formData.online_stock}
+                  onChange={handleOnlineStockChange}
+                  min="0"
+                  max={formData.total_stock}
+                  style={styles.input}
+                  placeholder="Custom amount"
+                />
+                <span style={styles.maxIndicator}>max: {formData.total_stock}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Smart Suggestions */}
+          {formData.total_stock > 0 && (
+            <div style={styles.suggestions}>
+              {formData.online_stock === 0 && (
+                <div style={styles.suggestion}>
+                  💡 <strong>Tip:</strong> Setting some items online can increase sales reach!
+                </div>
+              )}
+              {formData.online_stock === formData.total_stock && formData.total_stock > 10 && (
+                <div style={styles.suggestion}>
+                  💡 <strong>Suggestion:</strong> Consider keeping some stock for in-store customers.
+                </div>
+              )}
+              {availableForOnline > 0 && formData.online_stock > 0 && (
+                <div style={styles.suggestion}>
+                  📈 <strong>Opportunity:</strong> You can still add {availableForOnline} more items online!
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* ✅ ADVANCED MODE: Manual Inputs */
+        <div style={styles.advancedMode}>
+          <div style={styles.formRow}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Total Stock*</label>
+              <input 
+                type="number" 
+                name="total_stock" 
+                value={formData.total_stock} 
+                onChange={handleTotalStockChange}
+                required 
+                style={styles.input}
+                min="0"
+              />
+              <small style={styles.helpText}>Total items you have</small>
+            </div>
+            
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Online Stock*</label>
+              <input 
+                type="number" 
+                name="online_stock" 
+                value={formData.online_stock} 
+                onChange={handleOnlineStockChange}
+                required 
+                style={styles.input}
+                min="0"
+                max={formData.total_stock}
+              />
+              <small style={styles.helpText}>Items for online sales</small>
+            </div>
+          </div>
+
+          {/* Quick Action Buttons in Advanced Mode */}
+          <div style={styles.advancedQuickActions}>
+            <button type="button" onClick={setAllOnline} style={styles.miniButton}>
+              All Online
+            </button>
+            <button type="button" onClick={setHalfOnline} style={styles.miniButton}>
+              Half
+            </button>
+            <button type="button" onClick={setNoneOnline} style={styles.miniButton}>
+              None
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function ProductForm({ product, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -846,10 +1098,8 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     
     const submissionData = new FormData();
     
-    // Add all form fields
     Object.keys(formData).forEach(key => submissionData.append(key, formData[key]));
     
-    // Ensure category is sent as integer
     if (selectedCategoryId) {
       submissionData.append('category', parseInt(selectedCategoryId));
     }
@@ -863,7 +1113,6 @@ export default function ProductForm({ product, onClose, onSuccess }) {
       console.log('⚠️ No new main image selected for update');
     }
     
-    // Add sub images
     subImageFiles.forEach((file, index) => {
       submissionData.append('sub_images', file);
       console.log(`📸 Sub image ${index + 1}:`, file.name);
@@ -883,16 +1132,15 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     console.log('===============================');
 
     try {
-      // ✅ FIXED: Changed Token to Bearer authentication
       const response = await axios({ 
         method, 
         url, 
         data: submissionData, 
         headers: {
           'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`  // Changed from Token to Bearer
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
         },
-        timeout: 30000  // 30 second timeout for file uploads to hosted backend
+        timeout: 30000
       });
       
       console.log('✅ Product saved successfully:', response.data);
@@ -953,6 +1201,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
               onChange={handleChange} 
               required 
               style={styles.input}
+              placeholder="e.g., Premium Cotton T-Shirt"
             />
           </div>
           
@@ -964,7 +1213,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
               value={formData.model_name} 
               onChange={handleChange} 
               style={styles.input} 
-              placeholder="e.g., Red XL"
+              placeholder="e.g., Red XL, Size 42"
             />
           </div>
           
@@ -974,65 +1223,53 @@ export default function ProductForm({ product, onClose, onSuccess }) {
               name="description" 
               value={formData.description} 
               onChange={handleChange} 
-              style={styles.input}
+              style={styles.textArea}
+              placeholder="Describe your product features, benefits, and specifications..."
+              rows="3"
             />
           </div>
           
-          <div style={styles.formGroup}>
-            <label>Price (₹)*</label>
-            <input 
-              type="number" 
-              name="price" 
-              value={formData.price} 
-              onChange={handleChange} 
-              required 
-              style={styles.input} 
-              step="0.01" 
-            />
+          <div style={styles.formRow}>
+            <div style={styles.formGroup}>
+              <label>Selling Price (₹)*</label>
+              <input 
+                type="number" 
+                name="price" 
+                value={formData.price} 
+                onChange={handleChange} 
+                required 
+                style={styles.input} 
+                step="0.01"
+                min="0"
+                placeholder="299.99"
+              />
+            </div>
+            
+            <div style={styles.formGroup}>
+              <label>MRP (₹)</label>
+              <input 
+                type="number" 
+                name="mrp" 
+                value={formData.mrp} 
+                onChange={handleChange} 
+                style={styles.input} 
+                step="0.01"
+                min="0"
+                placeholder="399.99"
+              />
+              <small style={styles.helpText}>Maximum Retail Price (for discount calculation)</small>
+            </div>
           </div>
           
-          <div style={styles.formGroup}>
-            <label>MRP (₹)</label>
-            <input 
-              type="number" 
-              name="mrp" 
-              value={formData.mrp} 
-              onChange={handleChange} 
-              style={styles.input} 
-              step="0.01" 
-            />
-          </div>
-          
-          <div style={styles.formGroup}>
-            <label>Total Stock*</label>
-            <input 
-              type="number" 
-              name="total_stock" 
-              value={formData.total_stock} 
-              onChange={handleChange} 
-              required 
-              style={styles.input} 
-            />
-          </div>
-          
-          <div style={styles.formGroup}>
-            <label>Online Stock*</label>
-            <input 
-              type="number" 
-              name="online_stock" 
-              value={formData.online_stock} 
-              onChange={handleChange} 
-              required 
-              style={styles.input} 
-            />
-          </div>
+          {/* ✅ ENHANCED: Smart Stock Management */}
+          <SmartStockInput formData={formData} setFormData={setFormData} />
           
           <div style={styles.formGroup}>
             <label>Where to sell?*</label>
             <select name="sale_type" value={formData.sale_type} onChange={handleChange} style={styles.input}>
-              <option value="BOTH">Online & In-Store</option>
-              <option value="OFFLINE">In-Store Only</option>
-              <option value="ONLINE">Online Only</option>
+              <option value="BOTH">🌐 Online & 🏪 In-Store</option>
+              <option value="OFFLINE">🏪 In-Store Only</option>
+              <option value="ONLINE">🌐 Online Only</option>
             </select>
           </div>
 
@@ -1079,7 +1316,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
               required={!product || !mainImagePreview} 
               style={styles.input} 
             />
-            <small style={{color: '#666', fontSize: '12px'}}>
+            <small style={styles.helpText}>
               {product ? 'Select a new image to replace the current one' : 'Please select a main image'}
             </small>
           </div>
@@ -1104,21 +1341,13 @@ export default function ProductForm({ product, onClose, onSuccess }) {
               multiple 
               style={styles.input} 
             />
-            <small style={{color: '#666', fontSize: '12px'}}>
+            <small style={styles.helpText}>
               Select new images to replace all sub-images
             </small>
           </div>
           
           {error && (
-            <div style={{
-              color: '#dc3545',
-              fontSize: '14px',
-              marginTop: '10px',
-              padding: '10px',
-              backgroundColor: '#f8d7da',
-              border: '1px solid #f5c6cb',
-              borderRadius: '4px'
-            }}>
+            <div style={styles.errorAlert}>
               ⚠️ {error}
             </div>
           )}
@@ -1147,15 +1376,178 @@ export default function ProductForm({ product, onClose, onSuccess }) {
 }
 
 const styles = {
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-    modalContent: { background: 'white', padding: '2rem', borderRadius: '8px', width: '600px', maxWidth: '95%', maxHeight: '90vh', overflowY: 'auto' },
-    formGroup: { marginBottom: '1rem' },
-    input: { width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' },
-    hr: { border: 'none', borderTop: '1px solid #eee', margin: '20px 0' },
-    dynamicSection: { border: '1px solid #0d6efd', borderRadius: '8px', padding: '15px', marginTop: '15px', backgroundColor: '#f0f8ff' },
-    imagePreview: { width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd', marginBottom: '10px' },
-    subImageGrid: { display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '10px' },
-    buttonContainer: { display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' },
-    buttonPrimary: { padding: '10px 20px', backgroundColor: '#0d6efd', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' },
-    buttonSecondary: { padding: '10px 20px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' },
+  modalOverlay: { 
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', 
+    justifyContent: 'center', alignItems: 'center', zIndex: 1000 
+  },
+  modalContent: { 
+    background: 'white', padding: '2rem', borderRadius: '12px', 
+    width: '700px', maxWidth: '95%', maxHeight: '90vh', overflowY: 'auto',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+  },
+  formGroup: { marginBottom: '1rem' },
+  formRow: { 
+    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', 
+    marginBottom: '1rem' 
+  },
+  input: { 
+    width: '100%', padding: '10px 12px', boxSizing: 'border-box', 
+    border: '2px solid #e9ecef', borderRadius: '6px', fontSize: '14px',
+    transition: 'border-color 0.2s'
+  },
+  textArea: {
+    width: '100%', padding: '10px 12px', boxSizing: 'border-box', 
+    border: '2px solid #e9ecef', borderRadius: '6px', fontSize: '14px',
+    resize: 'vertical', minHeight: '80px'
+  },
+  label: {
+    display: 'block', marginBottom: '4px', fontWeight: '600', 
+    fontSize: '14px', color: '#333'
+  },
+  helpText: {
+    fontSize: '12px', color: '#6c757d', marginTop: '2px', display: 'block'
+  },
+  hr: { 
+    border: 'none', borderTop: '2px solid #f8f9fa', margin: '24px 0' 
+  },
+  
+  // ✅ ENHANCED: Stock Management Styles
+  stockContainer: {
+    border: '2px solid #e9ecef', borderRadius: '12px', 
+    padding: '20px', marginBottom: '1rem', backgroundColor: '#f8f9fa'
+  },
+  stockHeader: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    marginBottom: '16px'
+  },
+  stockTitle: {
+    margin: 0, fontSize: '16px', fontWeight: '700', color: '#333'
+  },
+  toggleButton: {
+    padding: '6px 12px', background: '#6c757d', color: 'white',
+    border: 'none', borderRadius: '6px', fontSize: '12px',
+    cursor: 'pointer', transition: 'all 0.2s'
+  },
+  stockSummary: {
+    display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px',
+    marginBottom: '16px', padding: '12px', backgroundColor: 'white',
+    borderRadius: '8px', border: '1px solid #e9ecef'
+  },
+  stockSummaryItem: {
+    textAlign: 'center'
+  },
+  stockLabel: {
+    display: 'block', fontSize: '11px', color: '#6c757d',
+    fontWeight: '500', marginBottom: '2px'
+  },
+  stockValue: {
+    display: 'block', fontSize: '16px', fontWeight: '700', color: '#333'
+  },
+  progressContainer: {
+    marginBottom: '20px'
+  },
+  progressLabel: {
+    fontSize: '12px', color: '#6c757d', marginBottom: '4px', fontWeight: '500'
+  },
+  progressBar: {
+    width: '100%', height: '8px', backgroundColor: '#e9ecef',
+    borderRadius: '4px', overflow: 'hidden'
+  },
+  progressFill: {
+    height: '100%', transition: 'width 0.3s ease, background-color 0.3s ease'
+  },
+  
+  // Simple Mode Styles
+  simpleMode: {
+    backgroundColor: 'white', padding: '16px', borderRadius: '8px',
+    border: '1px solid #e9ecef'
+  },
+  quickActionsContainer: {
+    marginTop: '16px'
+  },
+  quickActionsHeader: {
+    marginBottom: '12px'
+  },
+  quickActions: {
+    display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px',
+    marginBottom: '16px'
+  },
+  quickActionButton: {
+    padding: '12px 8px', border: '2px solid #e9ecef', borderRadius: '8px',
+    backgroundColor: 'white', cursor: 'pointer', transition: 'all 0.2s',
+    fontSize: '12px', fontWeight: '600', textAlign: 'center',
+    minHeight: '60px', display: 'flex', flexDirection: 'column',
+    justifyContent: 'center', alignItems: 'center'
+  },
+  quickActionActive: {
+    borderColor: '#0d6efd', backgroundColor: '#f0f8ff', color: '#0d6efd'
+  },
+  customAmountContainer: {
+    border: '1px dashed #ccc', borderRadius: '6px', padding: '12px',
+    backgroundColor: '#fefefe'
+  },
+  customAmountLabel: {
+    fontSize: '12px', fontWeight: '500', color: '#666', marginBottom: '6px',
+    display: 'block'
+  },
+  customAmountInput: {
+    display: 'flex', alignItems: 'center', gap: '8px'
+  },
+  maxIndicator: {
+    fontSize: '11px', color: '#6c757d', fontStyle: 'italic'
+  },
+  suggestions: {
+    marginTop: '12px', padding: '10px', backgroundColor: '#fff3cd',
+    border: '1px solid #ffeaa7', borderRadius: '6px'
+  },
+  suggestion: {
+    fontSize: '12px', color: '#856404', lineHeight: '1.4'
+  },
+  
+  // Advanced Mode Styles
+  advancedMode: {
+    backgroundColor: 'white', padding: '16px', borderRadius: '8px',
+    border: '1px solid #e9ecef'
+  },
+  advancedQuickActions: {
+    display: 'flex', gap: '6px', marginTop: '8px'
+  },
+  miniButton: {
+    padding: '4px 8px', background: '#f8f9fa', border: '1px solid #dee2e6',
+    borderRadius: '4px', fontSize: '11px', cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  
+  // Other Styles
+  dynamicSection: { 
+    border: '2px solid #0d6efd', borderRadius: '12px', padding: '16px', 
+    marginTop: '16px', backgroundColor: '#f0f8ff' 
+  },
+  imagePreview: { 
+    width: '100px', height: '100px', objectFit: 'cover', 
+    borderRadius: '6px', border: '2px solid #e9ecef', marginBottom: '10px' 
+  },
+  subImageGrid: { 
+    display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '10px' 
+  },
+  errorAlert: {
+    color: '#dc3545', fontSize: '14px', marginTop: '12px',
+    padding: '12px', backgroundColor: '#f8d7da', border: '1px solid #f5c6cb',
+    borderRadius: '6px'
+  },
+  buttonContainer: { 
+    display: 'flex', justifyContent: 'flex-end', gap: '12px', 
+    marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #e9ecef'
+  },
+  buttonPrimary: { 
+    padding: '12px 24px', backgroundColor: '#0d6efd', color: 'white', 
+    border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px',
+    fontWeight: '600', transition: 'all 0.2s'
+  },
+  buttonSecondary: { 
+    padding: '12px 24px', backgroundColor: '#6c757d', color: 'white', 
+    border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px',
+    fontWeight: '600', transition: 'all 0.2s'
+  }
 };
