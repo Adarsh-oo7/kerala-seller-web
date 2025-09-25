@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useCart } from '../../context/CartContext';
-import Header from '../../../components/common/Header';
-import Footer from '../../../components/common/Footer';
+import { useCart } from '../../../contexts/CartContext';
+import Header from '../../components/common/Header';
+import Footer from '../../components/common/Footer';
 import { 
   ShoppingCart, 
   CreditCard, 
