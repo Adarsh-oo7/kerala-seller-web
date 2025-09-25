@@ -199,6 +199,12 @@ export default function ProductCard({
             </div>
           )}
 
+          {onlineStock > 0 && onlineStock <= 3 && (
+            <div className="low-stock-badge">
+              Only {onlineStock} left!
+            </div>
+          )}
+
           <div className="wishlist show">
             <button
               className={`wishlist-btn ${wishlistState ? "wish-active" : ""} ${isWishlistCurrentlyLoading ? "loading" : ""}`}
@@ -266,35 +272,26 @@ export default function ProductCard({
         <div className="product-info">
           <div className="product-left">
             <h3 className="product-title">
-              <Link href={getProductUrl()}>{title || 'Product'}</Link>
+              <Link href={getProductUrl()}>
+                {title || 'Product'} {modelName && <span className="model-name">({modelName})</span>}
+              </Link>
             </h3>
 
-            {modelName && (
-              <p className="model-name">{modelName}</p>
-            )}
-
-
-
-            <div className="price-row">
-              <span className="product-price">{formatPrice(price)}</span>
-              {mrp && parseFloat(mrp) > parseFloat(price) && (
-                <>
-                  <span className="original-price">{formatPrice(mrp)}</span>
-                  {/* <span className="savings">Save {formatPrice(parseFloat(mrp) - parseFloat(price))}</span> */}
-                </>
+            <div className="product-meta">
+              {storeName && (
+                <p className="store-name">by {storeName}</p>
               )}
+
+              <div className="price-row">
+                <span className="product-price">{formatPrice(price)}</span>
+                {mrp && parseFloat(mrp) > parseFloat(price) && (
+                  <>
+                    <span className="original-price">{formatPrice(mrp)}</span>
+                    {/* <span className="savings">Save {formatPrice(parseFloat(mrp) - parseFloat(price))}</span> */}
+                  </>)}
+              </div>
             </div>
-          </div>
 
-
-          <div className="product-right">
-            {storeName && (
-              <p className="store-name">by {storeName}</p>
-            )}
-
-            {onlineStock > 0 && onlineStock <= 3 && (
-              <span className="low-stock">Only {onlineStock} left!</span>
-            )}
 
             <div className="cart-section">
               <button
@@ -302,16 +299,21 @@ export default function ProductCard({
                 onClick={handleAddToCart}
                 disabled={onlineStock === 0}
                 type="button"
-                aria-label={onlineStock > 0 ? "Add to cart" : "Out of stock"}
               >
-                {onlineStock > 0 ? (
-                  <ShoppingCart className="cart-icon" />
-                ) : (
-                  <Ban className="cart-icon out-of-stock-icon" />
-                )}
+                <ShoppingCart className="cart-icon" />
+                <span className="cart-text">
+                  {onlineStock > 0 ? "ADD TO CART" : "OUT OF STOCK"}
+                </span>
               </button>
             </div>
           </div>
+
+
+
+
+          {/* <div className="product-right"> */}
+
+          {/* </div> */}
         </div>
       </div>
 
