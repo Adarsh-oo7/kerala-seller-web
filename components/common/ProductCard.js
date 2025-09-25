@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Heart, Star, ShoppingCart,Ban  } from "lucide-react"
+import { Heart, Star, ShoppingCart, Ban } from "lucide-react"
 import Link from "next/link"
 import "../../styles/ProductCard.css";
 
@@ -199,7 +199,7 @@ export default function ProductCard({
             </div>
           )}
 
-          <div className={`wishlist ${isHovered || wishlistState ? "show" : ""}`}>
+          <div className="wishlist show">
             <button
               className={`wishlist-btn ${wishlistState ? "wish-active" : ""} ${isWishlistCurrentlyLoading ? "loading" : ""}`}
               onClick={handleWishlistToggle}
@@ -246,7 +246,7 @@ export default function ProductCard({
           {rating && rating > 0 && (
             <div className="rating-overlay">
               <div className="rating">
-                {[1, 2, 3, 4, 5].map((star) => (
+                {[1].map((star) => (
                   <Star
                     key={star}
                     className={`star ${star <= Math.floor(rating) ? "star-filled" : ""}`}
@@ -254,8 +254,10 @@ export default function ProductCard({
                 ))}
               </div>
               <span className="rating-text">
-                ({rating.toFixed(1)}){reviewCount > 0 && ` • ${reviewCount} reviews`}
+                ({rating.toFixed(1)})
+                {reviewCount > 0 && <span>{reviewCount} reviews</span>}
               </span>
+
             </div>
           )}
 
