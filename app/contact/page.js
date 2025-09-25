@@ -204,7 +204,7 @@ export default function ContactPage() {
       <Header />
 
       {/* Enhanced Hero Section */}
-      <div className="hero">
+      <div className="contacthero">
         <img
           src="/assets/images/T Shirts (7423 x 2810 px).png"
           alt="Promotional Banner"
@@ -250,7 +250,8 @@ export default function ContactPage() {
                 <div
                   className="quickContactIcon"
                 >
-                  {React.createElement(item.icon, { size: 36, color: item.color })}
+                  {React.createElement(item.icon, { className: "ContactIcon", color: item.color })}
+
                 </div>
                 <div className="quickContactText">
                   <h3 className="quickContactLabel">{item.label}</h3>
@@ -259,6 +260,51 @@ export default function ContactPage() {
                 </div>
               </a>
             ))}
+          </div>
+        </div>
+
+        {/* Enhanced Company Info */}
+        <div className="infoSection">
+          <div className="infoCard">
+            <h2 className="infoTitle">About Kerala Sellers</h2>
+            <p className="infoText">
+              Kerala Sellers is a comprehensive digital platform connecting local businesses
+              with customers across Kerala. We also provide professional web development
+              services through Digital Product Solutions.
+            </p>
+            <div className='cols'>
+              {/* ✅ Service highlights */}
+              <div className="serviceHighlights">
+                <div className="serviceItem">
+                  <Users size={18} color="#059669" />
+                  <span>1000+ Active Sellers</span>
+                </div>
+                <div className="serviceItem">
+                  <Award size={18} color="#059669" />
+                  <span>Zero Commission Platform</span>
+                </div>
+                <div className="serviceItem">
+                  <Briefcase size={18} color="#059669" />
+                  <span>Professional Web Development</span>
+                </div>
+              </div>
+
+
+              <div className="infoDetails">
+                <div className="infoItem">
+                  <MapPin size={18} color="#6b7280" />
+                  <span>Korani, Attingal, Kerala 695104</span>
+                </div>
+                <div className="infoItem">
+                  <Clock size={18} color="#6b7280" />
+                  <span>Monday - Saturday: 9:00 AM - 7:00 PM IST</span>
+                </div>
+                <div className="infoItem">
+                  <Globe size={18} color="#6b7280" />
+                  <span>Serving businesses across Kerala</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -284,7 +330,7 @@ export default function ContactPage() {
               <form onSubmit={handleSubmit} className="form" >
                 <div className="formRow">
                   <div className="inputGroup">
-                    <label className="label">Name *</label>
+                    {/* <label className="label">Name *</label> */}
                     <input
                       type="text"
                       name="name"
@@ -298,7 +344,7 @@ export default function ContactPage() {
                   </div>
 
                   <div className="inputGroup">
-                    <label className="label">Phone no. *</label>
+                    {/* <label className="label">Phone no. *</label> */}
                     <input
                       type="tel"
                       name="phone"
@@ -313,7 +359,7 @@ export default function ContactPage() {
                 </div>
 
                 <div className="inputGroup">
-                  <label className="label">Email address *</label>
+                  {/* <label className="label">Email address *</label> */}
                   <input
                     type="email"
                     name="email"
@@ -328,7 +374,7 @@ export default function ContactPage() {
 
                 <div className="formRow">
                   <div className="inputGroup">
-                    <label className="label">I am *</label>
+                    {/* <label className="label">I am *</label> */}
                     <select
                       name="userType"
                       value={formData.userType}
@@ -345,7 +391,7 @@ export default function ContactPage() {
                   </div>
 
                   <div className="inputGroup">
-                    <label className="label">Subject *</label>
+                    {/* <label className="label">Subject *</label> */}
                     <select
                       name="subject"
                       value={formData.subject}
@@ -364,7 +410,7 @@ export default function ContactPage() {
                 </div>
 
                 <div className="inputGroup">
-                  <label className="label">Your Message *</label>
+                  {/* <label className="label">Your Message *</label> */}
                   <textarea
                     name="message"
                     value={formData.message}
@@ -403,51 +449,6 @@ export default function ContactPage() {
                   )}
                 </button>
               </form>
-            </div>
-          </div>
-
-          {/* Enhanced Company Info */}
-          <div className="infoSection">
-            <div className="infoCard">
-              <h2 className="infoTitle">About Kerala Sellers</h2>
-              <p className="infoText">
-                Kerala Sellers is a comprehensive digital platform connecting local businesses
-                with customers across Kerala. We also provide professional web development
-                services through Digital Product Solutions.
-              </p>
-
-              {/* ✅ Service highlights */}
-              <div className="serviceHighlights">
-                <div className="serviceItem">
-                  <Users size={18} color="#059669" />
-                  <span>1000+ Active Sellers</span>
-                </div>
-                <div className="serviceItem">
-                  <Award size={18} color="#059669" />
-                  <span>Zero Commission Platform</span>
-                </div>
-                <div className="serviceItem">
-                  <Briefcase size={18} color="#059669" />
-                  <span>Professional Web Development</span>
-                </div>
-              </div>
-
-
-              <div className="infoDetails">
-                <div className="infoItem">
-                  <MapPin size={18} color="#6b7280" />
-                  <span>Korani, Attingal, Kerala 695104</span>
-                </div>
-                <div className="infoItem">
-                  <Clock size={18} color="#6b7280" />
-                  <span>Monday - Saturday: 9:00 AM - 7:00 PM IST</span>
-                </div>
-                <div className="infoItem">
-                  <Globe size={18} color="#6b7280" />
-                  <span>Serving businesses across Kerala</span>
-                </div>
-              </div>
-
             </div>
           </div>
         </div>

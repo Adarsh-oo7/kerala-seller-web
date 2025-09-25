@@ -3,7 +3,7 @@
     background-color: #FDFFF0;
 }
 
-.hero {
+.contacthero {
     border-bottom: 1px solid #e5e7eb;
     /* padding: 40px 0 32px; */
     text-align: center;
@@ -27,16 +27,17 @@
 }
 
 .heroTitle {
-    font-size: 2.25rem;
+    font-size: 40px;
     font-weight: 800;
-    color: #1f2937;
+    color: #1a4845;
     margin-bottom: 12px;
+    margin-top: 50px;
     line-height: 1.1;
 }
 
 .heroSubtitle {
     font-size: 1rem;
-    color: #6b7280;
+    color: rgb(101, 101, 101);
     max-width: 600px;
     margin: 0 auto 16px;
     line-height: 1.5;
@@ -69,7 +70,7 @@
 .quickContactTitle {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1f2937;
+    color: #1a4845;
     margin-bottom: 8px;
 }
 
@@ -82,20 +83,15 @@
 
 .quickContactGrid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
 }
 
-@media (min-width: 640px) {
-    .quickContactGrid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
 
-@media (min-width: 1024px) {
-    .quickContactGrid {
-        grid-template-columns: repeat(3, 1fr);
-    }
+
+.ContactIcon {
+    width: 40px !important;
+    height: 40px !important;
 }
 
 .quickContactCard {
@@ -126,14 +122,14 @@
 
 
 .quickContactIcon {
-    width: 3.5rem;
-    height: 3.5rem;
+    width: 40px;
+    height: 40px;
     border-radius: 9999px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-bottom: 1.5rem;
+    margin-bottom: 15px;
 }
 
 .quickContactText {
@@ -146,13 +142,13 @@
 .quickContactLabel {
     font-size: 1.125rem;
     font-weight: 600;
-    color: #1f2937;
+    color: #1a4845;
     margin: 0;
 }
 
 .quickContactValue {
     font-size: 1rem;
-    color: #374151;
+    color: #1a4845;
     margin: 0;
     font-weight: 500;
     white-space: nowrap;
@@ -169,6 +165,7 @@
 .mainContent {
     display: block;
     margin-bottom: 32px;
+    margin-top: -40px;
 }
 
 .formSection {
@@ -242,41 +239,61 @@
 .input {
     width: 100%;
     padding: 16px;
-    border: 1px solid #6b7280;
+    border: 1px solid #83aa4a;
     border-radius: 10px;
     font-size: 1rem;
     background-color: #FDFFF0;
     transition: all 0.2s ease;
     box-sizing: border-box;
     outline: none;
+    color: rgb(101, 101, 101);
 }
 
 .select {
     width: 100%;
-    padding: 16px;
-    border: 1px solid #d1d5db;
-    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1px solid #83aa4a;
+    border-radius: 8px;
     font-size: 1rem;
-    background-color: #ffffff;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-    outline: none;
+    background-color: #FDFFF0;
+    color: rgb(101, 101, 101);
     cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    /* remove default styling */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='%2383aa4a' height='20' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+
+.select option {
+    padding: 12px;
+    font-size: 1rem;
+    background: #FDFFF0;
+    color: rgb(101, 101, 101);
+}
+
+.select:focus {
+    border-color: #5d7d2d;
+    outline: none;
 }
 
 .textarea {
     width: 100%;
     padding: 16px;
-    border: 1px solid #d1d5db;
+    border: 1px solid #83aa4a;
     border-radius: 10px;
     font-size: 1rem;
-    background-color: #ffffff;
+    background-color: #FDFFF0;
     resize: vertical;
     min-height: 120px;
     font-family: inherit;
     transition: all 0.2s ease;
     box-sizing: border-box;
     outline: none;
+    color: rgb(101, 101, 101);
 }
 
 .charCount {
@@ -289,9 +306,8 @@
 .submitButton {
     width: 100%;
     padding: 18px 24px;
-    background-color: #3b82f6;
-    color: #ffffff;
-    border: none;
+    background-color: rgb(255, 223, 104);
+    color: #1a4845;
     border-radius: 12px;
     font-size: 1.1rem;
     font-weight: 600;
@@ -301,7 +317,8 @@
     align-items: center;
     justify-content: center;
     min-height: 56px;
-    box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.25);
+    box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .submitSuccess {
@@ -340,18 +357,21 @@
 }
 
 .infoCard {
-    background-color: #ffffff;
-    border: 1px solid #e5e7eb;
+    background-color: #FDFFF0;
+    border: 1px solid #FDFFF0;
     border-radius: 16px;
     padding: 24px;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+
 }
 
 .infoTitle {
-    font-size: 1.375rem;
+    font-size: 25px;
     font-weight: 700;
     color: #1f2937;
     margin-bottom: 12px;
+    text-align: center;
 }
 
 .infoText {
@@ -359,17 +379,25 @@
     color: #374151;
     line-height: 1.6;
     margin-bottom: 20px;
+    text-align: center;
+
 }
 
 .serviceHighlights {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    /* flex-direction: column; */
+    gap: 100px;
     margin-bottom: 20px;
     padding: 16px;
-    background-color: #f0fdf4;
+    align-items: center;
+    justify-content: center;
+    background: rgba(186, 204, 186, 0.49);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     border-radius: 8px;
-    border: 1px solid #bbf7d0;
+    border: 1px solid rgba(186, 204, 186, 0.49);
+    flex: 1;
+
 }
 
 .serviceItem {
@@ -387,6 +415,9 @@
     gap: 12px;
     padding-top: 16px;
     border-top: 1px solid #e5e7eb;
+    flex: 1;
+    align-items: center;
+
 }
 
 .infoItem {
@@ -395,14 +426,16 @@
     gap: 10px;
     font-size: 0.95rem;
     color: #374151;
+
 }
 
 .mapSection {
     margin-bottom: 32px;
+    margin-top: 80px;
 }
 
 .mapTitle {
-    font-size: 1.5rem;
+    font-size: 40px;
     font-weight: 700;
     color: #1f2937;
     margin-bottom: 8px;
@@ -478,6 +511,46 @@
     }
 }
 
+@media (min-width: 1024px) {
+    .hero-title {
+        font-size: 40px !important;
+    }
+
+    .info-card {
+        position: sticky !important;
+        top: 20px !important;
+    }
+}
+
+@media (max-width: 991px) {
+    .heroTitle {
+        font-size: 35px !important;
+    }
+
+    .mapTitle {
+        font-size: 35px;
+    }
+
+    .ContactIcon {
+        width: 35px !important;
+        height: 35px !important;
+    }
+
+    .quickContactLabel {
+        font-size: 19px;
+
+    }
+
+    .quickContactValue {
+        font-size: 17px;
+    }
+
+    .quickContactDesc {
+        font-size: 15px;
+    }
+}
+
+
 /* Enhanced responsive design */
 @media (max-width: 767px) {
     .form-row {
@@ -488,12 +561,66 @@
         display: block !important;
     }
 
-    .hero-title {
-        font-size: 2rem !important;
-    }
 
     .quick-contact-grid {
         grid-template-columns: 1fr !important;
+    }
+
+    .serviceHighlights {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+
+    }
+
+    .heroTitle {
+        font-size: 30px !important;
+    }
+
+    .mapTitle {
+        font-size: 30px !important;
+    }
+
+    .quickContactCard {
+        padding: 20px !important;
+    }
+
+    .ContactIcon {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
+    .quickContactIcon {
+        width: 30px !important;
+        height: 30px !important;
+    }
+
+    .quickContactLabel {
+        font-size: 17px !important;
+
+    }
+
+    .quickContactValue {
+        font-size: 14px !important;
+    }
+
+    .quickContactDesc {
+        font-size: 13px !important;
+    }
+
+    .heroSubtitle {
+        font-size: 16px;
+    }
+     .mapSubtitle {
+        font-size: 16px;
+    }
+
+    .infoTitle {
+        font-size: 24px;
+    }
+
+    .infoText {
+        font-size: 16px;
     }
 }
 
@@ -502,9 +629,6 @@
         grid-template-columns: repeat(3, 1fr) !important;
     }
 
-    .hero-title {
-        font-size: 3rem !important;
-    }
 
     .form-card {
         padding: 32px !important;
@@ -516,16 +640,82 @@
         gap: 32px !important;
         align-items: start !important;
     }
+
 }
 
-@media (min-width: 1024px) {
-    .hero-title {
-        font-size: 3.5rem !important;
+
+
+
+@media (max-width: 576px) {
+    .quickContactGrid {
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+        gap: 1.5rem;
     }
 
-    .info-card {
-        position: sticky !important;
-        top: 20px !important;
+    .heroTitle {
+        font-size: 25px !important;
+    }
+
+    .mapTitle {
+        font-size: 25px !important;
+    }
+
+    .input {
+        font-size: 14px;
+    }
+
+    .select {
+        font-size: 14px !important;
+    }
+    .submitButton {
+    width: 100%;
+    padding: 8px 15px;
+    font-size: 15px;
+    min-height: 42px;
+    }
+}
+
+@media (max-width: 480px) {
+    .quickContactGrid {
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+        gap: 1.5rem;
+    }
+
+    .heroTitle {
+        font-size: 20px !important;
+    }
+    .mapTitle {
+        font-size: 20px !important;
+    }
+
+    .heroSubtitle {
+        font-size: 14px;
+    }
+
+    .mapSubtitle {
+        font-size: 14px;
+    }
+
+    .infoTitle {
+        font-size: 20px;
+    }
+
+    .infoText {
+        font-size: 14px;
+    }
+
+    .infoItem {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #374151;
+    }
+
+    .select {
+        font-size: 14px !important;
     }
 }
 
