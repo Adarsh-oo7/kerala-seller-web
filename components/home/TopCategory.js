@@ -1,13 +1,14 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Slider from "react-slick";
-import { 
-  Dress, 
-  TShirt, 
-  DeviceMobile, 
-  HighHeel, 
-  Laptop, 
-  BeerBottle, 
+import "../../styles/TopCategory.css";
+import {
+  Dress,
+  TShirt,
+  DeviceMobile,
+  HighHeel,
+  Laptop,
+  BeerBottle,
   Flask,
   ShirtFolded,
   Sneaker,
@@ -21,20 +22,20 @@ import axios from "axios";
 // ✅ Updated environment variable handling with your hosted backend
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  
+
   console.log('Environment check:', {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NODE_ENV: process.env.NODE_ENV
   });
-  
+
   if (envUrl && envUrl !== 'undefined') {
     return envUrl;
   }
-  
+
   // Updated fallback with your hosted backend URL
-  return process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:8000' 
+  return process.env.NODE_ENV === 'development'
+    ? 'http://localhost:8000'
     : 'https://keralaseller-backend.onrender.com';  // ✅ Your hosted backend
 };
 
@@ -42,11 +43,11 @@ const API_BASE_URL = getApiBaseUrl();
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 
-console.log('🌐 API URLs configured:', { 
-  API_BASE_URL, 
-  PRODUCTS_API_URL, 
+console.log('🌐 API URLs configured:', {
+  API_BASE_URL,
+  PRODUCTS_API_URL,
   CATEGORIES_API_URL,
-  ENVIRONMENT: process.env.NODE_ENV 
+  ENVIRONMENT: process.env.NODE_ENV
 });
 
 // ✅ Create Axios instance with proper configuration for your hosted backend
@@ -101,11 +102,11 @@ const TopCategory = ({ onCategoryClick }) => {
       "men's wear": <TShirt size={32} weight="duotone" color="#1a4845" />,
       "mens clothing": <TShirt size={32} weight="duotone" color="#1a4845" />,
       "clothing": <ShirtFolded size={32} weight="duotone" color="#1a4845" />,
-      
+
       "womens wear": <Dress size={32} weight="duotone" color="#1a4845" />,
       "women's wear": <Dress size={32} weight="duotone" color="#1a4845" />,
       "womens clothing": <Dress size={32} weight="duotone" color="#1a4845" />,
-      
+
       // Electronics & Gadgets
       "electronics": <Laptop size={32} weight="duotone" color="#1a4845" />,
       "gadgets": <DeviceMobile size={32} weight="duotone" color="#1a4845" />,
@@ -114,13 +115,13 @@ const TopCategory = ({ onCategoryClick }) => {
       "tablet": <DeviceTablet size={32} weight="duotone" color="#1a4845" />,
       "laptop": <Laptop size={32} weight="duotone" color="#1a4845" />,
       "computer": <Laptop size={32} weight="duotone" color="#1a4845" />,
-      
+
       // Footwear
       "footwears": <HighHeel size={32} weight="duotone" color="#1a4845" />,
       "footwear": <HighHeel size={32} weight="duotone" color="#1a4845" />,
       "shoes": <Sneaker size={32} weight="duotone" color="#1a4845" />,
       "sneakers": <Sneaker size={32} weight="duotone" color="#1a4845" />,
-      
+
       // Other categories
       "grocery": <BeerBottle size={32} weight="duotone" color="#1a4845" />,
       "food": <BeerBottle size={32} weight="duotone" color="#1a4845" />,
@@ -134,17 +135,59 @@ const TopCategory = ({ onCategoryClick }) => {
     return iconMap[normalizedName] || <Package size={32} weight="duotone" color="#1a4845" />;
   };
 
+
+
+  const getCategoryImage = (categoryName) => {
+
+      const categoryImages = {
+
+
+    "mens clothing": "/assets/images/TopCategory/1.png",
+    "mens wear": "/assets/images/TopCategory/1.png",
+    "men's wear": "/assets/images/TopCategory/1.png",
+    "clothing": "/assets/images/TopCategory/1.png",
+
+
+    "womens wear": "/assets/images/TopCategory/2.png",
+    "women's wear": "/assets/images/TopCategory/2.png",
+    "womens clothing": "/assets/images/TopCategory/2.png",
+
+    "electronics": "/assets/images/TopCategory/7.png",
+    "gadgets": "/assets/images/TopCategory/3.png",
+    "mobile": "/assets/images/TopCategory/7.png",
+    "phone": "/assets/images/TopCategory/7.png",
+    "tablet": "/assets/images/TopCategory/7.png",
+    "laptop": "/assets/images/TopCategory/7.png",
+    "computer": "/assets/images/TopCategory/7.png",
+
+    "footwears": "/assets/images/TopCategory/4.png",
+    "footwear": "/assets/images/TopCategory/4.png",
+    "shoes": "/assets/images/TopCategory/4.png",
+    "sneakers": "/assets/images/TopCategory/4.png",
+
+    "grocery": "/assets/images/TopCategory/6.png",
+    "food": "/assets/images/TopCategory/6.png",
+    "beauty": "/assets/images/TopCategory/5.png",
+    "cosmetics": "/assets/images/TopCategory/5.png",
+    "books": "/assets/images/TopCategory/3.png",
+    "accessories": "/assets/images/TopCategory/3.png"
+  };
+    const  normalizedName = categoryName?.toLowerCase() || '';
+    return categoryImages[ normalizedName] || "/images/categories/default.png";
+  };
+
+
   // ✅ Enhanced fetch for hosted backend
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         console.log('🔄 Fetching categories from hosted backend:', CATEGORIES_API_URL);
-        
+
         const response = await apiClient.get('/api/categories/');
-        
+
         console.log('📊 Categories API Response:', {
           status: response.status,
           dataStructure: typeof response.data,
@@ -152,10 +195,10 @@ const TopCategory = ({ onCategoryClick }) => {
           hasResults: !!response.data?.results,
           dataKeys: response.data ? Object.keys(response.data).slice(0, 5) : []
         });
-        
+
         // Handle different response structures
         let categoryData = [];
-        
+
         if (response.data) {
           if (Array.isArray(response.data)) {
             categoryData = response.data;
@@ -168,29 +211,29 @@ const TopCategory = ({ onCategoryClick }) => {
             categoryData = [];
           }
         }
-        
+
         console.log('📋 Total categories received:', categoryData.length);
-        
+
         // Get only root categories (categories without parent)
-        const rootCategories = categoryData.filter(category => 
+        const rootCategories = categoryData.filter(category =>
           category && (!category.parent || category.parent === null)
         );
-        
+
         console.log('🌳 Root categories found:', rootCategories.length);
-        
+
         // Limit to 8 categories for display
         const displayCategories = rootCategories.slice(0, 8);
-        
+
         console.log('🎯 Final display categories:', displayCategories);
-        
+
         // ✅ Force new array creation to ensure re-render
         setCategories([...displayCategories]);
-        
+
       } catch (error) {
         console.error("❌ Failed to fetch categories from hosted backend:", error);
-        
+
         let errorMessage = 'Failed to load categories from server';
-        
+
         if (error.code === 'ECONNABORTED') {
           errorMessage = 'Server timeout - the hosted backend is taking too long to respond';
         } else if (error.response) {
@@ -206,7 +249,7 @@ const TopCategory = ({ onCategoryClick }) => {
         } else {
           errorMessage = 'Failed to load categories';
         }
-        
+
         setError(errorMessage);
         setCategories([]);
       } finally {
@@ -240,12 +283,13 @@ const TopCategory = ({ onCategoryClick }) => {
       <button
         type="button"
         onClick={onClick}
-        className={`${className} slick-next slick-arrow flex-center rounded-circle bg-white text-xl hover-bg-main-600 hover-text-white transition-1`}
+        className={`${className} slick-next slick-arrow flex-center rounded-circle bg-white text-xl hover-bg-main-600 hover-text-white `}
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           right: '10px',
+          display: "none",
           zIndex: 2
         }}
         aria-label="Next categories"
@@ -288,33 +332,33 @@ const TopCategory = ({ onCategoryClick }) => {
     prevArrow: <SamplePrevArrow />,
     lazyLoad: 'ondemand',
     responsive: [
-      { 
-        breakpoint: 1200, 
-        settings: { 
+      {
+        breakpoint: 1200,
+        settings: {
           slidesToShow: Math.min(6, categories.length || 1),
-          arrows: false 
-        } 
+          arrows: false
+        }
       },
-      { 
-        breakpoint: 992, 
-        settings: { 
+      {
+        breakpoint: 992,
+        settings: {
           slidesToShow: Math.min(5, categories.length || 1),
-          arrows: false 
-        } 
+          arrows: false
+        }
       },
-      { 
-        breakpoint: 768, 
-        settings: { 
+      {
+        breakpoint: 768,
+        settings: {
           slidesToShow: Math.min(4, categories.length || 1),
-          arrows: false 
-        } 
+          arrows: false
+        }
       },
-      { 
-        breakpoint: 480, 
-        settings: { 
+      {
+        breakpoint: 480,
+        settings: {
           slidesToShow: Math.min(3, categories.length || 1),
-          arrows: false 
-        } 
+          arrows: false
+        }
       },
     ],
   };
@@ -322,11 +366,11 @@ const TopCategory = ({ onCategoryClick }) => {
   // Loading state
   if (loading) {
     return (
-      <div className="feature" id="featureSection" style={styles.container}>
+      <div id="featureSection" className="contain">
         <div className="container container-lg">
-          <div style={styles.loadingContainer}>
-            <div style={styles.spinner}></div>
-            <p style={styles.loadingText}>Loading categories from server...</p>
+          <div className="loadingContainer">
+            <div className="spinner"></div>
+            <p className="loadingText">Loading categories from server...</p>
           </div>
         </div>
       </div>
@@ -336,40 +380,44 @@ const TopCategory = ({ onCategoryClick }) => {
   // Error state with backend-specific messaging
   if (error) {
     return (
-      <div className="feature" id="featureSection" style={styles.container}>
+      <div id="featureSection" className="container">
         <div className="container container-lg">
-          <div style={styles.errorState}>
-            <p style={styles.errorText}>⚠️ {error}</p>
-            <p style={styles.errorSubText}>Backend URL: {API_BASE_URL}</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              style={styles.retryButton}
+          <div className="errorState">
+            <p className="errorText">⚠️ {error}</p>
+            <p className="errorSubText">Backend URL: {API_BASE_URL}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="retryButton"
             >
               Try Again
             </button>
           </div>
         </div>
       </div>
+
     );
   }
 
   // No categories state
   if (!categories.length) {
     return (
-      <div className="feature" id="featureSection" style={styles.container}>
+      <div id="featureSection" className="container">
         <div className="container container-lg">
-          <div style={styles.emptyState}>
+          <div className="emptyState">
             <p>📭 No categories available</p>
-            <p style={styles.emptySubText}>Categories will appear here when available from the server</p>
+            <p className="emptySubText">
+              Categories will appear here when available from the server
+            </p>
           </div>
         </div>
+
       </div>
     );
   }
 
   // Main render (rest of component unchanged)
   return (
-    <div className="feature" id="featureSection" style={styles.container}>
+    <div id="featureSection" className="container">
       <div className="container container-lg">
         {!isMobile ? (
           // Desktop / Tablet view (slider)
@@ -378,9 +426,8 @@ const TopCategory = ({ onCategoryClick }) => {
               <Slider {...settings}>
                 {categories.map((category, index) => (
                   <div key={`desktop-${category.id || index}`} className="feature-item text-center">
-                    <div 
-                      className="feature-item__thumb"
-                      style={styles.categoryItem}
+                    <div
+                      className="categoryItem"
                       onClick={() => handleCategoryClick(category.id, category.name)}
                       role="button"
                       tabIndex={0}
@@ -391,14 +438,22 @@ const TopCategory = ({ onCategoryClick }) => {
                       }}
                       aria-label={`Browse ${category.name} category`}
                     >
-                      <div style={styles.desktopCategoryCard}>
-                        <div style={styles.iconWrapper}>
-                          {getIconForCategory(category.name)}
-                        </div>
-                        <h6 style={styles.categoryName}>
-                          {category.name}
-                        </h6>
+                      <div className="desktopCategoryCard">
+                        {!isMobile ? (
+                          <img
+                            src={getCategoryImage(category.name)}
+                            alt={category.name}
+                            className="categoryImage"
+                            style={{ width: '90px', height: '90px', objectFit: 'contain', marginBottom: '8px' }}
+                          />
+                        ) : (
+                          <div className="iconWrapper">
+                            {getIconForCategory(category.name)}
+                          </div>
+                        )}
+                        <h6 className="categoryName">{category.name}</h6>
                       </div>
+
                     </div>
                   </div>
                 ))}
@@ -407,13 +462,13 @@ const TopCategory = ({ onCategoryClick }) => {
           </div>
         ) : (
           // Mobile view (scrollable horizontal list)
-          <div style={styles.mobileContainer}>
-            <div style={styles.mobileCategoryBar}>
+          <div className="mobileContainer">
+            <div className="mobileCategoryBar">
               {categories.map((category, index) => (
                 <div
                   key={`mobile-${category.id || index}`}
                   onClick={() => handleCategoryClick(category.id, category.name)}
-                  style={styles.mobileCategoryItem}
+                  className="mobileCategoryItem"
                   role="button"
                   tabIndex={0}
                   onKeyPress={(e) => {
@@ -423,173 +478,22 @@ const TopCategory = ({ onCategoryClick }) => {
                   }}
                   aria-label={`Browse ${category.name} category`}
                 >
-                  <div style={styles.mobileIconWrapper}>
+                  <div className="mobileIconWrapper">
                     {getIconForCategory(category.name)}
                   </div>
-                  <span style={styles.mobileCategoryName}>{category.name}</span>
+                  <span className="mobileCategoryName">{category.name}</span>
                 </div>
               ))}
             </div>
           </div>
         )}
       </div>
-      
-      {/* CSS Animation */}
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+
+
     </div>
   );
 };
 
-// Enhanced styles with better error messaging
-const styles = {
-  container: {
-    backgroundColor: '#fff',
-    padding: '20px 0',
-    borderBottom: '1px solid #f0f0f0'
-  },
 
-  // Loading states
-  loadingContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px 20px',
-    gap: '10px'
-  },
-  spinner: {
-    width: '30px',
-    height: '30px',
-    border: '3px solid #f3f3f3',
-    borderTop: '3px solid #1a4845',
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite'
-  },
-  loadingText: {
-    color: '#666',
-    fontSize: '14px',
-    margin: 0
-  },
-
-  // Error states
-  errorState: {
-    textAlign: 'center',
-    padding: '40px 20px',
-  },
-  errorText: {
-    color: '#dc3545',
-    fontSize: '14px',
-    margin: '0 0 8px 0',
-    fontWeight: '600'
-  },
-  errorSubText: {
-    color: '#999',
-    fontSize: '12px',
-    margin: '0 0 15px 0',
-    fontFamily: 'monospace'
-  },
-  retryButton: {
-    padding: '10px 20px',
-    backgroundColor: '#1a4845',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '500'
-  },
-
-  // Empty states
-  emptyState: {
-    textAlign: 'center',
-    padding: '40px 20px',
-    color: '#666'
-  },
-  emptySubText: {
-    fontSize: '12px',
-    color: '#999',
-    margin: '10px 0 0 0'
-  },
-
-  // Desktop styles
-  categoryItem: {
-    cursor: 'pointer',
-    padding: '5px'
-  },
-  desktopCategoryCard: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '15px 10px',
-    backgroundColor: '#f8f9fa',
-    borderRadius: '12px',
-    transition: 'all 0.3s ease',
-    border: '2px solid transparent',
-    margin: '0 5px'
-  },
-  iconWrapper: {
-    marginBottom: '8px',
-    padding: '10px',
-    backgroundColor: 'white',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-  },
-  categoryName: {
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#333',
-    margin: 0,
-    textAlign: 'center',
-    lineHeight: '1.2'
-  },
-
-  // Mobile styles
-  mobileContainer: {
-    padding: '0 10px'
-  },
-  mobileCategoryBar: {
-    display: 'flex',
-    gap: '12px',
-    overflowX: 'auto',
-    paddingBottom: '10px',
-    scrollbarWidth: 'none',
-    msOverflowStyle: 'none'
-  },
-  mobileCategoryItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    minWidth: '80px',
-    cursor: 'pointer',
-    padding: '8px',
-    borderRadius: '8px',
-    transition: 'all 0.2s ease'
-  },
-  mobileIconWrapper: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: '50%',
-    padding: '12px',
-    marginBottom: '6px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-  },
-  mobileCategoryName: {
-    fontSize: '11px',
-    fontWeight: '500',
-    color: '#333',
-    textAlign: 'center',
-    lineHeight: '1.2'
-  }
-};
 
 export default TopCategory;

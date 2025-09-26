@@ -1,6 +1,6 @@
 .product-card {
-    width: 210px;
-    /* reduce card size */
+    width: 100%;
+    max-width: 210px;
     border: 1px solid #eee;
     border-radius: 10px;
     overflow: hidden;
@@ -63,7 +63,7 @@
 .wishlist-icon {
     height: 16px;
     width: 16px;
-    color: #666;
+    color: rgba(40, 167, 69, 0.9);
 }
 
 .wish-active {
@@ -390,39 +390,41 @@
 
 /* Place Add to Cart button permanently at the bottom */
 .cart-section {
-  margin-top: 12px;
-  display: flex;
-  justify-content: center;
-  width: 100%;
+    margin-top: 12px;
+    display: flex;
+    justify-content: center;
+    width: 100%;
 }
 
 .cart-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: #059669;
-  color: #fff;
-  border: none;
-  padding: 7px 42px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #059669;
+    color: #fff;
+    border: none;
+    padding: 7px 42px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
 }
 
+
+
 .cart-btn:hover:not(.disabled) {
-  background-color: #047857;
+    background-color: #047857;
 }
 
 .cart-btn.disabled {
-  background-color: #9ca3af;
-  cursor: not-allowed;
+    background-color: #9ca3af;
+    cursor: not-allowed;
 }
 
 .cart-icon {
-  width: 17px;
-  height: 17px;
+    width: 17px;
+    height: 17px;
 }
 
 
@@ -464,34 +466,37 @@
 }
 
 .product-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 4px;
-  gap: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+    gap: 10px;
 }
 
 .store-name {
-  font-size: 0.9rem;
-  color: #6b7280; /* gray-500 */
-  white-space: nowrap;
+    font-size: 0.9rem;
+    color: #6b7280;
+    /* gray-500 */
+    white-space: nowrap;
 }
 
 .price-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .product-price {
-  font-weight: 600;
-  color: #28a745; /* near black */
+    font-weight: 600;
+    color: #28a745;
+    /* near black */
 }
 
 .original-price {
-  font-size: 0.9rem;
-  color: #9ca3af; /* gray-400 */
-  text-decoration: line-through;
+    font-size: 0.9rem;
+    color: #9ca3af;
+    /* gray-400 */
+    text-decoration: line-through;
 }
 
 
@@ -596,7 +601,7 @@
     /* appears just below discount badge */
     left: 8px;
     background: #be1e237a;
-;
+    ;
     color: #fefefe;
     font-size: 12px;
     font-weight: 600;
@@ -608,10 +613,11 @@
 }
 
 .product-title .model-name {
-  font-size: 0.9em;
-  font-weight: 400;
-  color: #6b7280; /* gray-500 */
-  margin-left: 4px;
+    font-size: 0.9em;
+    font-weight: 400;
+    color: #6b7280;
+    /* gray-500 */
+    margin-left: 4px;
 }
 
 

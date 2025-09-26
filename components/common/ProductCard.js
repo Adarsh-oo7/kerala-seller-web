@@ -111,6 +111,7 @@ export default function ProductCard({
 
         console.log('🛒 Adding to cart:', productData)
         await onAddToCart(e, productData)
+
       }
     } catch (error) {
       console.error('❌ Add to cart error:', error)
@@ -306,10 +307,8 @@ export default function ProductCard({
                 </span>
               </button>
             </div>
+
           </div>
-
-
-
 
           {/* <div className="product-right"> */}
 
