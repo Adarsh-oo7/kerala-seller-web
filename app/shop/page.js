@@ -238,7 +238,7 @@ export default function ShopPage() {
             onClick={() => setShowMobileSort(!showMobileSort)}
             className="ShoptoolbarButton"
           >
-            <SlidersHorizontal size={18} />
+            <SlidersHorizontal size={18} className="ShopfilterIcon" />
             <span>Sort</span>
           </button>
 
@@ -266,15 +266,15 @@ export default function ShopPage() {
           <div className="ShopviewToggle">
             <button
               onClick={() => setViewMode('grid')}
-              className={`ShopviewButton ${viewMode === "Shopgrid" ? "ShopactiveView" : ""}`}
+              className={`ShopviewButton ${viewMode === "grid" ? "ShopactiveView" : ""}`}
             >
-              <Grid size={16} />
+              <Grid size={16} className="ShopgridIcon" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`ShopviewButton ${viewMode === "Shoplist" ? "ShopactiveView" : ""}`}
+              className={`ShopviewButton ${viewMode === "list" ? "ShopactiveView" : ""}`}
             >
-              <List size={16} />
+              <List size={16} className="ShopgridIcon" />
             </button>
           </div>
         </div>
@@ -326,15 +326,7 @@ export default function ShopPage() {
         {/* ✅ ENHANCED: SEO-friendly shop cards with slugs */}
         {filteredShops.length > 0 ? (
           <div
-            className="shopsContainer"
-            style={{
-              gridTemplateColumns: isMobile
-                ? "repeat(2, 1fr)"
-                : isTablet
-                  ? "repeat(3, 1fr)"
-                  : "repeat(4, 1fr)"
-            }}
-          >
+            className="shopsContainer">
             {filteredShops.map((shop, index) => {
               // ✅ Enhanced seller phone detection with multiple fallbacks
               const sellerPhone = shop.seller_phone ||
@@ -347,101 +339,7 @@ export default function ShopPage() {
               const shopSlug = generateShopSlug(shop);
 
               return (
-                // <div key={`shop-${shop.id}-${index}`} className="shopCard">
-                //   {/* ✅ Logo and basic info always shown */}
-                //   <div className="ShoplogoContainer">
-                //     <img
-                //       src={
-                //         shop.logo_url ||
-                //         shop.logo ||
-                //         shop.image ||
-                //         'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' + encodeURIComponent(shop.name?.charAt(0) || 'S')
-                //       }
-                //       alt={`${shop.name} - ${shop.seller_address || shop.address || 'Kerala'}`}
-                //       className="shopLogo"
-                //       onError={(e) => {
-                //         e.target.src = 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' +
-                //           encodeURIComponent(shop.name?.charAt(0) || 'S');
-                //       }}
-                //       loading="lazy"
-                //     />
-                //   </div>
-
-                //   <div className="shopCardContent">
-                //     <h3 className="shopName">{shop.name || 'Shop Name'}</h3>
-
-                //     {shop.tagline && (
-                //       <p className="shopTagline">{shop.tagline}</p>
-                //     )}
-
-                //     {shop.description && (
-                //       <p className="shopDescription">
-                //         {shop.description.length > 50
-                //           ? shop.description.substring(0, 50) + '...'
-                //           : shop.description}
-                //       </p>
-                //     )}
-
-                //     {/* Enhanced Shop Info with Location Priority */}
-                //     <div className="shopInfoContainer">
-                //       {(shop.seller_address || shop.seller?.address || shop.address) && (
-                //         <div className="shopInfoItem">
-                //           <MapPin size={12} />
-                //           <span className="ShoplocationText">
-                //             {(() => {
-                //               const address = shop.seller_address || shop.seller?.address || shop.address;
-                //               return address.length > 25
-                //                 ? address.substring(0, 25) + '...'
-                //                 : address;
-                //             })()}
-                //           </span>
-                //         </div>
-                //       )}
-
-                //       {(shop.products_count || shop.product_count) && (
-                //         <div className="shopInfoItem">
-                //           <Store size={12} />
-                //           <span>{shop.products_count || shop.product_count} Products</span>
-                //         </div>
-                //       )}
-
-                //       {shop.average_rating && shop.average_rating > 0 && (
-                //         <div className="shopInfoItem">
-                //           <Star size={12} fill="#ffc107" color="#ffc107" />
-                //           <span>{Number(shop.average_rating).toFixed(1)}</span>
-                //         </div>
-                //       )}
-
-                //       {sellerPhone && (
-                //         <div className="shopInfoItem">
-                //           <Phone size={12} />
-                //           <span>{sellerPhone.substring(0, 4)}****{sellerPhone.substring(8)}</span>
-                //         </div>
-                //       )}
-                //     </div>
-                //   </div>
-
-                //   {/* ✅ ENHANCED: SEO-friendly action button with proper data */}
-                //   <div className="shopActions">
-                //     {sellerPhone ? (
-                //       <Link
-                //         href={`/shop/${shopSlug}?id=${sellerPhone}`}
-                //         className="ShoplinkButton"
-                //         title={`Visit ${shop.name} in ${shop.seller_address || shop.address || 'Kerala'}`}
-                //       >
-                //         <button className="viewShopButton">
-                //           <Store size={14} />
-                //           <span>Visit Store</span>
-                //         </button>
-                //       </Link>
-                //     ) : (
-                //       <button className="ShopdisabledButton" disabled>
-                //         <AlertCircle size={14} />
-                //         <span>Contact Info Missing</span>
-                //       </button>
-                //     )}
-                //   </div>
-                // </div>
+                
 
                 <div className="shopCard">
                   {/* Header: logo + name + tagline */}
@@ -475,13 +373,13 @@ export default function ShopPage() {
 
 
                   {/* Description */}
-                  {/* {shop.description && (
+                  {shop.description && (
                     <p className="shopDescription">
                       {shop.description.length > 50
                         ? shop.description.substring(0, 50) + '...'
                         : shop.description}
                     </p>
-                  )} */}
+                  )}
 
 
 
