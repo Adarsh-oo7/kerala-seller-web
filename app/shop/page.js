@@ -6,11 +6,13 @@ import Link from 'next/link';
 import { useCart } from '../context/CartContext';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
-import { 
-  Search, 
-  Filter, 
-  Grid, 
-  List, 
+import "../../styles/ShopPage.css";
+
+import {
+  Search,
+  Filter,
+  Grid,
+  List,
   MapPin,
   Phone,
   Star,
@@ -23,17 +25,17 @@ import {
 // ✅ Enhanced environment variable handling
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  
+
   console.log('Shop API Environment check:', {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     resolved: envUrl || 'http://localhost:8000'
   });
-  
+
   if (envUrl && envUrl !== 'undefined') {
     return envUrl;
   }
-  
+
   return 'http://localhost:8000';
 };
 
@@ -49,7 +51,7 @@ const generateShopSlug = (shop) => {
     .replace(/\s+/g, '-')         // Replace spaces with hyphens
     .replace(/-+/g, '-')          // Replace multiple hyphens with single
     .trim('-');                   // Remove leading/trailing hyphens
-  
+
   const location = (shop.seller_address || shop.address || shop.city || '')
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
@@ -57,10 +59,10 @@ const generateShopSlug = (shop) => {
     .replace(/-+/g, '-')
     .trim('-')
     .split('-')[0]; // Take first word of location
-  
+
   // Combine shop name with location
   const slug = location ? `${shopName}-${location}` : shopName;
-  
+
   // Fallback to phone if slug is too short
   return slug.length >= 3 ? slug : `shop-${shop.seller_phone || shop.id}`;
 };
@@ -70,14 +72,14 @@ function useMediaQuery(query) {
 
   useEffect(() => {
     const media = window.matchMedia(query);
-    
+
     if (media.matches !== matches) {
       setMatches(media.matches);
     }
-    
+
     const listener = () => setMatches(media.matches);
     media.addEventListener('change', listener);
-    
+
     return () => media.removeEventListener('change', listener);
   }, [matches, query]);
 
@@ -100,11 +102,11 @@ export default function ShopPage() {
   const fetchShops = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       console.log('Fetching shops from:', API_URL);
       const response = await axios.get(API_URL);
-      
+
       let shopData = [];
       if (Array.isArray(response.data.results)) {
         shopData = response.data.results;
@@ -114,11 +116,11 @@ export default function ShopPage() {
         console.warn('Unexpected shop API response structure:', response.data);
         shopData = [];
       }
-      
+
       // ✅ DEBUG: Log shop data structure
       console.log('🔍 Shop data structure:', shopData.length > 0 ? shopData[0] : 'No data');
       console.log('🔍 Available fields:', shopData.length > 0 ? Object.keys(shopData[0]) : 'No data');
-      
+
       setShops(shopData);
       setFilteredShops(shopData);
     } catch (error) {
@@ -182,10 +184,10 @@ export default function ShopPage() {
 
   if (isLoading && shops.length === 0) {
     return (
-      <div style={styles.pageContainer}>
+      <div className="ShoppageContainer">
         <Header />
-        <div style={styles.loadingContainer}>
-          <div style={styles.spinner}></div>
+        <div className="ShoploadingContainer">
+          <div className="Shopspinner"></div>
           <p>Loading amazing shops for you...</p>
         </div>
         <Footer />
@@ -195,13 +197,13 @@ export default function ShopPage() {
 
   if (error) {
     return (
-      <div style={styles.pageContainer}>
+      <div className="ShoppageContainer">
         <Header />
-        <div style={styles.errorContainer}>
+        <div className="ShoperrorContainer">
           <AlertCircle size={48} />
           <h2>Oops! Something went wrong</h2>
           <p>{error}</p>
-          <button onClick={fetchShops} style={styles.retryButton}>
+          <button onClick={fetchShops} className="ShopretryButton">
             Try Again
           </button>
         </div>
@@ -211,29 +213,29 @@ export default function ShopPage() {
   }
 
   return (
-    <div style={styles.pageContainer}>
+    <div className="ShoppageContainer">
       <Header />
-      
+
       {/* Hero Section */}
-      <div style={styles.heroSection}>
-        <div style={styles.heroContent}>
-          <h1 style={styles.heroTitle}>Discover Local Shops in Kerala</h1>
-          <p style={styles.heroSubtitle}>Shop from trusted sellers across God's Own Country</p>
-          
-          <div style={styles.searchContainer}>
-            <div style={styles.searchBox}>
-              <Search size={18} style={styles.searchIcon} />
+      <div className="ShopheroSection">
+        <div className="ShopheroContent">
+          <h1 className="ShopheroTitle">Discover Local Shops in Kerala</h1>
+          <p className="ShopheroSubtitle">Shop from trusted sellers across God's Own Country</p>
+
+          <div className="ShopsearchContainer">
+            <div className="ShopsearchBox">
+              <Search size={18} className="ShopsearchIcon" />
               <input
                 type="text"
                 placeholder="Search shops by name, location, or category..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={styles.searchInput}
+                className="ShopsearchInput"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  style={styles.clearSearchButton}
+                  className="ShopclearSearchButton"
                 >
                   <X size={16} />
                 </button>
@@ -243,33 +245,27 @@ export default function ShopPage() {
         </div>
       </div>
 
-      <div style={styles.container}>
+      <div className="Shopcontainer">
         {/* Mobile Toolbar */}
-        <div style={styles.mobileToolbar}>
+        <div className="ShopmobileToolbar">
           <button
             onClick={() => setShowMobileSort(!showMobileSort)}
-            style={styles.toolbarButton}
+            className="ShoptoolbarButton"
           >
             <SlidersHorizontal size={18} />
             <span>Sort</span>
           </button>
-          
-          <div style={styles.viewToggle}>
+
+          <div className="ShopviewToggle">
             <button
               onClick={() => setViewMode('grid')}
-              style={{
-                ...styles.viewButton,
-                ...(viewMode === 'grid' ? styles.activeView : {})
-              }}
+              className={`ShopviewButton ${viewMode === "Shopgrid" ? "ShopactiveView" : ""}`}
             >
               <Grid size={16} />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              style={{
-                ...styles.viewButton,
-                ...(viewMode === 'list' ? styles.activeView : {})
-              }}
+              className={`ShopviewButton ${viewMode === "Shoplist" ? "ShopactiveView" : ""}`}
             >
               <List size={16} />
             </button>
@@ -278,11 +274,11 @@ export default function ShopPage() {
 
         {/* Mobile Sort Dropdown */}
         {showMobileSort && (
-          <div style={styles.mobileDropdown}>
-            <div style={styles.dropdownContent}>
-              <div style={styles.dropdownHeader}>
+          <div className="ShopmobileDropdown">
+            <div className="ShopdropdownContent">
+              <div className="ShopdropdownHeader">
                 <h3>Sort By</h3>
-                <button onClick={() => setShowMobileSort(false)} style={styles.closeButton}>
+                <button onClick={() => setShowMobileSort(false)} className="ShopcloseButton">
                   <X size={20} />
                 </button>
               </div>
@@ -299,10 +295,7 @@ export default function ShopPage() {
                     setSortBy(option.value);
                     setShowMobileSort(false);
                   }}
-                  style={{
-                    ...styles.dropdownOption,
-                    ...(sortBy === option.value ? styles.activeOption : {})
-                  }}
+                  className={`ShopdropdownOption ${sortBy === option.value ? "ShopactiveOption" : ""}`}
                 >
                   {option.label}
                 </button>
@@ -312,12 +305,12 @@ export default function ShopPage() {
         )}
 
         {/* Results Count */}
-        <div style={styles.resultsHeader}>
-          <span style={styles.resultsCount}>
+        <div className="ShopresultsHeader">
+          <span className="ShopresultsCount">
             {filteredShops.length} shop{filteredShops.length !== 1 ? 's' : ''} found
           </span>
           {searchTerm && (
-            <span style={styles.searchIndicator}>
+            <span className="ShopsearchIndicator">
               for "{searchTerm}"
             </span>
           )}
@@ -325,113 +318,220 @@ export default function ShopPage() {
 
         {/* ✅ ENHANCED: SEO-friendly shop cards with slugs */}
         {filteredShops.length > 0 ? (
-          <div style={{
-            ...styles.shopsContainer,
-            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 
-                               isTablet ? 'repeat(3, 1fr)' : 
-                               'repeat(4, 1fr)'
-          }}>
+          <div
+            className="shopsContainer"
+            style={{
+              gridTemplateColumns: isMobile
+                ? "repeat(2, 1fr)"
+                : isTablet
+                  ? "repeat(3, 1fr)"
+                  : "repeat(4, 1fr)"
+            }}
+          >
             {filteredShops.map((shop, index) => {
               // ✅ Enhanced seller phone detection with multiple fallbacks
-              const sellerPhone = shop.seller_phone || 
-                                 shop.seller?.phone || 
-                                 shop.phone ||
-                                 shop.contact_phone ||
-                                 shop.whatsapp_number;
-              
+              const sellerPhone = shop.seller_phone ||
+                shop.seller?.phone ||
+                shop.phone ||
+                shop.contact_phone ||
+                shop.whatsapp_number;
+
               // ✅ Generate SEO-friendly slug
               const shopSlug = generateShopSlug(shop);
-              
+
               return (
-                <div key={`shop-${shop.id}-${index}`} style={styles.shopCard}>
-                  {/* ✅ Logo and basic info always shown */}
-                  <div style={styles.logoContainer}>
-                    <img 
-                      src={
-                        shop.logo_url || 
-                        shop.logo || 
-                        shop.image ||
-                        'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' + encodeURIComponent(shop.name?.charAt(0) || 'S')
-                      }
-                      alt={`${shop.name} - ${shop.seller_address || shop.address || 'Kerala'}`} 
-                      style={styles.shopLogo}
-                      onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' + 
-                                      encodeURIComponent(shop.name?.charAt(0) || 'S');
-                      }}
-                      loading="lazy"
-                    />
-                  </div>
-                  
-                  <div style={styles.shopCardContent}>
-                    <h3 style={styles.shopName}>{shop.name || 'Shop Name'}</h3>
-                    
-                    {shop.tagline && (
-                      <p style={styles.shopTagline}>{shop.tagline}</p>
-                    )}
-                    
-                    {shop.description && (
-                      <p style={styles.shopDescription}>
-                        {shop.description.length > 50 
-                          ? shop.description.substring(0, 50) + '...' 
-                          : shop.description}
-                      </p>
-                    )}
+                // <div key={`shop-${shop.id}-${index}`} className="shopCard">
+                //   {/* ✅ Logo and basic info always shown */}
+                //   <div className="ShoplogoContainer">
+                //     <img
+                //       src={
+                //         shop.logo_url ||
+                //         shop.logo ||
+                //         shop.image ||
+                //         'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' + encodeURIComponent(shop.name?.charAt(0) || 'S')
+                //       }
+                //       alt={`${shop.name} - ${shop.seller_address || shop.address || 'Kerala'}`}
+                //       className="shopLogo"
+                //       onError={(e) => {
+                //         e.target.src = 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' +
+                //           encodeURIComponent(shop.name?.charAt(0) || 'S');
+                //       }}
+                //       loading="lazy"
+                //     />
+                //   </div>
 
-                    {/* Enhanced Shop Info with Location Priority */}
-                    <div style={styles.shopInfoContainer}>
-                      {(shop.seller_address || shop.seller?.address || shop.address) && (
-                        <div style={styles.shopInfoItem}>
-                          <MapPin size={12} />
-                          <span style={styles.locationText}>
-                            {(() => {
-                              const address = shop.seller_address || shop.seller?.address || shop.address;
-                              return address.length > 25 
-                                ? address.substring(0, 25) + '...' 
-                                : address;
-                            })()}
-                          </span>
-                        </div>
-                      )}
-                      
-                      {(shop.products_count || shop.product_count) && (
-                        <div style={styles.shopInfoItem}>
-                          <Store size={12} />
-                          <span>{shop.products_count || shop.product_count} Products</span>
-                        </div>
-                      )}
+                //   <div className="shopCardContent">
+                //     <h3 className="shopName">{shop.name || 'Shop Name'}</h3>
 
-                      {shop.average_rating && shop.average_rating > 0 && (
-                        <div style={styles.shopInfoItem}>
-                          <Star size={12} fill="#ffc107" color="#ffc107" />
-                          <span>{Number(shop.average_rating).toFixed(1)}</span>
-                        </div>
-                      )}
+                //     {shop.tagline && (
+                //       <p className="shopTagline">{shop.tagline}</p>
+                //     )}
 
-                      {sellerPhone && (
-                        <div style={styles.shopInfoItem}>
-                          <Phone size={12} />
-                          <span>{sellerPhone.substring(0, 4)}****{sellerPhone.substring(8)}</span>
-                        </div>
+                //     {shop.description && (
+                //       <p className="shopDescription">
+                //         {shop.description.length > 50
+                //           ? shop.description.substring(0, 50) + '...'
+                //           : shop.description}
+                //       </p>
+                //     )}
+
+                //     {/* Enhanced Shop Info with Location Priority */}
+                //     <div className="shopInfoContainer">
+                //       {(shop.seller_address || shop.seller?.address || shop.address) && (
+                //         <div className="shopInfoItem">
+                //           <MapPin size={12} />
+                //           <span className="ShoplocationText">
+                //             {(() => {
+                //               const address = shop.seller_address || shop.seller?.address || shop.address;
+                //               return address.length > 25
+                //                 ? address.substring(0, 25) + '...'
+                //                 : address;
+                //             })()}
+                //           </span>
+                //         </div>
+                //       )}
+
+                //       {(shop.products_count || shop.product_count) && (
+                //         <div className="shopInfoItem">
+                //           <Store size={12} />
+                //           <span>{shop.products_count || shop.product_count} Products</span>
+                //         </div>
+                //       )}
+
+                //       {shop.average_rating && shop.average_rating > 0 && (
+                //         <div className="shopInfoItem">
+                //           <Star size={12} fill="#ffc107" color="#ffc107" />
+                //           <span>{Number(shop.average_rating).toFixed(1)}</span>
+                //         </div>
+                //       )}
+
+                //       {sellerPhone && (
+                //         <div className="shopInfoItem">
+                //           <Phone size={12} />
+                //           <span>{sellerPhone.substring(0, 4)}****{sellerPhone.substring(8)}</span>
+                //         </div>
+                //       )}
+                //     </div>
+                //   </div>
+
+                //   {/* ✅ ENHANCED: SEO-friendly action button with proper data */}
+                //   <div className="shopActions">
+                //     {sellerPhone ? (
+                //       <Link
+                //         href={`/shop/${shopSlug}?id=${sellerPhone}`}
+                //         className="ShoplinkButton"
+                //         title={`Visit ${shop.name} in ${shop.seller_address || shop.address || 'Kerala'}`}
+                //       >
+                //         <button className="viewShopButton">
+                //           <Store size={14} />
+                //           <span>Visit Store</span>
+                //         </button>
+                //       </Link>
+                //     ) : (
+                //       <button className="ShopdisabledButton" disabled>
+                //         <AlertCircle size={14} />
+                //         <span>Contact Info Missing</span>
+                //       </button>
+                //     )}
+                //   </div>
+                // </div>
+
+                <div className="shopCard">
+                  {/* Header: logo + name + tagline */}
+                  <div className="shopHeader">
+                    <div className="ShoplogoContainer">
+                      <img
+                        src={
+                          shop.logo_url ||
+                          shop.logo ||
+                          shop.image ||
+                          'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' + encodeURIComponent(shop.name?.charAt(0) || 'S')
+                        }
+                        alt={`${shop.name} - ${shop.seller_address || shop.address || 'Kerala'}`}
+                        className="shopLogo"
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' +
+                            encodeURIComponent(shop.name?.charAt(0) || 'S');
+                        }}
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="shopHeaderText">
+                      <h3 className="shopName">{shop.name || 'Shop Name'}</h3>
+
+                      {shop.tagline && (
+                        <p className="shopTagline">{shop.tagline}</p>
                       )}
                     </div>
                   </div>
 
-                  {/* ✅ ENHANCED: SEO-friendly action button with proper data */}
-                  <div style={styles.shopActions}>
+
+
+                  {/* Description */}
+                  {/* {shop.description && (
+                    <p className="shopDescription">
+                      {shop.description.length > 50
+                        ? shop.description.substring(0, 50) + '...'
+                        : shop.description}
+                    </p>
+                  )} */}
+
+
+
+                  <div className="shopInfoContainer">
+                    {(shop.seller_address || shop.seller?.address || shop.address) && (
+                      <div className="shopInfoItem">
+                        <MapPin size={12} />
+                        <span className="ShoplocationText">
+                          {(() => {
+                            const address = shop.seller_address || shop.seller?.address || shop.address;
+                            return address.length > 25
+                              ? address.substring(0, 25) + '...'
+                              : address;
+                          })()}
+                        </span>
+                      </div>
+                    )}
+
+                    {(shop.products_count || shop.product_count) && (
+                      <div className="shopInfoItem">
+                        <Store size={12} />
+                        <span>{shop.products_count || shop.product_count} Products</span>
+                      </div>
+                    )}
+
+                    {shop.average_rating && shop.average_rating > 0 && (
+                      <div className="shopInfoItem">
+                        <Star size={12} fill="#ffc107" color="#ffc107" />
+                        <span>{Number(shop.average_rating).toFixed(1)}</span>
+                      </div>
+                    )}
+
+                    {sellerPhone && (
+                      <div className="shopInfoItem">
+                        <div className="phoneIconWrapper">
+                          <Phone size={14} />
+                        </div>
+                        <span>{sellerPhone.substring(0, 4)}****{sellerPhone.substring(8)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Visit Store button */}
+                  <div className="shopActions">
                     {sellerPhone ? (
-                      <Link 
-                        href={`/shop/${shopSlug}?id=${sellerPhone}`} 
-                        style={styles.linkButton}
+                      <Link
+                        href={`/shop/${shopSlug}?id=${sellerPhone}`}
+                        className="ShoplinkButton"
                         title={`Visit ${shop.name} in ${shop.seller_address || shop.address || 'Kerala'}`}
                       >
-                        <button style={styles.viewShopButton}>
-                          <Store size={14} />
+                        <button className="viewShopButton">
+                          {/* <Store size={14} /> */}
                           <span>Visit Store</span>
                         </button>
                       </Link>
                     ) : (
-                      <button style={styles.disabledButton} disabled>
+                      <button className="ShopdisabledButton" disabled>
                         <AlertCircle size={14} />
                         <span>Contact Info Missing</span>
                       </button>
@@ -442,15 +542,15 @@ export default function ShopPage() {
             })}
           </div>
         ) : (
-          <div style={styles.emptyState}>
+          <div className="ShopemptyState">
             <Search size={48} />
             <h3>No shops found</h3>
             <p>
-              {searchTerm 
+              {searchTerm
                 ? `No shops match "${searchTerm}". Try different search terms or browse by location.`
                 : "No shops available at the moment."}
             </p>
-            <button onClick={clearAllFilters} style={styles.clearFiltersButton}>
+            <button onClick={clearAllFilters} className="ShopclearFiltersButton">
               {searchTerm ? 'Clear Search' : 'Refresh'}
             </button>
           </div>
@@ -459,435 +559,9 @@ export default function ShopPage() {
 
       <Footer />
 
-      {/* CSS Animations */}
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(100%); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+
     </div>
   );
 }
 
-// ✅ Enhanced styles with location emphasis
-const styles = {
-  pageContainer: {
-    minHeight: '100vh',
-    backgroundColor: '#f8fafc'
-  },
-  
-  loadingContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '60vh',
-    gap: '20px',
-    padding: '20px',
-    textAlign: 'center'
-  },
-  
-  spinner: {
-    width: '40px',
-    height: '40px',
-    border: '4px solid #f3f3f3',
-    borderTop: '4px solid #3b82f6',
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite'
-  },
-  
-  errorContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '60vh',
-    gap: '20px',
-    textAlign: 'center',
-    padding: '20px',
-    color: '#ef4444'
-  },
-  
-  retryButton: {
-    padding: '12px 24px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '16px',
-    fontWeight: '500'
-  },
 
-  heroSection: {
-    background: 'linear-gradient(135deg, #16a34a 0%, #059669 100%)',
-    padding: '50px 20px 40px 20px',
-    textAlign: 'center',
-    color: 'white'
-  },
-  
-  heroContent: {
-    maxWidth: '700px',
-    margin: '0 auto'
-  },
-  
-  heroTitle: {
-    fontSize: '2.2rem',
-    fontWeight: '700',
-    marginBottom: '16px',
-    lineHeight: '1.2'
-  },
-  
-  heroSubtitle: {
-    fontSize: '1.1rem',
-    marginBottom: '32px',
-    opacity: 0.9
-  },
-
-  searchContainer: {
-    maxWidth: '100%',
-    margin: '0 auto'
-  },
-  
-  searchBox: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center'
-  },
-  
-  searchIcon: {
-    position: 'absolute',
-    left: '16px',
-    color: '#64748b',
-    zIndex: 1
-  },
-  
-  clearSearchButton: {
-    position: 'absolute',
-    right: '16px',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#64748b',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '4px'
-  },
-  
-  searchInput: {
-    width: '100%',
-    padding: '16px 48px 16px 44px',
-    fontSize: '16px',
-    border: 'none',
-    borderRadius: '12px',
-    outline: 'none',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    backgroundColor: 'white',
-    color: '#1e293b'
-  },
-
-  container: { 
-    maxWidth: '1200px', 
-    margin: '0 auto', 
-    padding: '20px 16px',
-    animation: 'fadeIn 0.6s ease-out'
-  },
-
-  mobileToolbar: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '20px',
-    padding: '0 4px'
-  },
-  
-  toolbarButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '10px 16px',
-    backgroundColor: 'white',
-    border: '2px solid #e5e7eb',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#374151',
-    transition: 'all 0.2s'
-  },
-  
-  viewToggle: {
-    display: 'flex',
-    marginLeft: 'auto',
-    gap: '4px'
-  },
-  
-  viewButton: {
-    padding: '8px',
-    border: '2px solid #e5e7eb',
-    borderRadius: '6px',
-    backgroundColor: 'white',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#64748b'
-  },
-  
-  activeView: {
-    backgroundColor: '#3b82f6',
-    borderColor: '#3b82f6',
-    color: 'white'
-  },
-
-  mobileDropdown: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 1000,
-    animation: 'fadeIn 0.3s ease-out'
-  },
-  
-  dropdownContent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    borderRadius: '16px 16px 0 0',
-    padding: '20px',
-    animation: 'slideUp 0.3s ease-out'
-  },
-  
-  dropdownHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '20px',
-    paddingBottom: '16px',
-    borderBottom: '1px solid #e5e7eb'
-  },
-  
-  closeButton: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '4px',
-    color: '#64748b'
-  },
-  
-  dropdownOption: {
-    display: 'block',
-    width: '100%',
-    padding: '16px',
-    backgroundColor: 'transparent',
-    border: 'none',
-    textAlign: 'left',
-    fontSize: '16px',
-    cursor: 'pointer',
-    borderRadius: '8px',
-    marginBottom: '4px'
-  },
-  
-  activeOption: {
-    backgroundColor: '#eff6ff',
-    color: '#3b82f6',
-    fontWeight: '600'
-  },
-
-  resultsHeader: {
-    marginBottom: '20px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    flexWrap: 'wrap'
-  },
-  
-  resultsCount: {
-    fontSize: '14px',
-    color: '#64748b',
-    fontWeight: '500'
-  },
-
-  searchIndicator: {
-    fontSize: '14px',
-    color: '#3b82f6',
-    backgroundColor: '#eff6ff',
-    padding: '4px 8px',
-    borderRadius: '12px',
-    fontWeight: '500'
-  },
-
-  // ✅ Responsive grid that adapts to screen size
-  shopsContainer: {
-    display: 'grid',
-    gap: '16px',
-    marginBottom: '40px'
-  },
-
-  // ✅ Enhanced Mobile-Optimized Shop Card
-  shopCard: {
-    width: '100%',
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    overflow: 'hidden',
-    transition: 'all 0.3s ease',
-    display: 'flex',
-    flexDirection: 'column',
-    animation: 'fadeIn 0.6s ease-out',
-    border: '1px solid #e5e7eb',
-    ':hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
-    }
-  },
-
-  logoContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: '16px',
-    backgroundColor: '#f8fafc'
-  },
-
-  // ✅ Perfect Round Shop Logo with better sizing
-  shopLogo: {
-    width: '80px',
-    height: '80px',
-    borderRadius: '50%',
-    objectFit: 'cover',
-    border: '3px solid white',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-  },
-
-  shopCardContent: {
-    padding: '16px',
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    textAlign: 'center'
-  },
-
-  shopName: {
-    margin: '0 0 8px 0',
-    fontSize: '16px',
-    fontWeight: '700',
-    color: '#1e293b',
-    lineHeight: '1.2'
-  },
-
-  shopTagline: {
-    margin: '0 0 8px 0',
-    fontSize: '12px',
-    color: '#3b82f6',
-    fontWeight: '500'
-  },
-
-  shopDescription: {
-    margin: '0 0 12px 0',
-    fontSize: '12px',
-    color: '#64748b',
-    lineHeight: '1.4',
-    flex: 1
-  },
-
-  shopInfoContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    marginTop: 'auto'
-  },
-
-  shopInfoItem: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '4px',
-    fontSize: '11px',
-    color: '#64748b'
-  },
-
-  // ✅ Enhanced location text with emphasis
-  locationText: {
-    fontWeight: '600',
-    color: '#059669'
-  },
-
-  shopActions: {
-    padding: '12px',
-    borderTop: '1px solid #e5e7eb',
-    backgroundColor: '#f8fafc'
-  },
-
-  linkButton: {
-    textDecoration: 'none',
-    display: 'block'
-  },
-
-  viewShopButton: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px',
-    width: '100%',
-    padding: '10px 12px',
-    backgroundColor: '#059669',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: '600',
-    transition: 'all 0.2s'
-  },
-
-  disabledButton: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px',
-    width: '100%',
-    padding: '10px 12px',
-    backgroundColor: '#9ca3af',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '12px',
-    fontWeight: '500',
-    cursor: 'not-allowed'
-  },
-
-  emptyState: {
-    textAlign: 'center',
-    padding: '60px 20px',
-    color: '#64748b'
-  },
-
-  clearFiltersButton: {
-    marginTop: '20px',
-    padding: '12px 24px',
-    backgroundColor: '#059669',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '500'
-  }
-};
