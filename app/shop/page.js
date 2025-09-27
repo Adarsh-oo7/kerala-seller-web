@@ -217,12 +217,32 @@ export default function ShopPage() {
       <Header />
 
       {/* Hero Section */}
-      <div className="ShopheroSection">
-        <div className="ShopheroContent">
-          <h1 className="ShopheroTitle">Discover Local Shops in Kerala</h1>
-          <p className="ShopheroSubtitle">Shop from trusted sellers across God's Own Country</p>
+      {/* <div className="ShopheroSection"> */}
 
-          <div className="ShopsearchContainer">
+        <img
+          src="/assets/images/Shoppagebanner.jpg"
+          alt="Promotional Banner"
+          className="Shopbanner-image"
+        />
+        {/* <div className="ShopheroContent"> */}
+          
+
+         
+        {/* </div> */}
+      {/* </div> */}
+
+      <div className="Shopcontainer">
+        {/* Mobile Toolbar */}
+        <div className="ShopmobileToolbar">
+          <button
+            onClick={() => setShowMobileSort(!showMobileSort)}
+            className="ShoptoolbarButton"
+          >
+            <SlidersHorizontal size={18} />
+            <span>Sort</span>
+          </button>
+
+           <div className="ShopsearchContainer">
             <div className="ShopsearchBox">
               <Search size={18} className="ShopsearchIcon" />
               <input
@@ -242,19 +262,6 @@ export default function ShopPage() {
               )}
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="Shopcontainer">
-        {/* Mobile Toolbar */}
-        <div className="ShopmobileToolbar">
-          <button
-            onClick={() => setShowMobileSort(!showMobileSort)}
-            className="ShoptoolbarButton"
-          >
-            <SlidersHorizontal size={18} />
-            <span>Sort</span>
-          </button>
 
           <div className="ShopviewToggle">
             <button
