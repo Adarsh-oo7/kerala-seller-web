@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
-import "../../styles/ShopProductCard.css";
 import {
   ShoppingCart,
   Heart,
@@ -238,58 +237,88 @@ export default function ShopProductCard({
 
   return (
     <div
-      className={`shop-product-card shopProductCard ${getStockStatus()}`}
+      className={`shop-product-card ${getStockStatus()}`}
+      style={styles.shopProductCard}
       data-product-id={product.id}
     >
       <Link
         href={getProductUrl()}
-        className="shop-product-link productLink"
+        className="shop-product-link"
+        style={styles.productLink}
         aria-label={`View ${product.name || 'product'} in ${store?.name || 'store'}`}
       >
-        <div className="product-image-wrapper productImageWrapper" >
+        <div className="product-image-wrapper" style={styles.productImageWrapper}>
           <img
             src={imageError ? 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image' : getImageUrl(product)}
             alt={product.name || 'Product image'}
-            className="product-image productImage"
+            className="product-image"
+            style={styles.productImage}
             loading="lazy"
             onError={() => setImageError(true)}
           />
 
+          {/* Rating (if available) */}
+          {product.average_rating > 0 && (
+            <div style={styles.ratingOverlay}>
+              {/* Left: Star + Rating */}
+              <div style={styles.ratingLeft}>
+                {[...Array(1)].map((_, i) => (
+                  <Star
+                    key={i}
+                    size={12}
+                    fill={i < Math.floor(product.average_rating) ? "#fbbf24" : "none"}
+                    color="#fbbf24"
+                  />
+                ))}
+                <span style={styles.ratingLeftText}>{product.average_rating.toFixed(1)}</span>
+              </div>
+
+              {/* Right: Review count */}
+              {product.review_count > 0 && (
+                <span style={styles.ratingRight}>
+                  ({product.review_count} reviews)
+                </span>
+              )}
+            </div>
+          )}
+
+
+
+
           {/* Product badges */}
-          <div className="product-badges productBadges" >
+          <div className="product-badges" style={styles.productBadges}>
             {getDiscountPercentage() > 0 && (
-              <span className="badge discount badgeDiscount" >
+              <span className="badge discount" style={styles.badgeDiscount}>
                 {getDiscountPercentage()}% OFF
               </span>
             )}
             {(product.online_stock || 0) <= 5 && (product.online_stock || 0) > 0 && (
-              <span className="badge low-stock badgeLowStock" >
+              <span className="badge low-stock" style={styles.badgeLowStock}>
                 Only {product.online_stock} left
               </span>
             )}
             {(product.online_stock || 0) === 0 && (
-              <span className="badge out-of-stock badgeOutOfStock" >
+              <span className="badge out-of-stock" style={styles.badgeOutOfStock}>
                 Out of Stock
               </span>
             )}
           </div>
 
           {/* ✅ FIXED: Wishlist button with real functionality */}
-          <div className="quick-actions quickActions" >
+          <div className="quick-actions" style={styles.quickActions}>
             <button
-              className=
-              {`quick-action-btn quickActionBtn wishlist-heart 
-                ${localWishlistState ? 'active' : ''} 
-                ${isWishlistLoading ? 'loading' : ''} 
-                ${localWishlistState ? 'quick-action-btn-active' : ''} 
-                ${isWishlistLoading ? 'quick-action-btn-loading' : ''}`}
-
+              className={`quick-action-btn wishlist-heart ${localWishlistState ? 'active' : ''} ${isWishlistLoading ? 'loading' : ''}`}
+              style={{
+                ...styles.quickActionBtn,
+                ...(localWishlistState ? styles.quickActionBtnActive : {}),
+                ...(isWishlistLoading ? styles.quickActionBtnLoading : {})
+              }}
               onClick={handleWishlistToggle}
               disabled={isWishlistLoading}
               aria-label={localWishlistState ? 'Remove from wishlist' : 'Add to wishlist'}
             >
               {isWishlistLoading ? (
-                <RefreshCw size={14} className={{ animation: 'spin 1s linear infinite' }} />
+                <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
               ) : (
                 <Heart
                   size={14}
@@ -301,89 +330,74 @@ export default function ShopProductCard({
           </div>
         </div>
 
-        <div className="product-info productInfo" >
+        <div className="product-info" style={styles.productInfo}>
           {/* Store name (optional) */}
           {showStoreName && store?.name && (
-            <div className="store-name storeName" >
+            <div className="store-name" style={styles.storeName}>
               <span>by {store.name}</span>
             </div>
           )}
 
           {/* Product details */}
-          <div className="product-header productHeader" >
-            <h3 className="product-name productName" >
+          <div className="product-header" style={styles.productHeader}>
+            <h3 className="product-name" style={styles.productName}>
               {product.name || 'Unnamed Product'}
+              {product.model_name && (
+                <span style={styles.productModel}> ({product.model_name})</span>
+              )}
             </h3>
-            {product.model_name && (
-              <p className="product-model productModel" >
-                {product.model_name}
-              </p>
-            )}
           </div>
 
-          {/* Rating (if available) */}
-          {product.average_rating && (
-            <div className="product-rating productRating" >
-              <div className="stars stars" >
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={12}
-                    fill={i < Math.floor(product.average_rating) ? '#fbbf24' : 'none'}
-                    color="#fbbf24"
-                  />
-                ))}
-              </div>
-              <span className="rating-text ratingText" >
-                ({product.review_count || 0})
-              </span>
-            </div>
-          )}
+
+
+
 
           {/* Pricing */}
-          <div className="product-pricing productPricing" >
-            <div className="price-section priceSection">
-              <span className="current-price currentPrice" >
+          <div className="product-pricing" style={styles.productPricing}>
+            <div className="price-section" style={styles.priceSection}>
+              <span className="current-price" style={styles.currentPrice}>
                 {formatPrice(product.price)}
               </span>
               {product.mrp && product.mrp > product.price && (
-                <span className="original-price originalPrice" >
+                <span className="original-price" style={styles.originalPrice}>
                   {formatPrice(product.mrp)}
                 </span>
               )}
             </div>
-            {getDiscountPercentage() > 0 && (
-              <div className="savings-info savingsInfo" >
-                Save {formatPrice((product.mrp || 0) - (product.price || 0))}
-              </div>
-            )}
           </div>
 
+
+          {/* {getDiscountPercentage() > 0 && (
+              <div className="savings-info" style={styles.savingsInfo}>
+                Save {formatPrice((product.mrp || 0) - (product.price || 0))}
+              </div>
+            )} */}
+
           {/* Stock status */}
-          <div className="stock-info stockInfo" >
+          {/* <div className="stock-info" style={styles.stockInfo}>
             {(product.online_stock || 0) > 0 ? (
-              <span className="stock-available stockAvailable">
+              <span className="stock-available" style={styles.stockAvailable}>
                 ✓ In Stock
               </span>
             ) : (
-              <span className="stock-unavailable stockUnavailable" >
+              <span className="stock-unavailable" style={styles.stockUnavailable}>
                 ✗ Out of Stock
               </span>
             )}
-          </div>
+          </div> */}
 
           {/* ✅ Wishlist indicator (optional) */}
           {localWishlistState && (
-            <div className="wishlist-indicator wishlistIndicator" >
+            <div className="wishlist-indicator" style={styles.wishlistIndicator}>
               <Heart size={12} fill="#ef4444" color="#ef4444" />
               <span>In Wishlist</span>
             </div>
           )}
         </div>
-      </Link >
+      </Link>
 
       {/* Add to cart button */}
-      < div className="product-actions productActions" >
+      <div className="product-actions" style={styles.productActions}>
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -392,8 +406,8 @@ export default function ShopProductCard({
               onAddToCart(e, product);
             }
           }}
-          className={`add-to-cart-btn addToCartBtn ${(product.online_stock || 0) === 0 ? 'disabled' : ''} ${isLoading ? 'loading' : ''} ${isInCart ? 'in-cart' : ''}`}
-
+          className={`add-to-cart-btn ${(product.online_stock || 0) === 0 ? 'disabled' : ''} ${isLoading ? 'loading' : ''} ${isInCart ? 'in-cart' : ''}`}
+          style={styles.addToCartBtn}
           disabled={(product.online_stock || 0) === 0 || isLoading}
           aria-label={(product.online_stock || 0) > 0 ?
             (isInCart ? `Add more ${product.name || 'product'} to cart (${getCartQuantity()} in cart)` : `Add ${product.name || 'product'} to cart`) :
@@ -421,9 +435,290 @@ export default function ShopProductCard({
             </>
           )}
         </button>
-      </div >
-    </div >
+      </div>
+    </div>
   );
 }
 
+// ✅ Enhanced styles with wishlist states
+const styles = {
+  shopProductCard: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    border: '1px solid #e5e7eb',
+    transition: 'all 0.3s ease',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%'
+  },
 
+  productLink: {
+    textDecoration: 'none',
+    color: 'inherit',
+    display: 'block',
+    flex: 1
+  },
+
+  productImageWrapper: {
+    position: 'relative',
+    overflow: 'hidden'
+  },
+
+  productImage: {
+    width: '100%',
+    height: '200px',
+    objectFit: 'cover',
+    transition: 'transform 0.3s ease'
+  },
+
+  productBadges: {
+    position: 'absolute',
+    top: '8px',
+    left: '8px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    zIndex: 2
+  },
+
+  badgeDiscount: {
+    padding: '4px 8px',
+    backgroundColor: '#dc2626',
+    color: 'white',
+    fontSize: '0.75rem',
+    borderRadius: '4px',
+    fontWeight: '600'
+  },
+
+  badgeLowStock: {
+    padding: '4px 8px',
+    backgroundColor: '#f59e0b',
+    color: 'white',
+    fontSize: '0.75rem',
+    borderRadius: '4px',
+    fontWeight: '600'
+  },
+
+  badgeOutOfStock: {
+    padding: '4px 8px',
+    backgroundColor: '#6b7280',
+    color: 'white',
+    fontSize: '0.75rem',
+    borderRadius: '4px',
+    fontWeight: '600'
+  },
+
+  quickActions: {
+    position: 'absolute',
+    top: '8px',
+    right: '8px',
+    zIndex: 3
+  },
+
+  quickActionBtn: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#6b7280',
+    transition: 'all 0.2s',
+    backdropFilter: 'blur(4px)',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+  },
+
+  // ✅ NEW: Active wishlist button style
+  quickActionBtnActive: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    color: '#ef4444',
+    borderColor: 'rgba(239, 68, 68, 0.3)'
+  },
+
+  // ✅ NEW: Loading wishlist button style
+  quickActionBtnLoading: {
+    cursor: 'not-allowed',
+    opacity: 0.7
+  },
+
+  productInfo: {
+    padding: '16px',
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column'
+  },
+
+  storeName: {
+    fontSize: '0.8rem',
+    color: '#059669',
+    fontWeight: '500',
+    marginBottom: '8px'
+  },
+
+  productHeader: {
+    marginBottom: '8px',
+    flex: 1
+  },
+
+  productName: {
+    fontSize: '1.1rem',
+    fontWeight: '600',
+    color: '#1f2937',
+    margin: '0 0 4px 0',
+    lineHeight: '1.3',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
+  },
+  productModel: {
+    fontSize: '0.85rem',
+    fontWeight: '400',
+    color: '#6b7280',
+    marginLeft: '4px',
+  },
+
+  productRating: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    marginBottom: '8px'
+  },
+
+  stars: {
+    display: 'flex',
+    gap: '2px'
+  },
+
+  ratingText: {
+    fontSize: '0.8rem',
+    color: '#6b7280'
+  },
+
+  productPricing: {
+    marginBottom: '8px'
+  },
+
+  priceSection: {
+    display: 'flex',        // make items horizontal
+    flexDirection: 'row',   // ensure row direction
+    alignItems: 'center',   // vertically center them
+    gap: '8px',             // space between current and original price
+    flexWrap: 'nowrap',     // prevent wrapping to next line
+  },
+
+  currentPrice: {
+    fontSize: '1.25rem',
+    fontWeight: '700',
+    color: '#059669'
+  },
+
+  originalPrice: {
+    fontSize: '1rem',
+    color: '#9ca3af',
+    textDecoration: 'line-through'
+  },
+
+  savingsInfo: {
+    fontSize: '0.8rem',
+    color: '#059669',
+    fontWeight: '500'
+  },
+
+  stockInfo: {
+    marginBottom: '8px'
+  },
+
+  stockAvailable: {
+    color: '#059669',
+    fontSize: '0.85rem',
+    fontWeight: '500'
+  },
+
+  stockUnavailable: {
+    color: '#ef4444',
+    fontSize: '0.85rem',
+    fontWeight: '500'
+  },
+
+  // ✅ NEW: Wishlist indicator in product info
+  wishlistIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '0.8rem',
+    color: '#ef4444',
+    fontWeight: '500',
+    marginBottom: '8px'
+  },
+
+  productActions: {
+    padding: '16px',
+    borderTop: '1px solid #f3f4f6'
+  },
+
+  addToCartBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    width: '100%',
+    padding: '12px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '0.9rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+
+  ratingOverlay: {
+    position: "absolute",
+    bottom: "3px",
+    left: "0",
+    width: "100%",
+    background: "rgba(0,0,0,0.6)",
+    color: "white",
+    display: "flex",
+    alignItems: "center",
+    padding: "12px 12px",
+    boxSizing: "border-box",
+    zIndex: 2,
+  },
+
+  ratingLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+  },
+
+  ratingLeftText: {
+    fontSize: "0.8rem",
+    fontWeight: 500,
+    color: "white",
+  },
+
+  ratingRight: {
+    fontSize: "0.8rem",
+    fontWeight: 500,
+    color: "white",
+    marginLeft: "auto", // <-- this pushes it to the right
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  starsOverlay: {
+    display: "flex",
+    gap: "2px"
+  },
+
+
+
+};
