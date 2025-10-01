@@ -9,9 +9,9 @@ import SHeader from '../../../components/common/SHeader';
 import Footer from '../../../components/common/Footer';
 // ✅ Import the new ShopProductCard component
 import ShopProductCard from '../../../components/common/ShopProductCard';
-import { 
-  ShoppingCart, 
-  User, 
+import {
+  ShoppingCart,
+  User,
   Phone,
   MapPin,
   Globe,
@@ -46,15 +46,15 @@ import {
 // ✅ Helper function to get API base URL with environment variable handling
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  
+
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
     return envUrl.trim();
   }
-  
+
   if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:8000';
   }
-  
+
   return 'https://keralaseller-backend.onrender.com';
 };
 
@@ -76,17 +76,17 @@ const getAuthHeaders = () => {
 // ✅ Helper function to extract phone from slug or query params with null safety
 const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
   console.log('🔍 Extracting phone from:', { shopSlug, searchParams: searchParams?.toString() });
-  
+
   // ✅ Add null/undefined checks
   if (!shopSlug || !searchParams) {
     console.log('❌ Missing shopSlug or searchParams');
     return null;
   }
-  
+
   // Try to get phone from query params first (for SEO URLs)
   const phoneFromParams = searchParams.get('id');
   console.log('📱 Phone from params:', phoneFromParams);
-  
+
   if (phoneFromParams) {
     // ✅ More flexible validation for development
     if (process.env.NODE_ENV === 'development') {
@@ -103,7 +103,7 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
       }
     }
   }
-  
+
   // Fallback: try to extract phone from slug if it's a direct phone URL
   if (typeof shopSlug === 'string') {
     if (process.env.NODE_ENV === 'development' && /^\d{3,}$/.test(shopSlug)) {
@@ -115,7 +115,7 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
       return shopSlug;
     }
   }
-  
+
   // Extract phone from compound slug (e.g., "raj-electronics-kochi-9544344339")
   if (typeof shopSlug === 'string') {
     const phoneMatch = shopSlug.match(/[6-9]\d{9}$/);
@@ -124,7 +124,7 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
       return phoneMatch[0];
     }
   }
-  
+
   console.log('❌ No valid phone number found');
   return null;
 };
@@ -132,7 +132,7 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
 // ✅ SEO Helper: Generate structured data for the shop
 const generateShopStructuredData = (store, products, shopSlug) => {
   if (!store) return null;
-  
+
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Store",
@@ -166,7 +166,7 @@ const generateShopStructuredData = (store, products, shopSlug) => {
       }))
     }
   };
-  
+
   return JSON.stringify(structuredData);
 };
 
@@ -195,7 +195,7 @@ class ErrorBoundary extends React.Component {
         }}>
           <h2>Something went wrong</h2>
           <p>Please try refreshing the page.</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             style={{
               padding: '0.75rem 1.5rem',
@@ -219,16 +219,16 @@ class ErrorBoundary extends React.Component {
 function ShopSEOHead({ store, products, shopSlug, sellerPhone }) {
   useEffect(() => {
     if (!store) return;
-    
+
     // Update page title
     const pageTitle = `${store.name} - Shop in Kerala | Kerala Sellers`;
     document.title = pageTitle;
-    
+
     // Update meta description
-    const metaDescription = store.description ? 
+    const metaDescription = store.description ?
       `${store.description.substring(0, 150)}... Shop from ${store.name} in Kerala. ${products.length} products available.` :
       `Shop from ${store.name} in Kerala. Browse ${products.length} quality products from a trusted local seller on Kerala Sellers.`;
-    
+
     // Update or create meta tags
     const updateOrCreateMeta = (property, content) => {
       let meta = document.querySelector(`meta[property="${property}"], meta[name="${property}"]`);
@@ -243,7 +243,7 @@ function ShopSEOHead({ store, products, shopSlug, sellerPhone }) {
       }
       meta.setAttribute('content', content);
     };
-    
+
     updateOrCreateMeta('description', metaDescription);
     updateOrCreateMeta('og:title', pageTitle);
     updateOrCreateMeta('og:description', metaDescription);
@@ -252,7 +252,7 @@ function ShopSEOHead({ store, products, shopSlug, sellerPhone }) {
     updateOrCreateMeta('twitter:card', 'summary_large_image');
     updateOrCreateMeta('twitter:title', pageTitle);
     updateOrCreateMeta('twitter:description', metaDescription);
-    
+
     // Add structured data
     const structuredData = generateShopStructuredData(store, products, shopSlug);
     if (structuredData) {
@@ -264,7 +264,7 @@ function ShopSEOHead({ store, products, shopSlug, sellerPhone }) {
       }
       script.textContent = structuredData;
     }
-    
+
     // Update canonical URL
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) {
@@ -273,9 +273,9 @@ function ShopSEOHead({ store, products, shopSlug, sellerPhone }) {
       document.head.appendChild(canonical);
     }
     canonical.setAttribute('href', `https://keralasellers.in/shop/${shopSlug}`);
-    
+
   }, [store, products, shopSlug]);
-  
+
   return null; // This component only updates head tags
 }
 
@@ -316,11 +316,8 @@ function EnhancedStoreBanner({ store, shopSlug }) {
         )}
         <div className="banner-overlay" style={styles.bannerOverlay}></div>
       </div>
-      <div className="store-status" style={styles.storeStatus}>
-        <div className="status-indicator online" style={styles.statusIndicator}></div>
-        <span>Online Now</span>
-      </div>
-      
+
+
       {/* ✅ Enhanced breadcrumbs for SEO */}
       <div className="breadcrumbs" style={styles.breadcrumbs}>
         <Link href="/" style={styles.breadcrumbLink}>Kerala Sellers</Link>
@@ -333,179 +330,7 @@ function EnhancedStoreBanner({ store, shopSlug }) {
   );
 }
 
-// Enhanced Store Info Section
-function EnhancedStoreInfoSection({ store, shopSlug, products }) {
-  const [showFullDescription, setShowFullDescription] = useState(false);
 
-  if (!store) return null;
-
-  const getLogoUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith('/media/')) {
-      return `${getApiBaseUrl()}${url}`;
-    }
-    return url;
-  };
-
-  // ✅ Enhanced location extraction
-  const getLocationInfo = () => {
-    const address = store.address || store.seller_address || '';
-    if (!address) return 'Kerala, India';
-    
-    // Extract city/district from address
-    const locationParts = address.split(',');
-    const city = locationParts[locationParts.length - 2]?.trim() || 
-                 locationParts[locationParts.length - 1]?.trim() ||
-                 'Kerala';
-    
-    return city.includes('Kerala') ? city : `${city}, Kerala`;
-  };
-
-  return (
-    <div className="enhanced-store-info-section" style={styles.storeInfoSection}>
-      <div className="container" style={styles.container}>
-        <div className="store-header" style={styles.storeHeader}>
-          <div className="store-identity" style={styles.storeIdentity}>
-            <div className="store-logo-wrapper" style={styles.storeLogoWrapper}>
-              {store.logo_url ? (
-                <img
-                  src={getLogoUrl(store.logo_url)}
-                  alt={`${store.name || 'Store'} logo - Kerala local business`}
-                  className="store-logo-enhanced"
-                  style={styles.storeLogo}
-                  loading="lazy"
-                  onError={(e) => {
-                    console.warn('Store logo failed to load');
-                    e.target.style.display = 'none';
-                  }}
-                />
-              ) : (
-                <div className="store-logo-placeholder-enhanced" style={styles.storeLogoPlaceholder}>
-                  {(store.name || 'Store').charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div className="verified-badge" style={styles.verifiedBadge}>
-                <Shield size={12} aria-hidden="true" />
-              </div>
-            </div>
-            <div className="store-details-enhanced" style={styles.storeDetails}>
-              <div className="store-name-section" style={styles.storeNameSection}>
-                <h1 className="store-name-enhanced" style={styles.storeName}>{store.name || 'Store'}</h1>
-                <div className="store-badges" style={styles.storeBadges}>
-                  <span className="badge verified" style={styles.badgeVerified}>
-                    <Award size={10} aria-hidden="true" />
-                    Verified Kerala Seller
-                  </span>
-                  <span className="badge responsive" style={styles.badgeResponsive}>
-                    <Clock size={10} aria-hidden="true" />
-                    Fast Response
-                  </span>
-                </div>
-              </div>
-              {store.tagline && (
-                <p className="store-tagline-enhanced" style={styles.storeTagline}>{store.tagline}</p>
-              )}
-              <div className="store-meta" style={styles.storeMeta}>
-                <div className="meta-item location-priority" style={styles.metaItemLocation}>
-                  <MapPin size={12} aria-hidden="true" />
-                  <span>{getLocationInfo()}</span>
-                </div>
-                <div className="meta-item" style={styles.metaItem}>
-                  <Users size={12} aria-hidden="true" />
-                  <span>Trusted by customers</span>
-                </div>
-                <div className="meta-item" style={styles.metaItem}>
-                  <Package size={12} aria-hidden="true" />
-                  {/* ✅ Fixed: Use actual products count */}
-                  <span>{products?.length || 0} products available</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="store-actions" style={styles.storeActions}>
-            <button className="action-button primary" style={styles.actionButtonPrimary} aria-label="Chat with store">
-              <MessageCircle size={16} aria-hidden="true" />
-              <span className="action-text">Chat</span>
-            </button>
-            <button className="action-button secondary" style={styles.actionButtonSecondary} aria-label="Call store">
-              <Phone size={16} aria-hidden="true" />
-              <span className="action-text">Call</span>
-            </button>
-            <button className="action-button icon-only" style={styles.actionButtonIcon} aria-label="Share store">
-              <Share2 size={16} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-        
-        <div className="store-performance" style={styles.storePerformance}>
-          <div className="performance-card" style={styles.performanceCard}>
-            <div className="performance-icon" style={styles.performanceIcon}>
-              <Star size={18} fill="currentColor" aria-hidden="true" />
-            </div>
-            <div className="performance-content" style={styles.performanceContent}>
-              <span className="performance-number" style={styles.performanceNumber}>
-                {store.average_rating?.toFixed(1) || '4.8'}
-              </span>
-              <span className="performance-label" style={styles.performanceLabel}>Rating</span>
-            </div>
-          </div>
-          <div className="performance-card" style={styles.performanceCard}>
-            <div className="performance-icon" style={styles.performanceIcon}>
-              <TrendingUp size={18} aria-hidden="true" />
-            </div>
-            <div className="performance-content" style={styles.performanceContent}>
-              <span className="performance-number" style={styles.performanceNumber}>5.2k</span>
-              <span className="performance-label" style={styles.performanceLabel}>Orders</span>
-            </div>
-          </div>
-          <div className="performance-card" style={styles.performanceCard}>
-            <div className="performance-icon" style={styles.performanceIcon}>
-              <Truck size={18} aria-hidden="true" />
-            </div>
-            <div className="performance-content" style={styles.performanceContent}>
-              <span className="performance-number" style={styles.performanceNumber}>24hr</span>
-              <span className="performance-label" style={styles.performanceLabel}>Kerala Delivery</span>
-            </div>
-          </div>
-          <div className="performance-card" style={styles.performanceCard}>
-            <div className="performance-icon" style={styles.performanceIcon}>
-              <Users size={18} aria-hidden="true" />
-            </div>
-            <div className="performance-content" style={styles.performanceContent}>
-              <span className="performance-number" style={styles.performanceNumber}>98%</span>
-              <span className="performance-label" style={styles.performanceLabel}>Satisfied</span>
-            </div>
-          </div>
-        </div>
-        
-        {store.description && (
-          <div className="store-description-card" style={styles.storeDescriptionCard}>
-            <h3>About {store.name} - Local Kerala Business</h3>
-            <p 
-              className={showFullDescription ? 'expanded' : 'collapsed'}
-              id="store-description"
-              style={showFullDescription ? styles.descriptionExpanded : styles.descriptionCollapsed}
-            >
-              {store.description}
-            </p>
-            {store.description.length > 150 && (
-              <button
-                className="expand-button"
-                style={styles.expandButton}
-                onClick={() => setShowFullDescription(!showFullDescription)}
-                aria-expanded={showFullDescription}
-                aria-controls="store-description"
-              >
-                {showFullDescription ? 'Show less' : 'Read more'}
-                <ChevronRight size={12} className={showFullDescription ? 'rotated' : ''} />
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // Enhanced Filter Component
 function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
@@ -577,37 +402,56 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
     }
   }, [activeFilters]);
 
+
+
   return (
     <div className="enhanced-filter-section" style={styles.filterSection} ref={filterRef}>
       <div className="container" style={styles.container}>
         <div className="filter-header" style={styles.filterHeader}>
-          <button
-            className="filter-toggle-button"
-            style={styles.filterToggleButton}
-            onClick={() => setShowFilters(!showFilters)}
-            aria-expanded={showFilters}
-            aria-controls="filter-panel"
-          >
-            <Filter size={18} aria-hidden="true" />
-            <span>Filters</span>
-            {getActiveFilterCount() > 0 && (
-              <span className="filter-count" style={styles.filterCount}>{getActiveFilterCount()}</span>
-            )}
-            <ChevronDown size={16} className={showFilters ? 'rotated' : ''} />
-          </button>
-          {getActiveFilterCount() > 0 && (
-            <button
-              className="clear-filters-button"
-              style={styles.clearFiltersButton}
-              onClick={handleClearFilters}
-              aria-label="Clear all filters"
-            >
-              <X size={14} aria-hidden="true" />
-              Clear All
-            </button>
-          )}
-        </div>
+          <div className="filter-search-row" style={styles.filterSearchRow}>
+            <div className="filter-left" style={styles.filterLeft}>
+              <button
+                className="filter-toggle-button"
+                style={styles.filterToggleButton}
+                onClick={() => setShowFilters(!showFilters)}
+                aria-expanded={showFilters}
+                aria-controls="filter-panel"
+              >
+                <Filter size={18} aria-hidden="true" />
+                <span>Filters</span>
 
+
+                {getActiveFilterCount() > 0 && (
+                  <span className="filter-count" style={styles.filterCount}>{getActiveFilterCount()}</span>
+                )}
+                <ChevronDown size={16} className={showFilters ? 'rotated' : ''} />
+              </button>
+              {getActiveFilterCount() > 0 && (
+                <button
+                  className="clear-filters-button"
+                  style={styles.clearFiltersButton}
+                  onClick={handleClearFilters}
+                  aria-label="Clear all filters"
+                >
+                  <X size={14} aria-hidden="true" />
+                  Clear All
+                </button>
+              )}
+            </div>
+
+
+            <div className="search-right" style={styles.searchRight}>
+              <input
+                type="text"
+                placeholder="Search products..."
+                // value={searchQuery}
+                // onChange={(e) => setSearchQuery(e.target.value)}
+                style={styles.searchInput}
+              />
+            </div>
+
+          </div>
+        </div>
         {showFilters && (
           <div className="filter-panel" style={styles.filterPanel} id="filter-panel">
             <div className="filter-group" style={styles.filterGroup}>
@@ -671,11 +515,15 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
               >
                 Cancel
               </button>
+
             </div>
           </div>
         )}
       </div>
+
+
     </div>
+
   );
 }
 
@@ -703,10 +551,10 @@ function EnhancedSellerStorefrontPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { shopSlug } = params;
-  
+
   // ✅ Extract seller phone from slug or query params with null safety
   const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams);
-  
+
   const cartContext = useCart();
   const { addToCart, cartItems } = cartContext || { addToCart: null, cartItems: [] };
   const abortControllerRef = useRef(null);
@@ -722,19 +570,19 @@ function EnhancedSellerStorefrontPage() {
     try {
       setWishlistLoading(true);
       console.log('🔍 Fetching wishlist from API...');
-      
-      const response = await axios.get(WISHLIST_API, { 
+
+      const response = await axios.get(WISHLIST_API, {
         headers,
         timeout: 10000
       });
-      
+
       console.log('🔍 Raw wishlist API response:', response.data);
       console.log('🔍 Response type:', typeof response.data);
       console.log('🔍 Is array:', Array.isArray(response.data));
-      
+
       // ✅ FIXED: Handle different response structures
       let wishlistItems = [];
-      
+
       if (Array.isArray(response.data)) {
         // Direct array response
         wishlistItems = response.data;
@@ -751,18 +599,18 @@ function EnhancedSellerStorefrontPage() {
         console.warn('⚠️ Unexpected wishlist response format:', response.data);
         wishlistItems = [];
       }
-      
+
       console.log('🔍 Extracted wishlist items:', wishlistItems);
       console.log('🔍 Wishlist items count:', wishlistItems.length);
-      
+
       // ✅ FIXED: Extract product IDs with comprehensive fallbacks
       const wishlistedProductIds = new Set();
-      
+
       wishlistItems.forEach((item, index) => {
         console.log(`🔍 Processing wishlist item ${index}:`, JSON.stringify(item, null, 2));
-        
+
         let productId = null;
-        
+
         // Try multiple ways to extract product ID
         if (item.product_id) {
           productId = item.product_id;
@@ -779,7 +627,7 @@ function EnhancedSellerStorefrontPage() {
           productId = item.id;
           console.log(`📝 Using item.id as product ID: ${productId}`);
         }
-        
+
         if (productId) {
           // ✅ CRITICAL: Ensure consistent data type (convert to number)
           const normalizedProductId = Number(productId);
@@ -793,12 +641,12 @@ function EnhancedSellerStorefrontPage() {
           console.warn('⚠️ Could not extract product ID from item:', item);
         }
       });
-      
+
       console.log('✅ Final wishlist set:', Array.from(wishlistedProductIds));
       console.log('✅ Wishlist loaded successfully:', wishlistedProductIds.size, 'items');
-      
+
       setWishlistProducts(wishlistedProductIds);
-      
+
     } catch (error) {
       console.error('❌ Failed to fetch wishlist:', error);
       if (error.response) {
@@ -814,11 +662,11 @@ function EnhancedSellerStorefrontPage() {
   const handleWishlistUpdate = useCallback((productId, isWishlisted) => {
     console.log('🔄 Wishlist update received:', productId, isWishlisted);
     console.log('🔄 Product ID type:', typeof productId);
-    
+
     setWishlistProducts(prev => {
       const newSet = new Set(prev);
       const normalizedProductId = Number(productId); // Ensure consistent type
-      
+
       if (isWishlisted) {
         newSet.add(normalizedProductId);
         console.log(`➕ Added product ${normalizedProductId} to local wishlist`);
@@ -826,7 +674,7 @@ function EnhancedSellerStorefrontPage() {
         newSet.delete(normalizedProductId);
         console.log(`➖ Removed product ${normalizedProductId} from local wishlist`);
       }
-      
+
       console.log('💖 Updated local wishlist:', Array.from(newSet));
       return newSet;
     });
@@ -835,9 +683,9 @@ function EnhancedSellerStorefrontPage() {
   // Check login status
   useEffect(() => {
     try {
-      const token = localStorage.getItem('buyerAccessToken') || 
-                   localStorage.getItem('access_token') ||
-                   localStorage.getItem('accessToken');
+      const token = localStorage.getItem('buyerAccessToken') ||
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('accessToken');
       setIsLoggedIn(!!token);
     } catch (error) {
       console.warn('localStorage access error:', error);
@@ -902,9 +750,9 @@ function EnhancedSellerStorefrontPage() {
         setError(null);
 
         abortControllerRef.current = new AbortController();
-        
+
         console.log('🔍 Fetching shop data for phone:', sellerPhone);
-        
+
         // ✅ Use /shop/ endpoint (matches your Django main URLs)
         const response = await axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/`, {
           signal: abortControllerRef.current.signal,
@@ -916,13 +764,13 @@ function EnhancedSellerStorefrontPage() {
         if (response.data) {
           setStore(response.data.store || null);
           const productsData = response.data.products || [];
-          
+
           // ✅ CRITICAL: Ensure product IDs are numbers for consistent comparison
           const normalizedProducts = productsData.map(product => ({
             ...product,
             id: Number(product.id) // Ensure product ID is a number
           }));
-          
+
           setProducts(normalizedProducts);
           console.log('✅ Shop data loaded successfully');
           console.log('📝 Products with IDs:', normalizedProducts.map(p => ({ id: p.id, name: p.name, idType: typeof p.id })));
@@ -931,9 +779,9 @@ function EnhancedSellerStorefrontPage() {
         }
       } catch (error) {
         if (axios.isCancel(error)) return;
-        
+
         console.error('❌ Shop data fetch failed:', error);
-        
+
         if (error.response?.status === 404) {
           setError('Shop not found. This shop may have been moved or is temporarily unavailable.');
         } else if (error.response?.status >= 500) {
@@ -949,7 +797,7 @@ function EnhancedSellerStorefrontPage() {
     };
 
     fetchStoreData();
-    
+
     // ✅ CRITICAL: Fetch wishlist after store data loads
     const timeoutId = setTimeout(() => {
       fetchWishlist();
@@ -979,10 +827,10 @@ function EnhancedSellerStorefrontPage() {
     }
 
     // Check if user is logged in
-    const token = localStorage.getItem('buyerAccessToken') || 
-                 localStorage.getItem('access_token') ||
-                 localStorage.getItem('accessToken');
-    
+    const token = localStorage.getItem('buyerAccessToken') ||
+      localStorage.getItem('access_token') ||
+      localStorage.getItem('accessToken');
+
     if (!token) {
       // Redirect to login with return URL
       router.push(`/login/buyer?redirect=${encodeURIComponent(window.location.pathname)}`);
@@ -995,7 +843,7 @@ function EnhancedSellerStorefrontPage() {
     }
 
     const productId = product.id;
-    
+
     try {
       setLoadingProducts(prev => ({ ...prev, [productId]: true }));
       await Promise.resolve(addToCart(sellerPhone, product));
@@ -1044,8 +892,8 @@ function EnhancedSellerStorefrontPage() {
           <Link href="/shop" className="back-button-enhanced" style={styles.backButton}>
             Browse All Shops
           </Link>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="retry-button-enhanced"
             style={styles.retryButton}
           >
@@ -1061,22 +909,23 @@ function EnhancedSellerStorefrontPage() {
     <ErrorBoundary>
       <div className="enhanced-page-container" style={styles.pageContainer}>
         {/* ✅ SEO Head component */}
-        <ShopSEOHead 
-          store={store} 
-          products={products} 
-          shopSlug={shopSlug} 
-          sellerPhone={sellerPhone} 
+        <ShopSEOHead
+          store={store}
+          products={products}
+          shopSlug={shopSlug}
+          sellerPhone={sellerPhone}
         />
-        
+
         <SHeader store={store} isLoggedIn={isLoggedIn} />
         <EnhancedStoreBanner store={store} shopSlug={shopSlug} />
-        <EnhancedStoreInfoSection store={store} shopSlug={shopSlug} products={products} />
         <EnhancedFilterSection
           products={products || []}
           onFilterChange={handleFilterChange}
           activeFilters={filters}
         />
-        
+
+
+
         <div className="container" style={styles.container}>
           <div className="products-header-enhanced" style={styles.productsHeader}>
             <div className="products-title-enhanced" style={styles.productsTitle}>
@@ -1108,12 +957,12 @@ function EnhancedSellerStorefrontPage() {
               </div>
             </div>
           </div>
-          
+
           {filteredProducts.length > 0 ? (
             <div className={`products-container-enhanced ${viewMode}`} style={styles.productsContainer}>
               {filteredProducts.map((product) => {
                 if (!product?.id) return null;
-                
+
                 // ✅ CRITICAL: Check wishlist status with detailed logging
                 const isInWishlist = wishlistProducts.has(product.id);
                 console.log(`🔍 Rendering product ${product.id} (${product.name}):`, {
@@ -1123,7 +972,7 @@ function EnhancedSellerStorefrontPage() {
                   wishlistSize: wishlistProducts.size,
                   wishlistContents: Array.from(wishlistProducts)
                 });
-                
+
                 return (
                   <ShopProductCard
                     key={product.id}
@@ -1164,7 +1013,7 @@ function EnhancedSellerStorefrontPage() {
             </div>
           )}
         </div>
-        
+
         <Footer />
       </div>
     </ErrorBoundary>
@@ -1208,7 +1057,7 @@ const styles = {
     minHeight: '100vh',
     backgroundColor: '#f8fafc'
   },
-  
+
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -1226,7 +1075,7 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
+
   errorContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -1268,13 +1117,13 @@ const styles = {
     fontSize: '16px',
     fontWeight: '500'
   },
-  
+
   container: {
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '0 20px'
   },
-  
+
   // Banner Styles
   bannerContainer: {
     position: 'relative',
@@ -1319,26 +1168,7 @@ const styles = {
     background: 'rgba(0,0,0,0.4)'
   },
 
-  storeStatus: {
-    position: 'absolute',
-    top: '20px',
-    right: '20px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 12px',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: '20px',
-    fontSize: '14px',
-    fontWeight: '500'
-  },
 
-  statusIndicator: {
-    width: '8px',
-    height: '8px',
-    backgroundColor: '#10b981',
-    borderRadius: '50%'
-  },
 
   breadcrumbs: {
     position: 'absolute',
@@ -1365,7 +1195,7 @@ const styles = {
     color: 'white',
     fontWeight: '500'
   },
-  
+
   // Store Info Styles
   storeInfoSection: {
     backgroundColor: 'white',
@@ -1373,7 +1203,7 @@ const styles = {
     padding: '32px 0',
     marginBottom: '32px'
   },
-  
+
   storeHeader: {
     display: 'flex',
     gap: '24px',
@@ -1381,19 +1211,19 @@ const styles = {
     marginBottom: '24px',
     flexWrap: 'wrap'
   },
-  
+
   storeIdentity: {
     display: 'flex',
     gap: '20px',
     flex: 1,
     minWidth: '300px'
   },
-  
+
   storeLogoWrapper: {
     position: 'relative',
     flexShrink: 0
   },
-  
+
   storeLogo: {
     width: '120px',
     height: '120px',
@@ -1417,7 +1247,7 @@ const styles = {
     border: '4px solid #f1f5f9',
     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
   },
-  
+
   verifiedBadge: {
     position: 'absolute',
     bottom: '5px',
@@ -1432,16 +1262,16 @@ const styles = {
     justifyContent: 'center',
     border: '2px solid white'
   },
-  
+
   storeDetails: {
     flex: 1,
     minWidth: '250px'
   },
-  
+
   storeNameSection: {
     marginBottom: '12px'
   },
-  
+
   storeName: {
     fontSize: '2rem',
     fontWeight: '700',
@@ -1449,13 +1279,13 @@ const styles = {
     margin: '0 0 8px 0',
     lineHeight: '1.2'
   },
-  
+
   storeBadges: {
     display: 'flex',
     gap: '8px',
     flexWrap: 'wrap'
   },
-  
+
   badgeVerified: {
     display: 'flex',
     alignItems: 'center',
@@ -1481,20 +1311,20 @@ const styles = {
     color: '#1e40af',
     fontWeight: '500'
   },
-  
+
   storeTagline: {
     fontSize: '1.1rem',
     color: '#3b82f6',
     fontWeight: '500',
     margin: '0 0 16px 0'
   },
-  
+
   storeMeta: {
     display: 'flex',
     flexDirection: 'column',
     gap: '8px'
   },
-  
+
   metaItem: {
     display: 'flex',
     alignItems: 'center',
@@ -1511,13 +1341,13 @@ const styles = {
     color: '#059669',
     fontWeight: '600'
   },
-  
+
   storeActions: {
     display: 'flex',
     flexDirection: 'column',
     gap: '8px'
   },
-  
+
   actionButtonPrimary: {
     display: 'flex',
     alignItems: 'center',
@@ -1562,7 +1392,7 @@ const styles = {
     borderRadius: '8px',
     cursor: 'pointer'
   },
-  
+
   // Store Performance
   storePerformance: {
     display: 'flex',
@@ -1571,35 +1401,35 @@ const styles = {
     borderTop: '1px solid #f3f4f6',
     flexWrap: 'wrap'
   },
-  
+
   performanceCard: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px'
   },
-  
+
   performanceIcon: {
     color: '#3b82f6'
   },
-  
+
   performanceContent: {
     display: 'flex',
     flexDirection: 'column'
   },
-  
+
   performanceNumber: {
     fontSize: '1.5rem',
     fontWeight: '700',
     color: '#1f2937'
   },
-  
+
   performanceLabel: {
     fontSize: '0.8rem',
     color: '#6b7280',
     textTransform: 'uppercase',
     letterSpacing: '0.5px'
   },
-  
+
   storeDescriptionCard: {
     marginTop: '24px',
     padding: '20px',
@@ -1631,7 +1461,7 @@ const styles = {
     fontSize: '0.9rem',
     fontWeight: '500'
   },
-  
+
   // Filter Section
   filterSection: {
     backgroundColor: 'white',
@@ -1742,7 +1572,7 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px'
   },
-  
+
   // Products Section
   productsHeader: {
     display: 'flex',
@@ -1752,36 +1582,36 @@ const styles = {
     flexWrap: 'wrap',
     gap: '16px'
   },
-  
+
   productsTitle: {
     flex: 1
   },
-  
+
   productsMainTitle: {
     fontSize: '1.5rem',
     fontWeight: '600',
     color: '#1f2937',
     margin: '0 0 4px 0'
   },
-  
+
   productCount: {
     fontSize: '0.9rem',
     color: '#6b7280'
   },
-  
+
   productsControls: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px'
   },
-  
+
   viewToggleGroup: {
     display: 'flex',
     border: '1px solid #d1d5db',
     borderRadius: '6px',
     overflow: 'hidden'
   },
-  
+
   viewToggle: {
     padding: '8px',
     backgroundColor: 'white',
@@ -1797,14 +1627,14 @@ const styles = {
     cursor: 'pointer',
     color: 'white'
   },
-  
+
   productsContainer: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
     gap: '20px',
     marginBottom: '40px'
   },
-  
+
   emptyState: {
     display: 'flex',
     flexDirection: 'column',
@@ -1814,7 +1644,7 @@ const styles = {
     textAlign: 'center',
     color: '#6b7280'
   },
-  
+
   clearFiltersButtonEnhanced: {
     marginTop: '16px',
     display: 'flex',
@@ -1828,5 +1658,35 @@ const styles = {
     cursor: 'pointer',
     fontSize: '0.9rem',
     fontWeight: '500'
-  }
+  },
+
+filterSearchRow: {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '1rem', // optional spacing between left and right
+  width: '100%',
+},
+
+filterLeft: {
+  display: 'flex',
+  gap: '0.5rem',
+  alignItems: 'center',
+},
+
+searchRight: {
+  marginLeft: 'auto', // pushes it to the right
+  display: 'flex',
+  alignItems: 'center',
+},
+
+searchInput: {
+  padding: '0.5rem 1rem',
+  borderRadius: '4px',
+  border: '1px solid #ccc',
+  minWidth: '200px',
+  maxWidth: '400px',
+},
+
+
+
 };

@@ -5,11 +5,11 @@ import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useCart } from '../../app/context/CartContext';
 import { usePathname } from "next/navigation";
-import { 
-  ShoppingCart, 
-  User, 
-  Menu, 
-  X as CloseIcon, 
+import {
+  ShoppingCart,
+  User,
+  Menu,
+  X as CloseIcon,
   Search,
   Heart,
   Phone,
@@ -43,22 +43,22 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
+
       if (currentScrollY > 100 && currentScrollY > lastScrollY) {
         setShow(true);
       } else if (currentScrollY < lastScrollY || currentScrollY < 50) {
         setShow(false);
       }
-      
+
       setLastScrollY(currentScrollY);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    
+
     if (window.scrollY > 100) {
       setShow(true);
     }
-    
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
@@ -66,7 +66,7 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
   useEffect(() => {
     if (storePhone) {
       const basePath = actualStoreId ? `/shop/new` : `/shop/${storePhone}`;
-      
+
       if (pathname === basePath) setActiveIndex(0);
       else if (pathname.includes(`${basePath}/cart`)) setActiveIndex(1);
       else if (pathname.includes(`${basePath}/about`)) setActiveIndex(2);
@@ -79,15 +79,15 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
   const handleNavigation = (targetPath, index, e) => {
     e.preventDefault();
     setActiveIndex(index);
-    
+
     let finalUrl = targetPath;
-    
+
     // Add query parameter for 'new' shopSlug pattern
     if (actualStoreId && shopSlug === 'new') {
       const separator = targetPath.includes('?') ? '&' : '?';
       finalUrl = `${targetPath}${separator}id=${actualStoreId}`;
     }
-    
+
     console.log('🔄 Bottom nav navigating to:', finalUrl);
     router.push(finalUrl);
   };
@@ -105,37 +105,37 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
   };
 
   const navItems = [
-    { 
-      href: getNavUrl(''), 
-      icon: Home, 
-      label: "Home", 
-      color: "#D2691E" 
+    {
+      href: getNavUrl(''),
+      icon: Home,
+      label: "Home",
+      color: "#D2691E"
     },
-    { 
+    {
       href: getNavUrl('/cart'),
-      icon: ShoppingCart, 
-      label: "Cart", 
+      icon: ShoppingCart,
+      label: "Cart",
       color: "#CD853F",
-      badge: storeCartCount 
+      badge: storeCartCount
     },
-    { 
-      href: getNavUrl('/about'), 
-      icon: Info, 
-      label: "About", 
-      color: "#DEB887" 
+    {
+      href: getNavUrl('/about'),
+      icon: Info,
+      label: "About",
+      color: "#DEB887"
     },
-    { 
+    {
       href: getNavUrl('/profile'),
-      icon: User, 
-      label: "Profile", 
+      icon: User,
+      label: "Profile",
       color: "#F4A460"
     }
   ];
 
   return (
-    <nav 
-      className={`${styles.bottomNav} ${show ? styles.show : ""}`} 
-      role="navigation" 
+    <nav
+      className={`${styles.bottomNav} ${show ? styles.show : ""}`}
+      role="navigation"
       aria-label="Mobile navigation"
     >
       <div className={styles.navBackground}></div>
@@ -143,11 +143,11 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
         transform: `translateX(${activeIndex * 100}%)`,
         background: `linear-gradient(135deg, ${navItems[activeIndex]?.color || '#D2691E'}, ${navItems[activeIndex]?.color || '#D2691E'}90)`
       }}></div>
-      
+
       {navItems.map((item, index) => {
         const IconComponent = item.icon;
         const isActive = activeIndex === index;
-        
+
         return (
           <button
             key={item.href}
@@ -163,7 +163,7 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
                 <span className={styles.cartBadge}>{item.badge}</span>
               )}
             </div>
-            <span 
+            <span
               className={styles.navLabel}
               style={{
                 color: isActive ? item.color : '#8B4513',
@@ -198,10 +198,10 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
   // ✅ CRITICAL FIX: Extract actual store ID from query parameters
   const actualStoreId = searchParams.get('id'); // Get the ?id= parameter
   const finalShopSlug = shopSlug || params?.shopSlug || store?.seller_phone;
-  
+
   // ✅ ENHANCED: Better store identification
   const effectiveStoreId = actualStoreId || (finalShopSlug !== 'new' ? finalShopSlug : null);
-  
+
   console.log('🔍 SHeader Debug:');
   console.log('- shopSlug prop:', shopSlug);
   console.log('- params?.shopSlug:', params?.shopSlug);
@@ -227,19 +227,19 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
 
   useEffect(() => {
     let ticking = false;
-    
+
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
           setHeaderScrolled(currentScrollY > 20);
-          
+
           if (currentScrollY > 150 && currentScrollY > lastScrollY + 5) {
             setHideTopBar(true);
           } else if (currentScrollY < lastScrollY - 5 || currentScrollY < 100) {
             setHideTopBar(false);
           }
-          
+
           setLastScrollY(currentScrollY);
           ticking = false;
         });
@@ -325,15 +325,15 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
     return (
       <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#fef2f2', color: '#dc2626' }}>
         <p>Store information not available. Please check the URL.</p>
-        <p style={{fontSize: '12px'}}>
+        <p style={{ fontSize: '12px' }}>
           shopSlug: {finalShopSlug} | id param: {actualStoreId}
         </p>
       </div>
     );
   }
 
-  const storeData = store || { 
-    name: `Store ${effectiveStoreId}`, 
+  const storeData = store || {
+    name: `Store ${effectiveStoreId}`,
     seller_phone: effectiveStoreId,
     tagline: 'Quality Products'
   };
@@ -363,6 +363,10 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
                 <Zap size={10} />
                 <span>Verified</span>
               </div>
+              <div className={styles.storeStatus}>
+                <div  className={styles.statusIndicator}></div>
+                <span>Online Now</span>
+              </div>
             </div>
           </div>
         </div>
@@ -370,9 +374,9 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
         {/* Main Header */}
         <div className={styles.mainHeader}>
           <div className={styles.container}>
-            <button 
-              className={styles.mobileToggle} 
-              onClick={toggleMobileMenu} 
+            <button
+              className={styles.mobileToggle}
+              onClick={toggleMobileMenu}
               aria-label="Toggle menu"
               aria-expanded={isMobileMenuOpen}
             >
@@ -380,7 +384,7 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
             </button>
 
             {/* ✅ UPDATED: Store Branding with proper URL generation */}
-            <Link href={generateShopUrl()} className={styles.brand}>
+            <Link href={generateShopUrl('/about')} className={styles.brand}>
               <div className={styles.logo}>
                 {storeData.logo_url ? (
                   <img src={storeData.logo_url} alt={`${storeData.name} logo`} />
@@ -389,7 +393,7 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
                     {storeData.name?.charAt(0)?.toUpperCase() || 'S'}
                   </div>
                 )}
-                <div className={styles.onlineIndicator} aria-label="Store online"></div>
+                {/* <div className={styles.onlineIndicator} aria-label="Store online"></div> */}
               </div>
               <div className={styles.brandText}>
                 <h1>{storeData.name}</h1>
@@ -410,118 +414,20 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
                   <span className={styles.navBadge}>{cartCount}</span>
                 )}
               </button>
-              <Link href={generateShopUrl('/about')} className={styles.navLink}>
+              {/* <Link href={generateShopUrl('/about')} className={styles.navLink}>
                 <Info size={16} />
                 <span>About</span>
-              </Link>
+              </Link> */}
               <button onClick={handleProfileClick} className={styles.navLink}>
                 <User size={16} />
                 <span>Profile</span>
               </button>
             </nav>
-
-            {/* Header Actions */}
-            <div className={styles.actions}>
-              {/* Desktop Search */}
-              <form 
-                className={`${styles.searchDesktop} ${isSearchFocused ? styles.focused : ''}`} 
-                onSubmit={handleSearchSubmit}
-                ref={searchDesktopRef}
-              >
-                <div className={styles.searchInput}>
-                  <Search size={16} />
-                  <input 
-                    type="text" 
-                    placeholder="Search products..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onFocus={() => setIsSearchFocused(true)}
-                    onBlur={() => setIsSearchFocused(false)}
-                    aria-label="Search products"
-                  />
-                  {searchQuery && (
-                    <button 
-                      type="button" 
-                      className={styles.clearSearch} 
-                      onClick={() => setSearchQuery('')}
-                      aria-label="Clear search"
-                    >
-                      <CloseIcon size={14} />
-                    </button>
-                  )}
-                </div>
-              </form>
-
-              <button 
-                className={`${styles.searchMobile} ${showMobileSearch ? styles.active : ''}`}
-                onClick={() => setShowMobileSearch(!showMobileSearch)}
-                aria-label="Search"
-                aria-expanded={showMobileSearch}
-              >
-                <Search size={20} />
-              </button>
-
-              <button 
-                onClick={handleCartClick}
-                className={`${styles.cartBtn} ${styles.desktop}`}
-                aria-label={`Cart with ${cartCount} items`}
-              >
-                <ShoppingCart size={18} />
-                {cartCount > 0 && (
-                  <span className={styles.badge}>{cartCount}</span>
-                )}
-              </button>
-
-              {/* ✅ UPDATED: Login/Profile with proper URL generation */}
-              {isLoggedIn ? (
-                <button 
-                  onClick={handleProfileClick}
-                  className={`${styles.actionBtn} ${styles.profileBtn}`} 
-                  aria-label="Profile"
-                >
-                  <User size={18} />
-                </button>
-              ) : (
-                <Link href={generateShopUrl('/login')} className={styles.loginBtn}>
-                  <User size={16} />
-                  <span>Login</span>
-                </Link>
-              )}
-            </div>
+            
           </div>
         </div>
 
-        {/* Mobile Search Bar */}
-        <div className={`${styles.mobileSearch} ${showMobileSearch ? styles.active : ''}`}>
-          <div className={styles.container}>
-            <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
-              <button type="button" onClick={closeMobileSearch} aria-label="Close search">
-                <CloseIcon size={20} />
-              </button>
-              <div className={styles.searchInput}>
-                <Search size={16} />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  aria-label="Search products"
-                />
-                {searchQuery && (
-                  <button 
-                    type="button" 
-                    className={styles.clearSearch} 
-                    onClick={() => setSearchQuery('')}
-                    aria-label="Clear search"
-                  >
-                    <CloseIcon size={16} />
-                  </button>
-                )}
-              </div>
-            </form>
-          </div>
-        </div>
+       
 
         {/* Promotional Banner */}
         {storeData.announcement && showPromo && (
@@ -530,8 +436,8 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
               <Zap size={14} />
               <span>{storeData.announcement}</span>
             </div>
-            <button 
-              onClick={() => setShowPromo(false)} 
+            <button
+              onClick={() => setShowPromo(false)}
               aria-label="Close announcement"
               className={styles.promoClose}
             >
@@ -563,7 +469,7 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
               <CloseIcon size={22} />
             </button>
           </div>
-          
+
           <div className={styles.menuItems}>
             <Link href={generateShopUrl()} onClick={() => setIsMobileMenuOpen(false)}>
               <span>
@@ -571,9 +477,9 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
                 <span>Home</span>
               </span>
             </Link>
-            
+
             <button onClick={() => {
-              handleCartClick({ preventDefault: () => {} });
+              handleCartClick({ preventDefault: () => { } });
               setIsMobileMenuOpen(false);
             }} className={styles.menuButton}>
               <span>
@@ -584,16 +490,16 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
                 <span className={styles.menuBadge}>{cartCount}</span>
               )}
             </button>
-            
+
             <Link href={generateShopUrl('/about')} onClick={() => setIsMobileMenuOpen(false)}>
               <span>
                 <Info size={20} />
                 <span>About</span>
               </span>
             </Link>
-            
+
             <button onClick={() => {
-              handleProfileClick({ preventDefault: () => {} });
+              handleProfileClick({ preventDefault: () => { } });
               setIsMobileMenuOpen(false);
             }} className={styles.menuButton}>
               <span>
@@ -601,7 +507,7 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
                 <span>Profile</span>
               </span>
             </button>
-            
+
             {!isLoggedIn && (
               <Link href={generateShopUrl('/login')} className={styles.menuLogin} onClick={() => setIsMobileMenuOpen(false)}>
                 <span>
@@ -615,9 +521,9 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
       </div>
 
       {/* ✅ UPDATED: Bottom Navigation with proper parameters */}
-      <BottomNav 
-        store={storeData} 
-        shopSlug={finalShopSlug} 
+      <BottomNav
+        store={storeData}
+        shopSlug={finalShopSlug}
         actualStoreId={actualStoreId}
       />
     </>

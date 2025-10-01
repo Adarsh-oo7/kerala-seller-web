@@ -4,19 +4,22 @@ import { useEffect, useState, Suspense } from 'react';
 import axios from 'axios';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  Star, 
-  Package, 
-  CheckCircle, 
-  MapPin, 
-  Phone, 
-  Instagram, 
-  Facebook, 
+import {
+  Star,
+  Package,
+  CheckCircle,
+  MapPin,
+  Phone,
+  Instagram,
+  Facebook,
   ArrowLeft,
   Store,
   Award,
   Users,
   Clock,
+  Truck,
+  MessageCircle,
+Share2,
   Home,
   RefreshCw,
   AlertCircle,
@@ -30,32 +33,32 @@ import SHeader from '../../../../components/common/SHeader';
 // ✅ Enhanced environment variable handling
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  
+
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
     return envUrl.trim();
   }
-  
+
   if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:8000';
   }
-  
+
   return 'https://keralaseller-backend.onrender.com';
 };
 
 // ✅ FIXED: Helper function to extract phone from slug or query params
 const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
-  console.log('🔍 About page - Extracting phone from:', { 
-    shopSlug, 
+  console.log('🔍 About page - Extracting phone from:', {
+    shopSlug,
     searchParams: searchParams?.toString(),
     isDev: process.env.NODE_ENV === 'development'
   });
-  
+
   // ✅ Add null/undefined checks
   if (!shopSlug) {
     console.log('❌ Missing shopSlug');
     return null;
   }
-  
+
   // ✅ First: Check if shopSlug is already a phone number (direct phone URL)
   if (typeof shopSlug === 'string') {
     // In development, be more flexible with phone validation
@@ -73,11 +76,11 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
       }
     }
   }
-  
+
   // Try to get phone from query params (for SEO URLs)
   const phoneFromParams = searchParams?.get('id');
   console.log('📱 Phone from params:', phoneFromParams);
-  
+
   if (phoneFromParams) {
     if (process.env.NODE_ENV === 'development') {
       // Allow any numeric string with 1+ digits for testing
@@ -93,7 +96,7 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
       }
     }
   }
-  
+
   // Extract phone from compound slug (e.g., "raj-electronics-kochi-9544344339")
   if (typeof shopSlug === 'string') {
     if (process.env.NODE_ENV === 'development') {
@@ -112,7 +115,7 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
       }
     }
   }
-  
+
   console.log('❌ No valid phone number found');
   return null;
 };
@@ -120,13 +123,13 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
 // ✅ SEO-friendly URL generator (same as other components)
 const generateShopSlug = (shop) => {
   if (!shop) return 'shop';
-  
+
   const shopName = (shop.name || '').toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim('-');
-  
+
   const location = (shop.seller_address || shop.address || '')
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
@@ -134,37 +137,40 @@ const generateShopSlug = (shop) => {
     .replace(/-+/g, '-')
     .trim('-')
     .split('-')[0];
-  
+
   const slug = location ? `${shopName}-${location}` : shopName;
   return slug.length >= 3 ? slug : `shop-${shop.seller_phone || 'store'}`;
 };
+
+
+
 
 function StoreAboutContent() {
   const [storeData, setStoreData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  
+
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { shopSlug } = params;
-  
+
   // ✅ Extract seller phone from slug or query params
   const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams);
-  
-  console.log('📍 About page debug:', { 
-    shopSlug, 
-    sellerPhone, 
+
+  console.log('📍 About page debug:', {
+    shopSlug,
+    sellerPhone,
     url: typeof window !== 'undefined' ? window.location.href : 'SSR'
   });
 
   useEffect(() => {
     // Check login status
     try {
-      const token = localStorage.getItem('buyerAccessToken') || 
-                   localStorage.getItem('access_token') ||
-                   localStorage.getItem('accessToken');
+      const token = localStorage.getItem('buyerAccessToken') ||
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('accessToken');
       setIsLoggedIn(!!token);
     } catch (error) {
       console.warn('localStorage access error:', error);
@@ -179,13 +185,13 @@ function StoreAboutContent() {
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
     setError('');
-    
+
     try {
       console.log('🔍 Fetching store about data for phone:', sellerPhone);
-      
+
       // Try the about endpoint first, fallback to main shop endpoint
       let response;
       try {
@@ -199,7 +205,7 @@ function StoreAboutContent() {
           timeout: 15000
         });
         console.log('✅ Shop endpoint successful:', response.data);
-        
+
         // Transform shop data to about format if needed
         if (response.data.store) {
           setStoreData(response.data.store);
@@ -209,7 +215,7 @@ function StoreAboutContent() {
         setIsLoading(false);
         return;
       }
-      
+
       setStoreData(response.data);
     } catch (error) {
       console.error("❌ Failed to fetch store about data:", error);
@@ -235,13 +241,13 @@ function StoreAboutContent() {
   // ✅ Enhanced: Generate SEO-friendly shop URL for navigation
   const getShopUrl = () => {
     if (!storeData || !sellerPhone) return `/shop`;
-    
+
     // If we have full store data, create SEO-friendly URL
     if (storeData.name) {
       const shopSlug = generateShopSlug(storeData);
       return `/shop/${shopSlug}?id=${sellerPhone}`;
     }
-    
+
     // Fallback: use direct phone URL
     return `/shop/${sellerPhone}`;
   };
@@ -249,9 +255,9 @@ function StoreAboutContent() {
   const formatJoinDate = (dateString) => {
     if (!dateString) return 'Recently joined';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', { 
-      year: 'numeric', 
-      month: 'long' 
+    return date.toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'long'
     });
   };
 
@@ -267,9 +273,9 @@ function StoreAboutContent() {
   if (isLoading) {
     return (
       <div style={styles.pageContainer}>
-        <SHeader 
-          store={null} 
-          isLoggedIn={isLoggedIn} 
+        <SHeader
+          store={null}
+          isLoggedIn={isLoggedIn}
         />
         <div style={styles.loadingContainer}>
           <div style={styles.spinner}></div>
@@ -282,21 +288,21 @@ function StoreAboutContent() {
   if (!sellerPhone) {
     return (
       <div style={styles.pageContainer}>
-        <SHeader 
-          store={null} 
-          isLoggedIn={isLoggedIn} 
+        <SHeader
+          store={null}
+          isLoggedIn={isLoggedIn}
         />
         <div style={styles.errorContainer}>
           <Store size={64} style={styles.errorIcon} />
           <h2 style={styles.errorTitle}>Invalid Store URL</h2>
           <p style={styles.errorText}>The store information is missing from the URL.</p>
-          
+
           {/* ✅ Enhanced Debug Info */}
           <div style={styles.errorDebug}>
-            <strong>Debug Info:</strong><br/>
-            Shop Slug: <code>{shopSlug || 'undefined'}</code><br/>
-            Phone: <code>{sellerPhone || 'null'}</code><br/>
-            URL: <code>{typeof window !== 'undefined' ? window.location.href : 'N/A'}</code><br/>
+            <strong>Debug Info:</strong><br />
+            Shop Slug: <code>{shopSlug || 'undefined'}</code><br />
+            Phone: <code>{sellerPhone || 'null'}</code><br />
+            URL: <code>{typeof window !== 'undefined' ? window.location.href : 'N/A'}</code><br />
             Environment: <code>{process.env.NODE_ENV || 'unknown'}</code>
           </div>
 
@@ -316,7 +322,7 @@ function StoreAboutContent() {
               </li>
             </ul>
           </div>
-          
+
           <Link href="/shop" style={styles.backLink}>
             <ArrowLeft size={16} />
             Browse All Shops
@@ -368,11 +374,11 @@ function StoreAboutContent() {
 
   return (
     <div style={styles.pageContainer}>
-      <SHeader 
-        store={storeData} 
-        isLoggedIn={isLoggedIn} 
+      <SHeader
+        store={storeData}
+        isLoggedIn={isLoggedIn}
       />
-      
+
       {/* ✅ Enhanced Navigation breadcrumb with SEO URLs */}
       <div style={styles.breadcrumbContainer}>
         <div style={styles.container}>
@@ -395,7 +401,7 @@ function StoreAboutContent() {
           </nav>
         </div>
       </div>
-      
+
       <div style={styles.container}>
         {/* ✅ Enhanced Back button with correct URL */}
         <Link href={getShopUrl()} style={styles.backButton}>
@@ -406,9 +412,9 @@ function StoreAboutContent() {
         {/* Store Header */}
         <div style={styles.storeHeader}>
           <div style={styles.logoContainer}>
-            <img 
-              src={storeData.logo_url || `https://via.placeholder.com/150x150/3b82f6/ffffff?text=${encodeURIComponent(storeData.name?.charAt(0) || 'S')}`} 
-              alt={`${storeData.name} logo`} 
+            <img
+              src={storeData.logo_url || `https://via.placeholder.com/150x150/3b82f6/ffffff?text=${encodeURIComponent(storeData.name?.charAt(0) || 'S')}`}
+              alt={`${storeData.name} logo`}
               style={styles.logo}
               onError={(e) => {
                 e.target.src = `https://via.placeholder.com/150x150/3b82f6/ffffff?text=${encodeURIComponent(storeData.name?.charAt(0) || 'S')}`;
@@ -446,31 +452,119 @@ function StoreAboutContent() {
           </div>
         </div>
 
+        <div className="enhanced-store-info-section" style={styles.storeInfoSection}>
+          <div className="container" style={styles.container}>
+            <div className="store-header" style={styles.storeHeader}>
+              <div className="store-identity" style={styles.storeIdentity}>
+
+                <div className="store-details-enhanced" style={styles.storeDetails}>
+                  <div className="store-name-section" style={styles.storeNameSection}>
+                    <div className="store-badges" style={styles.storeBadges}>
+                      <span className="badge verified" style={styles.badgeVerified}>
+                        <Award size={10} aria-hidden="true" />
+                        Verified Kerala Seller
+                      </span>
+                      <span className="badge responsive" style={styles.badgeResponsive}>
+                        <Clock size={10} aria-hidden="true" />
+                        Fast Response
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="store-meta" style={styles.storeMeta}>
+
+                    <div className="meta-item" style={styles.metaItem}>
+                      <Users size={12} aria-hidden="true" />
+                      <span>Trusted by customers</span>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+              <div className="store-actions" style={styles.storeActions}>
+                <button className="action-button primary" style={styles.actionButtonPrimary} aria-label="Chat with store">
+                  <MessageCircle size={16} aria-hidden="true" />
+                  <span className="action-text">Chat</span>
+                </button>
+                <button className="action-button secondary" style={styles.actionButtonSecondary} aria-label="Call store">
+                  <Phone size={16} aria-hidden="true" />
+                  <span className="action-text">Call</span>
+                </button>
+                <button className="action-button icon-only" style={styles.actionButtonIcon} aria-label="Share store">
+                  <Share2 size={16} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            <div className="store-performance" style={styles.storePerformance}>
+              <div className="performance-card" style={styles.performanceCard}>
+                <div className="performance-icon" style={styles.performanceIcon}>
+                  <Star size={18} fill="currentColor" aria-hidden="true" />
+                </div>
+                {/* <div className="performance-content" style={styles.performanceContent}>
+                  <span className="performance-number" style={styles.performanceNumber}>
+                    {store.average_rating?.toFixed(1) || '4.8'}
+                  </span>
+                  <span className="performance-label" style={styles.performanceLabel}>Rating</span>
+                </div> */}
+              </div>
+              <div className="performance-card" style={styles.performanceCard}>
+                <div className="performance-icon" style={styles.performanceIcon}>
+                  <TrendingUp size={18} aria-hidden="true" />
+                </div>
+                <div className="performance-content" style={styles.performanceContent}>
+                  <span className="performance-number" style={styles.performanceNumber}>5.2k</span>
+                  <span className="performance-label" style={styles.performanceLabel}>Orders</span>
+                </div>
+              </div>
+              <div className="performance-card" style={styles.performanceCard}>
+                <div className="performance-icon" style={styles.performanceIcon}>
+                  <Truck size={18} aria-hidden="true" />
+                </div>
+                <div className="performance-content" style={styles.performanceContent}>
+                  <span className="performance-number" style={styles.performanceNumber}>24hr</span>
+                  <span className="performance-label" style={styles.performanceLabel}>Kerala Delivery</span>
+                </div>
+              </div>
+              <div className="performance-card" style={styles.performanceCard}>
+                <div className="performance-icon" style={styles.performanceIcon}>
+                  <Users size={18} aria-hidden="true" />
+                </div>
+                <div className="performance-content" style={styles.performanceContent}>
+                  <span className="performance-number" style={styles.performanceNumber}>98%</span>
+                  <span className="performance-label" style={styles.performanceLabel}>Satisfied</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
         {/* Stats Grid */}
         <div style={styles.statsSection}>
           <h2 style={styles.sectionTitle}>Store Performance</h2>
           <div style={styles.statsGrid}>
-            <StatCard 
-              icon={<Star size={24} fill="currentColor" />} 
-              value={storeData.average_rating ? Number(storeData.average_rating).toFixed(1) : "New"} 
+            <StatCard
+              icon={<Star size={24} fill="currentColor" />}
+              value={storeData.average_rating ? Number(storeData.average_rating).toFixed(1) : "New"}
               label="Store Rating"
               color="#f59e0b"
             />
-            <StatCard 
-              icon={<CheckCircle size={24} />} 
-              value={storeData.stats?.completed_orders || storeData.orders_completed || "0"} 
+            <StatCard
+              icon={<CheckCircle size={24} />}
+              value={storeData.stats?.completed_orders || storeData.orders_completed || "0"}
               label="Orders Completed"
               color="#10b981"
             />
-            <StatCard 
-              icon={<Package size={24} />} 
-              value={storeData.stats?.products_count || storeData.products_count || "0"} 
+            <StatCard
+              icon={<Package size={24} />}
+              value={storeData.stats?.products_count || storeData.products_count || "0"}
               label="Products Available"
               color="#3b82f6"
             />
-            <StatCard 
-              icon={<TrendingUp size={24} />} 
-              value={storeData.stats?.monthly_growth || "Growing"} 
+            <StatCard
+              icon={<TrendingUp size={24} />}
+              value={storeData.stats?.monthly_growth || "Growing"}
               label="Monthly Growth"
               color="#8b5cf6"
             />
@@ -547,7 +641,7 @@ function StoreAboutContent() {
                   </div>
                 </div>
               )}
-              
+
               <div style={styles.contactItem}>
                 <div style={styles.contactIcon}>
                   <Phone size={20} />
@@ -588,7 +682,7 @@ function StoreAboutContent() {
                 </div>
               )}
             </div>
-            
+
             {/* Delivery Information */}
             {(storeData.delivery_time_local || storeData.delivery_time_national) && (
               <div style={styles.deliverySection}>
@@ -609,16 +703,16 @@ function StoreAboutContent() {
                 </div>
               </div>
             )}
-            
+
             {/* Social Links */}
             {(storeData.instagram_link || storeData.facebook_link) && (
               <div style={styles.socialSection}>
                 <h3 style={styles.socialTitle}>Follow Us</h3>
                 <div style={styles.socialLinks}>
                   {storeData.instagram_link && (
-                    <a 
-                      href={storeData.instagram_link} 
-                      target="_blank" 
+                    <a
+                      href={storeData.instagram_link}
+                      target="_blank"
                       rel="noopener noreferrer"
                       style={styles.socialLink}
                     >
@@ -627,9 +721,9 @@ function StoreAboutContent() {
                     </a>
                   )}
                   {storeData.facebook_link && (
-                    <a 
-                      href={storeData.facebook_link} 
-                      target="_blank" 
+                    <a
+                      href={storeData.facebook_link}
+                      target="_blank"
                       rel="noopener noreferrer"
                       style={styles.socialLink}
                     >
@@ -668,10 +762,12 @@ function StoreAboutContent() {
   );
 }
 
+
+
 function StatCard({ icon, value, label, color = '#3b82f6' }) {
   return (
     <div style={styles.statCard}>
-      <div style={{...styles.statIcon, color}}>
+      <div style={{ ...styles.statIcon, color }}>
         {icon}
       </div>
       <div style={styles.statValue}>{value}</div>
@@ -724,7 +820,7 @@ const styles = {
     minHeight: '60vh',
     gap: '20px'
   },
-  
+
   spinner: {
     width: '32px',
     height: '32px',
@@ -733,12 +829,12 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
+
   loadingText: {
     color: '#6b7280',
     fontSize: '16px'
   },
-  
+
   errorContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -749,18 +845,18 @@ const styles = {
     textAlign: 'center',
     padding: '40px'
   },
-  
+
   errorIcon: {
     color: '#ef4444'
   },
-  
+
   errorTitle: {
     fontSize: '24px',
     fontWeight: '700',
     color: '#1f2937',
     margin: 0
   },
-  
+
   errorText: {
     color: '#6b7280',
     fontSize: '16px',
@@ -800,14 +896,14 @@ const styles = {
     fontFamily: 'monospace',
     fontSize: '14px'
   },
-  
+
   errorActions: {
     display: 'flex',
     gap: '12px',
     flexWrap: 'wrap',
     justifyContent: 'center'
   },
-  
+
   retryButton: {
     display: 'flex',
     alignItems: 'center',
@@ -822,7 +918,7 @@ const styles = {
     fontWeight: '500',
     transition: 'all 0.2s'
   },
-  
+
   backLink: {
     display: 'flex',
     alignItems: 'center',
@@ -843,7 +939,7 @@ const styles = {
     borderBottom: '1px solid #e5e7eb',
     padding: '12px 0'
   },
-  
+
   breadcrumb: {
     display: 'flex',
     alignItems: 'center',
@@ -851,7 +947,7 @@ const styles = {
     fontSize: '14px',
     flexWrap: 'wrap'
   },
-  
+
   breadcrumbLink: {
     display: 'flex',
     alignItems: 'center',
@@ -860,11 +956,11 @@ const styles = {
     textDecoration: 'none',
     transition: 'color 0.2s'
   },
-  
+
   breadcrumbSeparator: {
     color: '#9ca3af'
   },
-  
+
   breadcrumbCurrent: {
     color: '#6b7280',
     fontWeight: '500'
@@ -907,12 +1003,12 @@ const styles = {
     gap: '24px',
     flexWrap: 'wrap'
   },
-  
+
   logoContainer: {
     position: 'relative',
     flexShrink: 0
   },
-  
+
   logo: {
     width: '120px',
     height: '120px',
@@ -920,7 +1016,7 @@ const styles = {
     objectFit: 'cover',
     border: '3px solid #f1f5f9'
   },
-  
+
   verifiedBadge: {
     position: 'absolute',
     bottom: '-8px',
@@ -935,32 +1031,32 @@ const styles = {
     justifyContent: 'center',
     border: '3px solid white'
   },
-  
+
   storeInfo: {
     flex: 1,
     minWidth: '250px'
   },
-  
+
   storeName: {
     fontSize: '2rem',
     fontWeight: '700',
     color: '#1f2937',
     margin: '0 0 8px 0'
   },
-  
+
   tagline: {
     fontSize: '1.125rem',
     color: '#6b7280',
     margin: '0 0 16px 0',
     lineHeight: '1.5'
   },
-  
+
   badges: {
     display: 'flex',
     gap: '12px',
     flexWrap: 'wrap'
   },
-  
+
   badge: {
     display: 'flex',
     alignItems: 'center',
@@ -979,14 +1075,14 @@ const styles = {
     flexDirection: 'column',
     gap: '16px'
   },
-  
+
   sectionTitle: {
     fontSize: '1.5rem',
     fontWeight: '700',
     color: '#1f2937',
     margin: 0
   },
-  
+
   card: {
     backgroundColor: 'white',
     borderRadius: '16px',
@@ -1001,13 +1097,13 @@ const styles = {
     flexDirection: 'column',
     gap: '16px'
   },
-  
+
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '20px'
   },
-  
+
   statCard: {
     backgroundColor: 'white',
     padding: '24px',
@@ -1017,20 +1113,20 @@ const styles = {
     border: '1px solid #e5e7eb',
     transition: 'all 0.2s'
   },
-  
+
   statIcon: {
     marginBottom: '12px',
     display: 'flex',
     justifyContent: 'center'
   },
-  
+
   statValue: {
     fontSize: '2rem',
     fontWeight: '700',
     color: '#1f2937',
     marginBottom: '4px'
   },
-  
+
   statLabel: {
     fontSize: '14px',
     color: '#6b7280',
@@ -1043,13 +1139,13 @@ const styles = {
     gridTemplateColumns: '1fr',
     gap: '20px'
   },
-  
+
   businessItem: {
     display: 'flex',
     alignItems: 'flex-start',
     gap: '16px'
   },
-  
+
   businessIcon: {
     width: '40px',
     height: '40px',
@@ -1061,7 +1157,7 @@ const styles = {
     color: '#3b82f6',
     flexShrink: 0
   },
-  
+
   businessLabel: {
     display: 'block',
     fontSize: '14px',
@@ -1069,7 +1165,7 @@ const styles = {
     fontWeight: '600',
     marginBottom: '4px'
   },
-  
+
   businessValue: {
     margin: 0,
     fontSize: '16px',
@@ -1092,13 +1188,13 @@ const styles = {
     gap: '20px',
     marginBottom: '24px'
   },
-  
+
   contactItem: {
     display: 'flex',
     alignItems: 'flex-start',
     gap: '16px'
   },
-  
+
   contactIcon: {
     width: '48px',
     height: '48px',
@@ -1110,11 +1206,11 @@ const styles = {
     color: '#3b82f6',
     flexShrink: 0
   },
-  
+
   contactInfo: {
     flex: 1
   },
-  
+
   contactLabel: {
     display: 'block',
     fontSize: '14px',
@@ -1122,14 +1218,14 @@ const styles = {
     fontWeight: '600',
     marginBottom: '4px'
   },
-  
+
   contactValue: {
     margin: 0,
     fontSize: '16px',
     color: '#1f2937',
     fontWeight: '500'
   },
-  
+
   websiteLink: {
     color: '#3b82f6',
     textDecoration: 'none'
@@ -1141,20 +1237,20 @@ const styles = {
     paddingTop: '24px',
     marginBottom: '24px'
   },
-  
+
   deliveryTitle: {
     fontSize: '18px',
     fontWeight: '600',
     color: '#1f2937',
     margin: '0 0 16px 0'
   },
-  
+
   deliveryGrid: {
     display: 'flex',
     gap: '20px',
     flexWrap: 'wrap'
   },
-  
+
   deliveryItem: {
     display: 'flex',
     alignItems: 'center',
@@ -1168,20 +1264,20 @@ const styles = {
     borderTop: '1px solid #e5e7eb',
     paddingTop: '24px'
   },
-  
+
   socialTitle: {
     fontSize: '18px',
     fontWeight: '600',
     color: '#1f2937',
     margin: '0 0 16px 0'
   },
-  
+
   socialLinks: {
     display: 'flex',
     gap: '16px',
     flexWrap: 'wrap'
   },
-  
+
   socialLink: {
     display: 'flex',
     alignItems: 'center',
@@ -1202,7 +1298,7 @@ const styles = {
     justifyContent: 'center',
     padding: '24px 0'
   },
-  
+
   primaryButton: {
     display: 'flex',
     alignItems: 'center',
@@ -1216,5 +1312,260 @@ const styles = {
     fontWeight: '600',
     transition: 'all 0.2s',
     boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-  }
+  },
+// Store Info Styles
+  storeInfoSection: {
+    backgroundColor: 'white',
+    borderBottom: '1px solid #e5e7eb',
+    padding: '32px 0',
+    marginBottom: '32px'
+  },
+
+  storeHeader: {
+    display: 'flex',
+    gap: '24px',
+    alignItems: 'flex-start',
+    marginBottom: '24px',
+    flexWrap: 'wrap'
+  },
+
+  storeIdentity: {
+    display: 'flex',
+    gap: '20px',
+    flex: 1,
+    minWidth: '300px'
+  },
+
+  storeLogoWrapper: {
+    position: 'relative',
+    flexShrink: 0
+  },
+
+  storeLogo: {
+    width: '120px',
+    height: '120px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    border: '4px solid #f1f5f9',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+  },
+
+  storeLogoPlaceholder: {
+    width: '120px',
+    height: '120px',
+    borderRadius: '50%',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '2rem',
+    fontWeight: '700',
+    border: '4px solid #f1f5f9',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+  },
+
+  verifiedBadge: {
+    position: 'absolute',
+    bottom: '5px',
+    right: '5px',
+    width: '24px',
+    height: '24px',
+    backgroundColor: '#10b981',
+    color: 'white',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: '2px solid white'
+  },
+
+  storeDetails: {
+    flex: 1,
+    minWidth: '250px'
+  },
+
+  storeNameSection: {
+    marginBottom: '12px'
+  },
+
+  storeName: {
+    fontSize: '2rem',
+    fontWeight: '700',
+    color: '#1f2937',
+    margin: '0 0 8px 0',
+    lineHeight: '1.2'
+  },
+
+  storeBadges: {
+    display: 'flex',
+    gap: '8px',
+    flexWrap: 'wrap'
+  },
+
+  badgeVerified: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '4px 8px',
+    backgroundColor: '#ecfdf5',
+    border: '1px solid #10b981',
+    borderRadius: '12px',
+    fontSize: '0.75rem',
+    color: '#065f46',
+    fontWeight: '500'
+  },
+
+  badgeResponsive: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '4px 8px',
+    backgroundColor: '#eff6ff',
+    border: '1px solid #3b82f6',
+    borderRadius: '12px',
+    fontSize: '0.75rem',
+    color: '#1e40af',
+    fontWeight: '500'
+  },
+
+  storeTagline: {
+    fontSize: '1.1rem',
+    color: '#3b82f6',
+    fontWeight: '500',
+    margin: '0 0 16px 0'
+  },
+
+  storeMeta: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+
+  metaItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '0.9rem',
+    color: '#4b5563'
+  },
+
+  metaItemLocation: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '0.9rem',
+    color: '#059669',
+    fontWeight: '600'
+  },
+
+  storeActions: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+
+  actionButtonPrimary: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '0.9rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap'
+  },
+
+  actionButtonSecondary: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    backgroundColor: 'white',
+    color: '#374151',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
+    fontSize: '0.9rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap'
+  },
+
+  actionButtonIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '40px',
+    height: '40px',
+    backgroundColor: 'white',
+    color: '#6b7280',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
+    cursor: 'pointer'
+  },
+
+  // Store Performance
+  storePerformance: {
+    display: 'flex',
+    gap: '32px',
+    padding: '20px 0',
+    borderTop: '1px solid #f3f4f6',
+    flexWrap: 'wrap'
+  },
+
+  performanceCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px'
+  },
+
+  performanceIcon: {
+    color: '#3b82f6'
+  },
+
+  performanceContent: {
+    display: 'flex',
+    flexDirection: 'column'
+  },
+
+  performanceNumber: {
+    fontSize: '1.5rem',
+    fontWeight: '700',
+    color: '#1f2937'
+  },
+
+  performanceLabel: {
+    fontSize: '0.8rem',
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  },
+
+  storeDescriptionCard: {
+    marginTop: '24px',
+    padding: '20px',
+    backgroundColor: '#f8fafc',
+    borderRadius: '8px',
+    border: '1px solid #e5e7eb'
+  },
+
+  descriptionExpanded: {
+    margin: '12px 0'
+  },
+
+  descriptionCollapsed: {
+    margin: '12px 0',
+    display: '-webkit-box',
+    WebkitLineClamp: 3,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
+  },
+
+  
 };
