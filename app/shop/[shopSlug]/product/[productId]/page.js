@@ -26,7 +26,8 @@ import {
   Phone,
   Tag,
   Camera,
-  Zap
+  Zap,
+  User
 } from 'lucide-react';
 
 // ✅ Helper function to get API base URL
@@ -42,6 +43,23 @@ const getApiBaseUrl = () => {
   }
   
   return 'https://keralaseller-backend.onrender.com';
+};
+
+// ✅ API URLs
+const API_BASE_URL = getApiBaseUrl();
+const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
+const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
+const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
+const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;
+
+// ✅ Enhanced auth headers function
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('access_token') ||
+    localStorage.getItem('buyerAccessToken') ||
+    localStorage.getItem('buyerToken') ||
+    localStorage.getItem('accessToken');
+
+  return token ? { 'Authorization': `Bearer ${token}` } : null;
 };
 
 // ✅ Helper function to extract phone from slug or query params
@@ -99,6 +117,179 @@ const generateShopSlug = (shop) => {
   const slug = location ? `${shopName}-${location}` : shopName;
   return slug.length >= 3 ? slug : `shop-${shop.seller_phone || 'store'}`;
 };
+
+// ✅ NEW: Enhanced Review Form Component
+function ReviewForm({ productId, onReviewSubmitted }) {
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (comment.trim().length < 10) {
+      setError('Review must be at least 10 characters long');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError('');
+    setSuccess('');
+    
+    const token = localStorage.getItem('buyerAccessToken') ||
+                  localStorage.getItem('access_token') ||
+                  localStorage.getItem('accessToken');
+    if (!token) {
+      setError('Please login to submit a review');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/products/${productId}/create-review/`, 
+        { rating, comment: comment.trim() }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setComment('');
+      setRating(5);
+      setSuccess('Review submitted successfully!');
+      
+      setTimeout(() => {
+        onReviewSubmitted();
+        setSuccess('');
+      }, 1500);
+      
+    } catch (err) {
+      console.error('Review submission error:', err);
+      setError(err.response?.data?.error || 'Failed to submit review');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  return (
+    <div style={styles.reviewForm}>
+      <h4 style={styles.reviewFormTitle}>Write Your Review</h4>
+      
+      {error && <div style={styles.errorMessage}>{error}</div>}
+      {success && <div style={styles.successMessage}>{success}</div>}
+      
+      <form onSubmit={handleSubmit}>
+        <div style={styles.ratingSection}>
+          <label style={styles.label}>Your Rating:</label>
+          <div style={styles.starRatingInput}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                size={28}
+                onClick={() => setRating(star)}
+                color={star <= rating ? "#ffc107" : "#e4e5e9"}
+                fill={star <= rating ? "#ffc107" : "none"}
+                style={styles.starButton}
+              />
+            ))}
+            <span style={styles.ratingText}>({rating}/5 stars)</span>
+          </div>
+        </div>
+        
+        <div style={styles.commentSection}>
+          <label style={styles.label}>Your Review:</label>
+          <textarea 
+            value={comment} 
+            onChange={e => setComment(e.target.value)} 
+            placeholder="Share your experience with this product. What did you like or dislike about it?" 
+            style={styles.textarea}
+            rows={4}
+            maxLength={500}
+          />
+          <small style={styles.charCount}>
+            {comment.length}/500 characters (minimum 10 required)
+          </small>
+        </div>
+        
+        <button 
+          type="submit" 
+          disabled={isSubmitting || comment.trim().length < 10}
+          style={{
+            ...styles.submitButton,
+            ...(isSubmitting || comment.trim().length < 10 ? styles.disabledButton : {})
+          }}
+        >
+          {isSubmitting ? (
+            <span style={styles.buttonContent}>
+              <RefreshCw size={16} className="spinning" />
+              Submitting Review...
+            </span>
+          ) : (
+            'Submit Review'
+          )}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+// ✅ NEW: Enhanced Star Rating Component
+function StarRating({ rating = 0, reviewCount = 0, showCount = true }) {
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+
+  return (
+    <div style={styles.starContainer}>
+      <div style={styles.stars}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            size={20}
+            color={star <= fullStars || (star === fullStars + 1 && hasHalfStar) ? "#ffc107" : "#e4e5e9"}
+            fill={star <= fullStars || (star === fullStars + 1 && hasHalfStar) ? "#ffc107" : "#e4e5e9"}
+          />
+        ))}
+      </div>
+      {rating > 0 && (
+        <span style={styles.ratingDisplay}>
+          {rating.toFixed(1)} out of 5
+        </span>
+      )}
+      {showCount && reviewCount > 0 && (
+        <span style={styles.reviewCount}>({reviewCount} reviews)</span>
+      )}
+    </div>
+  );
+}
+
+// ✅ NEW: Individual Review Component
+function ReviewItem({ review }) {
+  return (
+    <div style={styles.reviewItem}>
+      <div style={styles.reviewHeader}>
+        <div style={styles.reviewerInfo}>
+          <div style={styles.reviewerAvatar}>
+            <User size={16} />
+          </div>
+          <div>
+            <StarRating rating={review.rating} showCount={false} />
+            <h5 style={styles.reviewerName}>
+              {review.buyer?.full_name || 'Anonymous Customer'}
+            </h5>
+          </div>
+        </div>
+        <span style={styles.reviewDate}>
+          {new Date(review.created_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}
+        </span>
+      </div>
+      <p style={styles.reviewComment}>{review.comment}</p>
+    </div>
+  );
+}
 
 // ✅ Image Gallery Component
 function ProductImageGallery({ product }) {
@@ -162,10 +353,96 @@ function ProductImageGallery({ product }) {
   );
 }
 
-// ✅ Product Info Component
-function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity }) {
+// ✅ ENHANCED: Product Info Component with Wishlist
+function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isLoggedIn, router }) {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+
+  // ✅ Check if product is wishlisted on component mount
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      const headers = getAuthHeaders();
+      if (!headers || !product?.id) return;
+
+      try {
+        console.log(`🔍 Checking wishlist status for product ${product.id}`);
+        const response = await axios.get(`${WISHLIST_CHECK_API}?product_id=${product.id}`, { 
+          headers,
+          timeout: 5000 
+        });
+        const isInWishlist = response.data.is_wishlisted || false;
+        console.log(`✅ Product ${product.id} wishlist status:`, isInWishlist);
+        setIsWishlisted(isInWishlist);
+      } catch (error) {
+        console.warn('❌ Failed to check wishlist status:', error);
+      }
+    };
+
+    if (isLoggedIn && product?.id) {
+      checkWishlistStatus();
+    }
+  }, [product?.id, isLoggedIn]);
+
+  // ✅ Wishlist toggle handler
+  const handleWishlistToggle = async () => {
+    const headers = getAuthHeaders();
+    if (!headers) {
+      const shouldLogin = window.confirm('Please login to add items to your wishlist. Would you like to login now?');
+      if (shouldLogin) {
+        router.push('/login/buyer');
+      }
+      return;
+    }
+
+    if (isWishlistLoading) {
+      console.log('⏳ Wishlist request already in progress for product:', product.id);
+      return;
+    }
+
+    setIsWishlistLoading(true);
+    const previousState = isWishlisted;
+
+    // Optimistic update
+    setIsWishlisted(!isWishlisted);
+
+    try {
+      console.log('🔄 Toggling wishlist for product:', product.id);
+
+      const response = await axios.post(WISHLIST_TOGGLE_API, {
+        product_id: product.id
+      }, {
+        headers,
+        timeout: 10000
+      });
+
+      console.log('✅ Wishlist toggle response:', response.data);
+
+      const newWishlistState = response.data.is_wishlisted ?? response.data.wishlisted;
+      setIsWishlisted(newWishlistState);
+
+      // Show user feedback
+      const action = newWishlistState ? 'added to' : 'removed from';
+      console.log(`✅ ${product.name} ${action} wishlist`);
+
+    } catch (error) {
+      console.error('❌ Wishlist toggle error:', error);
+
+      // Revert optimistic update
+      setIsWishlisted(previousState);
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('buyerAccessToken');
+        alert('Session expired. Please login again.');
+      } else {
+        const errorMessage = error.response?.data?.error || 'Failed to update wishlist. Please try again.';
+        alert(errorMessage);
+      }
+    } finally {
+      setIsWishlistLoading(false);
+    }
+  };
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {
@@ -288,15 +565,27 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity }) {
           )}
         </button>
         
+        {/* ✅ FIXED: Working Wishlist Button */}
         <button
-          onClick={() => setIsWishlisted(!isWishlisted)}
+          onClick={handleWishlistToggle}
+          disabled={isWishlistLoading}
           style={{
             ...styles.wishlistButton,
-            ...(isWishlisted ? styles.wishlistActive : {})
+            ...(isWishlisted ? styles.wishlistActive : {}),
+            ...(isWishlistLoading ? styles.wishlistLoading : {})
           }}
         >
-          <Heart size={18} fill={isWishlisted ? 'currentColor' : 'none'} />
-          {isWishlisted ? 'Wishlisted' : 'Add to Wishlist'}
+          {isWishlistLoading ? (
+            <>
+              <RefreshCw size={18} className="spinning" />
+              {isWishlisted ? 'Removing...' : 'Adding...'}
+            </>
+          ) : (
+            <>
+              <Heart size={18} fill={isWishlisted ? 'currentColor' : 'none'} />
+              {isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+            </>
+          )}
         </button>
       </div>
 
@@ -319,15 +608,125 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity }) {
   );
 }
 
-// ✅ Main Product Page Component
+// ✅ ENHANCED: Related Products with Wishlist
+function RelatedProductCard({ product, shopSlug, sellerPhone }) {
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+
+  // Check wishlist status
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      const headers = getAuthHeaders();
+      if (!headers || !product?.id) return;
+
+      try {
+        const response = await axios.get(`${WISHLIST_CHECK_API}?product_id=${product.id}`, { 
+          headers,
+          timeout: 5000 
+        });
+        setIsWishlisted(response.data.is_wishlisted || false);
+      } catch (error) {
+        console.warn('❌ Failed to check wishlist status for related product:', error);
+      }
+    };
+
+    checkWishlistStatus();
+  }, [product?.id]);
+
+  // Handle wishlist toggle
+  const handleWishlistToggle = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
+    if (isWishlistLoading) return;
+
+    setIsWishlistLoading(true);
+    const previousState = isWishlisted;
+    setIsWishlisted(!isWishlisted);
+
+    try {
+      const response = await axios.post(WISHLIST_TOGGLE_API, {
+        product_id: product.id
+      }, {
+        headers,
+        timeout: 10000
+      });
+
+      setIsWishlisted(response.data.is_wishlisted ?? response.data.wishlisted);
+    } catch (error) {
+      console.error('❌ Wishlist toggle error:', error);
+      setIsWishlisted(previousState);
+    } finally {
+      setIsWishlistLoading(false);
+    }
+  };
+
+  const getImageUrl = (url) => {
+    if (!url) return 'https://placehold.co/200x200/e9ecef/6c757d?text=No+Image';
+    if (url.startsWith('/media/')) {
+      return `${getApiBaseUrl()}${url}`;
+    }
+    return url;
+  };
+
+  return (
+    <div style={styles.relatedProductCard}>
+      <Link
+        href={`/shop/${shopSlug}/product/${product.id}?id=${sellerPhone}`}
+        style={styles.relatedProductLink}
+      >
+        <div style={styles.relatedProductImageContainer}>
+          <img
+            src={getImageUrl(product.main_image_url)}
+            alt={product.name}
+            style={styles.relatedProductImage}
+            onError={(e) => {
+              e.target.src = 'https://placehold.co/200x200/e9ecef/6c757d?text=No+Image';
+            }}
+          />
+          {/* ✅ Wishlist button for related products */}
+          <button
+            onClick={handleWishlistToggle}
+            disabled={isWishlistLoading}
+            style={{
+              ...styles.relatedWishlistButton,
+              ...(isWishlisted ? styles.relatedWishlistActive : {})
+            }}
+          >
+            {isWishlistLoading ? (
+              <RefreshCw size={12} className="spinning" />
+            ) : (
+              <Heart size={12} fill={isWishlisted ? 'currentColor' : 'none'} />
+            )}
+          </button>
+        </div>
+        <div style={styles.relatedProductInfo}>
+          <h3 style={styles.relatedProductName}>{product.name}</h3>
+          <p style={styles.relatedProductPrice}>
+            ₹{product.price?.toLocaleString('en-IN')}
+          </p>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+// ✅ ENHANCED: Main Product Page Component with Reviews + Wishlist
 function ShopProductPageContent() {
   const [product, setProduct] = useState(null);
   const [store, setStore] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [addToCartLoading, setAddToCartLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [buyerStatus, setBuyerStatus] = useState({ isLoggedIn: false, isVerified: false });
+  const [canReview, setCanReview] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   
   const params = useParams();
   const searchParams = useSearchParams();
@@ -339,6 +738,46 @@ function ShopProductPageContent() {
   const cartContext = useCart();
   const { addToCart, cartItems } = cartContext || { addToCart: null, cartItems: [] };
 
+  // ✅ NEW: Fetch reviews
+  const fetchReviews = async () => {
+    try {
+      setReviewsLoading(true);
+      const reviewsResponse = await axios.get(`${API_BASE_URL}/api/products/${productId}/reviews/`);
+      setReviews(reviewsResponse.data.results || reviewsResponse.data || []);
+    } catch (reviewError) {
+      console.log('Reviews fetch failed:', reviewError.message);
+      setReviews([]);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  // ✅ NEW: Check review permission
+  const checkReviewPermission = async () => {
+    const token = localStorage.getItem('buyerAccessToken') ||
+                  localStorage.getItem('access_token') ||
+                  localStorage.getItem('accessToken');
+    if (token) {
+      try {
+        const canReviewResponse = await axios.get(
+          `${API_BASE_URL}/api/products/${productId}/can-review/`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setCanReview(canReviewResponse.data.can_review);
+      } catch (e) {
+        console.log('Can review check failed:', e.message);
+        setCanReview(false);
+      }
+    }
+  };
+
+  // ✅ NEW: Handle review submission
+  const handleReviewSubmitted = () => {
+    fetchReviews();
+    // Refetch product to update ratings
+    fetchProductData();
+  };
+
   // Check login status
   useEffect(() => {
     try {
@@ -346,9 +785,25 @@ function ShopProductPageContent() {
                    localStorage.getItem('access_token') ||
                    localStorage.getItem('accessToken');
       setIsLoggedIn(!!token);
+
+      // ✅ NEW: Also check buyer status for reviews
+      if (token) {
+        const headers = { 'Authorization': `Bearer ${token}` };
+        axios.get(BUYER_PROFILE_URL, { headers })
+          .then(res => {
+            setBuyerStatus({ isLoggedIn: true, isVerified: res.data.phone_verified });
+          })
+          .catch(err => {
+            console.error("Could not verify buyer status", err);
+            setBuyerStatus({ isLoggedIn: false, isVerified: false });
+          });
+      } else {
+        setBuyerStatus({ isLoggedIn: false, isVerified: false });
+      }
     } catch (error) {
       console.warn('localStorage access error:', error);
       setIsLoggedIn(false);
+      setBuyerStatus({ isLoggedIn: false, isVerified: false });
     }
   }, []);
 
@@ -364,56 +819,61 @@ function ShopProductPageContent() {
     return `/shop/${shopSlug}?id=${sellerPhone}`;
   };
 
-  // Fetch product and store data
-  useEffect(() => {
+  // ✅ ENHANCED: Fetch product and store data with reviews
+  const fetchProductData = async () => {
     if (!sellerPhone || !productId) {
       setError('Invalid product URL. Please check the link and try again.');
       setIsLoading(false);
       return;
     }
 
-    const fetchProductData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        console.log('🔍 Fetching product data:', { sellerPhone, productId });
+      console.log('🔍 Fetching product data:', { sellerPhone, productId });
 
-        // Fetch both product and store data
-        const [productRes, storeRes] = await Promise.all([
-          axios.get(`${getApiBaseUrl()}/api/products/${productId}/`, { timeout: 15000 }),
-          axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/`, { timeout: 15000 })
-        ]);
+      // Fetch both product and store data
+      const [productRes, storeRes] = await Promise.all([
+        axios.get(`${getApiBaseUrl()}/api/products/${productId}/`, { timeout: 15000 }),
+        axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/`, { timeout: 15000 })
+      ]);
 
-        console.log('✅ Product data received:', productRes.data);
-        console.log('✅ Store data received:', storeRes.data);
+      console.log('✅ Product data received:', productRes.data);
+      console.log('✅ Store data received:', storeRes.data);
 
-        setProduct(productRes.data);
-        setStore(storeRes.data.store || storeRes.data);
-        
-        // Set related products from the same store
-        if (storeRes.data.products) {
-          const related = storeRes.data.products
-            .filter(p => p.id !== parseInt(productId))
-            .slice(0, 4);
-          setRelatedProducts(related);
-        }
-
-      } catch (error) {
-        console.error('❌ Failed to fetch product data:', error);
-        
-        if (error.response?.status === 404) {
-          setError('Product not found or not available in this store.');
-        } else if (error.code === 'ECONNABORTED') {
-          setError('Request timed out. Please check your connection and try again.');
-        } else {
-          setError('Failed to load product information. Please try again.');
-        }
-      } finally {
-        setIsLoading(false);
+      setProduct(productRes.data);
+      setStore(storeRes.data.store || storeRes.data);
+      
+      // Set related products from the same store
+      if (storeRes.data.products) {
+        const related = storeRes.data.products
+          .filter(p => p.id !== parseInt(productId))
+          .slice(0, 4);
+        setRelatedProducts(related);
       }
-    };
 
+      // ✅ NEW: Fetch reviews and check review permission
+      await fetchReviews();
+      await checkReviewPermission();
+
+    } catch (error) {
+      console.error('❌ Failed to fetch product data:', error);
+      
+      if (error.response?.status === 404) {
+        setError('Product not found or not available in this store.');
+      } else if (error.code === 'ECONNABORTED') {
+        setError('Request timed out. Please check your connection and try again.');
+      } else {
+        setError('Failed to load product information. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch product and store data
+  useEffect(() => {
     fetchProductData();
   }, [sellerPhone, productId]);
 
@@ -522,6 +982,8 @@ function ShopProductPageContent() {
             onAddToCart={handleAddToCart}
             isLoading={addToCartLoading}
             cartQuantity={cartQuantity}
+            isLoggedIn={isLoggedIn}
+            router={router}
           />
         </div>
 
@@ -535,32 +997,71 @@ function ShopProductPageContent() {
           </div>
         )}
 
-        {/* Related Products */}
+        {/* ✅ NEW: Reviews Section */}
+        <div style={styles.reviewsSection}>
+          <div style={styles.reviewsHeader}>
+            <h2>Customer Reviews</h2>
+            <div style={styles.reviewsSummary}>
+              <StarRating 
+                rating={product.average_rating || 0} 
+                reviewCount={reviews.length}
+              />
+            </div>
+          </div>
+          
+          {buyerStatus.isLoggedIn ? (
+            canReview ? (
+              <ReviewForm 
+                productId={productId} 
+                onReviewSubmitted={handleReviewSubmitted} 
+              />
+            ) : (
+              <div style={styles.cannotReviewMessage}>
+                <p>You can only review products you have purchased and received.</p>
+              </div>
+            )
+          ) : (
+            <div style={styles.loginPrompt}>
+              <p>
+                Please <Link href="/login/buyer" style={styles.loginLink}>login</Link> to write a review
+              </p>
+            </div>
+          )}
+          
+          <div style={styles.reviewsList}>
+            <h3>All Reviews ({reviews.length})</h3>
+            
+            {reviewsLoading ? (
+              <div style={styles.loadingText}>
+                <RefreshCw size={16} className="spinning" />
+                <span>Loading reviews...</span>
+              </div>
+            ) : reviews.length > 0 ? (
+              <div style={styles.reviewsContainer}>
+                {reviews.map(review => (
+                  <ReviewItem key={review.id} review={review} />
+                ))}
+              </div>
+            ) : (
+              <div style={styles.noReviews}>
+                <p>No reviews yet. Be the first to review this product!</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ✅ ENHANCED: Related Products with Wishlist */}
         {relatedProducts.length > 0 && (
           <div style={styles.relatedContainer}>
             <h2 style={styles.sectionTitle}>More from {store?.name}</h2>
             <div style={styles.relatedGrid}>
               {relatedProducts.map((relatedProduct) => (
-                <Link
+                <RelatedProductCard
                   key={relatedProduct.id}
-                  href={`/shop/${shopSlug}/product/${relatedProduct.id}?id=${sellerPhone}`}
-                  style={styles.relatedProductCard}
-                >
-                  <img
-                    src={relatedProduct.main_image_url || 'https://placehold.co/200x200/e9ecef/6c757d?text=No+Image'}
-                    alt={relatedProduct.name}
-                    style={styles.relatedProductImage}
-                    onError={(e) => {
-                      e.target.src = 'https://placehold.co/200x200/e9ecef/6c757d?text=No+Image';
-                    }}
-                  />
-                  <div style={styles.relatedProductInfo}>
-                    <h3 style={styles.relatedProductName}>{relatedProduct.name}</h3>
-                    <p style={styles.relatedProductPrice}>
-                      ₹{relatedProduct.price?.toLocaleString('en-IN')}
-                    </p>
-                  </div>
-                </Link>
+                  product={relatedProduct}
+                  shopSlug={shopSlug}
+                  sellerPhone={sellerPhone}
+                />
               ))}
             </div>
           </div>
@@ -569,7 +1070,7 @@ function ShopProductPageContent() {
 
       <Footer />
 
-      {/* CSS Animations */}
+      {/* ✅ Enhanced CSS Animations */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -578,6 +1079,16 @@ function ShopProductPageContent() {
         
         .spinning {
           animation: spin 1s linear infinite;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
         }
       `}</style>
     </div>
@@ -612,7 +1123,7 @@ export default function ShopProductPage() {
   );
 }
 
-// ✅ Enhanced styles
+// ✅ Enhanced styles with reviews and wishlist support
 const styles = {
   pageContainer: {
     minHeight: '100vh',
@@ -946,6 +1457,7 @@ const styles = {
     cursor: 'not-allowed'
   },
 
+  // ✅ ENHANCED: Wishlist button styles
   wishlistButton: {
     display: 'flex',
     alignItems: 'center',
@@ -966,6 +1478,11 @@ const styles = {
     backgroundColor: '#fef2f2',
     color: '#dc2626',
     borderColor: '#dc2626'
+  },
+
+  wishlistLoading: {
+    cursor: 'not-allowed',
+    opacity: 0.7
   },
 
   features: {
@@ -1008,7 +1525,256 @@ const styles = {
     lineHeight: '1.7'
   },
 
-  // Related Products
+  // ✅ NEW: Reviews Section Styles
+  reviewsSection: { 
+    backgroundColor: 'white',
+    padding: '40px 32px',
+    borderRadius: '12px',
+    border: '1px solid #e5e7eb',
+    marginBottom: '40px'
+  },
+  
+  reviewsHeader: {
+    marginBottom: '30px',
+    textAlign: 'center'
+  },
+  
+  reviewsSummary: {
+    marginTop: '15px'
+  },
+  
+  loginPrompt: {
+    backgroundColor: '#f8fafc',
+    padding: '20px',
+    borderRadius: '8px',
+    textAlign: 'center',
+    margin: '20px 0',
+    border: '1px solid #e5e7eb'
+  },
+  
+  loginLink: {
+    color: '#3b82f6',
+    textDecoration: 'none',
+    fontWeight: '600'
+  },
+  
+  cannotReviewMessage: {
+    backgroundColor: '#fef3c7',
+    color: '#92400e',
+    padding: '15px',
+    borderRadius: '8px',
+    margin: '20px 0',
+    border: '1px solid #fbbf24'
+  },
+  
+  // Review Form Styles
+  reviewForm: { 
+    backgroundColor: '#f8fafc',
+    border: '1px solid #e5e7eb', 
+    borderRadius: '12px', 
+    padding: '30px', 
+    margin: '30px 0'
+  },
+  
+  reviewFormTitle: {
+    fontSize: '1.2rem',
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: '20px'
+  },
+  
+  errorMessage: {
+    color: '#dc2626',
+    backgroundColor: '#fef2f2',
+    padding: '12px',
+    borderRadius: '8px',
+    marginBottom: '15px',
+    border: '1px solid #fecaca'
+  },
+  
+  successMessage: {
+    color: '#065f46',
+    backgroundColor: '#ecfdf5',
+    padding: '12px',
+    borderRadius: '8px',
+    marginBottom: '15px',
+    border: '1px solid #a7f3d0'
+  },
+  
+  ratingSection: {
+    marginBottom: '20px'
+  },
+  
+  label: {
+    display: 'block',
+    fontWeight: '600',
+    marginBottom: '8px',
+    color: '#374151'
+  },
+  
+  starRatingInput: { 
+    display: 'flex', 
+    alignItems: 'center',
+    gap: '5px',
+    marginTop: '8px'
+  },
+  
+  starButton: {
+    cursor: 'pointer',
+    transition: 'transform 0.2s'
+  },
+
+  ratingText: {
+    marginLeft: '10px',
+    color: '#6b7280',
+    fontSize: '0.9rem'
+  },
+  
+  commentSection: {
+    marginBottom: '20px'
+  },
+  
+  textarea: { 
+    width: '100%', 
+    minHeight: '100px', 
+    padding: '12px', 
+    border: '1px solid #d1d5db', 
+    borderRadius: '8px',
+    resize: 'vertical',
+    fontFamily: 'inherit',
+    fontSize: '1rem',
+    lineHeight: '1.5',
+    outline: 'none',
+    transition: 'border-color 0.2s'
+  },
+  
+  charCount: {
+    color: '#6b7280',
+    fontSize: '0.8rem',
+    marginTop: '5px',
+    display: 'block'
+  },
+  
+  submitButton: { 
+    padding: '12px 30px', 
+    border: 'none', 
+    borderRadius: '8px', 
+    backgroundColor: '#059669', 
+    color: 'white', 
+    cursor: 'pointer',
+    fontSize: '1rem',
+    fontWeight: '600',
+    transition: 'all 0.3s ease'
+  },
+
+  buttonContent: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
+  
+  // Reviews List Styles
+  reviewsList: {
+    marginTop: '40px'
+  },
+  
+  reviewsContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    marginTop: '20px'
+  },
+  
+  reviewItem: {
+    backgroundColor: '#f8fafc',
+    border: '1px solid #e5e7eb',
+    borderRadius: '12px',
+    padding: '25px'
+  },
+  
+  reviewHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '15px',
+    flexWrap: 'wrap',
+    gap: '10px'
+  },
+
+  reviewerInfo: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px'
+  },
+
+  reviewerAvatar: {
+    width: '40px',
+    height: '40px',
+    backgroundColor: '#e5e7eb',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#6b7280'
+  },
+  
+  reviewerName: {
+    margin: '8px 0 0 0',
+    fontSize: '1rem',
+    fontWeight: '600',
+    color: '#1f2937'
+  },
+  
+  reviewDate: {
+    fontSize: '0.85rem',
+    color: '#6b7280'
+  },
+  
+  reviewComment: {
+    margin: 0,
+    lineHeight: '1.6',
+    color: '#374151',
+    fontSize: '1rem'
+  },
+  
+  starContainer: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '8px',
+    flexWrap: 'wrap'
+  },
+  
+  ratingDisplay: {
+    fontSize: '0.9rem',
+    color: '#6b7280',
+    fontWeight: '500'
+  },
+  
+  reviewCount: { 
+    color: '#6b7280', 
+    fontSize: '0.9rem' 
+  },
+  
+  noReviews: {
+    textAlign: 'center',
+    padding: '40px',
+    color: '#6b7280',
+    fontStyle: 'italic',
+    backgroundColor: '#f8fafc',
+    borderRadius: '8px',
+    border: '1px solid #e5e7eb'
+  },
+  
+  loadingText: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+    color: '#6b7280',
+    padding: '20px'
+  },
+
+  // ✅ ENHANCED: Related Products with wishlist
   relatedContainer: {
     backgroundColor: 'white',
     padding: '32px',
@@ -1023,19 +1789,52 @@ const styles = {
   },
 
   relatedProductCard: {
-    display: 'block',
-    textDecoration: 'none',
-    color: 'inherit',
+    position: 'relative',
     border: '1px solid #e5e7eb',
     borderRadius: '8px',
     overflow: 'hidden',
-    transition: 'all 0.2s'
+    transition: 'all 0.2s',
+    backgroundColor: 'white'
+  },
+
+  relatedProductLink: {
+    display: 'block',
+    textDecoration: 'none',
+    color: 'inherit'
+  },
+
+  relatedProductImageContainer: {
+    position: 'relative'
   },
 
   relatedProductImage: {
     width: '100%',
     height: '150px',
     objectFit: 'cover'
+  },
+
+  // ✅ NEW: Wishlist button for related products
+  relatedWishlistButton: {
+    position: 'absolute',
+    top: '8px',
+    right: '8px',
+    width: '24px',
+    height: '24px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#6b7280',
+    transition: 'all 0.2s',
+    backdropFilter: 'blur(4px)'
+  },
+
+  relatedWishlistActive: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    color: '#ef4444'
   },
 
   relatedProductInfo: {
@@ -1046,7 +1845,11 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500',
     color: '#1f2937',
-    margin: '0 0 4px 0'
+    margin: '0 0 4px 0',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
   },
 
   relatedProductPrice: {

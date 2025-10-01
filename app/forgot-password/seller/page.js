@@ -1183,7 +1183,6 @@ const styles = {
     justifyContent: 'center',
     flexWrap: 'wrap'
   },
-  
   supportLink: {
     color: '#3b82f6',
     textDecoration: 'none',

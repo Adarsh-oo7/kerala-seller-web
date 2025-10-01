@@ -58,7 +58,22 @@ const getApiBaseUrl = () => {
   return 'https://keralaseller-backend.onrender.com';
 };
 
-// ✅ FIXED: Helper function to extract phone from slug or query params with null safety
+// ✅ Wishlist API URLs
+const API_BASE_URL = getApiBaseUrl();
+const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
+const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
+
+// ✅ Enhanced auth headers function
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('access_token') ||
+    localStorage.getItem('buyerAccessToken') ||
+    localStorage.getItem('buyerToken') ||
+    localStorage.getItem('accessToken');
+
+  return token ? { 'Authorization': `Bearer ${token}` } : null;
+};
+
+// ✅ Helper function to extract phone from slug or query params with null safety
 const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
   console.log('🔍 Extracting phone from:', { shopSlug, searchParams: searchParams?.toString() });
   
@@ -664,7 +679,7 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
   );
 }
 
-// ✅ MAIN COMPONENT - Updated for SEO URLs with new ShopProductCard
+// ✅ MAIN COMPONENT - Updated with FIXED wishlist functionality
 function EnhancedSellerStorefrontPage() {
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
@@ -680,6 +695,10 @@ function EnhancedSellerStorefrontPage() {
     sortBy: 'name-asc'
   });
 
+  // ✅ Wishlist state management
+  const [wishlistProducts, setWishlistProducts] = useState(new Set());
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -691,6 +710,127 @@ function EnhancedSellerStorefrontPage() {
   const cartContext = useCart();
   const { addToCart, cartItems } = cartContext || { addToCart: null, cartItems: [] };
   const abortControllerRef = useRef(null);
+
+  // ✅ FIXED: Enhanced fetchWishlist with proper data parsing
+  const fetchWishlist = useCallback(async () => {
+    const headers = getAuthHeaders();
+    if (!headers) {
+      console.log('🚫 No auth token found, skipping wishlist fetch');
+      return;
+    }
+
+    try {
+      setWishlistLoading(true);
+      console.log('🔍 Fetching wishlist from API...');
+      
+      const response = await axios.get(WISHLIST_API, { 
+        headers,
+        timeout: 10000
+      });
+      
+      console.log('🔍 Raw wishlist API response:', response.data);
+      console.log('🔍 Response type:', typeof response.data);
+      console.log('🔍 Is array:', Array.isArray(response.data));
+      
+      // ✅ FIXED: Handle different response structures
+      let wishlistItems = [];
+      
+      if (Array.isArray(response.data)) {
+        // Direct array response
+        wishlistItems = response.data;
+        console.log('📝 Using direct array format');
+      } else if (response.data && Array.isArray(response.data.results)) {
+        // Paginated response with results array
+        wishlistItems = response.data.results;
+        console.log('📝 Using paginated format with results');
+      } else if (response.data && Array.isArray(response.data.items)) {
+        // Items wrapper
+        wishlistItems = response.data.items;
+        console.log('📝 Using items wrapper format');
+      } else {
+        console.warn('⚠️ Unexpected wishlist response format:', response.data);
+        wishlistItems = [];
+      }
+      
+      console.log('🔍 Extracted wishlist items:', wishlistItems);
+      console.log('🔍 Wishlist items count:', wishlistItems.length);
+      
+      // ✅ FIXED: Extract product IDs with comprehensive fallbacks
+      const wishlistedProductIds = new Set();
+      
+      wishlistItems.forEach((item, index) => {
+        console.log(`🔍 Processing wishlist item ${index}:`, JSON.stringify(item, null, 2));
+        
+        let productId = null;
+        
+        // Try multiple ways to extract product ID
+        if (item.product_id) {
+          productId = item.product_id;
+          console.log(`📝 Found product_id: ${productId}`);
+        } else if (item.product && typeof item.product === 'object' && item.product.id) {
+          productId = item.product.id;
+          console.log(`📝 Found product.id: ${productId}`);
+        } else if (item.product && typeof item.product === 'number') {
+          // Sometimes product is just the ID
+          productId = item.product;
+          console.log(`📝 Found direct product ID: ${productId}`);
+        } else if (item.id && !item.product && !item.product_id) {
+          // Sometimes the item ID is actually the product ID
+          productId = item.id;
+          console.log(`📝 Using item.id as product ID: ${productId}`);
+        }
+        
+        if (productId) {
+          // ✅ CRITICAL: Ensure consistent data type (convert to number)
+          const normalizedProductId = Number(productId);
+          if (!isNaN(normalizedProductId)) {
+            wishlistedProductIds.add(normalizedProductId);
+            console.log(`✅ Added product ${normalizedProductId} to wishlist set`);
+          } else {
+            console.warn(`⚠️ Invalid product ID (not a number): ${productId}`);
+          }
+        } else {
+          console.warn('⚠️ Could not extract product ID from item:', item);
+        }
+      });
+      
+      console.log('✅ Final wishlist set:', Array.from(wishlistedProductIds));
+      console.log('✅ Wishlist loaded successfully:', wishlistedProductIds.size, 'items');
+      
+      setWishlistProducts(wishlistedProductIds);
+      
+    } catch (error) {
+      console.error('❌ Failed to fetch wishlist:', error);
+      if (error.response) {
+        console.error('❌ Wishlist API error response:', error.response.status, error.response.data);
+      }
+      // Don't show error to user for wishlist - it's not critical
+    } finally {
+      setWishlistLoading(false);
+    }
+  }, []);
+
+  // ✅ Handle wishlist updates from ShopProductCard
+  const handleWishlistUpdate = useCallback((productId, isWishlisted) => {
+    console.log('🔄 Wishlist update received:', productId, isWishlisted);
+    console.log('🔄 Product ID type:', typeof productId);
+    
+    setWishlistProducts(prev => {
+      const newSet = new Set(prev);
+      const normalizedProductId = Number(productId); // Ensure consistent type
+      
+      if (isWishlisted) {
+        newSet.add(normalizedProductId);
+        console.log(`➕ Added product ${normalizedProductId} to local wishlist`);
+      } else {
+        newSet.delete(normalizedProductId);
+        console.log(`➖ Removed product ${normalizedProductId} from local wishlist`);
+      }
+      
+      console.log('💖 Updated local wishlist:', Array.from(newSet));
+      return newSet;
+    });
+  }, []);
 
   // Check login status
   useEffect(() => {
@@ -747,7 +887,7 @@ function EnhancedSellerStorefrontPage() {
     setFilteredProducts(filtered);
   }, [products, filters]);
 
-  // ✅ Enhanced fetch store data with better error handling
+  // ✅ Enhanced fetch store data with wishlist integration
   useEffect(() => {
     if (!sellerPhone) {
       console.log('❌ No seller phone - showing error');
@@ -775,8 +915,17 @@ function EnhancedSellerStorefrontPage() {
 
         if (response.data) {
           setStore(response.data.store || null);
-          setProducts(response.data.products || []);
+          const productsData = response.data.products || [];
+          
+          // ✅ CRITICAL: Ensure product IDs are numbers for consistent comparison
+          const normalizedProducts = productsData.map(product => ({
+            ...product,
+            id: Number(product.id) // Ensure product ID is a number
+          }));
+          
+          setProducts(normalizedProducts);
           console.log('✅ Shop data loaded successfully');
+          console.log('📝 Products with IDs:', normalizedProducts.map(p => ({ id: p.id, name: p.name, idType: typeof p.id })));
         } else {
           throw new Error('No data received from server');
         }
@@ -800,13 +949,19 @@ function EnhancedSellerStorefrontPage() {
     };
 
     fetchStoreData();
+    
+    // ✅ CRITICAL: Fetch wishlist after store data loads
+    const timeoutId = setTimeout(() => {
+      fetchWishlist();
+    }, 1500); // Increased delay to ensure shop loads first
 
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+      clearTimeout(timeoutId);
     };
-  }, [sellerPhone]);
+  }, [sellerPhone, fetchWishlist]);
 
   // Apply filters when products or filters change
   useEffect(() => {
@@ -958,8 +1113,18 @@ function EnhancedSellerStorefrontPage() {
             <div className={`products-container-enhanced ${viewMode}`} style={styles.productsContainer}>
               {filteredProducts.map((product) => {
                 if (!product?.id) return null;
+                
+                // ✅ CRITICAL: Check wishlist status with detailed logging
+                const isInWishlist = wishlistProducts.has(product.id);
+                console.log(`🔍 Rendering product ${product.id} (${product.name}):`, {
+                  productId: product.id,
+                  productIdType: typeof product.id,
+                  isInWishlist,
+                  wishlistSize: wishlistProducts.size,
+                  wishlistContents: Array.from(wishlistProducts)
+                });
+                
                 return (
-                  // ✅ Use the new ShopProductCard component
                   <ShopProductCard
                     key={product.id}
                     product={product}
@@ -970,6 +1135,9 @@ function EnhancedSellerStorefrontPage() {
                     isLoading={loadingProducts[product.id] || false}
                     cartItems={cartItems || []}
                     showStoreName={false} // Don't show store name since we're in the store
+                    // ✅ CRITICAL: Pass correct wishlist state and callback
+                    isWishlisted={isInWishlist}
+                    onWishlistUpdate={handleWishlistUpdate}
                   />
                 );
               }).filter(Boolean)}
@@ -1034,7 +1202,7 @@ function ShopPageWithSuspense() {
 
 export default ShopPageWithSuspense;
 
-// ✅ Enhanced styles object
+// ✅ All styles remain the same
 const styles = {
   pageContainer: {
     minHeight: '100vh',

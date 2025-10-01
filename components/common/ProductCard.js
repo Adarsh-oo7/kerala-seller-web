@@ -5,7 +5,6 @@ import { Heart, Star, ShoppingCart, Ban } from "lucide-react"
 import Link from "next/link"
 import "../../styles/ProductCard.css";
 
-
 // ✅ Enhanced API base URL function
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
@@ -249,7 +248,6 @@ export default function ProductCard({
             </div>
           </Link>
 
-
           {rating && rating > 0 && (
             <div className="rating-overlay">
               <div className="rating">
@@ -293,7 +291,6 @@ export default function ProductCard({
               </div>
             </div>
 
-
             <div className="cart-section">
               <button
                 className={`cart-btn ${onlineStock === 0 ? "disabled" : ""}`}
@@ -319,3 +316,5 @@ export default function ProductCard({
     </>
   )
 }
+
+

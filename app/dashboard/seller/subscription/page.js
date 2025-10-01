@@ -17,14 +17,14 @@ import {
   Shield
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// ✅ Updated API URLs to match your Django backend
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.4:8000';
 const PLANS_API_URL = `${API_BASE_URL}/api/subscriptions/plans/`;
 const CURRENT_SUB_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
 const CREATE_ORDER_API = `${API_BASE_URL}/api/subscriptions/create-order/`;
 const VERIFY_PAYMENT_API = `${API_BASE_URL}/api/subscriptions/verify-payment/`;
 
-// ✅ Using environment variable for Razorpay Key
+// ✅ Use your actual Razorpay key
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RClyCqWG0I7Frn';
 
 // Enhanced Current Plan Card Component
@@ -64,7 +64,8 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh }) {
         );
     }
     
-    const remainingDays = subscription.days_remaining || Math.ceil((new Date(subscription.end_date) - new Date()) / (1000 * 60 * 60 * 24));
+    // ✅ Updated to work with your Django API response structure
+    const remainingDays = subscription.days_remaining || 0;
     const isExpiringSoon = remainingDays <= 7;
     
     return (
@@ -122,18 +123,44 @@ export default function SubscriptionPage() {
     const [isProcessing, setIsProcessing] = useState(null);
     const [billingCycle, setBillingCycle] = useState('monthly');
     const [error, setError] = useState('');
+    const [razorpayLoaded, setRazorpayLoaded] = useState(false);
     const router = useRouter();
 
-    // ✅ FIXED: Changed Token to Bearer authentication
+    // ✅ Load Razorpay script
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => {
+            console.log('✅ Razorpay script loaded');
+            setRazorpayLoaded(true);
+        };
+        script.onerror = () => {
+            console.error('❌ Failed to load Razorpay script');
+            setError('Payment system failed to load. Please refresh the page.');
+        };
+        document.body.appendChild(script);
+
+        return () => {
+            // Cleanup script on unmount
+            if (document.body.contains(script)) {
+                document.body.removeChild(script);
+            }
+        };
+    }, []);
+
+    // ✅ Updated authentication headers
     const getAuthHeaders = useCallback(() => {
         const token = localStorage.getItem('accessToken');
         if (!token) {
+            console.error('❌ No access token found');
             router.push('/login/seller');
             return null;
         }
+        console.log('✅ Using Bearer token for authentication');
         return { Authorization: `Bearer ${token}` };
     }, [router]);
 
+    // ✅ Updated subscription data loading to match your API
     const loadSubscriptionData = useCallback(async () => {
         setSubscriptionLoading(true);
         setSubscriptionError(null);
@@ -142,16 +169,21 @@ export default function SubscriptionPage() {
         if (!headers) return;
         
         try {
+            console.log('🔍 Fetching current subscription...');
             const subResponse = await axios.get(CURRENT_SUB_API_URL, { headers });
-            console.log('Current subscription:', subResponse.data);
+            console.log('✅ Current subscription:', subResponse.data);
             setCurrentSubscription(subResponse.data);
         } catch (subErr) {
-            console.log('No active subscription found');
+            console.log('⚠️ No active subscription found:', subErr.response?.status);
             setCurrentSubscription(null);
+            
             if (subErr.response?.status === 401) {
                 setSubscriptionError('Session expired. Please log in again.');
                 setTimeout(() => router.push('/login/seller'), 2000);
-            } else if (subErr.response?.status !== 404) {
+            } else if (subErr.response?.status === 404) {
+                // 404 is normal - no subscription exists yet
+                console.log('ℹ️ No subscription found (normal for new users)');
+            } else {
                 setSubscriptionError('Failed to load subscription data');
             }
         } finally {
@@ -159,15 +191,26 @@ export default function SubscriptionPage() {
         }
     }, [getAuthHeaders, router]);
 
+    // ✅ Updated plans loading to match your API structure
     const loadPlansData = useCallback(async () => {
         try {
-            console.log('Fetching plans from:', PLANS_API_URL);
+            console.log('🔍 Fetching plans from:', PLANS_API_URL);
             const plansResponse = await axios.get(PLANS_API_URL);
+            
+            // ✅ Handle both paginated and direct response formats
             const plansData = plansResponse.data.results || plansResponse.data || [];
-            console.log('Plans loaded:', plansData);
-            setPlans(plansData);
+            console.log('✅ Plans loaded:', plansData);
+            
+            // Sort plans by price (lowest first)
+            const sortedPlans = plansData.sort((a, b) => {
+                const priceA = parseFloat(a.price) || 0;
+                const priceB = parseFloat(b.price) || 0;
+                return priceA - priceB;
+            });
+            
+            setPlans(sortedPlans);
         } catch (err) {
-            console.error('Failed to load plans:', err);
+            console.error('❌ Failed to load plans:', err);
             setError('Failed to load subscription plans. Please refresh the page.');
         }
     }, []);
@@ -189,12 +232,33 @@ export default function SubscriptionPage() {
         loadData();
     }, [loadPlansData, loadSubscriptionData]);
 
+    // ✅ Updated payment handling to match your Django API
     const handleChoosePlan = async (planId, planName) => {
         // Check if Razorpay is loaded
-        if (!window.Razorpay) {
-            alert('Payment system is not available. Please refresh the page and try again.');
+        if (!razorpayLoaded || !window.Razorpay) {
+            alert('Payment system is loading. Please wait a moment and try again.');
             return;
         }
+
+        // Find the plan to get pricing info
+        const plan = plans.find(p => p.id === planId);
+        if (!plan) {
+            alert('Plan not found. Please refresh the page and try again.');
+            return;
+        }
+
+        const basePrice = parseFloat(plan.price) || 0;
+        const yearlyPrice = parseFloat(plan.yearly_price || '') || (basePrice * 12 * 0.90);
+        const displayPrice = billingCycle === 'yearly' ? yearlyPrice : basePrice;
+
+        // Show confirmation
+        const confirmed = confirm(
+            `Subscribe to ${planName}?\n\n` +
+            `Price: ₹${Math.round(displayPrice).toLocaleString('en-IN')}/${billingCycle === 'yearly' ? 'year' : 'month'}\n\n` +
+            `Click OK to proceed to secure payment.`
+        );
+
+        if (!confirmed) return;
 
         setIsProcessing(planId);
         const headers = getAuthHeaders();
@@ -204,27 +268,37 @@ export default function SubscriptionPage() {
         }
 
         try {
-            console.log('Creating order for plan:', planId, 'billing cycle:', billingCycle);
+            console.log('🔄 Creating order for plan:', planId, 'billing cycle:', billingCycle);
             
-            // Create order
+            // ✅ Create order using your Django API
             const orderResponse = await axios.post(CREATE_ORDER_API, {
                 plan_id: planId,
                 billing_cycle: billingCycle 
             }, { headers });
 
-            console.log('Order created:', orderResponse.data);
-            const { order_id, amount } = orderResponse.data;
+            console.log('✅ Order created:', orderResponse.data);
+            const { order_id, amount, currency } = orderResponse.data;
 
-            // Initialize Razorpay
+            // ✅ Initialize Razorpay with proper options
             const options = {
                 key: RAZORPAY_KEY_ID,
-                amount,
-                order_id,
+                amount: amount, // Already in paise from Django
+                currency: currency || 'INR',
+                order_id: order_id,
                 name: 'Kerala Sellers',
-                description: `${planName} - ${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'} Plan`,
+                description: `${planName} - ${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'} Subscription`,
+                image: '/logo.png', // Add your logo
+                theme: {
+                    color: '#3b82f6'
+                },
+                prefill: {
+                    name: currentSubscription?.seller?.name || 'Kerala Seller',
+                    email: currentSubscription?.seller?.email || 'seller@keralasellers.com'
+                },
                 handler: async function (response) {
-                    console.log('Payment successful:', response);
+                    console.log('✅ Payment successful:', response);
                     
+                    // ✅ Verify payment with your Django API
                     const verificationData = {
                         razorpay_payment_id: response.razorpay_payment_id,
                         razorpay_order_id: response.razorpay_order_id,
@@ -234,22 +308,25 @@ export default function SubscriptionPage() {
                     };
                     
                     try {
-                        await axios.post(VERIFY_PAYMENT_API, verificationData, { headers });
+                        const verifyResponse = await axios.post(VERIFY_PAYMENT_API, verificationData, { headers });
+                        console.log('✅ Payment verified:', verifyResponse.data);
+                        
                         setError('');
-                        alert('🎉 Subscription activated successfully! Welcome to Kerala Sellers Premium!');
+                        alert('🎉 Payment Successful!\n\nYour subscription is now active! You can now sell products online with Kerala Sellers Premium features.');
                         
                         // Refresh subscription data
                         await loadSubscriptionData();
                         
-                    } catch (error) {
-                        console.error('Payment verification failed:', error);
-                        if (error.response?.status === 401) {
+                    } catch (verifyError) {
+                        console.error('❌ Payment verification failed:', verifyError);
+                        
+                        if (verifyError.response?.status === 401) {
                             alert('❌ Session expired. Please log in again.');
                             setTimeout(() => router.push('/login/seller'), 2000);
                         } else {
-                            const errorMessage = error.response?.data?.message || 
-                                               error.response?.data?.error ||
-                                               'Payment verification failed. Please contact support.';
+                            const errorMessage = verifyError.response?.data?.error || 
+                                               verifyError.response?.data?.message ||
+                                               'Payment verification failed. Please contact support if money was deducted.';
                             alert(`❌ ${errorMessage}`);
                         }
                     } finally {
@@ -261,19 +338,14 @@ export default function SubscriptionPage() {
                         console.log('Payment modal dismissed');
                         setIsProcessing(null);
                     }
-                },
-                theme: {
-                    color: '#3b82f6'
-                },
-                prefill: {
-                    name: currentSubscription?.user?.name || '',
-                    email: currentSubscription?.user?.email || ''
                 }
             };
 
+            // Open Razorpay
             const rzp = new window.Razorpay(options);
+            
             rzp.on('payment.failed', function (response) {
-                console.error('Payment failed:', response.error);
+                console.error('❌ Payment failed:', response.error);
                 alert(`❌ Payment failed: ${response.error.description}`);
                 setIsProcessing(null);
             });
@@ -281,13 +353,14 @@ export default function SubscriptionPage() {
             rzp.open();
 
         } catch (error) {
-            console.error('Subscription error:', error);
+            console.error('❌ Subscription error:', error);
+            
             if (error.response?.status === 401) {
                 alert('❌ Session expired. Please log in again.');
                 setTimeout(() => router.push('/login/seller'), 2000);
             } else {
-                const errorMessage = error.response?.data?.message || 
-                                   error.response?.data?.error ||
+                const errorMessage = error.response?.data?.error || 
+                                   error.response?.data?.message ||
                                    'Failed to process subscription. Please try again.';
                 alert(`❌ ${errorMessage}`);
             }
@@ -325,6 +398,14 @@ export default function SubscriptionPage() {
                 </div>
             )}
 
+            {/* Loading indicator for Razorpay */}
+            {!razorpayLoaded && (
+                <div style={styles.razorpayLoading}>
+                    <Loader size={16} />
+                    <span>Loading payment system...</span>
+                </div>
+            )}
+
             {/* Billing Cycle Toggle */}
             <div style={styles.toggleContainer}>
                 <button 
@@ -352,11 +433,18 @@ export default function SubscriptionPage() {
             
             {/* Plans Grid */}
             <div style={styles.planGrid}>
-                {plans.map(plan => {
-                    const yearlyPrice = plan.yearly_price || (plan.price * 12 * 0.90);
-                    const displayPrice = billingCycle === 'yearly' ? yearlyPrice : plan.price;
+                {plans.map((plan, index) => {
+                    // ✅ Updated pricing calculation to match your API
+                    const basePrice = parseFloat(plan.price) || 0;
+                    const yearlyPrice = parseFloat(plan.yearly_price || '') || (basePrice * 12 * 0.90);
+                    const displayPrice = billingCycle === 'yearly' ? yearlyPrice : basePrice;
+                    
                     const isCurrentPlan = currentSubscription?.plan?.id === plan.id && currentSubscription?.is_active;
-                    const isPopular = plan.name === 'Professional' || plan.name === 'Pro';
+                    
+                    // ✅ Updated popularity detection
+                    const isPopular = plan.name.toLowerCase().includes('pro') || 
+                                     plan.name.toLowerCase().includes('professional') ||
+                                     index === Math.floor(plans.length / 2);
                     
                     return (
                         <div key={plan.id} style={{
@@ -386,9 +474,13 @@ export default function SubscriptionPage() {
                                     <div style={styles.savings}>
                                         <p>Billed as ₹{Math.round(yearlyPrice).toLocaleString('en-IN')} annually</p>
                                         <p style={styles.savingsAmount}>
-                                            Save ₹{Math.round((plan.price * 12) - yearlyPrice).toLocaleString('en-IN')} per year
+                                            Save ₹{Math.round((basePrice * 12) - yearlyPrice).toLocaleString('en-IN')} per year
                                         </p>
                                     </div>
+                                )}
+
+                                {plan.description && (
+                                    <p style={styles.planDescription}>{plan.description}</p>
                                 )}
                             </div>
                             
@@ -433,10 +525,11 @@ export default function SubscriptionPage() {
                                     ...styles.button,
                                     ...(isCurrentPlan ? styles.currentPlanButton : {}),
                                     ...(isProcessing === plan.id ? styles.processingButton : {}),
-                                    ...(isPopular && !isCurrentPlan ? styles.popularButton : {})
+                                    ...(isPopular && !isCurrentPlan ? styles.popularButton : {}),
+                                    ...(!razorpayLoaded ? styles.disabledButton : {})
                                 }}
                                 onClick={() => handleChoosePlan(plan.id, plan.name)}
-                                disabled={isProcessing === plan.id || isCurrentPlan}
+                                disabled={isProcessing === plan.id || isCurrentPlan || !razorpayLoaded}
                             >
                                 {isProcessing === plan.id ? (
                                     <div style={styles.buttonContent}>
@@ -460,9 +553,6 @@ export default function SubscriptionPage() {
                 })}
             </div>
 
-            {/* Load Razorpay Script */}
-            <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
             {/* CSS Animations */}
             <style jsx>{`
                 @keyframes spin {
@@ -484,7 +574,7 @@ export default function SubscriptionPage() {
     );
 }
 
-// ... (all styles remain exactly the same)
+// ✅ Updated styles with new additions
 const styles = {
     container: { 
         padding: '24px',
@@ -525,6 +615,21 @@ const styles = {
     loadingText: {
         fontSize: '16px',
         color: '#6b7280'
+    },
+
+    // ✅ NEW: Razorpay loading indicator
+    razorpayLoading: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '12px 16px',
+        backgroundColor: '#eff6ff',
+        border: '1px solid #3b82f6',
+        borderRadius: '8px',
+        color: '#1e40af',
+        fontSize: '14px',
+        marginBottom: '24px',
+        justifyContent: 'center'
     },
     
     // Header
@@ -814,6 +919,14 @@ const styles = {
         fontWeight: '700',
         color: '#1f2937'
     },
+
+    planDescription: {
+        fontSize: '14px',
+        color: '#6b7280',
+        textAlign: 'center',
+        lineHeight: 1.5,
+        marginTop: '8px'
+    },
     
     priceContainer: {
         marginBottom: '16px'
@@ -905,6 +1018,14 @@ const styles = {
         backgroundColor: '#f9fafb',
         border: '2px solid #d1d5db',
         color: '#6b7280',
+        cursor: 'not-allowed'
+    },
+
+    // ✅ NEW: Disabled button style
+    disabledButton: {
+        backgroundColor: '#f9fafb',
+        border: '2px solid #e5e7eb',
+        color: '#9ca3af',
         cursor: 'not-allowed'
     }
 };

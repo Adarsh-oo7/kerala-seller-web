@@ -7,12 +7,27 @@ import { useCart } from '../../context/CartContext';
 import WhatsAppButton from '../../../components/common/WhatsAppButton';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
-import { Star, ShoppingCart, Heart, Share2, Truck, Shield } from 'lucide-react';
+import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
+// ✅ Enhanced API configuration with wishlist endpoints
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 const API_URL = `${API_BASE_URL}/api/products/`;
 const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;
+
+// ✅ NEW: Wishlist API URLs
+const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
+const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
+const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
+
+// ✅ NEW: Enhanced auth headers function
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('access_token') ||
+    localStorage.getItem('buyerAccessToken') ||
+    localStorage.getItem('buyerToken') ||
+    localStorage.getItem('accessToken');
+
+  return token ? { 'Authorization': `Bearer ${token}` } : null;
+};
 
 // Enhanced Review Form Component
 function ReviewForm({ productId, onReviewSubmitted }) {
@@ -180,6 +195,131 @@ function ReviewItem({ review }) {
     );
 }
 
+// ✅ NEW: Enhanced Wishlist Component
+function WishlistButton({ productId, isLoggedIn, router }) {
+    const [isWishlisted, setIsWishlisted] = useState(false);
+    const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+
+    // ✅ Check if product is wishlisted on component mount
+    useEffect(() => {
+        const checkWishlistStatus = async () => {
+            const headers = getAuthHeaders();
+            if (!headers || !productId) return;
+
+            try {
+                console.log(`🔍 Checking wishlist status for product ${productId}`);
+                const response = await axios.get(`${WISHLIST_CHECK_API}?product_id=${productId}`, { 
+                    headers,
+                    timeout: 5000 
+                });
+                const isInWishlist = response.data.is_wishlisted || false;
+                console.log(`✅ Product ${productId} wishlist status:`, isInWishlist);
+                setIsWishlisted(isInWishlist);
+            } catch (error) {
+                console.warn('❌ Failed to check wishlist status:', error);
+            }
+        };
+
+        if (isLoggedIn && productId) {
+            checkWishlistStatus();
+        }
+    }, [productId, isLoggedIn]);
+
+    // ✅ Wishlist toggle handler
+    const handleWishlistToggle = async () => {
+        const headers = getAuthHeaders();
+        if (!headers) {
+            const shouldLogin = window.confirm('Please login to add items to your wishlist. Would you like to login now?');
+            if (shouldLogin) {
+                router.push('/login/buyer');
+            }
+            return;
+        }
+
+        if (isWishlistLoading) {
+            console.log('⏳ Wishlist request already in progress for product:', productId);
+            return;
+        }
+
+        setIsWishlistLoading(true);
+        const previousState = isWishlisted;
+
+        // Optimistic update
+        setIsWishlisted(!isWishlisted);
+
+        try {
+            console.log('🔄 Toggling wishlist for product:', productId);
+
+            const response = await axios.post(WISHLIST_TOGGLE_API, {
+                product_id: productId
+            }, {
+                headers,
+                timeout: 10000
+            });
+
+            console.log('✅ Wishlist toggle response:', response.data);
+
+            const newWishlistState = response.data.is_wishlisted ?? response.data.wishlisted;
+            setIsWishlisted(newWishlistState);
+
+            // Show user feedback
+            const action = newWishlistState ? 'added to' : 'removed from';
+            console.log(`✅ Product ${action} wishlist`);
+
+            // Visual feedback
+            const button = document.querySelector('[data-wishlist-button]');
+            if (button) {
+                button.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    button.style.transform = 'scale(1)';
+                }, 200);
+            }
+
+        } catch (error) {
+            console.error('❌ Wishlist toggle error:', error);
+
+            // Revert optimistic update
+            setIsWishlisted(previousState);
+
+            if (error.response?.status === 401) {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('buyerAccessToken');
+                alert('Session expired. Please login again.');
+            } else {
+                const errorMessage = error.response?.data?.error || 'Failed to update wishlist. Please try again.';
+                alert(errorMessage);
+            }
+        } finally {
+            setIsWishlistLoading(false);
+        }
+    };
+
+    return (
+        <button 
+            style={{
+                ...styles.secondaryButton,
+                ...(isWishlisted ? styles.wishlistActive : {}),
+                ...(isWishlistLoading ? styles.wishlistLoading : {})
+            }}
+            onClick={handleWishlistToggle}
+            disabled={isWishlistLoading}
+            data-wishlist-button
+            title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+        >
+            {isWishlistLoading ? (
+                <RefreshCw size={16} className="spinning" />
+            ) : (
+                <Heart 
+                    size={16} 
+                    fill={isWishlisted ? '#ef4444' : 'none'}
+                    color={isWishlisted ? '#ef4444' : '#6b7280'}
+                />
+            )}
+        </button>
+    );
+}
+
+// ✅ ENHANCED: Main Product Detail Component with Wishlist
 export default function ProductDetailPage() {
     const [product, setProduct] = useState(null);
     const [reviews, setReviews] = useState([]);
@@ -260,6 +400,7 @@ export default function ProductDetailPage() {
         }
     };
 
+    // ✅ Check buyer status and login state
     useEffect(() => {
         const token = localStorage.getItem('buyerAccessToken');
         if (token) {
@@ -272,6 +413,8 @@ export default function ProductDetailPage() {
                     console.error("Could not verify buyer status", err);
                     setBuyerStatus({ isLoggedIn: false, isVerified: false });
                 });
+        } else {
+            setBuyerStatus({ isLoggedIn: false, isVerified: false });
         }
     }, []);
 
@@ -319,6 +462,34 @@ export default function ProductDetailPage() {
             }
         } finally {
             setAddingToCart(false);
+        }
+    };
+
+    // ✅ Share functionality
+    const handleShare = async () => {
+        const shareData = {
+            title: product.name,
+            text: `Check out this product: ${product.name}`,
+            url: window.location.href
+        };
+
+        try {
+            if (navigator.share && navigator.canShare(shareData)) {
+                await navigator.share(shareData);
+            } else {
+                // Fallback: copy to clipboard
+                await navigator.clipboard.writeText(window.location.href);
+                alert('Product link copied to clipboard!');
+            }
+        } catch (error) {
+            console.error('Error sharing:', error);
+            // Final fallback: copy to clipboard
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                alert('Product link copied to clipboard!');
+            } catch (clipboardError) {
+                console.error('Clipboard error:', clipboardError);
+            }
         }
     };
 
@@ -447,10 +618,19 @@ export default function ProductDetailPage() {
                             </button>
 
                             <div style={styles.secondaryActions}>
-                                <button style={styles.secondaryButton}>
-                                    <Heart size={16} />
-                                </button>
-                                <button style={styles.secondaryButton}>
+                                {/* ✅ FIXED: Working Wishlist Button */}
+                                <WishlistButton 
+                                    productId={productId}
+                                    isLoggedIn={buyerStatus.isLoggedIn}
+                                    router={router}
+                                />
+                                
+                                {/* ✅ Working Share Button */}
+                                <button 
+                                    style={styles.secondaryButton}
+                                    onClick={handleShare}
+                                    title="Share this product"
+                                >
                                     <Share2 size={16} />
                                 </button>
                             </div>
@@ -459,7 +639,7 @@ export default function ProductDetailPage() {
                 </div>
             </div>
 
-            {/* Reviews Section */}
+            {/* Reviews Section - Keeping your existing implementation */}
             <div style={styles.reviewsSection}>
                 <div style={styles.reviewsHeader}>
                     <h2>Customer Reviews</h2>
@@ -518,11 +698,15 @@ export default function ProductDetailPage() {
 
             <Footer />
 
-            {/* CSS Animations */}
+            {/* ✅ Enhanced CSS Animations */}
             <style jsx>{`
                 @keyframes spin {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
+                }
+                
+                .spinning {
+                    animation: spin 1s linear infinite;
                 }
                 
                 @keyframes fadeIn {
@@ -534,12 +718,17 @@ export default function ProductDetailPage() {
                     0%, 100% { opacity: 1; }
                     50% { opacity: 0.7; }
                 }
+                
+                @keyframes heartPulse {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.1); }
+                }
             `}</style>
         </div>
     );
 }
 
-// Enhanced Styles
+// ✅ Enhanced Styles with wishlist support
 const styles = {
     pageContainer: {
         minHeight: '100vh',
@@ -757,8 +946,20 @@ const styles = {
         color: '#6b7280',
         transition: 'all 0.2s ease'
     },
+
+    // ✅ NEW: Wishlist button states
+    wishlistActive: {
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderColor: 'rgba(239, 68, 68, 0.3)',
+        boxShadow: '0 2px 8px rgba(239, 68, 68, 0.2)'
+    },
+
+    wishlistLoading: {
+        cursor: 'not-allowed',
+        opacity: 0.7
+    },
     
-    // Reviews Section Styles
+    // Reviews Section Styles - Keeping all your existing review styles
     reviewsSection: { 
         maxWidth: '1200px', 
         margin: '0 auto', 

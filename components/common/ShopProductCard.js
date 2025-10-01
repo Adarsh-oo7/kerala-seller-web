@@ -30,28 +30,6 @@ const API_BASE_URL = getApiBaseUrl();
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 
-// ✅ SEO-friendly URL generator
-const generateShopSlug = (store) => {
-  if (!store || !store.name) return 'shop';
-
-  const shopName = store.name.toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim('-');
-
-  const location = (store.seller_address || store.address || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim('-')
-    .split('-')[0];
-
-  const slug = location ? `${shopName}-${location}` : shopName;
-  return slug.length >= 3 ? slug : `shop-${store.seller_phone || 'store'}`;
-};
-
 // ✅ Enhanced token handling function
 const getAuthHeaders = () => {
   const token = localStorage.getItem('access_token') ||
@@ -66,7 +44,7 @@ const getAuthHeaders = () => {
 };
 
 /**
- * ShopProductCard - Product card with integrated wishlist functionality
+ * ShopProductCard - Product card with integrated wishlist functionality and ratings
  */
 export default function ShopProductCard({
   product,
@@ -77,7 +55,7 @@ export default function ShopProductCard({
   isLoading = false,
   cartItems = [],
   showStoreName = false,
-  // ✅ NEW: Wishlist props
+  // ✅ Wishlist props
   isWishlisted = false,
   onWishlistUpdate = null // Callback to update parent state
 }) {
@@ -85,10 +63,37 @@ export default function ShopProductCard({
   const [localWishlistState, setLocalWishlistState] = useState(isWishlisted);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
-  // ✅ Sync with parent wishlist state
+  // ✅ Sync with parent wishlist state + debug logging
   useEffect(() => {
+    console.log(`🔍 Product ${product?.id}: isWishlisted prop changed to:`, isWishlisted);
     setLocalWishlistState(isWishlisted);
-  }, [isWishlisted]);
+  }, [isWishlisted, product?.id]);
+
+  // ✅ Fallback: Check individual wishlist status if parent doesn't provide
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      const headers = getAuthHeaders();
+      if (!headers || !product?.id) return;
+
+      try {
+        console.log(`🔍 Checking wishlist status for product ${product.id}`);
+        const response = await axios.get(`${WISHLIST_CHECK_API}?product_id=${product.id}`, { 
+          headers,
+          timeout: 5000 
+        });
+        const isInWishlist = response.data.is_wishlisted || false;
+        console.log(`✅ Product ${product.id} wishlist status:`, isInWishlist);
+        setLocalWishlistState(isInWishlist);
+      } catch (error) {
+        console.warn('❌ Failed to check wishlist status:', error);
+      }
+    };
+
+    // Only check if no wishlist prop provided from parent AND we have a product ID
+    if (isWishlisted === false && product?.id && !onWishlistUpdate) {
+      checkWishlistStatus();
+    }
+  }, [product?.id, isWishlisted, onWishlistUpdate]);
 
   if (!product) return null;
 
@@ -116,10 +121,12 @@ export default function ShopProductCard({
     return imageUrl || 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
   };
 
-  // ✅ FIXED: Proper wishlist toggle integration
+  // ✅ FIXED: Proper wishlist toggle with better event handling
   const handleWishlistToggle = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+
+    console.log('🔍 Wishlist button clicked for product:', product.id);
 
     const headers = getAuthHeaders();
     if (!headers) {
@@ -241,13 +248,15 @@ export default function ShopProductCard({
       style={styles.shopProductCard}
       data-product-id={product.id}
     >
-      <Link
-        href={getProductUrl()}
-        className="shop-product-link"
-        style={styles.productLink}
-        aria-label={`View ${product.name || 'product'} in ${store?.name || 'store'}`}
-      >
-        <div className="product-image-wrapper" style={styles.productImageWrapper}>
+      {/* ✅ FIXED: Image section without Link wrapper for wishlist button */}
+      <div className="product-image-wrapper" style={styles.productImageWrapper}>
+        {/* ✅ Link only wraps the image itself */}
+        <Link
+          href={getProductUrl()}
+          className="product-image-link"
+          style={styles.productImageLink}
+          aria-label={`View ${product.name || 'product'} in ${store?.name || 'store'}`}
+        >
           <img
             src={imageError ? 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image' : getImageUrl(product)}
             alt={product.name || 'Product image'}
@@ -256,80 +265,84 @@ export default function ShopProductCard({
             loading="lazy"
             onError={() => setImageError(true)}
           />
+        </Link>
 
-          {/* Rating (if available) */}
-          {product.average_rating > 0 && (
-            <div style={styles.ratingOverlay}>
-              {/* Left: Star + Rating */}
-              <div style={styles.ratingLeft}>
-                {[...Array(1)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={12}
-                    fill={i < Math.floor(product.average_rating) ? "#fbbf24" : "none"}
-                    color="#fbbf24"
-                  />
-                ))}
-                <span style={styles.ratingLeftText}>{product.average_rating.toFixed(1)}</span>
-              </div>
-
-              {/* Right: Review count */}
-              {product.review_count > 0 && (
-                <span style={styles.ratingRight}>
-                  ({product.review_count} reviews)
-                </span>
-              )}
-            </div>
-          )}
-
-
-
-
-          {/* Product badges */}
-          <div className="product-badges" style={styles.productBadges}>
-            {getDiscountPercentage() > 0 && (
-              <span className="badge discount" style={styles.badgeDiscount}>
-                {getDiscountPercentage()}% OFF
-              </span>
-            )}
-            {(product.online_stock || 0) <= 5 && (product.online_stock || 0) > 0 && (
-              <span className="badge low-stock" style={styles.badgeLowStock}>
-                Only {product.online_stock} left
-              </span>
-            )}
-            {(product.online_stock || 0) === 0 && (
-              <span className="badge out-of-stock" style={styles.badgeOutOfStock}>
-                Out of Stock
-              </span>
-            )}
-          </div>
-
-          {/* ✅ FIXED: Wishlist button with real functionality */}
-          <div className="quick-actions" style={styles.quickActions}>
-            <button
-              className={`quick-action-btn wishlist-heart ${localWishlistState ? 'active' : ''} ${isWishlistLoading ? 'loading' : ''}`}
-              style={{
-                ...styles.quickActionBtn,
-                ...(localWishlistState ? styles.quickActionBtnActive : {}),
-                ...(isWishlistLoading ? styles.quickActionBtnLoading : {})
-              }}
-              onClick={handleWishlistToggle}
-              disabled={isWishlistLoading}
-              aria-label={localWishlistState ? 'Remove from wishlist' : 'Add to wishlist'}
-            >
-              {isWishlistLoading ? (
-                <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
-              ) : (
-                <Heart
-                  size={14}
-                  fill={localWishlistState ? '#ef4444' : 'none'}
-                  color={localWishlistState ? '#ef4444' : 'currentColor'}
+        {/* ✅ Rating overlay (existing) - shows on image hover */}
+        {product.average_rating > 0 && (
+          <div style={styles.ratingOverlay}>
+            <div style={styles.ratingLeft}>
+              {[...Array(1)].map((_, i) => (
+                <Star
+                  key={i}
+                  size={12}
+                  fill={i < Math.floor(product.average_rating) ? "#fbbf24" : "none"}
+                  color="#fbbf24"
                 />
-              )}
-            </button>
+              ))}
+              <span style={styles.ratingLeftText}>{product.average_rating.toFixed(1)}</span>
+            </div>
+
+            {product.review_count > 0 && (
+              <span style={styles.ratingRight}>
+                ({product.review_count} reviews)
+              </span>
+            )}
           </div>
+        )}
+
+        {/* Product badges */}
+        <div className="product-badges" style={styles.productBadges}>
+          {getDiscountPercentage() > 0 && (
+            <span className="badge discount" style={styles.badgeDiscount}>
+              {getDiscountPercentage()}% OFF
+            </span>
+          )}
+          {(product.online_stock || 0) <= 5 && (product.online_stock || 0) > 0 && (
+            <span className="badge low-stock" style={styles.badgeLowStock}>
+              Only {product.online_stock} left
+            </span>
+          )}
+          {(product.online_stock || 0) === 0 && (
+            <span className="badge out-of-stock" style={styles.badgeOutOfStock}>
+              Out of Stock
+            </span>
+          )}
         </div>
 
+        {/* ✅ FIXED: Wishlist button outside Link - this is the key fix */}
+        <div className="quick-actions" style={styles.quickActions}>
+          <button
+            className={`quick-action-btn wishlist-heart ${localWishlistState ? 'active' : ''} ${isWishlistLoading ? 'loading' : ''}`}
+            style={{
+              ...styles.quickActionBtn,
+              ...(localWishlistState ? styles.quickActionBtnActive : {}),
+              ...(isWishlistLoading ? styles.quickActionBtnLoading : {})
+            }}
+            onClick={handleWishlistToggle}
+            disabled={isWishlistLoading}
+            aria-label={localWishlistState ? 'Remove from wishlist' : 'Add to wishlist'}
+            type="button"
+          >
+            {isWishlistLoading ? (
+              <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
+            ) : (
+              <Heart
+                size={14}
+                fill={localWishlistState ? '#ef4444' : 'none'}
+                color={localWishlistState ? '#ef4444' : 'currentColor'}
+              />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* ✅ Product info section wrapped in Link */}
+      <Link
+        href={getProductUrl()}
+        className="shop-product-link"
+        style={styles.productLink}
+        aria-label={`View ${product.name || 'product'} details`}
+      >
         <div className="product-info" style={styles.productInfo}>
           {/* Store name (optional) */}
           {showStoreName && store?.name && (
@@ -348,9 +361,25 @@ export default function ShopProductCard({
             </h3>
           </div>
 
-
-
-
+          {/* ✅ NEW: Rating in product info (always visible) */}
+          {product.average_rating > 0 && (
+            <div className="product-rating" style={styles.productRating}>
+              <div style={styles.ratingStars}>
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    size={14}
+                    fill={i < Math.floor(product.average_rating) ? "#fbbf24" : "none"}
+                    color="#fbbf24"
+                  />
+                ))}
+              </div>
+              <span style={styles.ratingNumber}>{product.average_rating.toFixed(1)}</span>
+              {product.review_count > 0 && (
+                <span style={styles.reviewCountText}>({product.review_count})</span>
+              )}
+            </div>
+          )}
 
           {/* Pricing */}
           <div className="product-pricing" style={styles.productPricing}>
@@ -366,26 +395,6 @@ export default function ShopProductCard({
             </div>
           </div>
 
-
-          {/* {getDiscountPercentage() > 0 && (
-              <div className="savings-info" style={styles.savingsInfo}>
-                Save {formatPrice((product.mrp || 0) - (product.price || 0))}
-              </div>
-            )} */}
-
-          {/* Stock status */}
-          {/* <div className="stock-info" style={styles.stockInfo}>
-            {(product.online_stock || 0) > 0 ? (
-              <span className="stock-available" style={styles.stockAvailable}>
-                ✓ In Stock
-              </span>
-            ) : (
-              <span className="stock-unavailable" style={styles.stockUnavailable}>
-                ✗ Out of Stock
-              </span>
-            )}
-          </div> */}
-
           {/* ✅ Wishlist indicator (optional) */}
           {localWishlistState && (
             <div className="wishlist-indicator" style={styles.wishlistIndicator}>
@@ -396,7 +405,7 @@ export default function ShopProductCard({
         </div>
       </Link>
 
-      {/* Add to cart button */}
+      {/* ✅ Add to cart button - separate from Link */}
       <div className="product-actions" style={styles.productActions}>
         <button
           onClick={(e) => {
@@ -412,6 +421,7 @@ export default function ShopProductCard({
           aria-label={(product.online_stock || 0) > 0 ?
             (isInCart ? `Add more ${product.name || 'product'} to cart (${getCartQuantity()} in cart)` : `Add ${product.name || 'product'} to cart`) :
             'Out of stock'}
+          type="button"
         >
           {isLoading ? (
             <>
@@ -436,11 +446,23 @@ export default function ShopProductCard({
           )}
         </button>
       </div>
+
+      {/* ✅ CSS for animations */}
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        .spinning {
+          animation: spin 1s linear infinite;
+        }
+      `}</style>
     </div>
   );
 }
 
-// ✅ Enhanced styles with wishlist states
+// ✅ Enhanced styles with rating in product info
 const styles = {
   shopProductCard: {
     backgroundColor: 'white',
@@ -457,8 +479,12 @@ const styles = {
   productLink: {
     textDecoration: 'none',
     color: 'inherit',
+    display: 'block'
+  },
+
+  productImageLink: {
     display: 'block',
-    flex: 1
+    textDecoration: 'none'
   },
 
   productImageWrapper: {
@@ -514,14 +540,14 @@ const styles = {
     position: 'absolute',
     top: '8px',
     right: '8px',
-    zIndex: 3
+    zIndex: 10,
   },
 
   quickActionBtn: {
     width: '32px',
     height: '32px',
     borderRadius: '50%',
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: 'rgba(255,255,255,0.95)',
     border: 'none',
     cursor: 'pointer',
     display: 'flex',
@@ -530,20 +556,21 @@ const styles = {
     color: '#6b7280',
     transition: 'all 0.2s',
     backdropFilter: 'blur(4px)',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+    position: 'relative'
   },
 
-  // ✅ NEW: Active wishlist button style
   quickActionBtnActive: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
     color: '#ef4444',
-    borderColor: 'rgba(239, 68, 68, 0.3)'
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    boxShadow: '0 2px 12px rgba(239, 68, 68, 0.25)'
   },
 
-  // ✅ NEW: Loading wishlist button style
   quickActionBtnLoading: {
     cursor: 'not-allowed',
-    opacity: 0.7
+    opacity: 0.7,
+    pointerEvents: 'none'
   },
 
   productInfo: {
@@ -576,6 +603,7 @@ const styles = {
     WebkitBoxOrient: 'vertical',
     overflow: 'hidden'
   },
+  
   productModel: {
     fontSize: '0.85rem',
     fontWeight: '400',
@@ -583,6 +611,7 @@ const styles = {
     marginLeft: '4px',
   },
 
+  // ✅ NEW: Rating styles in product info
   productRating: {
     display: 'flex',
     alignItems: 'center',
@@ -590,12 +619,19 @@ const styles = {
     marginBottom: '8px'
   },
 
-  stars: {
+  ratingStars: {
     display: 'flex',
-    gap: '2px'
+    alignItems: 'center',
+    gap: '1px'
   },
 
-  ratingText: {
+  ratingNumber: {
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    color: '#1f2937'
+  },
+
+  reviewCountText: {
     fontSize: '0.8rem',
     color: '#6b7280'
   },
@@ -605,11 +641,11 @@ const styles = {
   },
 
   priceSection: {
-    display: 'flex',        // make items horizontal
-    flexDirection: 'row',   // ensure row direction
-    alignItems: 'center',   // vertically center them
-    gap: '8px',             // space between current and original price
-    flexWrap: 'nowrap',     // prevent wrapping to next line
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'nowrap',
   },
 
   currentPrice: {
@@ -624,29 +660,6 @@ const styles = {
     textDecoration: 'line-through'
   },
 
-  savingsInfo: {
-    fontSize: '0.8rem',
-    color: '#059669',
-    fontWeight: '500'
-  },
-
-  stockInfo: {
-    marginBottom: '8px'
-  },
-
-  stockAvailable: {
-    color: '#059669',
-    fontSize: '0.85rem',
-    fontWeight: '500'
-  },
-
-  stockUnavailable: {
-    color: '#ef4444',
-    fontSize: '0.85rem',
-    fontWeight: '500'
-  },
-
-  // ✅ NEW: Wishlist indicator in product info
   wishlistIndicator: {
     display: 'flex',
     alignItems: 'center',
@@ -654,7 +667,11 @@ const styles = {
     fontSize: '0.8rem',
     color: '#ef4444',
     fontWeight: '500',
-    marginBottom: '8px'
+    marginBottom: '8px',
+    padding: '4px 6px',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: '12px',
+    width: 'fit-content'
   },
 
   productActions: {
@@ -679,6 +696,7 @@ const styles = {
     transition: 'all 0.2s'
   },
 
+  // ✅ Rating overlay (existing) - on image
   ratingOverlay: {
     position: "absolute",
     bottom: "3px",
@@ -709,16 +727,9 @@ const styles = {
     fontSize: "0.8rem",
     fontWeight: 500,
     color: "white",
-    marginLeft: "auto", // <-- this pushes it to the right
+    marginLeft: "auto",
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
   },
-  starsOverlay: {
-    display: "flex",
-    gap: "2px"
-  },
-
-
-
 };
