@@ -404,11 +404,11 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
             {/* ✅ UPDATED: Desktop Navigation with proper URL generation */}
             <nav className={styles.desktopNav} role="navigation" aria-label="Store navigation">
               <Link href={generateShopUrl()} className={styles.navLink}>
-                <Home size={16} />
+                <Home className={styles.iconsize} />
                 <span>Home</span>
               </Link>
               <button onClick={handleCartClick} className={styles.navLink}>
-                <ShoppingCart size={16} />
+                <ShoppingCart className={styles.iconsize} />
                 <span>Cart</span>
                 {cartCount > 0 && (
                   <span className={styles.navBadge}>{cartCount}</span>
@@ -419,7 +419,7 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
                 <span>About</span>
               </Link> */}
               <button onClick={handleProfileClick} className={styles.navLink}>
-                <User size={16} />
+                <User className={styles.iconsize} />
                 <span>Profile</span>
               </button>
             </nav>

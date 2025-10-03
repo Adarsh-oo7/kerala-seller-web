@@ -77,9 +77,9 @@ export default function ShopProductCard({
 
       try {
         console.log(`🔍 Checking wishlist status for product ${product.id}`);
-        const response = await axios.get(`${WISHLIST_CHECK_API}?product_id=${product.id}`, { 
+        const response = await axios.get(`${WISHLIST_CHECK_API}?product_id=${product.id}`, {
           headers,
-          timeout: 5000 
+          timeout: 5000
         });
         const isInWishlist = response.data.is_wishlisted || false;
         console.log(`✅ Product ${product.id} wishlist status:`, isInWishlist);
@@ -268,27 +268,28 @@ export default function ShopProductCard({
         </Link>
 
         {/* ✅ Rating overlay (existing) - shows on image hover */}
-        {product.average_rating > 0 && (
-          <div style={styles.ratingOverlay}>
-            <div style={styles.ratingLeft}>
-              {[...Array(1)].map((_, i) => (
-                <Star
-                  key={i}
-                  size={12}
-                  fill={i < Math.floor(product.average_rating) ? "#fbbf24" : "none"}
-                  color="#fbbf24"
-                />
-              ))}
-              <span style={styles.ratingLeftText}>{product.average_rating.toFixed(1)}</span>
-            </div>
-
-            {product.review_count > 0 && (
-              <span style={styles.ratingRight}>
-                ({product.review_count} reviews)
-              </span>
-            )}
+        {/* {product.average_rating > 0 && ( */}
+        <div style={styles.ratingOverlay}>
+          <div style={styles.ratingLeft}>
+            <Star
+              size={12}
+              fill={product.average_rating > 0 ? "#fbbf24" : "none"}
+              color="#fbbf24"
+            />
+            <span style={styles.ratingLeftText}>
+              {product.average_rating > 0 ? `(${product.average_rating.toFixed(1)})` : ""}
+            </span>
           </div>
-        )}
+
+          {product.review_count > 0 ? (
+            <span style={styles.ratingRight}>
+              {product.review_count} reviews
+            </span>
+          ) : (
+            <span style={styles.ratingRight}>No reviews</span>
+          )}
+        </div>
+        {/* )} */}
 
         {/* Product badges */}
         <div className="product-badges" style={styles.productBadges}>
@@ -361,25 +362,7 @@ export default function ShopProductCard({
             </h3>
           </div>
 
-          {/* ✅ NEW: Rating in product info (always visible) */}
-          {product.average_rating > 0 && (
-            <div className="product-rating" style={styles.productRating}>
-              <div style={styles.ratingStars}>
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={14}
-                    fill={i < Math.floor(product.average_rating) ? "#fbbf24" : "none"}
-                    color="#fbbf24"
-                  />
-                ))}
-              </div>
-              <span style={styles.ratingNumber}>{product.average_rating.toFixed(1)}</span>
-              {product.review_count > 0 && (
-                <span style={styles.reviewCountText}>({product.review_count})</span>
-              )}
-            </div>
-          )}
+
 
           {/* Pricing */}
           <div className="product-pricing" style={styles.productPricing}>
@@ -395,57 +378,50 @@ export default function ShopProductCard({
             </div>
           </div>
 
-          {/* ✅ Wishlist indicator (optional) */}
-          {localWishlistState && (
-            <div className="wishlist-indicator" style={styles.wishlistIndicator}>
-              <Heart size={12} fill="#ef4444" color="#ef4444" />
-              <span>In Wishlist</span>
-            </div>
-          )}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onAddToCart) {
+                onAddToCart(e, product);
+              }
+            }}
+            className={`add-to-cart-btn ${(product.online_stock || 0) === 0 ? 'disabled' : ''} ${isLoading ? 'loading' : ''} ${isInCart ? 'in-cart' : ''}`}
+            style={styles.addToCartBtn}
+            disabled={(product.online_stock || 0) === 0 || isLoading}
+            aria-label={(product.online_stock || 0) > 0 ?
+              (isInCart ? `Add more ${product.name || 'product'} to cart (${getCartQuantity()} in cart)` : `Add ${product.name || 'product'} to cart`) :
+              'Out of stock'}
+            type="button"
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw size={16} className="spinning" />
+                <span>Adding...</span>
+              </>
+            ) : (product.online_stock || 0) === 0 ? (
+              <>
+                <X size={16} />
+                <span>Out of Stock</span>
+              </>
+            ) : isInCart ? (
+              <>
+                <ShoppingCart size={16} fill="currentColor" />
+                <span>Add More ({getCartQuantity()})</span>
+              </>
+            ) : (
+              <>
+                <ShoppingCart size={16} />
+                <span>Add to Cart</span>
+              </>
+            )}
+          </button>
+
+
         </div>
       </Link>
 
-      {/* ✅ Add to cart button - separate from Link */}
-      <div className="product-actions" style={styles.productActions}>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (onAddToCart) {
-              onAddToCart(e, product);
-            }
-          }}
-          className={`add-to-cart-btn ${(product.online_stock || 0) === 0 ? 'disabled' : ''} ${isLoading ? 'loading' : ''} ${isInCart ? 'in-cart' : ''}`}
-          style={styles.addToCartBtn}
-          disabled={(product.online_stock || 0) === 0 || isLoading}
-          aria-label={(product.online_stock || 0) > 0 ?
-            (isInCart ? `Add more ${product.name || 'product'} to cart (${getCartQuantity()} in cart)` : `Add ${product.name || 'product'} to cart`) :
-            'Out of stock'}
-          type="button"
-        >
-          {isLoading ? (
-            <>
-              <RefreshCw size={16} className="spinning" />
-              <span>Adding...</span>
-            </>
-          ) : (product.online_stock || 0) === 0 ? (
-            <>
-              <X size={16} />
-              <span>Out of Stock</span>
-            </>
-          ) : isInCart ? (
-            <>
-              <ShoppingCart size={16} fill="currentColor" />
-              <span>Add More ({getCartQuantity()})</span>
-            </>
-          ) : (
-            <>
-              <ShoppingCart size={16} />
-              <span>Add to Cart</span>
-            </>
-          )}
-        </button>
-      </div>
+
 
       {/* ✅ CSS for animations */}
       <style jsx>{`
@@ -466,14 +442,15 @@ export default function ShopProductCard({
 const styles = {
   shopProductCard: {
     backgroundColor: 'white',
-    borderRadius: '12px',
+    borderRadius: '10px',
     overflow: 'hidden',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
     border: '1px solid #e5e7eb',
     transition: 'all 0.3s ease',
     display: 'flex',
     flexDirection: 'column',
-    height: '100%'
+    width: "100%",
+    maxWidth: "210px",
   },
 
   productLink: {
@@ -489,7 +466,8 @@ const styles = {
 
   productImageWrapper: {
     position: 'relative',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    width: '100%',
   },
 
   productImage: {
@@ -498,6 +476,8 @@ const styles = {
     objectFit: 'cover',
     transition: 'transform 0.3s ease'
   },
+
+
 
   productBadges: {
     position: 'absolute',
@@ -509,21 +489,25 @@ const styles = {
     zIndex: 2
   },
 
+
+
+
   badgeDiscount: {
     padding: '4px 8px',
-    backgroundColor: '#dc2626',
+    background: 'rgba(40, 167, 69, 0.9)',
     color: 'white',
-    fontSize: '0.75rem',
-    borderRadius: '4px',
-    fontWeight: '600'
+    fontSize: '10px',
+    borderRadius: '6px',
+    fontWeight: '600',
+    backdropFilter: 'blur(4px)',
   },
 
   badgeLowStock: {
     padding: '4px 8px',
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#be1e237a',
     color: 'white',
-    fontSize: '0.75rem',
-    borderRadius: '4px',
+    fontSize: '10px',
+    borderRadius: '6px',
     fontWeight: '600'
   },
 
@@ -574,11 +558,15 @@ const styles = {
   },
 
   productInfo: {
-    padding: '16px',
+    padding: '10px',
     flex: 1,
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    justifyContent: 'space-between',
   },
+
+
+
 
   storeName: {
     fontSize: '0.8rem',
@@ -593,17 +581,18 @@ const styles = {
   },
 
   productName: {
-    fontSize: '1.1rem',
+    fontSize: '15px',
     fontWeight: '600',
-    color: '#1f2937',
-    margin: '0 0 4px 0',
+    color: '#1a4845',
+    margin: '0',
     lineHeight: '1.3',
     display: '-webkit-box',
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
     overflow: 'hidden'
   },
-  
+
+
   productModel: {
     fontSize: '0.85rem',
     fontWeight: '400',
@@ -649,14 +638,13 @@ const styles = {
   },
 
   currentPrice: {
-    fontSize: '1.25rem',
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#059669'
   },
 
   originalPrice: {
-    fontSize: '1rem',
-    color: '#9ca3af',
+    fontSize: '0.9rem',
+    color: 'rgb(156, 163, 175)',
     textDecoration: 'line-through'
   },
 
@@ -683,18 +671,20 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '6px',
+    gap: '8px',
     width: '100%',
-    padding: '12px',
-    backgroundColor: '#3b82f6',
+    padding: '7px 42px',
+    backgroundColor: '#059669',
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
-    fontSize: '0.9rem',
+    borderRadius: '6px',
+    fontSize: '12px',
     fontWeight: '500',
     cursor: 'pointer',
     transition: 'all 0.2s'
   },
+
+
 
   // ✅ Rating overlay (existing) - on image
   ratingOverlay: {

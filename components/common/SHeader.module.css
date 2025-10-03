@@ -1,9 +1,11 @@
+
+
 .sheader {
   --glassy-white: rgba(255, 255, 255, 0.9);
   --glassy-white-dark: rgba(255, 255, 255, 0.95);
   --glassy-border: rgba(200, 200, 200, 0.4);
-  --glassy-text: #1a1a1a;
-  --glassy-text-muted: #666666;
+  --glassy-text: #1a4845;
+  --glassy-text-muted: #1a4845;
   --glassy-shadow: 0 6px 24px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
   --glassy-accent: #3b82f6;
   --glassy-accent-light: #93c5fd;
@@ -12,13 +14,16 @@
   --glassy-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --glassy-transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --blur-amount: 16px;
+  --header-height: 80px; /* adjust to your header's actual height */
+
 
   background: var(--glassy-white);
   backdrop-filter: blur(var(--blur-amount));
   -webkit-backdrop-filter: blur(var(--blur-amount));
   border-bottom: 1px solid var(--glassy-border);
-  position: sticky;
+  position: fixed;
   top: 0;
+  width: 100%;
   z-index: 1000;
   transition: var(--glassy-transition-slow);
   will-change: transform, opacity;
@@ -47,14 +52,14 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 clamp(10px, 2.5vw, 14px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 /* Glassy Top Bar */
 .topBar {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.9) 0%, 
-    rgba(240, 240, 240, 0.85) 50%, 
-    rgba(220, 220, 220, 0.8) 100%);
+  background: #1a4845;
   padding: 6px 0;
   border-bottom: 1px solid rgba(200, 200, 200, 0.3);
   font-size: clamp(0.65rem, 1.8vw, 0.7rem);
@@ -70,16 +75,21 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(255, 255, 255, 0.2), 
-    transparent);
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent);
   animation: shimmer 3s infinite;
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .topBar.hidden {
@@ -97,23 +107,27 @@
   z-index: 1;
 }
 
-.topLeft, .topRight {
+.topLeft,
+.topRight {
   display: flex;
   align-items: center;
   gap: clamp(10px, 3.5vw, 16px);
 }
 
-.contactInfo, .locationInfo, .ratingInfo {
+.contactInfo,
+.locationInfo,
+.ratingInfo {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: var(--glassy-text);
+  color: white;
   font-weight: 500;
   transition: var(--glassy-transition);
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
 }
 
-.contactInfo:hover, .locationInfo:hover {
+.contactInfo:hover,
+.locationInfo:hover {
   color: var(--glassy-accent);
   transform: translateY(-1px);
 }
@@ -128,7 +142,7 @@
   gap: 3px;
   background: rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(8px);
-  color: var(--glassy-text);
+  color: white;
   padding: 5px 10px;
   border-radius: var(--glassy-radius);
   font-weight: 600;
@@ -144,7 +158,9 @@
 
 /* Glassy Main Header */
 .mainHeader {
-  padding: clamp(10px, 2.5vw, 14px) 0;
+  padding: clamp(9px, 2.5vw, 1px) 0;
+  background: #FDFFF0;
+  border-bottom: 1px solid #eee;
 }
 
 .mainHeader .container {
@@ -199,24 +215,27 @@
 .brand {
   display: flex;
   align-items: center;
-  gap: clamp(8px, 2.5vw, 12px);
+  gap: clamp(8px, 2.5vw, 15px);
   flex-shrink: 0;
+  text-decoration: none;
 }
 
 .logo {
   position: relative;
 }
 
-.logo img, .logoPlaceholder {
-  width: clamp(36px, 9vw, 44px);
-  height: clamp(36px, 9vw, 44px);
+.logo img,
+.logoPlaceholder {
+  width: clamp(39px, 9vw, 60px);
+  height: clamp(39px, 9vw, 60px);
   border-radius: var(--glassy-radius);
   object-fit: cover;
   transition: var(--glassy-transition);
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.08));
 }
 
-.logo:hover img, .logo:hover .logoPlaceholder {
+.logo:hover img,
+.logo:hover .logoPlaceholder {
   transform: scale(1.05);
   filter: drop-shadow(0 6px 12px rgba(59, 130, 246, 0.15));
 }
@@ -246,12 +265,15 @@
 }
 
 @keyframes glassyPulse {
-  0%, 100% { 
-    opacity: 1; 
+
+  0%,
+  100% {
+    opacity: 1;
     transform: scale(1);
   }
-  50% { 
-    opacity: 0.85; 
+
+  50% {
+    opacity: 0.85;
     transform: scale(1.1);
   }
 }
@@ -263,11 +285,13 @@
   margin: 0 0 3px 0;
   line-height: 1.2;
   transition: var(--glassy-transition);
-  background: linear-gradient(135deg, var(--glassy-text), var(--glassy-accent));
+  background: #1a4845;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+
 
 .brandText p {
   font-size: clamp(0.7rem, 2vw, 0.8rem);
@@ -277,12 +301,18 @@
   opacity: 0.85;
 }
 
+.iconsize{
+  width: 20px;
+  height: 20px;
+}
+
 /* Glassy Desktop Navigation */
 .desktopNav {
-  display: flex;
-  gap: clamp(16px, 5vw, 28px);
+  gap: clamp(50px, 5vw, 100px);
   flex: 1;
-  justify-content: center;
+  display: flex;
+  justify-content: flex-end;
+  /* push items right */
 }
 
 .navLink {
@@ -292,9 +322,12 @@
   color: var(--glassy-text-muted);
   text-decoration: none;
   font-weight: 500;
-  font-size: clamp(0.8rem, 2vw, 0.85rem);
-  padding: 10px 0;
+  font-size: clamp(10px, 2vw, 15px);
+  /* padding: 10px 10px; */
+  border: none;
+  border-radius: 10px;
   position: relative;
+  background: none;
   transition: var(--glassy-transition);
   overflow: hidden;
 }
@@ -306,12 +339,12 @@
   left: 50%;
   width: 0;
   height: 100%;
-  background: linear-gradient(135deg, 
-    rgba(59, 130, 246, 0.1), 
-    rgba(147, 197, 253, 0.1));
+  /* background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.1),
+      rgba(147, 197, 253, 0.1)); */
   transition: var(--glassy-transition);
   transform: translateX(-50%);
-  border-radius: var(--glassy-radius-sm);
+  /* border-radius: var(--glassy-radius-sm); */
 }
 
 .navLink::after {
@@ -321,10 +354,10 @@
   left: 50%;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--glassy-accent), var(--glassy-accent-light));
+  /* background: linear-gradient(90deg, var(--glassy-accent), var(--glassy-accent-light)); */
   transition: var(--glassy-transition);
   transform: translateX(-50%);
-  border-radius: 2px;
+  /* border-radius: 2px; */
 }
 
 .navLink:hover::before {
@@ -378,9 +411,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, 
-    var(--glassy-white), 
-    var(--glassy-accent-light));
+  background: linear-gradient(135deg,
+      var(--glassy-white),
+      var(--glassy-accent-light));
   opacity: 0;
   transition: var(--glassy-transition);
 }
@@ -451,7 +484,8 @@
 }
 
 /* Glassy Action Buttons */
-.searchMobile, .actionBtn {
+.searchMobile,
+.actionBtn {
   background: none;
   border: none;
   padding: 10px;
@@ -463,7 +497,8 @@
   overflow: hidden;
 }
 
-.searchMobile::before, .actionBtn::before {
+.searchMobile::before,
+.actionBtn::before {
   content: '';
   position: absolute;
   top: 0;
@@ -477,17 +512,20 @@
   transform: scale(0.8);
 }
 
-.searchMobile:hover::before, .actionBtn:hover::before {
+.searchMobile:hover::before,
+.actionBtn:hover::before {
   opacity: 0.15;
   transform: scale(1);
 }
 
-.searchMobile:hover, .actionBtn:hover {
+.searchMobile:hover,
+.actionBtn:hover {
   color: var(--glassy-accent);
   transform: translateY(-1px) scale(1.05);
 }
 
-.searchMobile:active, .actionBtn:active {
+.searchMobile:active,
+.actionBtn:active {
   transform: translateY(0) scale(0.95);
 }
 
@@ -566,9 +604,17 @@
 }
 
 @keyframes bounceIn {
-  0% { transform: scale(0); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(0);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Glassy Login Button */
@@ -597,10 +643,10 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(255, 255, 255, 0.3), 
-    transparent);
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent);
   transition: var(--glassy-transition);
 }
 
@@ -717,20 +763,21 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(255, 255, 255, 0.2), 
-    transparent);
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent);
   animation: shimmer 4s infinite;
 }
 
 @keyframes slideDown {
-  from { 
-    transform: translateY(-100%); 
+  from {
+    transform: translateY(-100%);
     opacity: 0;
   }
-  to { 
-    transform: translateY(0); 
+
+  to {
+    transform: translateY(0);
     opacity: 1;
   }
 }
@@ -799,8 +846,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .mobileMenu {
@@ -826,9 +878,9 @@
   justify-content: space-between;
   padding: 20px 16px;
   border-bottom: 1px solid rgba(200, 200, 200, 0.2);
-  background: linear-gradient(135deg, 
-    var(--glassy-white), 
-    rgba(240, 240, 240, 0.85));
+  background: linear-gradient(135deg,
+      var(--glassy-white),
+      rgba(240, 240, 240, 0.85));
   position: relative;
 }
 
@@ -839,10 +891,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(255, 255, 255, 0.2), 
-    transparent);
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent);
   animation: shimmer 3s infinite;
 }
 
@@ -854,7 +906,8 @@
   z-index: 1;
 }
 
-.menuBrand img, .menuLogoPlaceholder {
+.menuBrand img,
+.menuLogoPlaceholder {
   width: 36px;
   height: 36px;
   border-radius: var(--glassy-radius-sm);
@@ -909,7 +962,8 @@
   padding: 20px 16px;
 }
 
-.menuItems a, .menuItems button {
+.menuItems a,
+.menuItems button {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -930,32 +984,36 @@
   border-radius: var(--glassy-radius-sm);
 }
 
-.menuItems a::before, .menuItems button::before {
+.menuItems a::before,
+.menuItems button::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(59, 130, 246, 0.1), 
-    rgba(147, 197, 253, 0.1));
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.1),
+      rgba(147, 197, 253, 0.1));
   opacity: 0;
   transition: var(--glassy-transition);
   border-radius: inherit;
 }
 
-.menuItems a:hover::before, .menuItems button:hover::before {
+.menuItems a:hover::before,
+.menuItems button:hover::before {
   opacity: 1;
 }
 
-.menuItems a:hover, .menuItems button:hover {
+.menuItems a:hover,
+.menuItems button:hover {
   color: var(--glassy-accent);
   padding-left: 10px;
   transform: translateX(3px);
 }
 
-.menuItems a span:first-child, .menuItems button span:first-child {
+.menuItems a span:first-child,
+.menuItems button span:first-child {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -966,7 +1024,8 @@
   opacity: 0.5;
 }
 
-.menuItems a:hover .chevron, .menuItems button:hover .chevron {
+.menuItems a:hover .chevron,
+.menuItems button:hover .chevron {
   transform: rotate(90deg);
   opacity: 1;
 }
@@ -997,10 +1056,10 @@
   left: 50%;
   width: 50px;
   height: 2px;
-  background: linear-gradient(90deg, 
-    transparent, 
-    var(--glassy-accent-light), 
-    transparent);
+  background: linear-gradient(90deg,
+      transparent,
+      var(--glassy-accent-light),
+      transparent);
   transform: translateX(-50%);
 }
 
@@ -1023,10 +1082,10 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(255, 255, 255, 0.3), 
-    transparent);
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent);
   transition: var(--glassy-transition);
 }
 
@@ -1063,7 +1122,8 @@
   box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.1);
   will-change: transform;
   contain: layout style paint;
-  height: 56px; /* Reduced height */
+  height: 56px;
+  /* Reduced height */
 }
 
 .bottomNav.show {
@@ -1076,9 +1136,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.2), 
-    rgba(200, 200, 200, 0.1));
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.2),
+      rgba(200, 200, 200, 0.1));
   opacity: 0.4;
 }
 
@@ -1098,12 +1158,12 @@
 
 
 .storeStatus {
- display: flex;
+  display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 5px;
   background: rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(8px);
-  color: var(--glassy-text);
+  color: white;
   padding: 5px 10px;
   border-radius: var(--glassy-radius);
   font-weight: 600;
@@ -1115,7 +1175,8 @@
 .statusIndicator {
   width: 8px;
   height: 8px;
-  background-color: #10b981; /* green for online */
+  background-color: #10b981;
+  /* green for online */
   border-radius: 50%;
 }
 
@@ -1143,7 +1204,8 @@
   font-weight: 600;
 }
 
-.bottomNavItem:hover, .bottomNavItem.active {
+.bottomNavItem:hover,
+.bottomNavItem.active {
   transform: translateY(-2px) scale(1.05);
 }
 
@@ -1168,7 +1230,8 @@
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
 }
 
-.bottomNavItem:hover .navLabel, .bottomNavItem.active .navLabel {
+.bottomNavItem:hover .navLabel,
+.bottomNavItem.active .navLabel {
   transform: scale(1.1);
 }
 
@@ -1197,33 +1260,42 @@
     padding: 6px 0;
     font-size: clamp(0.6rem, 1.8vw, 0.65rem);
   }
-  
-  .topLeft, .topRight {
+
+  .topLeft,
+  .topRight {
     gap: clamp(6px, 2.5vw, 10px);
   }
-  
+
   .mobileToggle {
     display: block;
+    order: 2;
+    margin-left: auto;
   }
-  
+
   .desktopNav {
     display: none;
   }
-  
+
   .searchDesktop {
     display: none;
   }
-  
+
   .actions {
     gap: clamp(5px, 1.8vw, 7px);
   }
-  
+
   .bottomNav {
     display: flex;
   }
 
   .container {
     padding: 0 clamp(6px, 2.5vw, 10px);
+    flex-direction: row;
+  }
+
+  .brand {
+    order: 1;
+    /* logo goes first (left) */
   }
 
   .mainHeader {
@@ -1244,7 +1316,7 @@
   .searchDesktop {
     display: block;
   }
-  
+
   .searchMobile {
     display: none;
   }
@@ -1258,7 +1330,7 @@
   .brandText p {
     display: none;
   }
-  
+
   .topBar {
     display: none;
   }
@@ -1267,7 +1339,9 @@
     gap: clamp(3px, 1.8vw, 5px);
   }
 
-  .actionBtn, .cartBtn, .searchMobile {
+  .actionBtn,
+  .cartBtn,
+  .searchMobile {
     padding: 8px;
   }
 
@@ -1339,17 +1413,24 @@
 
 /* Glassy Loading States */
 .loadingShimmer {
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(59, 130, 246, 0.1), 
-    transparent);
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(59, 130, 246, 0.1),
+      transparent);
   animation: shimmer 1.5s infinite;
 }
 
 /* Glassy Micro-interactions */
 @keyframes glassyBounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
 }
 
 .brand:hover .onlineIndicator {
@@ -1396,9 +1477,9 @@
   }
 
   .topBar {
-    background: linear-gradient(135deg, 
-      rgba(59, 130, 246, 0.7), 
-      rgba(31, 41, 55, 0.8));
+    background: linear-gradient(135deg,
+        rgba(59, 130, 246, 0.7),
+        rgba(31, 41, 55, 0.8));
   }
 
   .mobileMenu,
@@ -1407,14 +1488,15 @@
   }
 
   .menuHeader {
-    background: linear-gradient(135deg, 
-      rgba(59, 130, 246, 0.15), 
-      rgba(147, 197, 253, 0.1));
+    background: linear-gradient(135deg,
+        rgba(59, 130, 246, 0.15),
+        rgba(147, 197, 253, 0.1));
   }
 }
 
 /* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
+
   .sheader *,
   .sheader *::before,
   .sheader *::after {
@@ -1422,11 +1504,10 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
+
   .onlineIndicator,
   .notificationDot,
   .cartBadge {
     animation: none !important;
   }
 }
-

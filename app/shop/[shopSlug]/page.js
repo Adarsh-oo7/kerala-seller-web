@@ -294,6 +294,8 @@ function EnhancedStoreBanner({ store, shopSlug }) {
   };
 
   return (
+        <div  style={styles.mainWrapper}>
+
     <div className="enhanced-banner-container" style={styles.bannerContainer}>
       <div className="banner-background" style={styles.bannerBackground}>
         {store.banner_image_url ? (
@@ -326,6 +328,7 @@ function EnhancedStoreBanner({ store, shopSlug }) {
         <span className="breadcrumb-separator" style={styles.breadcrumbSeparator}>›</span>
         <span className="current-page" style={styles.currentPage}>{store.name}</span>
       </div>
+    </div>
     </div>
   );
 }
@@ -1055,7 +1058,7 @@ export default ShopPageWithSuspense;
 const styles = {
   pageContainer: {
     minHeight: '100vh',
-    backgroundColor: '#f8fafc'
+    backgroundColor: '#FDFFF0'
   },
 
   loadingContainer: {
@@ -1127,8 +1130,10 @@ const styles = {
   // Banner Styles
   bannerContainer: {
     position: 'relative',
-    height: '300px',
-    overflow: 'hidden'
+    width: '100%',
+    aspectRatio: '4 / 1',   // keeps 1400x700 ratio (modern CSS)
+    overflow: 'hidden',
+    marginTop: "130px",
   },
 
   bannerBackground: {
@@ -1142,7 +1147,8 @@ const styles = {
   bannerImage: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover'
+    objectFit: 'contain',   // show full image without cut
+    display: 'block'
   },
 
   bannerFallback: {
@@ -1165,7 +1171,7 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'rgba(0,0,0,0.4)'
+    // background: 'rgba(0,0,0,0.4)'
   },
 
 
@@ -1464,9 +1470,8 @@ const styles = {
 
   // Filter Section
   filterSection: {
-    backgroundColor: 'white',
-    borderBottom: '1px solid #e5e7eb',
-    padding: '16px 0'
+    backgroundColor: '#FDFFF0',
+    padding: '30px 0'
   },
 
   filterHeader: {
@@ -1480,8 +1485,9 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
     padding: '8px 16px',
-    backgroundColor: 'white',
-    border: '1px solid #d1d5db',
+    backgroundColor: '#FDFFF0',
+    border: '2px solid #e5e7eb',
+    boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.3)',
     borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '14px'
@@ -1611,6 +1617,9 @@ const styles = {
     borderRadius: '6px',
     overflow: 'hidden'
   },
+  mainWrapper: {
+  paddingTop: '10px',
+},
 
   viewToggle: {
     padding: '8px',
@@ -1660,32 +1669,35 @@ const styles = {
     fontWeight: '500'
   },
 
-filterSearchRow: {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '1rem', // optional spacing between left and right
-  width: '100%',
-},
+  filterSearchRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem', // optional spacing between left and right
+    width: '100%',
+  },
 
-filterLeft: {
-  display: 'flex',
-  gap: '0.5rem',
-  alignItems: 'center',
-},
+  filterLeft: {
+    display: 'flex',
+    gap: '0.5rem',
+    alignItems: 'center',
+  },
 
-searchRight: {
-  marginLeft: 'auto', // pushes it to the right
-  display: 'flex',
-  alignItems: 'center',
-},
+  searchRight: {
+    marginLeft: 'auto', // pushes it to the right
+    display: 'flex',
+    alignItems: 'center',
+  },
 
-searchInput: {
-  padding: '0.5rem 1rem',
-  borderRadius: '4px',
-  border: '1px solid #ccc',
-  minWidth: '200px',
-  maxWidth: '400px',
-},
+  searchInput: {
+    padding: '0.5rem 1rem',
+    borderRadius: '8px',
+    border: '2px solid #e5e7eb',
+    boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.3)', minWidth: '200px',
+    maxWidth: '400px',
+    background:'#FDFFF0',
+  },
+
+  
 
 
 
