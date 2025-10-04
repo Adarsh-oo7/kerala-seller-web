@@ -364,7 +364,7 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
                 <span>Verified</span>
               </div>
               <div className={styles.storeStatus}>
-                <div  className={styles.statusIndicator}></div>
+                <div className={styles.statusIndicator}></div>
                 <span>Online Now</span>
               </div>
             </div>
@@ -409,11 +409,14 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
               </Link>
               <button onClick={handleCartClick} className={styles.navLink}>
                 <ShoppingCart className={styles.iconsize} />
-                <span>Cart</span>
-                {cartCount > 0 && (
-                  <span className={styles.navBadge}>{cartCount}</span>
-                )}
+                <span className={styles.cartText}>
+                  Cart
+                  {cartCount > 0 && (
+                    <span className={styles.navBadge}>{cartCount}</span>
+                  )}
+                </span>
               </button>
+
               {/* <Link href={generateShopUrl('/about')} className={styles.navLink}>
                 <Info size={16} />
                 <span>About</span>
@@ -423,11 +426,11 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
                 <span>Profile</span>
               </button>
             </nav>
-            
+
           </div>
         </div>
 
-       
+
 
         {/* Promotional Banner */}
         {storeData.announcement && showPromo && (

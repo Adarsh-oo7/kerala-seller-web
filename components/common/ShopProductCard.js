@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
+import "../../styles/ShopProductcard.css";
+
 import {
   ShoppingCart,
   Heart,
@@ -357,7 +359,7 @@ export default function ShopProductCard({
             <h3 className="product-name" style={styles.productName}>
               {product.name || 'Unnamed Product'}
               {product.model_name && (
-                <span style={styles.productModel}> ({product.model_name})</span>
+                <span className='product-model' style={styles.productModel}> ({product.model_name})</span>
               )}
             </h3>
           </div>
@@ -441,16 +443,16 @@ export default function ShopProductCard({
 // ✅ Enhanced styles with rating in product info
 const styles = {
   shopProductCard: {
-    backgroundColor: 'white',
-    borderRadius: '10px',
-    overflow: 'hidden',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb',
-    transition: 'all 0.3s ease',
-    display: 'flex',
-    flexDirection: 'column',
     width: "100%",
     maxWidth: "210px",
+    border: "1px solid #eee",
+    borderRadius: "10px",
+    overflow: "hidden",
+    background: "#fff",
+    display: "flex",
+    flexDirection: "column",
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+    position: "relative"
   },
 
   productLink: {
@@ -465,14 +467,15 @@ const styles = {
   },
 
   productImageWrapper: {
-    position: 'relative',
-    overflow: 'hidden',
-    width: '100%',
+    width: "100%",
+    height: "185px",
+    position: "relative",
+    overflow: "hidden"
   },
 
   productImage: {
     width: '100%',
-    height: '200px',
+    height: '180px',
     objectFit: 'cover',
     transition: 'transform 0.3s ease'
   },
@@ -537,7 +540,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#6b7280',
+    color: '#059669',
     transition: 'all 0.2s',
     backdropFilter: 'blur(4px)',
     boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
@@ -564,8 +567,6 @@ const styles = {
     flexDirection: 'column',
     justifyContent: 'space-between',
   },
-
-
 
 
   storeName: {
@@ -598,9 +599,14 @@ const styles = {
     fontWeight: '400',
     color: '#6b7280',
     marginLeft: '4px',
+    whiteSpace: "nowrap",       // force one line
+    overflow: "hidden",         // cut extra text
+    textOverflow: "ellipsis",   // add "..."
+    maxWidth: "120px",          // width decides how much text is visible
+    display: "inline-block",    // required for ellipsis
+    verticalAlign: "middle"
   },
 
-  // ✅ NEW: Rating styles in product info
   productRating: {
     display: 'flex',
     alignItems: 'center',
@@ -689,14 +695,14 @@ const styles = {
   // ✅ Rating overlay (existing) - on image
   ratingOverlay: {
     position: "absolute",
-    bottom: "3px",
+    bottom: "5px",
     left: "0",
     width: "100%",
     background: "rgba(0,0,0,0.6)",
     color: "white",
     display: "flex",
     alignItems: "center",
-    padding: "12px 12px",
+    padding: "13px 12px",
     boxSizing: "border-box",
     zIndex: 2,
   },
@@ -722,4 +728,4 @@ const styles = {
     overflow: "hidden",
     textOverflow: "ellipsis",
   },
-};
+}

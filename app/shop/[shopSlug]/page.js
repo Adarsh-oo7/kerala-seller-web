@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useCallback, Suspense } from 'react
 import axios from 'axios';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import "../../../styles/Shopslugpage.css";
 import { useCart } from '../../context/CartContext';
 import SHeader from '../../../components/common/SHeader';
 import Footer from '../../../components/common/Footer';
@@ -294,41 +295,41 @@ function EnhancedStoreBanner({ store, shopSlug }) {
   };
 
   return (
-        <div  style={styles.mainWrapper}>
+    <div style={styles.mainWrapper}>
 
-    <div className="enhanced-banner-container" style={styles.bannerContainer}>
-      <div className="banner-background" style={styles.bannerBackground}>
-        {store.banner_image_url ? (
-          <img
-            src={getBannerImageUrl(store.banner_image_url)}
-            alt={`${store.name || 'Store'} - Kerala local business banner`}
-            className={`banner-image ${imageLoaded ? 'loaded' : ''}`}
-            style={styles.bannerImage}
-            onLoad={() => setImageLoaded(true)}
-            loading="lazy"
-            onError={(e) => {
-              console.warn('Banner image failed to load');
-              e.target.style.display = 'none';
-            }}
-          />
-        ) : (
-          <div className="banner-fallback" style={styles.bannerFallback}>
-            <div className="fallback-pattern" style={styles.fallbackPattern}></div>
-          </div>
-        )}
-        <div className="banner-overlay" style={styles.bannerOverlay}></div>
+      <div className="enhanced-banner-container" style={styles.bannerContainer}>
+        <div className="banner-background" style={styles.bannerBackground}>
+          {store.banner_image_url ? (
+            <img
+              src={getBannerImageUrl(store.banner_image_url)}
+              alt={`${store.name || 'Store'} - Kerala local business banner`}
+              className={`banner-image ${imageLoaded ? 'loaded' : ''}`}
+              style={styles.bannerImage}
+              onLoad={() => setImageLoaded(true)}
+              loading="lazy"
+              onError={(e) => {
+                console.warn('Banner image failed to load');
+                e.target.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="banner-fallback" style={styles.bannerFallback}>
+              <div className="fallback-pattern" style={styles.fallbackPattern}></div>
+            </div>
+          )}
+          <div className="banner-overlay" style={styles.bannerOverlay}></div>
+        </div>
       </div>
 
-
       {/* ✅ Enhanced breadcrumbs for SEO */}
-      <div className="breadcrumbs" style={styles.breadcrumbs}>
+      {/* <div className="breadcrumbs" style={styles.breadcrumbs}>
         <Link href="/" style={styles.breadcrumbLink}>Kerala Sellers</Link>
         <span className="breadcrumb-separator" style={styles.breadcrumbSeparator}>›</span>
         <Link href="/shop" style={styles.breadcrumbLink}>Shops</Link>
         <span className="breadcrumb-separator" style={styles.breadcrumbSeparator}>›</span>
         <span className="current-page" style={styles.currentPage}>{store.name}</span>
-      </div>
-    </div>
+      </div> */}
+
     </div>
   );
 }
@@ -420,7 +421,7 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
                 aria-expanded={showFilters}
                 aria-controls="filter-panel"
               >
-                <Filter size={18} aria-hidden="true" />
+                <Filter className='filtericonsize' aria-hidden="true" />
                 <span>Filters</span>
 
 
@@ -445,6 +446,7 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
 
             <div className="search-right" style={styles.searchRight}>
               <input
+                className='search-input'
                 type="text"
                 placeholder="Search products..."
                 // value={searchQuery}
@@ -932,15 +934,18 @@ function EnhancedSellerStorefrontPage() {
         <div className="container" style={styles.container}>
           <div className="products-header-enhanced" style={styles.productsHeader}>
             <div className="products-title-enhanced" style={styles.productsTitle}>
-              <h2 className="products-main-title-enhanced" style={styles.productsMainTitle}>
+              {/* <h2 className="products-main-title-enhanced" style={styles.productsMainTitle}>
                 Products from {store.name}
-              </h2>
-              <span className="product-count-enhanced" style={styles.productCount}>
-                {filteredProducts.length} of {products.length} products available
+              </h2> */}
+              <span className="product-text" style={styles.producttext}>
+                All Products
               </span>
             </div>
             <div className="products-controls-enhanced" style={styles.productsControls}>
-              <div className="view-toggle-group" style={styles.viewToggleGroup}>
+              <span className="product-count-enhanced" style={styles.productCount}>
+                {filteredProducts.length} of {products.length} products available
+              </span>
+              {/* <div className="view-toggle-group" style={styles.viewToggleGroup}>
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`view-toggle-enhanced ${viewMode === 'grid' ? 'active' : ''}`}
@@ -957,12 +962,12 @@ function EnhancedSellerStorefrontPage() {
                 >
                   <List size={16} aria-hidden="true" />
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
 
           {filteredProducts.length > 0 ? (
-            <div className={`products-container-enhanced ${viewMode}`} style={styles.productsContainer}>
+            <div className={`products-container ${viewMode}`} style={styles.productsContainer}>
               {filteredProducts.map((product) => {
                 if (!product?.id) return null;
 
@@ -1053,6 +1058,11 @@ function ShopPageWithSuspense() {
 }
 
 export default ShopPageWithSuspense;
+
+
+
+
+
 
 // ✅ All styles remain the same
 const styles = {
@@ -1177,30 +1187,36 @@ const styles = {
 
 
   breadcrumbs: {
-    position: 'absolute',
-    bottom: '20px',
-    left: '20px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '14px'
+    width: "100%",
+    background: "#1a4845", // light background
+    padding: "12px 150px",
+    display: "flex",
+    alignItems: "center",
+    fontSize: "14px",
+    gap: "8px",
+    boxSizing: "border-box",
+    marginTop: "20px",
   },
 
   breadcrumbLink: {
-    color: 'white',
-    textDecoration: 'none',
-    opacity: 0.8
+    color: "white",
+    textDecoration: "none",
+    fontWeight: 500,
+  },
+
+  breadcrumbLinkHover: {
+    textDecoration: "underline",
   },
 
   breadcrumbSeparator: {
-    color: 'white',
-    opacity: 0.6
+    color: "#9ca3af",
   },
 
   currentPage: {
-    color: 'white',
-    fontWeight: '500'
+    color: "white",
+    fontWeight: 600,
   },
+
 
   // Store Info Styles
   storeInfoSection: {
@@ -1485,6 +1501,7 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
     padding: '8px 16px',
+    color: "#1a4845",
     backgroundColor: '#FDFFF0',
     border: '2px solid #e5e7eb',
     boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.3)',
@@ -1596,13 +1613,18 @@ const styles = {
   productsMainTitle: {
     fontSize: '1.5rem',
     fontWeight: '600',
-    color: '#1f2937',
+    color: '#1a4845',
     margin: '0 0 4px 0'
   },
 
   productCount: {
     fontSize: '0.9rem',
     color: '#6b7280'
+  },
+
+  producttext: {
+    fontSize: '1.2rem',
+    color: '#1a4845'
   },
 
   productsControls: {
@@ -1618,12 +1640,12 @@ const styles = {
     overflow: 'hidden'
   },
   mainWrapper: {
-  paddingTop: '10px',
-},
+    paddingTop: '10px',
+  },
 
   viewToggle: {
     padding: '8px',
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     border: 'none',
     cursor: 'pointer',
     color: '#6b7280'
@@ -1631,7 +1653,7 @@ const styles = {
 
   viewToggleActive: {
     padding: '8px',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#1a4845',
     border: 'none',
     cursor: 'pointer',
     color: 'white'
@@ -1639,10 +1661,15 @@ const styles = {
 
   productsContainer: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-    gap: '20px',
-    marginBottom: '40px'
+    gap: '16px',
+    justifyContent: 'center', // centers grid items horizontally
+    width: '100%',
+    margin: '0 auto',
+    padding: '10px 0',
+    boxSizing: 'border-box',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
   },
+
 
   emptyState: {
     display: 'flex',
@@ -1694,10 +1721,11 @@ const styles = {
     border: '2px solid #e5e7eb',
     boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.3)', minWidth: '200px',
     maxWidth: '400px',
-    background:'#FDFFF0',
+    background: '#FDFFF0',
+    color: "#1a4845",
   },
 
-  
+
 
 
 

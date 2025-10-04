@@ -5,9 +5,9 @@
   --glassy-white-dark: rgba(255, 255, 255, 0.95);
   --glassy-border: rgba(200, 200, 200, 0.4);
   --glassy-text: #1a4845;
-  --glassy-text-muted: #1a4845;
+  --glassy-text-muted: #059669;
   --glassy-shadow: 0 6px 24px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
-  --glassy-accent: #3b82f6;
+  --glassy-accent: #059669;
   --glassy-accent-light: #93c5fd;
   --glassy-radius: 12px;
   --glassy-radius-sm: 6px;
@@ -150,6 +150,7 @@
   border: 1px solid rgba(200, 200, 200, 0.4);
   transition: var(--glassy-transition);
 }
+
 
 .trustBadge:hover {
   background: rgba(255, 255, 255, 0.4);
@@ -319,17 +320,17 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--glassy-text-muted);
+  color: var(--glassy-text);
   text-decoration: none;
   font-weight: 500;
   font-size: clamp(10px, 2vw, 15px);
   /* padding: 10px 10px; */
   border: none;
-  border-radius: 10px;
+  /* border-radius: 10px; */
   position: relative;
   background: none;
   transition: var(--glassy-transition);
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 .navLink::before {
@@ -347,13 +348,38 @@
   /* border-radius: var(--glassy-radius-sm); */
 }
 
+.cartText {
+  position: relative;
+  display: inline-block;
+  margin-left: 6px; /* spacing from icon */
+}
+
+.navBadge {
+  position: absolute;
+  top: -10px;   /* adjust vertical alignment */
+  right: -23px; /* adjust horizontal alignment */
+  background: #ef4444; /* red background */
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 9999px; /* makes it round */
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
 .navLink::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 50%;
   width: 0;
-  height: 2px;
+  /* height: 2px; */
   /* background: linear-gradient(90deg, var(--glassy-accent), var(--glassy-accent-light)); */
   transition: var(--glassy-transition);
   transform: translateX(-50%);
@@ -1164,7 +1190,7 @@
   background: rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(8px);
   color: white;
-  padding: 5px 10px;
+  padding: 4px 10px;
   border-radius: var(--glassy-radius);
   font-weight: 600;
   font-size: 0.65rem;
@@ -1254,6 +1280,11 @@
   animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
+
+
+
+
+
 /* Responsive Design with Glassy Breakpoints */
 @media (max-width: 768px) {
   .topBar {
@@ -1327,9 +1358,7 @@
 }
 
 @media (max-width: 480px) {
-  .brandText p {
-    display: none;
-  }
+  
 
   .topBar {
     display: none;
@@ -1400,11 +1429,7 @@
   box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.15);
 }
 
-.navLink:focus {
-  outline: 2px solid var(--glassy-accent);
-  outline-offset: 3px;
-  box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.1);
-}
+
 
 .searchDesktop input:focus,
 .mobileSearch input:focus {
