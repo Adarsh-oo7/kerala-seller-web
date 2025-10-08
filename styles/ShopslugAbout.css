@@ -1,0 +1,312 @@
+@media (max-width: 991px) {
+    .logo-1 {
+        width: 120px !important;
+        height: 120px !important;
+    }
+
+    .Aboutsluglogo {
+        width: 60px !important;
+        height: 60px !important;
+    }
+
+    .aboutslugfootdesc {
+        font-size: 13px !important;
+    }
+
+    .aboutslugfoottitle {
+        font-size: 20px !important;
+    }
+
+    .Aboutstorename {
+        font-size: 20px !important;
+    }
+
+    .Aboutstoretags {
+        font-size: 14px !important;
+    }
+
+    .Aboutinfo-column {
+        gap: 5px !important
+    }
+
+    .aboutstat-value {
+        font-size: 25px !important;
+    }
+
+    .aboutstat-label {
+        font-size: 14px !important;
+    }
+
+    .aboutstat-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) !important;
+        gap: 15px !important;
+    }
+
+    .aboutContainer {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+        gap: 0px !important;
+        flex-wrap: wrap !important;
+        padding: 0px !important;
+    }
+
+    .aboutContainer .aboutCard {
+        flex: 1 1 20% !important;
+        /* roughly 3 cards per row */
+        max-width: 20% !important;
+        min-width: 242px !important;
+        /* prevent collapsing */
+        box-sizing: border-box !important;
+    }
+
+}
+
+@media (max-width: 767px) {
+    .logo-1 {
+        width: 100px !important;
+        height: 100px !important;
+    }
+
+    .Aboutstorename {
+        font-size: 19px !important;
+    }
+
+    .Aboutstoretags {
+        font-size: 14px !important;
+    }
+
+    .Aboutinfo-column {
+        gap: 3px !important;
+        margin-top: 10px !important;
+    }
+
+    .Aboutaction-button {
+        font-size: 13px !important;
+        padding: 7px 13px !important;
+    }
+
+    .aboutstat-value {
+        font-size: 19px !important;
+    }
+
+    .aboutstat-label {
+        font-size: 12px !important;
+    }
+
+    .aboutstat-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(123px, 1fr)) !important;
+        gap: 13px !important;
+    }
+
+    .aboutstat-icon {
+        scale: 0.9;
+        margin-bottom: 12px !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    .enhanced-store-info-section {
+        padding: 20px 0px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .logo-1 {
+        width: 85px !important;
+        height: 85px !important;
+    }
+
+    .Aboutstorename {
+        font-size: 18px !important;
+    }
+
+    .Aboutstoretags {
+        font-size: 13px !important;
+    }
+
+    .Aboutinfo-column {
+        gap: 2px !important;
+        margin-top: 8px !important;
+    }
+
+    .Aboutaction-button {
+        font-size: 12px !important;
+        padding: 6px 12px !important;
+    }
+
+    .shopslugAboutcontainer {
+        gap: 0px !important;
+    }
+
+    .shopslugAboutcontainer1 {
+        gap: 0px !important;
+    }
+
+
+    .abouticonsize {
+        height: 14px !important;
+        width: 14px !important;
+    }
+
+    .AboutpageContainer {
+        margin-top: 70px !important;
+    }
+
+    .performance-number {
+        font-size: 20px !important;
+    }
+
+    .store-performance {
+        gap: 20px !important;
+    }
+
+    .performance-label {
+        font-size: 11px !important;
+    }
+
+    .aboutstat-value {
+        font-size: 19px !important;
+    }
+
+    .aboutstat-label {
+        font-size: 12px !important;
+    }
+
+    .aboutstat-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+        gap: 13px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .aboutstat-icon {
+        scale: 0.9;
+        margin-bottom: 12px !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+}
+
+@media (max-width: 480px) {
+    .logo-1 {
+        width: 70px !important;
+        height: 70px !important;
+    }
+
+    .Aboutstorename {
+        font-size: 18px !important;
+    }
+
+    .Aboutstoretags {
+        font-size: 13px !important;
+    }
+
+    .shopslugAboutcontainer {
+        gap: 30px !important;
+    }
+
+    .performance-number {
+        font-size: 20px !important;
+    }
+
+    .store-performance {
+        gap: 20px !important;
+        padding: 19px 8px !important;
+        justify-content: center !important;
+    }
+
+    .performance-label {
+        font-size: 8px !important;
+    }
+
+    .shopslugAboutcontainer1 {
+        gap: 0px !important;
+    }
+
+    .aboutlogocontainer {
+        flex-shrink: 0;
+    }
+
+    .Aboutinfo-column {
+        flex: 1;
+        gap: 2px !important;
+        margin-top: 0 !important;
+        align-items: flex-start !important;
+    }
+
+
+    .Aboutaction-button {
+        font-size: 12px !important;
+        padding: 6px 12px !important;
+    }
+
+    .Aboutaction-button1 {
+        font-size: 12px !important;
+        height: 30px !important;
+        width: 40px !important;
+    }
+
+    .abouticonsize {
+        height: 14px !important;
+        width: 14px !important;
+    }
+
+    .AboutpageContainer {
+        margin-top: 15px !important;
+    }
+
+
+    .store-share {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: flex-start !important;
+        margin-top: 0.5rem !important;
+    }
+
+    .store-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 10px !important;
+    }
+
+    .store-actions .Aboutaction-button {
+        flex: none !important;
+        width: auto !important;
+    }
+
+    .aboutstore-header {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 30px !important;
+        text-align: left !important;
+    }
+
+    .aboutstat-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(134px, 1fr)) !important;
+        gap: 10px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .aboutstat-value {
+        font-size: 17px !important;
+    }
+
+    .aboutstat-label {
+        font-size: 11px !important;
+    }
+
+    .aboutstat-icon {
+        scale: 0.8;
+        margin-bottom: 12px !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+}

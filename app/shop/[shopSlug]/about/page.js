@@ -4,6 +4,8 @@ import { useEffect, useState, Suspense } from 'react';
 import axios from 'axios';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import "../../../../styles/ShopslugAbout.css";
+
 import {
   Star,
   Package,
@@ -19,7 +21,7 @@ import {
   Clock,
   Truck,
   MessageCircle,
-Share2,
+  Share2,
   Home,
   RefreshCw,
   AlertCircle,
@@ -373,14 +375,14 @@ function StoreAboutContent() {
   }
 
   return (
-    <div style={styles.pageContainer}>
+    <div className='AboutpageContainer' style={styles.pageContainer}>
       <SHeader
         store={storeData}
         isLoggedIn={isLoggedIn}
       />
 
       {/* ✅ Enhanced Navigation breadcrumb with SEO URLs */}
-      <div style={styles.breadcrumbContainer}>
+      {/* <div style={styles.breadcrumbContainer}>
         <div style={styles.container}>
           <nav style={styles.breadcrumb}>
             <Link href="/" style={styles.breadcrumbLink}>
@@ -400,114 +402,89 @@ function StoreAboutContent() {
             <span style={styles.breadcrumbCurrent}>About</span>
           </nav>
         </div>
-      </div>
+      </div> */}
 
-      <div style={styles.container}>
+      <div className='shopslugAboutcontainer1' style={styles.container}>
         {/* ✅ Enhanced Back button with correct URL */}
-        <Link href={getShopUrl()} style={styles.backButton}>
+        {/* <Link href={getShopUrl()} style={styles.backButton}>
           <ArrowLeft size={16} />
           Back to Store
-        </Link>
+        </Link> */}
 
-        {/* Store Header */}
-        <div style={styles.storeHeader}>
-          <div style={styles.logoContainer}>
-            <img
-              src={storeData.logo_url || `https://via.placeholder.com/150x150/3b82f6/ffffff?text=${encodeURIComponent(storeData.name?.charAt(0) || 'S')}`}
-              alt={`${storeData.name} logo`}
-              style={styles.logo}
-              onError={(e) => {
-                e.target.src = `https://via.placeholder.com/150x150/3b82f6/ffffff?text=${encodeURIComponent(storeData.name?.charAt(0) || 'S')}`;
-              }}
-            />
-            {storeData.verification_status === 'verified' && (
-              <div style={styles.verifiedBadge}>
-                <Award size={16} />
-              </div>
-            )}
-          </div>
-          <div style={styles.storeInfo}>
-            <h1 style={styles.storeName}>{storeData.name}</h1>
-            {storeData.tagline && (
-              <p style={styles.tagline}>{storeData.tagline}</p>
-            )}
-            <div style={styles.badges}>
-              {storeData.verification_status === 'verified' && (
-                <span style={styles.badge}>
-                  <CheckCircle size={12} />
-                  Verified Store
-                </span>
-              )}
-              <span style={styles.badge}>
-                <Users size={12} />
-                Trusted Kerala Seller
-              </span>
-              {storeData.date_joined && (
-                <span style={styles.badge}>
-                  <Calendar size={12} />
-                  Since {formatJoinDate(storeData.date_joined)}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+
 
         <div className="enhanced-store-info-section" style={styles.storeInfoSection}>
-          <div className="container" style={styles.container}>
-            <div className="store-header" style={styles.storeHeader}>
-              <div className="store-identity" style={styles.storeIdentity}>
-
-                <div className="store-details-enhanced" style={styles.storeDetails}>
-                  <div className="store-name-section" style={styles.storeNameSection}>
-                    <div className="store-badges" style={styles.storeBadges}>
-                      <span className="badge verified" style={styles.badgeVerified}>
-                        <Award size={10} aria-hidden="true" />
-                        Verified Kerala Seller
-                      </span>
-                      <span className="badge responsive" style={styles.badgeResponsive}>
-                        <Clock size={10} aria-hidden="true" />
-                        Fast Response
-                      </span>
-                    </div>
+          <div className="shopslugAboutcontainer" style={styles.container}>
+            <div className='aboutstore-header' style={styles.storeHeader}>
+              {/* Left: Logo */}
+              <div className='aboutlogocontainer' style={styles.logoContainer}>
+                <img
+                  src={storeData.logo_url || `https://via.placeholder.com/150x150/3b82f6/ffffff?text=${encodeURIComponent(storeData.name?.charAt(0) || 'S')}`}
+                  alt={`${storeData.name} logo`}
+                  className='logo-1'
+                  style={styles.logo1}
+                  onError={(e) => {
+                    e.target.src = `https://via.placeholder.com/150x150/3b82f6/ffffff?text=${encodeURIComponent(storeData.name?.charAt(0) || 'S')}`;
+                  }}
+                />
+                {storeData.verification_status === 'verified' && (
+                  <div style={styles.verifiedBadge}>
+                    <Award size={16} />
                   </div>
+                )}
+              </div>
 
-                  <div className="store-meta" style={styles.storeMeta}>
+              {/* Right: Info Column */}
+              <div className='Aboutinfo-column' style={styles.infoColumn}>
+                <h1 className='Aboutstorename' style={styles.storeName}>{storeData.name}</h1>
+                {storeData.tagline && <p className='Aboutstoretags' style={styles.tagline}>{storeData.tagline}</p>}
 
-                    <div className="meta-item" style={styles.metaItem}>
-                      <Users size={12} aria-hidden="true" />
-                      <span>Trusted by customers</span>
-                    </div>
+                <div style={styles.badges}>
+                  {storeData.verification_status === 'verified' && (
+                    <span className='Aboutstoretags' style={styles.badge}>
+                      <CheckCircle size={12} />
+                      Verified Store
+                    </span>
+                  )}
+                  <span className='Aboutstoretags' style={styles.badge}>
+                    <Award size={12} />
+                    Verified Kerala Seller
+                  </span>
+                  {storeData.date_joined && (
+                    <span style={styles.badge}>
+                      <Calendar size={12} />
+                      Since {formatJoinDate(storeData.date_joined)}
+                    </span>
+                  )}
+                </div>
 
-                  </div>
+                {/* Meta Item */}
+                <div className='Aboutstoretags' style={styles.storeMeta}>
+                  <Users size={12} />
+                  <span>Trusted by customers</span>
                 </div>
               </div>
-              <div className="store-actions" style={styles.storeActions}>
-                <button className="action-button primary" style={styles.actionButtonPrimary} aria-label="Chat with store">
-                  <MessageCircle size={16} aria-hidden="true" />
-                  <span className="action-text">Chat</span>
-                </button>
-                <button className="action-button secondary" style={styles.actionButtonSecondary} aria-label="Call store">
-                  <Phone size={16} aria-hidden="true" />
-                  <span className="action-text">Call</span>
-                </button>
-                <button className="action-button icon-only" style={styles.actionButtonIcon} aria-label="Share store">
-                  <Share2 size={16} aria-hidden="true" />
-                </button>
+
+              <div className="store-share" style={styles.storeShare}>
+                <div className="store-actions" style={styles.storeActions}>
+                  <button className="Aboutaction-button" style={styles.actionButtonPrimary}>
+                    <MessageCircle size={16} className='abouticonsize' />
+                    <span className="action-text">Chat</span>
+                  </button>
+                  <button className="Aboutaction-button" style={styles.actionButtonSecondary}>
+                    <Phone size={16} className='abouticonsize' />
+                    <span className="action-text">Call</span>
+                  </button>
+                  <button className="Aboutaction-button1" style={styles.actionButtonIcon}>
+                    <Share2 size={16} className='abouticonsize' />
+                  </button>
+                </div>
               </div>
+
             </div>
 
             <div className="store-performance" style={styles.storePerformance}>
-              <div className="performance-card" style={styles.performanceCard}>
-                <div className="performance-icon" style={styles.performanceIcon}>
-                  <Star size={18} fill="currentColor" aria-hidden="true" />
-                </div>
-                {/* <div className="performance-content" style={styles.performanceContent}>
-                  <span className="performance-number" style={styles.performanceNumber}>
-                    {store.average_rating?.toFixed(1) || '4.8'}
-                  </span>
-                  <span className="performance-label" style={styles.performanceLabel}>Rating</span>
-                </div> */}
-              </div>
+
               <div className="performance-card" style={styles.performanceCard}>
                 <div className="performance-icon" style={styles.performanceIcon}>
                   <TrendingUp size={18} aria-hidden="true" />
@@ -537,13 +514,17 @@ function StoreAboutContent() {
               </div>
             </div>
           </div>
-
         </div>
+
+
+
+
+
 
         {/* Stats Grid */}
         <div style={styles.statsSection}>
-          <h2 style={styles.sectionTitle}>Store Performance</h2>
-          <div style={styles.statsGrid}>
+          {/* <h2 style={styles.sectionTitle}>Store Performance</h2> */}
+          <div className='aboutstat-grid' style={styles.statsGrid}>
             <StatCard
               icon={<Star size={24} fill="currentColor" />}
               value={storeData.average_rating ? Number(storeData.average_rating).toFixed(1) : "New"}
@@ -572,7 +553,7 @@ function StoreAboutContent() {
         </div>
 
         {/* Business Information */}
-        <div style={styles.section}>
+        {/* <div style={styles.section}>
           <h2 style={styles.sectionTitle}>Business Information</h2>
           <div style={styles.card}>
             <div style={styles.businessGrid}>
@@ -598,144 +579,100 @@ function StoreAboutContent() {
                   </div>
                 </div>
               )}
-              {(storeData.owner_name || storeData.seller_name) && (
-                <div style={styles.businessItem}>
-                  <div style={styles.businessIcon}>
-                    <Users size={20} />
-                  </div>
-                  <div>
-                    <span style={styles.businessLabel}>Owner</span>
-                    <p style={styles.businessValue}>{storeData.owner_name || storeData.seller_name}</p>
-                  </div>
-                </div>
-              )}
+              
             </div>
           </div>
-        </div>
+        </div> */}
 
-        {/* About Section */}
-        <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>About Our Store</h2>
-          <div style={styles.card}>
-            <p style={styles.description}>
-              {storeData.description || `Welcome to ${storeData.name}! We are a trusted Kerala-based business committed to providing you with the best products and exceptional customer service. Our team works hard to ensure quality and satisfaction with every purchase.`}
+        <div className='aboutContainer' style={styles.aboutContainer}>
+          <div className='aboutCard'
+          style={{
+            ...styles.aboutCard,
+            textAlign: 'left',       // align text to start
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start' // align all items to left
+          }}>
+            {/* Left Card */}
+            <img
+              src={storeData.logo_url || `https://via.placeholder.com/150x150/3b82f6/ffffff?text=${encodeURIComponent(storeData.name?.charAt(0) || 'S')}`}
+              alt={`${storeData.name} logo`}
+              className='Aboutsluglogo'
+              style={styles.logo}
+            />
+            <p className='aboutslugfootdesc' style={styles.description}>
+              {storeData.description ||
+                `Welcome to ${storeData.name}! We are a trusted Kerala-based business committed to providing quality and customer satisfaction.`}
             </p>
           </div>
-        </div>
 
-        {/* Contact Section */}
-        <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>Contact & Location</h2>
-          <div style={styles.card}>
-            <div style={styles.contactGrid}>
-              {(storeData.business_address || storeData.address || storeData.seller_address) && (
-                <div style={styles.contactItem}>
-                  <div style={styles.contactIcon}>
-                    <MapPin size={20} />
-                  </div>
-                  <div style={styles.contactInfo}>
-                    <span style={styles.contactLabel}>Business Address</span>
-                    <p style={styles.contactValue}>
-                      {storeData.business_address || storeData.address || storeData.seller_address}
-                    </p>
-                  </div>
-                </div>
-              )}
 
-              <div style={styles.contactItem}>
-                <div style={styles.contactIcon}>
-                  <Phone size={20} />
-                </div>
-                <div style={styles.contactInfo}>
-                  <span style={styles.contactLabel}>Phone Number</span>
-                  <p style={styles.contactValue}>
-                    {formatPhoneNumber(storeData.whatsapp_number || storeData.phone || sellerPhone)}
-                  </p>
-                </div>
-              </div>
+          <div className='aboutCard'
+           style={{
+            ...styles.aboutCard,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center', // center card content horizontally
+            textAlign: 'center',  // center text inside each row
+            padding: '13px 40px'     // optional spacing inside card
+          }}>
+            {/* Heading */}
+            <h3 className='aboutslugfoottitle'
+             style={{
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              marginBottom: '1rem',
+              color: '#1F2937'
+            }}>
+              Contact
+            </h3>
 
-              {storeData.email && (
-                <div style={styles.contactItem}>
-                  <div style={styles.contactIcon}>
-                    <Mail size={20} />
-                  </div>
-                  <div style={styles.contactInfo}>
-                    <span style={styles.contactLabel}>Email</span>
-                    <p style={styles.contactValue}>{storeData.email}</p>
-                  </div>
-                </div>
-              )}
-
-              {storeData.website && (
-                <div style={styles.contactItem}>
-                  <div style={styles.contactIcon}>
-                    <Globe size={20} />
-                  </div>
-                  <div style={styles.contactInfo}>
-                    <span style={styles.contactLabel}>Website</span>
-                    <p style={styles.contactValue}>
-                      <a href={storeData.website} target="_blank" rel="noopener noreferrer" style={styles.websiteLink}>
-                        {storeData.website}
-                      </a>
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Delivery Information */}
-            {(storeData.delivery_time_local || storeData.delivery_time_national) && (
-              <div style={styles.deliverySection}>
-                <h3 style={styles.deliveryTitle}>Delivery Information</h3>
-                <div style={styles.deliveryGrid}>
-                  {storeData.delivery_time_local && (
-                    <div style={styles.deliveryItem}>
-                      <Clock size={16} />
-                      <span>Local Kerala: {storeData.delivery_time_local}</span>
-                    </div>
-                  )}
-                  {storeData.delivery_time_national && (
-                    <div style={styles.deliveryItem}>
-                      <Clock size={16} />
-                      <span>National: {storeData.delivery_time_national}</span>
-                    </div>
-                  )}
-                </div>
+            {/* Center Card Content */}
+            {(storeData.owner_name || storeData.seller_name) && (
+              <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
+                <Users size={18} />
+                <span>{storeData.owner_name || storeData.seller_name}</span>
               </div>
             )}
-
-            {/* Social Links */}
-            {(storeData.instagram_link || storeData.facebook_link) && (
-              <div style={styles.socialSection}>
-                <h3 style={styles.socialTitle}>Follow Us</h3>
-                <div style={styles.socialLinks}>
-                  {storeData.instagram_link && (
-                    <a
-                      href={storeData.instagram_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={styles.socialLink}
-                    >
-                      <Instagram size={18} />
-                      <span>Instagram</span>
-                    </a>
-                  )}
-                  {storeData.facebook_link && (
-                    <a
-                      href={storeData.facebook_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={styles.socialLink}
-                    >
-                      <Facebook size={18} />
-                      <span>Facebook</span>
-                    </a>
-                  )}
-                </div>
+            <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
+              <Phone size={18} />
+              <span>{formatPhoneNumber(storeData.whatsapp_number || storeData.phone || sellerPhone)}</span>
+            </div>
+            {(storeData.business_address || storeData.address) && (
+              <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
+                <MapPin size={18} />
+                <span>{storeData.business_address || storeData.address}</span>
               </div>
             )}
           </div>
+
+
+
+
+          <div className='aboutCard'
+          style={styles.aboutCard}>
+            {/* Right Card */}
+            <h3 style={styles.socialTitle}>Follow Us</h3>
+            <div style={styles.socialIcons}>
+              {storeData.facebook_link && (
+                <a href={storeData.facebook_link} target="_blank" rel="noopener noreferrer" style={styles.socialIcon}>
+                  <Facebook size={20} />
+                </a>
+              )}
+              {storeData.instagram_link && (
+                <a href={storeData.instagram_link} target="_blank" rel="noopener noreferrer" style={styles.socialIcon}>
+                  <Instagram size={20} />
+                </a>
+              )}
+            </div>
+          </div>
         </div>
+
+
+
+
+
+
 
         {/* ✅ Enhanced Quick Actions with correct URL */}
         <div style={styles.quickActionsSection}>
@@ -767,11 +704,11 @@ function StoreAboutContent() {
 function StatCard({ icon, value, label, color = '#3b82f6' }) {
   return (
     <div style={styles.statCard}>
-      <div style={{ ...styles.statIcon, color }}>
+      <div className='aboutstat-icon' style={{ ...styles.statIcon, color }}>
         {icon}
       </div>
-      <div style={styles.statValue}>{value}</div>
-      <div style={styles.statLabel}>{label}</div>
+      <div className='aboutstat-value' style={styles.statValue}>{value}</div>
+      <div className='aboutstat-label' style={styles.statLabel}>{label}</div>
     </div>
   );
 }
@@ -808,7 +745,81 @@ export default function StoreAboutPage() {
 const styles = {
   pageContainer: {
     minHeight: '100vh',
-    backgroundColor: '#f8fafc'
+    marginTop:'90px',
+    backgroundColor: '#FDFFF0'
+  },
+
+  aboutContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: '20px',
+    backgroundColor: '#FDFFF0',
+    borderRadius: '12px',
+    boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+    maxWidth: '1300px',
+    margin: '0 auto',
+    padding: '20px',
+    boxSizing: 'border-box',
+  },
+
+  aboutCard: {
+    flex: '1 1 30%',      // take 30% width, grow/shrink as needed
+    backgroundColor: '#FDFFF0',
+    padding: '35px 40px',
+    boxSizing: 'border-box',
+    minWidth: '250px',   // ensures cards never shrink too much
+    textAlign: 'center',
+  },
+
+  // Optional: adjust gap for smaller screens using media queries
+
+
+
+  logo: {
+    width: '70px',
+    height: '70px',
+    borderRadius: '50%',
+    // marginBottom: '15px',
+  },
+
+
+
+  description: {
+    fontSize: '14px',
+    color: '#333',
+    lineHeight: '1.5',
+  },
+
+  infoRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    marginBottom: '10px',
+    fontSize: '14px',
+    color: '#333',
+  },
+
+  socialTitle: {
+    marginBottom: '10px',
+    fontSize: '16px',
+    fontWeight: '600',
+  },
+
+  socialIcons: {
+    display: 'flex',
+    gap: '10px',
+    justifyContent: 'center',
+  },
+
+  socialIcon: {
+    color: '#555',
+    transition: 'color 0.2s',
+  },
+
+
+  socialIconHover: {
+    transform: 'scale(1.1)',
   },
 
   // Loading & Error States
@@ -982,7 +993,7 @@ const styles = {
 
   // Main Container
   container: {
-    maxWidth: '900px',
+    maxWidth: '1300px',
     margin: '0 auto',
     padding: '24px 20px',
     display: 'flex',
@@ -993,43 +1004,79 @@ const styles = {
 
   // Store Header
   storeHeader: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: '32px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb',
     display: 'flex',
-    alignItems: 'center',
-    gap: '24px',
-    flexWrap: 'wrap'
+    justifyContent: 'space-between', // Logo+info left, actions right
+    alignItems: 'center', // vertically align
+    flexWrap: 'wrap',
+    gap: '2rem',
+    width: '100%',
   },
 
   logoContainer: {
     position: 'relative',
-    flexShrink: 0
+    flexShrink: 0,
   },
 
-  logo: {
-    width: '120px',
-    height: '120px',
-    borderRadius: '20px',
+
+  logo1: {
+    width: '140px',
+    height: '140px',
+    borderRadius: '50%',
     objectFit: 'cover',
-    border: '3px solid #f1f5f9'
   },
 
   verifiedBadge: {
     position: 'absolute',
-    bottom: '-8px',
-    right: '-8px',
-    backgroundColor: '#10b981',
-    color: 'white',
+    bottom: '5px',
+    right: '5px',
+    backgroundColor: '#10B981',
+    color: '#fff',
     borderRadius: '50%',
-    width: '32px',
-    height: '32px',
+    padding: '4px',
+  },
+
+  infoColumn: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    gap: '0.5rem',
+    flex: 1,
+    marginTop: '19px',
+  },
+
+  storeName: {
+    fontSize: '1.8rem',
+    fontWeight: 600,
+    margin: 0,
+  },
+
+  tagline: {
+    fontSize: '1rem',
+    color: '#555',
+    margin: 0,
+  },
+
+  badges: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px',
+  },
+
+  badge: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    border: '3px solid white'
+    gap: '6px',
+    fontSize: '0.85rem',
+    color: '#374151',
+
+  },
+
+  storeMeta: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '0.9rem',
+    color: '#374151',
   },
 
   storeInfo: {
@@ -1037,37 +1084,19 @@ const styles = {
     minWidth: '250px'
   },
 
-  storeName: {
-    fontSize: '2rem',
-    fontWeight: '700',
-    color: '#1f2937',
-    margin: '0 0 8px 0'
-  },
-
-  tagline: {
-    fontSize: '1.125rem',
-    color: '#6b7280',
-    margin: '0 0 16px 0',
-    lineHeight: '1.5'
-  },
-
-  badges: {
+  storeShare: {
     display: 'flex',
-    gap: '12px',
-    flexWrap: 'wrap'
-  },
-
-  badge: {
-    display: 'flex',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: '6px',
-    backgroundColor: '#f1f5f9',
-    color: '#6b7280',
-    padding: '6px 12px',
-    borderRadius: '20px',
-    fontSize: '12px',
-    fontWeight: '600'
   },
+
+  storeActions: {
+    display: 'flex',
+    flexDirection: 'column', // stack vertically
+    alignItems: 'center',
+    gap: '10px',
+  },
+
 
   // Sections
   section: {
@@ -1105,7 +1134,7 @@ const styles = {
   },
 
   statCard: {
-    backgroundColor: 'white',
+    backgroundColor: 'transparent',
     padding: '24px',
     borderRadius: '16px',
     textAlign: 'center',
@@ -1121,7 +1150,7 @@ const styles = {
   },
 
   statValue: {
-    fontSize: '2rem',
+    fontSize: '1.8rem',
     fontWeight: '700',
     color: '#1f2937',
     marginBottom: '4px'
@@ -1173,13 +1202,6 @@ const styles = {
     fontWeight: '500'
   },
 
-  // Description
-  description: {
-    fontSize: '16px',
-    color: '#374151',
-    lineHeight: '1.7',
-    margin: 0
-  },
 
   // Contact Section
   contactGrid: {
@@ -1313,12 +1335,10 @@ const styles = {
     transition: 'all 0.2s',
     boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
   },
-// Store Info Styles
+  // Store Info Styles
   storeInfoSection: {
-    backgroundColor: 'white',
-    borderBottom: '1px solid #e5e7eb',
+    backgroundColor: '#FDFFF0',
     padding: '32px 0',
-    marginBottom: '32px'
   },
 
   storeHeader: {
@@ -1342,8 +1362,8 @@ const styles = {
   },
 
   storeLogo: {
-    width: '120px',
-    height: '120px',
+    width: '70px',
+    height: '70px',
     borderRadius: '50%',
     objectFit: 'cover',
     border: '4px solid #f1f5f9',
@@ -1365,20 +1385,7 @@ const styles = {
     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
   },
 
-  verifiedBadge: {
-    position: 'absolute',
-    bottom: '5px',
-    right: '5px',
-    width: '24px',
-    height: '24px',
-    backgroundColor: '#10b981',
-    color: 'white',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: '2px solid white'
-  },
+
 
   storeDetails: {
     flex: 1,
@@ -1389,13 +1396,7 @@ const styles = {
     marginBottom: '12px'
   },
 
-  storeName: {
-    fontSize: '2rem',
-    fontWeight: '700',
-    color: '#1f2937',
-    margin: '0 0 8px 0',
-    lineHeight: '1.2'
-  },
+
 
   storeBadges: {
     display: 'flex',
@@ -1436,11 +1437,7 @@ const styles = {
     margin: '0 0 16px 0'
   },
 
-  storeMeta: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
-  },
+
 
   metaItem: {
     display: 'flex',
@@ -1459,11 +1456,6 @@ const styles = {
     fontWeight: '600'
   },
 
-  storeActions: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
-  },
 
   actionButtonPrimary: {
     display: 'flex',
@@ -1471,7 +1463,7 @@ const styles = {
     justifyContent: 'center',
     gap: '8px',
     padding: '10px 16px',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#1a4845',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
@@ -1513,9 +1505,8 @@ const styles = {
   // Store Performance
   storePerformance: {
     display: 'flex',
-    gap: '32px',
-    padding: '20px 0',
-    borderTop: '1px solid #f3f4f6',
+    gap: '50px',
+    padding: '20px 30px',
     flexWrap: 'wrap'
   },
 
@@ -1567,5 +1558,5 @@ const styles = {
     overflow: 'hidden'
   },
 
-  
+
 };
