@@ -14,7 +14,7 @@
     }
 
     .aboutslugfoottitle {
-        font-size: 20px !important;
+        font-size: 17px !important;
     }
 
     .Aboutstorename {
@@ -53,9 +53,27 @@
         padding: 0px !important;
     }
 
-    .aboutContainer .aboutCard {
+    .aboutContainer .aboutCard1 {
         flex: 1 1 20% !important;
-        /* roughly 3 cards per row */
+        padding: 35px 40px !important;
+        max-width: 20% !important;
+        min-width: 242px !important;
+        /* prevent collapsing */
+        box-sizing: border-box !important;
+    }
+
+    .aboutContainer .aboutCard2 {
+        flex: 1 1 20% !important;
+        padding: 35px 0px !important;
+        max-width: 20% !important;
+        min-width: 242px !important;
+        /* prevent collapsing */
+        box-sizing: border-box !important;
+    }
+
+    .aboutContainer .aboutCard3 {
+        flex: 1 1 20% !important;
+        padding: 50px 0px !important;
         max-width: 20% !important;
         min-width: 242px !important;
         /* prevent collapsing */
@@ -112,6 +130,33 @@
     .enhanced-store-info-section {
         padding: 20px 0px !important;
     }
+
+    .aboutContainer .aboutCard1 {
+        flex: 1 1 20% !important;
+        padding: 20px 10px !important;
+        max-width: 20% !important;
+        min-width: 242px !important;
+        /* prevent collapsing */
+        box-sizing: border-box !important;
+    }
+
+    .aboutContainer .aboutCard2 {
+        flex: 1 1 20% !important;
+        padding: 15px 0px !important;
+        max-width: 20% !important;
+        min-width: 242px !important;
+        /* prevent collapsing */
+        box-sizing: border-box !important;
+    }
+
+    .aboutContainer .aboutCard3 {
+        flex: 1 1 20% !important;
+        padding: 20px 0px !important;
+        max-width: 20% !important;
+        min-width: 242px !important;
+        /* prevent collapsing */
+        box-sizing: border-box !important;
+    }
 }
 
 @media (max-width: 576px) {
@@ -131,6 +176,13 @@
     .Aboutinfo-column {
         gap: 2px !important;
         margin-top: 8px !important;
+    }
+
+    .Aboutsluglogo {
+        width: 60px !important;
+        height: 60px !important;
+        align-self: center !important;
+        display: flex !important;
     }
 
     .Aboutaction-button {
@@ -190,6 +242,23 @@
         justify-content: center !important;
     }
 
+    .aboutContainer .aboutCard1 {
+        flex: 1 1 20% !important;
+        padding: 20px 10px !important;
+        max-width: 20% !important;
+        min-width: 260px !important;
+        /* prevent collapsing */
+        box-sizing: border-box !important;
+    }
+
+    .aboutContainer .aboutCard3 {
+        flex: 1 1 20% !important;
+        padding: 28px 0px !important;
+        max-width: 20% !important;
+        min-width: 242px !important;
+        /* prevent collapsing */
+        box-sizing: border-box !important;
+    }
 }
 
 @media (max-width: 480px) {
@@ -287,6 +356,10 @@
         text-align: left !important;
     }
 
+    .aboutslugfoottitle {
+        font-size: 15px !important;
+    }
+
     .aboutstat-grid {
         display: grid !important;
         grid-template-columns: repeat(auto-fit, minmax(134px, 1fr)) !important;
@@ -307,6 +380,15 @@
         margin-bottom: 12px !important;
         display: flex !important;
         justify-content: center !important;
+    }
+
+    .aboutContainer .aboutCard1 {
+        flex: 1 1 20% !important;
+        padding: 20px 10px !important;
+        max-width: 20% !important;
+        min-width: 260px !important;
+        /* prevent collapsing */
+        box-sizing: border-box !important;
     }
 
 }

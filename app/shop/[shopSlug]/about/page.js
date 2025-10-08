@@ -585,9 +585,9 @@ function StoreAboutContent() {
         </div> */}
 
         <div className='aboutContainer' style={styles.aboutContainer}>
-          <div className='aboutCard'
+          <div className='aboutCard1'
           style={{
-            ...styles.aboutCard,
+            ...styles.aboutCard1,
             textAlign: 'left',       // align text to start
             display: 'flex',
             flexDirection: 'column',
@@ -607,24 +607,22 @@ function StoreAboutContent() {
           </div>
 
 
-          <div className='aboutCard'
+          <div className='aboutCard2'
            style={{
-            ...styles.aboutCard,
+            ...styles.aboutCard2,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center', // center card content horizontally
             textAlign: 'center',  // center text inside each row
-            padding: '13px 40px'     // optional spacing inside card
           }}>
             {/* Heading */}
             <h3 className='aboutslugfoottitle'
              style={{
-              fontSize: '1.5rem',
               fontWeight: '600',
               marginBottom: '1rem',
               color: '#1F2937'
             }}>
-              Contact
+              CONTACT
             </h3>
 
             {/* Center Card Content */}
@@ -649,10 +647,10 @@ function StoreAboutContent() {
 
 
 
-          <div className='aboutCard'
-          style={styles.aboutCard}>
+          <div className='aboutCard3'
+          style={styles.aboutCard3}>
             {/* Right Card */}
-            <h3 style={styles.socialTitle}>Follow Us</h3>
+            <h3 className='aboutslugfoottitle' style={styles.socialTitle}>FOLLOW US</h3>
             <div style={styles.socialIcons}>
               {storeData.facebook_link && (
                 <a href={storeData.facebook_link} target="_blank" rel="noopener noreferrer" style={styles.socialIcon}>
@@ -763,7 +761,7 @@ const styles = {
     boxSizing: 'border-box',
   },
 
-  aboutCard: {
+  aboutCard1: {
     flex: '1 1 30%',      // take 30% width, grow/shrink as needed
     backgroundColor: '#FDFFF0',
     padding: '35px 40px',
@@ -772,8 +770,22 @@ const styles = {
     textAlign: 'center',
   },
 
-  // Optional: adjust gap for smaller screens using media queries
-
+ aboutCard2: {
+    flex: '1 1 30%',      // take 30% width, grow/shrink as needed
+    backgroundColor: '#FDFFF0',
+    padding: '35px 0px',
+    boxSizing: 'border-box',
+    minWidth: '250px',   // ensures cards never shrink too much
+    textAlign: 'center',
+  },
+   aboutCard3: {
+    flex: '1 1 30%',      // take 30% width, grow/shrink as needed
+    backgroundColor: '#FDFFF0',
+    padding: '53px 0px',
+    boxSizing: 'border-box',
+    minWidth: '250px',   // ensures cards never shrink too much
+    textAlign: 'center',
+  },
 
 
   logo: {
@@ -800,11 +812,7 @@ const styles = {
     color: '#333',
   },
 
-  socialTitle: {
-    marginBottom: '10px',
-    fontSize: '16px',
-    fontWeight: '600',
-  },
+
 
   socialIcons: {
     display: 'flex',
@@ -1288,7 +1296,6 @@ const styles = {
   },
 
   socialTitle: {
-    fontSize: '18px',
     fontWeight: '600',
     color: '#1f2937',
     margin: '0 0 16px 0'
