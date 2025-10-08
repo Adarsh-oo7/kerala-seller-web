@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ShoppingCart, Plus, Minus, Trash2, CreditCard, Store, AlertTriangle, Loader } from 'lucide-react';
 import "../../../../styles/Shopslugcart.css";
+// ✅ ADD: Import the SHeader component
+import SHeader from '../../../../components/common/SHeader';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
@@ -17,6 +19,20 @@ export default function ShopCartPage() {
   const [urlError, setUrlError] = useState(null);
   const [stockWarnings, setStockWarnings] = useState({});
   const [validatingStock, setValidatingStock] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ ADD: Login state for SHeader
+
+  // ✅ ADD: Check login status for SHeader
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('buyerAccessToken') ||
+          localStorage.getItem('access_token') ||
+          localStorage.getItem('accessToken');
+      setIsLoggedIn(!!token);
+    } catch (error) {
+      console.warn('localStorage access error:', error);
+      setIsLoggedIn(false);
+    }
+  }, []);
 
   // ✅ ENHANCED: Better store ID detection with validation
   const getActualStoreId = () => {
@@ -325,29 +341,35 @@ export default function ShopCartPage() {
   // ✅ ENHANCED: Better loading state with progress indication
   if (loading || urlError) {
     return (
-
-      <div style={styles.loadingContainer}>
-        {urlError ? (
-          <>
-            <AlertTriangle size={48} color="#ef4444" />
-            <h2>Invalid Cart URL</h2>
-            <p>{urlError}</p>
-            <p>Checking for available carts...</p>
-            <div style={styles.debugInfo}>
-              <div><strong>Shop Slug:</strong> {shopSlug}</div>
-              <div><strong>Query ID:</strong> {searchParams.get('id')}</div>
-              <div><strong>URL:</strong> {typeof window !== 'undefined' ? window.location.pathname : 'SSR'}</div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div style={styles.spinner}></div>
-            <p>Loading your cart...</p>
-            <p style={{ fontSize: '12px', color: '#666' }}>
-              Store: {storeData?.name || actualStoreId || 'Detecting...'}
-            </p>
-          </>
-        )}
+      <div style={styles.pageContainer}>
+        {/* ✅ ADD: SHeader during loading */}
+        <SHeader
+          store={storeData}
+          isLoggedIn={isLoggedIn}
+        />
+        <div style={styles.loadingContainer}>
+          {urlError ? (
+            <>
+              <AlertTriangle size={48} color="#ef4444" />
+              <h2>Invalid Cart URL</h2>
+              <p>{urlError}</p>
+              <p>Checking for available carts...</p>
+              <div style={styles.debugInfo}>
+                <div><strong>Shop Slug:</strong> {shopSlug}</div>
+                <div><strong>Query ID:</strong> {searchParams.get('id')}</div>
+                <div><strong>URL:</strong> {typeof window !== 'undefined' ? window.location.pathname : 'SSR'}</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={styles.spinner}></div>
+              <p>Loading your cart...</p>
+              <p style={{ fontSize: '12px', color: '#666' }}>
+                Store: {storeData?.name || actualStoreId || 'Detecting...'}
+              </p>
+            </>
+          )}
+        </div>
       </div>
     );
   }
@@ -355,209 +377,227 @@ export default function ShopCartPage() {
   // Show error if no store ID found (shouldn't reach here due to redirect)
   if (!actualStoreId) {
     return (
-      <div style={styles.errorContainer}>
-        <Store size={48} color="#ef4444" />
-        <h2>Store Not Found</h2>
-        <p>Unable to identify the store. Please check the URL.</p>
-        <div style={{ fontSize: '12px', color: '#666', marginTop: '10px', textAlign: 'left' }}>
-          <div>shopSlug: {shopSlug}</div>
-          <div>id parameter: {searchParams.get('id')}</div>
-          <div>Current URL: {typeof window !== 'undefined' ? window.location.href : 'Loading...'}</div>
+      <div style={styles.pageContainer}>
+        {/* ✅ ADD: SHeader for error state */}
+        <SHeader
+          store={null}
+          isLoggedIn={isLoggedIn}
+        />
+        <div style={styles.errorContainer}>
+          <Store size={48} color="#ef4444" />
+          <h2>Store Not Found</h2>
+          <p>Unable to identify the store. Please check the URL.</p>
+          <div style={{ fontSize: '12px', color: '#666', marginTop: '10px', textAlign: 'left' }}>
+            <div>shopSlug: {shopSlug}</div>
+            <div>id parameter: {searchParams.get('id')}</div>
+            <div>Current URL: {typeof window !== 'undefined' ? window.location.href : 'Loading...'}</div>
+          </div>
+          <button onClick={() => router.push('/')} style={styles.homeButton}>
+            Go Home
+          </button>
         </div>
-        <button onClick={() => router.push('/')} style={styles.homeButton}>
-          Go Home
-        </button>
       </div>
     );
   }
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <button onClick={handleBackClick} style={styles.backButton}>
-          <ArrowLeft size={20} color='red' />
-        </button>
-        <h1 className='carttitle' style={styles.title}>
-          {storeData?.name || `Store ${actualStoreId}`} Cart
-        </h1>
-        {cartItems.length > 0 && (
-          <button className='shopcartclearbutton' onClick={clearCart} style={styles.clearButton}>
-            Clear All
+    <div style={styles.pageContainer}>
+      {/* ✅ ADD: SHeader - Navigation Bar */}
+      <SHeader
+        store={storeData}
+        isLoggedIn={isLoggedIn}
+      />
+      
+      <div style={styles.container}>
+        {/* Header - Keep the existing cart header for actions */}
+        <div style={styles.header}>
+          <button onClick={handleBackClick} style={styles.backButton}>
+            <ArrowLeft size={20} color='red' />
           </button>
-        )}
-      </div>
+          <h1 className='carttitle' style={styles.title}>
+            {storeData?.name || `Store ${actualStoreId}`} Cart
+          </h1>
+          {cartItems.length > 0 && (
+            <button className='shopcartclearbutton' onClick={clearCart} style={styles.clearButton}>
+              Clear All
+            </button>
+          )}
+        </div>
 
-      {/* Store Context Indicator */}
-      <div className='storeindicator' style={styles.storeIndicator}>
-        <Store size={16} color='white' />
-        <span>Shopping at {storeData?.name || `Store ${actualStoreId}`} • {cartItems.length} item{cartItems.length !== 1 ? 's' : ''}</span>
-        {validatingStock && (
-          <div style={styles.stockValidating}>
-            <Loader size={12} />
-            <span>Checking stock...</span>
+        {/* Store Context Indicator */}
+        <div className='storeindicator' style={styles.storeIndicator}>
+          <Store size={16} color='white' />
+          <span>Shopping at {storeData?.name || `Store ${actualStoreId}`} • {cartItems.length} item{cartItems.length !== 1 ? 's' : ''}</span>
+          {validatingStock && (
+            <div style={styles.stockValidating}>
+              <Loader size={12} />
+              <span>Checking stock...</span>
+            </div>
+          )}
+        </div>
+
+        {/* Stock Issues Alert */}
+        {Object.keys(stockWarnings).length > 0 && (
+          <div style={styles.stockAlert}>
+            <AlertTriangle size={16} />
+            <span>Some items have stock issues. Please review quantities below.</span>
           </div>
         )}
-      </div>
 
-      {/* Stock Issues Alert */}
-      {Object.keys(stockWarnings).length > 0 && (
-        <div style={styles.stockAlert}>
-          <AlertTriangle size={16} />
-          <span>Some items have stock issues. Please review quantities below.</span>
-        </div>
-      )}
-
-      {/* Cart Items */}
-      {cartItems.length === 0 ? (
-        <div style={styles.emptyState}>
-          <ShoppingCart size={48} color="#ccc" />
-          <h2>Your cart is empty</h2>
-          <p>Add some items from {storeData?.name || `Store ${actualStoreId}`} to get started.</p>
-          <button onClick={handleContinueShopping} style={styles.shopButton}>
-            Continue Shopping
-          </button>
-        </div>
-      ) : (
-        <>
-          <div className='cart-layout' style={styles.cartLayout}>
-            <div style={styles.cartItemsSection}>
-              <div className='cart-items' style={styles.cartItems}>
-                {cartItems.map(item => (
-                  <div className="cart-item" key={item.id} style={{
-                    ...styles.cartItem,
-                    ...(stockWarnings[item.id] ? styles.cartItemWarning : {})
-                  }}>
-                    <div className="cart-item-image" style={styles.imageColumn}>
-                      <img
-                        src={item.main_image_url || item.image_url || '/placeholder.svg'}
-                        alt={item.name}
-                        style={styles.itemImage}
-                        onError={(e) => { e.target.src = '/placeholder.svg'; }}
-                      />
-                      <div className="total-price-below-image" style={styles.totalPriceBelowImage}>
-                        {formatPrice(item.price * item.quantity)}
-                      </div>
-                    </div>
-
-                    <div className="item-info" style={styles.itemInfo} data-total-price={`₹${item.price * item.quantity}`}>
-                      <h3 className="item-name" style={styles.itemName}>{item.name}</h3>
-                      <p className="item-price" style={styles.itemPrice}>{formatPrice(item.price)} each</p>
-                      {/* ✅ ENHANCED: Stock warning display */}
-                      {stockWarnings[item.id] && (
-                        <p style={styles.stockWarning}>
-                          ⚠️ {stockWarnings[item.id]}
-                        </p>
-                      )}
-
-
-                      <div style={styles.quantityControls}>
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                          style={{
-                            ...styles.quantityButton,
-                            opacity: item.quantity <= 1 ? 0.5 : 1,
-                            cursor: item.quantity <= 1 ? 'not-allowed' : 'pointer'
-                          }}
-                        >
-                          <Minus backgroundColor='#FDFFF0' size={16} />
-                        </button>
-                        <span style={styles.quantity}>{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          style={styles.quantityButton}
-                        >
-                          <Plus backgroundColor='#FDFFF0' size={16} />
-                        </button>
+        {/* Cart Items */}
+        {cartItems.length === 0 ? (
+          <div style={styles.emptyState}>
+            <ShoppingCart size={48} color="#ccc" />
+            <h2>Your cart is empty</h2>
+            <p>Add some items from {storeData?.name || `Store ${actualStoreId}`} to get started.</p>
+            <button onClick={handleContinueShopping} style={styles.shopButton}>
+              Continue Shopping
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className='cart-layout' style={styles.cartLayout}>
+              <div style={styles.cartItemsSection}>
+                <div className='cart-items' style={styles.cartItems}>
+                  {cartItems.map(item => (
+                    <div className="cart-item" key={item.id} style={{
+                      ...styles.cartItem,
+                      ...(stockWarnings[item.id] ? styles.cartItemWarning : {})
+                    }}>
+                      <div className="cart-item-image" style={styles.imageColumn}>
+                        <img
+                          src={item.main_image_url || item.image_url || '/placeholder.svg'}
+                          alt={item.name}
+                          style={styles.itemImage}
+                          onError={(e) => { e.target.src = '/placeholder.svg'; }}
+                        />
+                        <div className="total-price-below-image" style={styles.totalPriceBelowImage}>
+                          {formatPrice(item.price * item.quantity)}
+                        </div>
                       </div>
 
-                      <button
-                        className="remove-button-below-quantity"
-                        onClick={() => removeItem(item.id)}
-                        style={styles.removeButtonBelowQuantity}
-                        title="Remove item"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="item-info" style={styles.itemInfo} data-total-price={`₹${item.price * item.quantity}`}>
+                        <h3 className="item-name" style={styles.itemName}>{item.name}</h3>
+                        <p className="item-price" style={styles.itemPrice}>{formatPrice(item.price)} each</p>
+                        {/* ✅ ENHANCED: Stock warning display */}
+                        {stockWarnings[item.id] && (
+                          <p style={styles.stockWarning}>
+                            ⚠️ {stockWarnings[item.id]}
+                          </p>
+                        )}
+
+                        <div style={styles.quantityControls}>
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                            style={{
+                              ...styles.quantityButton,
+                              opacity: item.quantity <= 1 ? 0.5 : 1,
+                              cursor: item.quantity <= 1 ? 'not-allowed' : 'pointer'
+                            }}
+                          >
+                            <Minus backgroundColor='#FDFFF0' size={16} />
+                          </button>
+                          <span style={styles.quantity}>{item.quantity}</span>
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            style={styles.quantityButton}
+                          >
+                            <Plus backgroundColor='#FDFFF0' size={16} />
+                          </button>
+                        </div>
+
+                        <button
+                          className="remove-button-below-quantity"
+                          onClick={() => removeItem(item.id)}
+                          style={styles.removeButtonBelowQuantity}
+                          title="Remove item"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Cart Summary */}
-            <div className='cart-summary-section' style={styles.cartSummarySection}>
-              <div style={styles.cartSummary}>
-                <div style={styles.summaryRow}>
-                  <span style={styles.summaryLabel}>Items ({cartItems.length})</span>
-                  <span style={styles.summaryValue}>{formatPrice(calculateTotal())}</span>
-                </div>
-                <div style={styles.summaryRow}>
-                  <span style={styles.summaryLabel}>Delivery</span>
-                  <span style={styles.summaryValue}>Free</span>
-                </div>
-                {Object.keys(stockWarnings).length > 0 && (
+              {/* Cart Summary */}
+              <div className='cart-summary-section' style={styles.cartSummarySection}>
+                <div style={styles.cartSummary}>
                   <div style={styles.summaryRow}>
-                    <span style={styles.summaryLabel}>Stock Issues</span>
-                    <span style={styles.summaryWarning}>{Object.keys(stockWarnings).length} item{Object.keys(stockWarnings).length !== 1 ? 's' : ''}</span>
+                    <span style={styles.summaryLabel}>Items ({cartItems.length})</span>
+                    <span style={styles.summaryValue}>{formatPrice(calculateTotal())}</span>
                   </div>
-                )}
-                <div style={styles.totalRow}>
-                  <span className='totallabel' style={styles.totalLabel}>Total</span>
-                  <span className='totallabel' style={styles.totalValue}>{formatPrice(calculateTotal())}</span>
+                  <div style={styles.summaryRow}>
+                    <span style={styles.summaryLabel}>Delivery</span>
+                    <span style={styles.summaryValue}>Free</span>
+                  </div>
+                  {Object.keys(stockWarnings).length > 0 && (
+                    <div style={styles.summaryRow}>
+                      <span style={styles.summaryLabel}>Stock Issues</span>
+                      <span style={styles.summaryWarning}>{Object.keys(stockWarnings).length} item{Object.keys(stockWarnings).length !== 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                  <div style={styles.totalRow}>
+                    <span className='totallabel' style={styles.totalLabel}>Total</span>
+                    <span className='totallabel' style={styles.totalValue}>{formatPrice(calculateTotal())}</span>
+                  </div>
+
+                  <button
+                  className='proceedbtn'
+                    onClick={handleCheckout}
+                    style={{
+                      ...styles.checkoutButton,
+                      backgroundColor: cartItems.length === 0 ? '#ccc' : '#10b981',
+                      cursor: cartItems.length === 0 ? 'not-allowed' : 'pointer'
+                    }}
+                    disabled={cartItems.length === 0}
+                  >
+                    <CreditCard size={18} />
+                    Proceed to Checkout 
+                  </button>
+
+                  <button className='continuebtn' onClick={handleContinueShopping} style={styles.continueButton}>
+                    Continue Shopping
+                  </button>
                 </div>
-
-                <button
-                className='proceedbtn'
-                  onClick={handleCheckout}
-                  style={{
-                    ...styles.checkoutButton,
-                    backgroundColor: cartItems.length === 0 ? '#ccc' : '#10b981',
-                    cursor: cartItems.length === 0 ? 'not-allowed' : 'pointer'
-                  }}
-                  disabled={cartItems.length === 0}
-                >
-                  <CreditCard size={18} />
-                  Proceed to Checkout 
-                </button>
-
-                <button className='continuebtn' onClick={handleContinueShopping} style={styles.continueButton}>
-                  Continue Shopping
-                </button>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
 
-      {/* ✅ ENHANCED: Debug info for development */}
-      {/* {process.env.NODE_ENV === 'development' && (
-        <div style={styles.debugPanel}>
-          <div style={styles.debugTitle}>🔧 Debug Info</div>
-          <div>Store ID: {actualStoreId}</div>
-          <div>Cart Items: {cartItems.length}</div>
-          <div>Stock Warnings: {Object.keys(stockWarnings).length}</div>
-          <div>URL Pattern: {searchParams.get('id') ? 'new+id' : 'direct'}</div>
-          <div>Validating Stock: {validatingStock ? 'Yes' : 'No'}</div>
-        </div>
-      )} */}
+        {/* ✅ ENHANCED: Debug info for development */}
+        {/* {process.env.NODE_ENV === 'development' && (
+          <div style={styles.debugPanel}>
+            <div style={styles.debugTitle}>🔧 Debug Info</div>
+            <div>Store ID: {actualStoreId}</div>
+            <div>Cart Items: {cartItems.length}</div>
+            <div>Stock Warnings: {Object.keys(stockWarnings).length}</div>
+            <div>URL Pattern: {searchParams.get('id') ? 'new+id' : 'direct'}</div>
+            <div>Validating Stock: {validatingStock ? 'Yes' : 'No'}</div>
+          </div>
+        )} */}
+      </div>
     </div>
   );
 }
 
+// ✅ UPDATED: Styles with proper spacing for SHeader
 const styles = {
+  pageContainer: { 
+    minHeight: '100vh', 
+    backgroundColor: '#FDFFF0',
+    paddingTop: '90px', // ✅ ADD: Space for SHeader navigation bar
+  },
   container: {
-    minHeight: "100vh",
     backgroundColor: "#FDFFF0",
     padding: "20px",
-    // maxWidth: "1200px",
     margin: "0 auto",
     overflowX: "hidden",
   },
   loadingContainer: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', minHeight: '100vh', gap: '20px', textAlign: 'center'
+    justifyContent: 'center', minHeight: 'calc(100vh - 90px)', gap: '20px', textAlign: 'center'
   },
   spinner: {
     width: '32px', height: '32px', border: '3px solid #f3f3f3',
@@ -571,7 +611,7 @@ const styles = {
   },
   errorContainer: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', minHeight: '100vh', gap: '20px',
+    justifyContent: 'center', minHeight: 'calc(100vh - 90px)', gap: '20px',
     textAlign: 'center', padding: '40px'
   },
   homeButton: {
@@ -631,7 +671,6 @@ const styles = {
     gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', // responsive
   },
 
-
   cartItem: {
     display: 'flex',
     flexDirection: 'row',
@@ -647,8 +686,6 @@ const styles = {
     width: '100%',          // fills the grid cell
     boxSizing: 'border-box',
   },
-
-
 
   itemInfo: {
     flex: 1,                  // fills horizontal space
@@ -709,7 +746,6 @@ const styles = {
     margin: '4px 0 0 0'
   },
 
-
   quantityButton: {
     width: '26px', height: '26px', border: '1px solid #d1d5db',
     backgroundColor: '#FDFFF0', borderRadius: '6px', cursor: 'pointer',
@@ -758,7 +794,7 @@ const styles = {
 
   cartSummarySection: {
     position: "sticky",
-    top: "20px",
+    top: "110px", // ✅ UPDATE: Account for SHeader height
     minWidth: 0,
   },
 

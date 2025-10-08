@@ -18,6 +18,8 @@ import {
   CheckCircle,
   AlertTriangle 
 } from 'lucide-react';
+// ✅ ADD: Import the SHeader component
+import SHeader from '../../../../components/common/SHeader';
 
 // ✅ Enhanced API configuration
 const getApiBaseUrl = () => {
@@ -107,7 +109,7 @@ function EmailLoginForm({ onLoginSuccess, storeInfo }) {
             const response = await axios.post(EMAIL_LOGIN_API, { 
                 email: email.trim().toLowerCase(), 
                 password: password,
-                store_context: storeInfo.actualStoreId // ✅ Include store context
+                store_context: storeInfo.actualStoreId
             }, {
                 timeout: 15000
             });
@@ -255,6 +257,21 @@ function ShopLoginContent() {
         loading: true,
         error: null
     });
+    const [hasCheckedToken, setHasCheckedToken] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ ADD: Login state for SHeader
+
+    // ✅ ADD: Check login status for SHeader
+    useEffect(() => {
+        try {
+            const token = localStorage.getItem('buyerAccessToken') ||
+                localStorage.getItem('access_token') ||
+                localStorage.getItem('accessToken');
+            setIsLoggedIn(!!token);
+        } catch (error) {
+            console.warn('localStorage access error:', error);
+            setIsLoggedIn(false);
+        }
+    }, []);
 
     // Get actual store ID from URL parameters
     const getActualStoreId = () => {
@@ -361,6 +378,9 @@ function ShopLoginContent() {
         if (userData.user) {
             localStorage.setItem('userInfo', JSON.stringify(userData.user));
         }
+
+        // ✅ UPDATE: Update login state for SHeader
+        setIsLoggedIn(true);
         
         // Shop-specific redirect logic
         const redirectTo = searchParams.get('redirect');
@@ -368,23 +388,58 @@ function ShopLoginContent() {
         if (redirectTo) {
             router.push(decodeURIComponent(redirectTo));
         } else {
-            // Default to shop profile
-            const profileUrl = getShopUrl('/profile');
-            console.log('🔄 Redirecting to shop profile:', profileUrl);
-            router.push(profileUrl);
+            // Default to shop home instead of profile to avoid loop
+            const shopUrl = getShopUrl('');
+            console.log('🔄 Redirecting to shop home:', shopUrl);
+            router.push(shopUrl);
         }
     }, [router, searchParams, storeInfo.actualStoreId]);
     
-    // ✅ Check for existing token on mount
+    // ✅ FIXED: Enhanced token check with validation and loop prevention
     useEffect(() => {
-        const token = localStorage.getItem('buyerAccessToken') || localStorage.getItem('access_token');
-        if (token && storeInfo.actualStoreId) {
-            console.log('🔍 Existing token found, redirecting to shop...');
-            handleLoginSuccess(token);
-        }
-    }, [handleLoginSuccess, storeInfo.actualStoreId]);
+        if (!hasCheckedToken && storeInfo.actualStoreId && !storeInfo.loading) {
+            const checkExistingToken = async () => {
+                const token = localStorage.getItem('buyerAccessToken') || localStorage.getItem('access_token');
+                
+                if (!token) {
+                    setHasCheckedToken(true);
+                    return;
+                }
 
-    // ✅ Enhanced Google Login Handler with store context
+                console.log('🔍 Existing token found, validating...');
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/buyer/profile/`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                    });
+
+                    if (response.ok) {
+                        console.log('✅ Token is valid, redirecting...');
+                        handleLoginSuccess(token);
+                    } else if (response.status === 401) {
+                        console.log('🔐 Token is invalid/expired, clearing...');
+                        localStorage.removeItem('access_token');
+                        localStorage.removeItem('buyerAccessToken');
+                        localStorage.removeItem('refresh_token');
+                        setHasCheckedToken(true);
+                    } else {
+                        console.log('⚠️ Token validation inconclusive, staying on login');
+                        setHasCheckedToken(true);
+                    }
+                } catch (error) {
+                    console.error('❌ Token validation error:', error);
+                    setHasCheckedToken(true);
+                }
+            };
+
+            checkExistingToken();
+        }
+    }, [hasCheckedToken, storeInfo.actualStoreId, storeInfo.loading, handleLoginSuccess]);
+
+    // Enhanced Google Login Handler with store context
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
             console.log('🔍 Google credential received for shop:', storeInfo.actualStoreId);
@@ -451,15 +506,29 @@ function ShopLoginContent() {
         }
     };
 
-    // Loading state
-    if (storeInfo.loading) {
-        return <ShopLoginLoading />;
+    // ✅ FIXED: Loading state - show loading until token check is complete
+    if (storeInfo.loading || !hasCheckedToken) {
+        return (
+            <div style={styles.pageContainer}>
+                {/* ✅ ADD: SHeader during loading */}
+                <SHeader
+                    store={storeInfo.storeData}
+                    isLoggedIn={isLoggedIn}
+                />
+                <ShopLoginLoading />
+            </div>
+        );
     }
 
     // Error state
     if (!storeInfo.actualStoreId) {
         return (
             <div style={styles.pageContainer}>
+                {/* ✅ ADD: SHeader for error state */}
+                <SHeader
+                    store={null}
+                    isLoggedIn={isLoggedIn}
+                />
                 <div style={styles.container}>
                     <div style={styles.card}>
                         <div style={styles.cardHeader}>
@@ -485,18 +554,13 @@ function ShopLoginContent() {
 
     return (
         <div style={styles.pageContainer}>
-            <header style={styles.header}>
-                <div style={styles.headerContainer}>
-                    <button onClick={handleBackClick} style={styles.backButton}>
-                        <ArrowLeft size={20} />
-                        <span style={styles.backText}>Back</span>
-                    </button>
-                    <h1 style={styles.headerTitle}>
-                        {storeInfo.storeData?.name || `Store ${storeInfo.actualStoreId}`} - Sign In
-                    </h1>
-                    <div style={styles.headerSpacer}></div>
-                </div>
-            </header>
+            {/* ✅ ADD: SHeader - Navigation Bar */}
+            <SHeader
+                store={storeInfo.storeData}
+                isLoggedIn={isLoggedIn}
+            />
+            
+            {/* ✅ REMOVE: The old header since we have SHeader now */}
             
             <div style={styles.container}>
                 <div style={styles.card}>
@@ -574,6 +638,7 @@ function ShopLoginContent() {
                 <div><strong>Store Name:</strong> {storeInfo.storeData?.name || 'Loading...'}</div>
                 <div><strong>URL Pattern:</strong> {searchParams.get('id') ? 'new+id' : 'direct'}</div>
                 <div><strong>Redirect URL:</strong> {searchParams.get('redirect') || 'None'}</div>
+                <div><strong>Token Checked:</strong> {hasCheckedToken ? '✅ Yes' : '⏳ Checking...'}</div>
                 <div><strong>Current URL:</strong> {typeof window !== 'undefined' ? window.location.href : 'SSR'}</div>
             </div>
         </div>
@@ -583,25 +648,12 @@ function ShopLoginContent() {
 // ✅ Enhanced Loading component
 function ShopLoginLoading() {
     return (
-        <div style={styles.pageContainer}>
-            <header style={styles.header}>
-                <div style={styles.headerContainer}>
-                    <div style={styles.backButton}>
-                        <ArrowLeft size={20} />
-                        <span style={styles.backText}>Back</span>
-                    </div>
-                    <h1 style={styles.headerTitle}>Loading Shop...</h1>
-                    <div style={styles.headerSpacer}></div>
-                </div>
-            </header>
-            
-            <div style={styles.container}>
-                <div style={styles.card}>
-                    <div style={styles.loadingContainer}>
-                        <div style={styles.spinner}></div>
-                        <p>Loading shop login...</p>
-                        <p style={styles.loadingSubtext}>🌐 Connected to: {API_BASE_URL}</p>
-                    </div>
+        <div style={styles.container}>
+            <div style={styles.card}>
+                <div style={styles.loadingContainer}>
+                    <div style={styles.spinner}></div>
+                    <p>Loading shop login...</p>
+                    <p style={styles.loadingSubtext}>🌐 Connected to: {API_BASE_URL}</p>
                 </div>
             </div>
         </div>
@@ -653,65 +705,21 @@ export default function ShopLoginPage() {
     );
 }
 
-// ✅ Enhanced styles (same as your KeralaSellers login but with shop-specific colors)
+// ✅ UPDATED: Styles with proper spacing for SHeader
 const styles = {
     pageContainer: { 
         minHeight: '100vh', 
-        backgroundColor: '#f8fafc' 
+        backgroundColor: '#f8fafc',
+        marginTop: '90px', // ✅ ADD: Space for SHeader navigation bar
     },
     
-    header: { 
-        backgroundColor: 'white', 
-        borderBottom: '1px solid #e2e8f0', 
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)' 
-    },
-    
-    headerContainer: { 
-        maxWidth: '1200px', 
-        margin: '0 auto', 
-        padding: '16px 20px', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between' 
-    },
-    
-    backButton: { 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '8px', 
-        color: '#3b82f6', 
-        background: 'none', 
-        border: 'none', 
-        fontSize: '16px', 
-        fontWeight: '500', 
-        padding: '8px', 
-        cursor: 'pointer', 
-        borderRadius: '6px',
-        transition: 'all 0.2s ease'
-    },
-    
-    backText: { 
-        display: 'block'
-    },
-    
-    headerTitle: { 
-        fontSize: '18px', 
-        fontWeight: '700', 
-        color: '#1e293b', 
-        margin: 0,
-        textAlign: 'center',
-        flex: 1
-    },
-    
-    headerSpacer: { 
-        width: '60px' 
-    },
+    // ✅ REMOVE: Old header styles since we're using SHeader now
     
     container: { 
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        minHeight: 'calc(100vh - 80px)', 
+        minHeight: 'calc(100vh - 170px)', // ✅ UPDATE: Account for SHeader
         padding: '20px' 
     },
     
@@ -863,7 +871,7 @@ const styles = {
         padding: '16px 24px', 
         border: 'none', 
         borderRadius: '8px', 
-        backgroundColor: '#10b981', // ✅ Shop-specific green color
+        backgroundColor: '#10b981',
         color: 'white', 
         cursor: 'pointer', 
         fontSize: '16px', 
@@ -949,7 +957,7 @@ const styles = {
     },
     
     link: { 
-        color: '#10b981', // ✅ Shop-specific green
+        color: '#10b981',
         textDecoration: 'none', 
         fontWeight: '500',
         transition: 'color 0.2s ease'

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { User, Package, Edit3, Heart, ArrowLeft, LogOut, Store, RefreshCw, AlertTriangle } from 'lucide-react';
+// ✅ ADD: Import the SHeader component
+import SHeader from '../../../../components/common/SHeader';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
@@ -18,6 +20,21 @@ export default function ShopProfilePage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [urlError, setUrlError] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ ADD: Login state for SHeader
+
+  // ✅ ADD: Check login status for SHeader
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('buyerAccessToken') ||
+          localStorage.getItem('access_token') ||
+          localStorage.getItem('accessToken');
+      setIsLoggedIn(!!token);
+    } catch (error) {
+      console.warn('localStorage access error:', error);
+      setIsLoggedIn(false);
+    }
+  }, [buyer]); // Update when buyer state changes
 
   // Get actual store ID from URL parameters
   const getActualStoreId = () => {
@@ -61,18 +78,60 @@ export default function ShopProfilePage() {
     }
   };
 
-  // Check authentication
-  const checkAuth = () => {
+  // ✅ FIXED: Enhanced authentication check with token validation
+  const checkAuthWithValidation = async () => {
     const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
+    
     if (!token) {
+      console.log('🔐 No token found, redirecting to login...');
+      redirectToLogin();
+      return null;
+    }
+
+    // ✅ VALIDATE: Try to validate token by making a simple API call
+    try {
+      console.log('🔍 Validating token...');
+      const response = await fetch(`${API_BASE_URL}/api/buyer/profile/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        console.log('✅ Token is valid');
+        setAuthChecked(true);
+        return { 'Authorization': `Bearer ${token}` };
+      } else if (response.status === 401) {
+        console.log('🔐 Token is invalid/expired, removing and redirecting...');
+        // Clear invalid tokens
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('buyerAccessToken');
+        localStorage.removeItem('refresh_token');
+        setIsLoggedIn(false); // ✅ UPDATE: Update login state
+        redirectToLogin();
+        return null;
+      } else {
+        console.log('⚠️ Token validation failed with status:', response.status);
+        setAuthChecked(true);
+        return { 'Authorization': `Bearer ${token}` };
+      }
+    } catch (error) {
+      console.error('❌ Token validation error:', error);
+      // On network error, assume token is valid and continue
+      setAuthChecked(true);
+      return { 'Authorization': `Bearer ${token}` };
+    }
+  };
+
+  const redirectToLogin = () => {
+    if (!authChecked) { // ✅ PREVENT: Only redirect once
       const loginUrl = getShopUrl('/login');
       const currentUrl = getShopUrl('/profile');
       const redirectUrl = `${loginUrl}?redirect=${encodeURIComponent(currentUrl)}`;
-      console.log('🔐 No token, redirecting to login:', redirectUrl);
+      console.log('🔐 Redirecting to login:', redirectUrl);
       router.push(redirectUrl);
-      return null;
     }
-    return { 'Authorization': `Bearer ${token}` };
   };
 
   // Redirect if invalid URL
@@ -152,7 +211,7 @@ export default function ShopProfilePage() {
     }
   };
 
-  // Main data fetching function
+  // ✅ FIXED: Main data fetching function with proper auth check
   const fetchData = async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -160,8 +219,8 @@ export default function ShopProfilePage() {
       setLoading(true);
     }
 
-    const headers = checkAuth();
-    if (!headers) return;
+    const headers = await checkAuthWithValidation(); // ✅ Use async validation
+    if (!headers) return; // Will redirect to login if no valid token
 
     if (!actualStoreId) {
       console.error('❌ No valid store ID found');
@@ -183,9 +242,11 @@ export default function ShopProfilePage() {
       if (profileRes.status === 'fulfilled' && profileRes.value.ok) {
         const profileData = await profileRes.value.json();
         setBuyer(profileData);
+        setIsLoggedIn(true); // ✅ UPDATE: Update login state when buyer is loaded
         console.log('✅ Profile data loaded');
       } else {
         console.warn('⚠️ Profile API failed');
+        // Don't redirect here, token was already validated
       }
 
       // Handle store response
@@ -238,12 +299,12 @@ export default function ShopProfilePage() {
     }
   };
 
-  // Load data on component mount
+  // ✅ FIXED: Load data only after auth is checked
   useEffect(() => {
-    if (actualStoreId && !urlError) {
+    if (actualStoreId && !urlError && !authChecked) {
       fetchData();
     }
-  }, [actualStoreId]);
+  }, [actualStoreId, authChecked]);
 
   // Handle logout
   const handleLogout = () => {
@@ -254,6 +315,8 @@ export default function ShopProfilePage() {
       localStorage.removeItem('buyerAccessToken');
       localStorage.removeItem('refresh_token');
       sessionStorage.clear();
+      
+      setIsLoggedIn(false); // ✅ UPDATE: Update login state
       
       const loginUrl = getShopUrl('/login');
       router.push(loginUrl);
@@ -273,26 +336,33 @@ export default function ShopProfilePage() {
     fetchData(true);
   };
 
-  // Loading state
-  if (loading || urlError) {
+  // ✅ FIXED: Loading state - show loading until auth is checked
+  if (loading || urlError || !authChecked) {
     return (
-      <div style={styles.loadingContainer}>
-        {urlError ? (
-          <>
-            <AlertTriangle size={48} color="#ef4444" />
-            <h2>Invalid Profile URL</h2>
-            <p>{urlError}</p>
-            <p>Redirecting to home...</p>
-          </>
-        ) : (
-          <>
-            <div style={styles.spinner}></div>
-            <p>Loading your profile...</p>
-            <p style={{fontSize: '12px', color: '#666'}}>
-              Store ID: {actualStoreId || 'Not found'}
-            </p>
-          </>
-        )}
+      <div style={styles.pageContainer}>
+        {/* ✅ ADD: SHeader during loading */}
+        <SHeader
+          store={storeData}
+          isLoggedIn={isLoggedIn}
+        />
+        <div style={styles.loadingContainer}>
+          {urlError ? (
+            <>
+              <AlertTriangle size={48} color="#ef4444" />
+              <h2>Invalid Profile URL</h2>
+              <p>{urlError}</p>
+              <p>Redirecting to home...</p>
+            </>
+          ) : (
+            <>
+              <div style={styles.spinner}></div>
+              <p>Loading your profile...</p>
+              <p style={{fontSize: '12px', color: '#666'}}>
+                {!authChecked ? 'Checking authentication...' : `Store ID: ${actualStoreId || 'Not found'}`}
+              </p>
+            </>
+          )}
+        </div>
       </div>
     );
   }
@@ -300,159 +370,193 @@ export default function ShopProfilePage() {
   // Error state
   if (!actualStoreId) {
     return (
-      <div style={styles.errorContainer}>
-        <Store size={48} color="#ef4444" />
-        <h2>Store Not Found</h2>
-        <p>Unable to identify the store. Please check the URL.</p>
-        <button onClick={() => router.push('/')} style={styles.homeButton}>
-          Go Home
-        </button>
+      <div style={styles.pageContainer}>
+        {/* ✅ ADD: SHeader for error state */}
+        <SHeader
+          store={null}
+          isLoggedIn={isLoggedIn}
+        />
+        <div style={styles.errorContainer}>
+          <Store size={48} color="#ef4444" />
+          <h2>Store Not Found</h2>
+          <p>Unable to identify the store. Please check the URL.</p>
+          <button onClick={() => router.push('/')} style={styles.homeButton}>
+            Go Home
+          </button>
+        </div>
       </div>
     );
   }
 
-  // Login required state
+  // Login required state (shouldn't reach here now with proper validation)
   if (!buyer) {
     return (
-      <div style={styles.errorContainer}>
-        <User size={48} color="#3b82f6" />
-        <h2>Please Login</h2>
-        <p>Login to access your profile at {storeData?.name || `Store ${actualStoreId}`}</p>
-        <Link href={getShopUrl('/login')} style={styles.loginButton}>
-          Login to {storeData?.name || `Store ${actualStoreId}`}
-        </Link>
+      <div style={styles.pageContainer}>
+        {/* ✅ ADD: SHeader for login required state */}
+        <SHeader
+          store={storeData}
+          isLoggedIn={false}
+        />
+        <div style={styles.errorContainer}>
+          <User size={48} color="#3b82f6" />
+          <h2>Please Login</h2>
+          <p>Login to access your profile at {storeData?.name || `Store ${actualStoreId}`}</p>
+          <Link href={getShopUrl('/login')} style={styles.loginButton}>
+            Login to {storeData?.name || `Store ${actualStoreId}`}
+          </Link>
+        </div>
       </div>
     );
   }
 
   // Main profile page
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <button onClick={handleBackClick} style={styles.backButton}>
-          <ArrowLeft size={20} />
-        </button>
-        <h1 style={styles.title}>
-          {storeData?.name || `Store ${actualStoreId}`} Profile
-        </h1>
-        <div style={styles.headerActions}>
-          <button 
-            onClick={handleRefresh} 
-            style={{...styles.refreshButton, opacity: refreshing ? 0.6 : 1}}
-            disabled={refreshing}
-            title="Refresh data"
-          >
-            <RefreshCw size={16} className={refreshing ? 'spinning' : ''} />
+    <div style={styles.pageContainer}>
+      {/* ✅ ADD: SHeader - Navigation Bar */}
+      <SHeader
+        store={storeData}
+        isLoggedIn={isLoggedIn}
+      />
+      
+      <div style={styles.container}>
+        {/* Header - Keep the existing profile header for actions */}
+        <div style={styles.header}>
+          <button onClick={handleBackClick} style={styles.backButton}>
+            <ArrowLeft size={20} />
           </button>
-          <button onClick={handleLogout} style={styles.logoutButton} title="Logout">
-            <LogOut size={18} />
-          </button>
-        </div>
-      </div>
-
-      {/* Store Indicator */}
-      <div style={styles.storeIndicator}>
-        <Store size={20} />
-        <div>
-          <div style={styles.storeTitle}>
-            Shopping at {storeData?.name || `Store ${actualStoreId}`}
+          <h1 style={styles.title}>
+            {storeData?.name || `Store ${actualStoreId}`} Profile
+          </h1>
+          <div style={styles.headerActions}>
+            <button 
+              onClick={handleRefresh} 
+              style={{...styles.refreshButton, opacity: refreshing ? 0.6 : 1}}
+              disabled={refreshing}
+              title="Refresh data"
+            >
+              <RefreshCw size={16} className={refreshing ? 'spinning' : ''} />
+            </button>
+            <button onClick={handleLogout} style={styles.logoutButton} title="Logout">
+              <LogOut size={18} />
+            </button>
           </div>
-          <div style={styles.storeSubtitle}>
-            Your account data is store-specific • Store ID: {actualStoreId}
-          </div>
         </div>
-      </div>
 
-      {/* Profile Card */}
-      <div style={styles.profileCard}>
-        <div style={styles.avatar}>
-          {buyer.full_name?.charAt(0)?.toUpperCase() || buyer.email?.charAt(0)?.toUpperCase() || 'U'}
-        </div>
-        <div style={styles.profileInfo}>
-          <h2 style={styles.userName}>{buyer.full_name || 'User'}</h2>
-          <p style={styles.userEmail}>{buyer.email}</p>
-          {buyer.phone_number && (
-            <p style={styles.userPhone}>{buyer.phone_number}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div style={styles.statsGrid}>
-        <div style={styles.statCard}>
-          <Package size={24} color="#3b82f6" />
+        {/* Store Indicator */}
+        <div style={styles.storeIndicator}>
+          <Store size={20} />
           <div>
-            <div style={styles.statNumber}>{ordersCount}</div>
-            <div style={styles.statLabel}>Orders from Store</div>
-          </div>
-        </div>
-        <div style={styles.statCard}>
-          <Heart size={24} color="#ef4444" />
-          <div>
-            <div style={styles.statNumber}>{wishlistCount}</div>
-            <div style={styles.statLabel}>Store Wishlist</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Menu */}
-      <div style={styles.menuSection}>
-        <Link href={getShopUrl('/profile/edit')} style={styles.menuItem}>
-          <Edit3 size={24} color="#6b7280" />
-          <div>
-            <div style={styles.menuLabel}>Edit Profile</div>
-            <div style={styles.menuDesc}>Update your information</div>
-          </div>
-          <div style={styles.menuArrow}>→</div>
-        </Link>
-
-        <Link href={getShopUrl('/profile/orders')} style={styles.menuItem}>
-          <Package size={24} color="#6b7280" />
-          <div>
-            <div style={styles.menuLabel}>My Orders</div>
-            <div style={styles.menuDesc}>
-              {ordersCount > 0 ? `${ordersCount} orders from this store` : 'No orders yet'}
+            <div style={styles.storeTitle}>
+              Shopping at {storeData?.name || `Store ${actualStoreId}`}
+            </div>
+            <div style={styles.storeSubtitle}>
+              Your account data is store-specific • Store ID: {actualStoreId}
             </div>
           </div>
-          <div style={styles.menuArrow}>→</div>
-        </Link>
+        </div>
 
-        <Link href={getShopUrl('/profile/wishlist')} style={styles.menuItem}>
-          <Heart size={24} color="#6b7280" />
-          <div>
-            <div style={styles.menuLabel}>Store Wishlist</div>
-            <div style={styles.menuDesc}>
-              {wishlistCount > 0 ? `${wishlistCount} items saved` : 'No wishlist items'}
+        {/* Profile Card */}
+        <div style={styles.profileCard}>
+          <div style={styles.avatar}>
+            {buyer.full_name?.charAt(0)?.toUpperCase() || buyer.email?.charAt(0)?.toUpperCase() || 'U'}
+          </div>
+          <div style={styles.profileInfo}>
+            <h2 style={styles.userName}>{buyer.full_name || 'User'}</h2>
+            <p style={styles.userEmail}>{buyer.email}</p>
+            {buyer.phone_number && (
+              <p style={styles.userPhone}>{buyer.phone_number}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div style={styles.statsGrid}>
+          <div style={styles.statCard}>
+            <Package size={24} color="#3b82f6" />
+            <div>
+              <div style={styles.statNumber}>{ordersCount}</div>
+              <div style={styles.statLabel}>Orders from Store</div>
             </div>
           </div>
-          <div style={styles.menuArrow}>→</div>
-        </Link>
-      </div>
+          <div style={styles.statCard}>
+            <Heart size={24} color="#ef4444" />
+            <div>
+              <div style={styles.statNumber}>{wishlistCount}</div>
+              <div style={styles.statLabel}>Store Wishlist</div>
+            </div>
+          </div>
+        </div>
 
-      {/* Simple Debug Info */}
-      <div style={{
-        backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '8px',
-        marginTop: '20px', fontSize: '12px', color: '#666', fontFamily: 'monospace'
-      }}>
-        <div style={{fontWeight: 'bold', marginBottom: '8px', color: '#333'}}>🔍 Debug Information:</div>
-        <div><strong>Store ID:</strong> {actualStoreId}</div>
-        <div><strong>Orders Count:</strong> {ordersCount} (Endpoint: /user/orders/count/)</div>
-        <div><strong>Wishlist Count:</strong> {wishlistCount} (Endpoint: /api/wishlist/)</div>
-        <div><strong>User:</strong> {buyer?.full_name || buyer?.email || 'N/A'}</div>
-        <div><strong>Store Name:</strong> {storeData?.name || 'Loading...'}</div>
-        <div><strong>URL Pattern:</strong> {searchParams.get('id') ? 'new+id' : 'direct'}</div>
-        <div><strong>Refreshing:</strong> {refreshing ? 'Yes' : 'No'}</div>
+        {/* Menu */}
+        <div style={styles.menuSection}>
+          <Link href={getShopUrl('/profile/edit')} style={styles.menuItem}>
+            <Edit3 size={24} color="#6b7280" />
+            <div>
+              <div style={styles.menuLabel}>Edit Profile</div>
+              <div style={styles.menuDesc}>Update your information</div>
+            </div>
+            <div style={styles.menuArrow}>→</div>
+          </Link>
+
+          <Link href={getShopUrl('/profile/orders')} style={styles.menuItem}>
+            <Package size={24} color="#6b7280" />
+            <div>
+              <div style={styles.menuLabel}>My Orders</div>
+              <div style={styles.menuDesc}>
+                {ordersCount > 0 ? `${ordersCount} orders from this store` : 'No orders yet'}
+              </div>
+            </div>
+            <div style={styles.menuArrow}>→</div>
+          </Link>
+
+          <Link href={getShopUrl('/profile/wishlist')} style={styles.menuItem}>
+            <Heart size={24} color="#6b7280" />
+            <div>
+              <div style={styles.menuLabel}>Store Wishlist</div>
+              <div style={styles.menuDesc}>
+                {wishlistCount > 0 ? `${wishlistCount} items saved` : 'No wishlist items'}
+              </div>
+            </div>
+            <div style={styles.menuArrow}>→</div>
+          </Link>
+        </div>
+
+        {/* Enhanced Debug Info */}
+        <div style={{
+          backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '8px',
+          marginTop: '20px', fontSize: '12px', color: '#666', fontFamily: 'monospace'
+        }}>
+          <div style={{fontWeight: 'bold', marginBottom: '8px', color: '#333'}}>🔍 Debug Information:</div>
+          <div><strong>Store ID:</strong> {actualStoreId}</div>
+          <div><strong>Auth Checked:</strong> {authChecked ? '✅ Yes' : '⏳ Checking...'}</div>
+          <div><strong>Is Logged In:</strong> {isLoggedIn ? '✅ Yes' : '❌ No'}</div>
+          <div><strong>Orders Count:</strong> {ordersCount} (Endpoint: /user/orders/count/)</div>
+          <div><strong>Wishlist Count:</strong> {wishlistCount} (Endpoint: /api/wishlist/)</div>
+          <div><strong>User:</strong> {buyer?.full_name || buyer?.email || 'N/A'}</div>
+          <div><strong>Store Name:</strong> {storeData?.name || 'Loading...'}</div>
+          <div><strong>URL Pattern:</strong> {searchParams.get('id') ? 'new+id' : 'direct'}</div>
+          <div><strong>Refreshing:</strong> {refreshing ? 'Yes' : 'No'}</div>
+        </div>
       </div>
     </div>
   );
 }
 
+// ✅ UPDATED: Styles with proper spacing for SHeader
 const styles = {
-  container: { minHeight: '100vh', backgroundColor: '#f8fafc', padding: '20px', maxWidth: '800px', margin: '0 auto' },
+  pageContainer: { 
+    minHeight: '100vh', 
+    backgroundColor: '#f8fafc',
+    paddingTop: '90px', // ✅ ADD: Space for SHeader navigation bar
+  },
+  container: { 
+    padding: '20px', 
+    maxWidth: '800px', 
+    margin: '0 auto' 
+  },
   loadingContainer: { 
     display: 'flex', flexDirection: 'column', alignItems: 'center', 
-    justifyContent: 'center', minHeight: '100vh', gap: '20px', textAlign: 'center' 
+    justifyContent: 'center', minHeight: 'calc(100vh - 90px)', gap: '20px', textAlign: 'center' 
   },
   spinner: { 
     width: '32px', height: '32px', border: '3px solid #f3f3f3',
@@ -461,7 +565,7 @@ const styles = {
   },
   errorContainer: { 
     display: 'flex', flexDirection: 'column', alignItems: 'center', 
-    justifyContent: 'center', minHeight: '100vh', gap: '20px',
+    justifyContent: 'center', minHeight: 'calc(100vh - 90px)', gap: '20px',
     textAlign: 'center', padding: '40px' 
   },
   homeButton: { 
