@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import "../../../../styles/BuyerProfile.css";
+
 import { User, Package, Edit3, Heart, ArrowLeft, LogOut, Store, RefreshCw, AlertTriangle } from 'lucide-react';
 // ✅ ADD: Import the SHeader component
 import SHeader from '../../../../components/common/SHeader';
@@ -27,8 +29,8 @@ export default function ShopProfilePage() {
   useEffect(() => {
     try {
       const token = localStorage.getItem('buyerAccessToken') ||
-          localStorage.getItem('access_token') ||
-          localStorage.getItem('accessToken');
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('accessToken');
       setIsLoggedIn(!!token);
     } catch (error) {
       console.warn('localStorage access error:', error);
@@ -51,11 +53,11 @@ export default function ShopProfilePage() {
     if (queryId && queryId !== 'undefined' && queryId.trim() !== '') {
       return queryId.trim();
     }
-    
+
     if (shopSlug && shopSlug !== 'new' && shopSlug !== 'undefined') {
       return shopSlug;
     }
-    
+
     setUrlError('No valid store ID found');
     return null;
   };
@@ -69,7 +71,7 @@ export default function ShopProfilePage() {
       console.error('❌ Cannot generate URL - no store ID available');
       return '/';
     }
-    
+
     if (searchParams.get('id') && shopSlug === 'new') {
       const basePath = `/shop/new${path}`;
       return `${basePath}?id=${actualStoreId}`;
@@ -81,7 +83,7 @@ export default function ShopProfilePage() {
   // ✅ FIXED: Enhanced authentication check with token validation
   const checkAuthWithValidation = async () => {
     const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
-    
+
     if (!token) {
       console.log('🔐 No token found, redirecting to login...');
       redirectToLogin();
@@ -146,15 +148,15 @@ export default function ShopProfilePage() {
   // Fetch orders count using the working endpoint
   const fetchOrdersCount = async (storeId, headers) => {
     const endpoint = `${API_BASE_URL}/user/orders/count/?store_id=${storeId}`;
-    
+
     try {
       console.log('📊 Fetching orders count from:', endpoint);
       const response = await fetch(endpoint, { headers });
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('✅ Orders count response:', data);
-        
+
         // Extract count from response
         let count = 0;
         if (typeof data === 'object' && data !== null) {
@@ -162,7 +164,7 @@ export default function ShopProfilePage() {
         } else if (typeof data === 'number') {
           count = data;
         }
-        
+
         console.log('📊 Final orders count:', count);
         return count;
       } else {
@@ -178,27 +180,27 @@ export default function ShopProfilePage() {
   // Fetch wishlist count
   const fetchWishlistCount = async (storeId, headers) => {
     const endpoint = `${API_BASE_URL}/api/wishlist/?store_id=${storeId}`;
-    
+
     try {
       console.log('❤️ Fetching wishlist count from:', endpoint);
       const response = await fetch(endpoint, { headers });
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('✅ Wishlist response:', data);
-        
+
         // Extract count from response
         let count = 0;
         if (Array.isArray(data)) {
           count = data.length;
         } else if (data && typeof data === 'object') {
-          count = data.items?.length || 
-                  data.results?.length || 
-                  data.count || 
-                  data.total_items || 
-                  data.total || 0;
+          count = data.items?.length ||
+            data.results?.length ||
+            data.count ||
+            data.total_items ||
+            data.total || 0;
         }
-        
+
         console.log('❤️ Final wishlist count:', count);
         return count;
       } else {
@@ -231,7 +233,7 @@ export default function ShopProfilePage() {
 
     try {
       console.log('📡 Fetching profile data for store ID:', actualStoreId);
-      
+
       // Fetch profile and store data in parallel
       const [profileRes, storeRes] = await Promise.allSettled([
         fetch(`${API_BASE_URL}/api/buyer/profile/`, { headers }),
@@ -265,7 +267,7 @@ export default function ShopProfilePage() {
 
       // Fetch counts
       console.log('📊 Fetching counts for store:', actualStoreId);
-      
+
       const [ordersCountResult, wishlistCountResult] = await Promise.allSettled([
         fetchOrdersCount(actualStoreId, headers),
         fetchWishlistCount(actualStoreId, headers)
@@ -310,14 +312,14 @@ export default function ShopProfilePage() {
   const handleLogout = () => {
     if (window.confirm(`Logout from ${storeData?.name || 'this store'}?\n\nYou'll need to login again to access your account.`)) {
       console.log('🔐 Logging out from store:', actualStoreId);
-      
+
       localStorage.removeItem('access_token');
       localStorage.removeItem('buyerAccessToken');
       localStorage.removeItem('refresh_token');
       sessionStorage.clear();
-      
+
       setIsLoggedIn(false); // ✅ UPDATE: Update login state
-      
+
       const loginUrl = getShopUrl('/login');
       router.push(loginUrl);
     }
@@ -357,7 +359,7 @@ export default function ShopProfilePage() {
             <>
               <div style={styles.spinner}></div>
               <p>Loading your profile...</p>
-              <p style={{fontSize: '12px', color: '#666'}}>
+              <p style={{ fontSize: '12px', color: '#666' }}>
                 {!authChecked ? 'Checking authentication...' : `Store ID: ${actualStoreId || 'Not found'}`}
               </p>
             </>
@@ -411,39 +413,18 @@ export default function ShopProfilePage() {
 
   // Main profile page
   return (
-    <div style={styles.pageContainer}>
+    <div className='profilepagecontainer' style={styles.pageContainer}>
       {/* ✅ ADD: SHeader - Navigation Bar */}
       <SHeader
         store={storeData}
         isLoggedIn={isLoggedIn}
       />
-      
+
       <div style={styles.container}>
-        {/* Header - Keep the existing profile header for actions */}
-        <div style={styles.header}>
-          <button onClick={handleBackClick} style={styles.backButton}>
-            <ArrowLeft size={20} />
-          </button>
-          <h1 style={styles.title}>
-            {storeData?.name || `Store ${actualStoreId}`} Profile
-          </h1>
-          <div style={styles.headerActions}>
-            <button 
-              onClick={handleRefresh} 
-              style={{...styles.refreshButton, opacity: refreshing ? 0.6 : 1}}
-              disabled={refreshing}
-              title="Refresh data"
-            >
-              <RefreshCw size={16} className={refreshing ? 'spinning' : ''} />
-            </button>
-            <button onClick={handleLogout} style={styles.logoutButton} title="Logout">
-              <LogOut size={18} />
-            </button>
-          </div>
-        </div>
+
 
         {/* Store Indicator */}
-        <div style={styles.storeIndicator}>
+        {/* <div style={styles.storeIndicator}>
           <Store size={20} />
           <div>
             <div style={styles.storeTitle}>
@@ -453,36 +434,50 @@ export default function ShopProfilePage() {
               Your account data is store-specific • Store ID: {actualStoreId}
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Profile Card */}
         <div style={styles.profileCard}>
-          <div style={styles.avatar}>
+          <div className='buyerprofileavatar' style={styles.avatar}>
             {buyer.full_name?.charAt(0)?.toUpperCase() || buyer.email?.charAt(0)?.toUpperCase() || 'U'}
           </div>
           <div style={styles.profileInfo}>
-            <h2 style={styles.userName}>{buyer.full_name || 'User'}</h2>
-            <p style={styles.userEmail}>{buyer.email}</p>
+            <h2 className='buyernamefont' style={styles.userName}>{buyer.full_name || 'User'}</h2>
+            <p className='buyersubnamesfont' style={styles.userEmail}>{buyer.email}</p>
             {buyer.phone_number && (
-              <p style={styles.userPhone}>{buyer.phone_number}</p>
+              <p className='buyersubnamesfont' style={styles.userPhone}>{buyer.phone_number}</p>
             )}
+          </div>
+          <div className='buyerprofileheaderaction' style={styles.headerActions}>
+            <button
+              onClick={handleRefresh}
+              className='buyerprofilerefreshbtn'
+              style={{ ...styles.refreshButton, opacity: refreshing ? 0.6 : 1 }}
+              disabled={refreshing}
+              title="Refresh data"
+            >
+              <RefreshCw size={16} className={refreshing ? 'spinning' : ''} />
+            </button>
+            <button onClick={handleLogout} className='buyerprofilelogoutbtn' style={styles.logoutButton} title="Logout">
+              <LogOut  className='buyerprofilelogouticon' />
+            </button>
           </div>
         </div>
 
         {/* Stats */}
         <div style={styles.statsGrid}>
           <div style={styles.statCard}>
-            <Package size={24} color="#3b82f6" />
+            <Package size={24} color="#1a4845" />
             <div>
-              <div style={styles.statNumber}>{ordersCount}</div>
-              <div style={styles.statLabel}>Orders from Store</div>
+              <div className='buyerprofilestatnum'style={styles.statNumber}>{ordersCount}</div>
+              <div className='buyerprofilestatlabel' style={styles.statLabel}>Orders from Store</div>
             </div>
           </div>
           <div style={styles.statCard}>
             <Heart size={24} color="#ef4444" />
             <div>
-              <div style={styles.statNumber}>{wishlistCount}</div>
-              <div style={styles.statLabel}>Store Wishlist</div>
+              <div className='buyerprofilestatnum' style={styles.statNumber}>{wishlistCount}</div>
+              <div className='buyerprofilestatlabel' style={styles.statLabel}>Store Wishlist</div>
             </div>
           </div>
         </div>
@@ -490,19 +485,19 @@ export default function ShopProfilePage() {
         {/* Menu */}
         <div style={styles.menuSection}>
           <Link href={getShopUrl('/profile/edit')} style={styles.menuItem}>
-            <Edit3 size={24} color="#6b7280" />
+            <Edit3 size={24} color="#3b82f6 " />
             <div>
-              <div style={styles.menuLabel}>Edit Profile</div>
-              <div style={styles.menuDesc}>Update your information</div>
+              <div className='buyerprofilemenulabel' style={styles.menuLabel}>Edit Profile</div>
+              <div className='buyerprofilemenudesc' style={styles.menuDesc}>Update your information</div>
             </div>
             <div style={styles.menuArrow}>→</div>
           </Link>
 
           <Link href={getShopUrl('/profile/orders')} style={styles.menuItem}>
-            <Package size={24} color="#6b7280" />
+            <Package size={24} color="#1a4845" />
             <div>
-              <div style={styles.menuLabel}>My Orders</div>
-              <div style={styles.menuDesc}>
+              <div className='buyerprofilemenulabel' style={styles.menuLabel}>My Orders</div>
+              <div className='buyerprofilemenudesc' style={styles.menuDesc}>
                 {ordersCount > 0 ? `${ordersCount} orders from this store` : 'No orders yet'}
               </div>
             </div>
@@ -510,10 +505,10 @@ export default function ShopProfilePage() {
           </Link>
 
           <Link href={getShopUrl('/profile/wishlist')} style={styles.menuItem}>
-            <Heart size={24} color="#6b7280" />
+            <Heart size={24} color="#ef4444" />
             <div>
-              <div style={styles.menuLabel}>Store Wishlist</div>
-              <div style={styles.menuDesc}>
+              <div className='buyerprofilemenulabel' style={styles.menuLabel}>Store Wishlist</div>
+              <div className='buyerprofilemenudesc' style={styles.menuDesc}>
                 {wishlistCount > 0 ? `${wishlistCount} items saved` : 'No wishlist items'}
               </div>
             </div>
@@ -522,7 +517,7 @@ export default function ShopProfilePage() {
         </div>
 
         {/* Enhanced Debug Info */}
-        <div style={{
+        {/* <div style={{
           backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '8px',
           marginTop: '20px', fontSize: '12px', color: '#666', fontFamily: 'monospace'
         }}>
@@ -536,7 +531,7 @@ export default function ShopProfilePage() {
           <div><strong>Store Name:</strong> {storeData?.name || 'Loading...'}</div>
           <div><strong>URL Pattern:</strong> {searchParams.get('id') ? 'new+id' : 'direct'}</div>
           <div><strong>Refreshing:</strong> {refreshing ? 'Yes' : 'No'}</div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
@@ -544,114 +539,133 @@ export default function ShopProfilePage() {
 
 // ✅ UPDATED: Styles with proper spacing for SHeader
 const styles = {
-  pageContainer: { 
-    minHeight: '100vh', 
-    backgroundColor: '#f8fafc',
-    paddingTop: '90px', // ✅ ADD: Space for SHeader navigation bar
+  pageContainer: {
+    minHeight: 'calc(100vh - 130px)',  // fills remaining space below header
+    backgroundColor: '#FDFFF0',
+    paddingTop: '130px',
+    paddingBottom: '35px',              // ensures breathing room
+    overflowX: 'hidden',
+    width: '100%',
+    boxSizing: 'border-box'
   },
-  container: { 
-    padding: '20px', 
-    maxWidth: '800px', 
-    margin: '0 auto' 
+
+  container: {
+    padding: '20px',
+    maxWidth: '800px',
+    margin: '0 auto',
+    width: '100%',            // ✅ Ensure child fits parent width
+    boxSizing: 'border-box'
   },
-  loadingContainer: { 
-    display: 'flex', flexDirection: 'column', alignItems: 'center', 
-    justifyContent: 'center', minHeight: 'calc(100vh - 90px)', gap: '20px', textAlign: 'center' 
+  loadingContainer: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    justifyContent: 'center', minHeight: 'calc(100vh - 90px)', gap: '20px', textAlign: 'center'
   },
-  spinner: { 
+  spinner: {
     width: '32px', height: '32px', border: '3px solid #f3f3f3',
     borderTop: '3px solid #3b82f6', borderRadius: '50%',
-    animation: 'spin 1s linear infinite' 
+    animation: 'spin 1s linear infinite'
   },
-  errorContainer: { 
-    display: 'flex', flexDirection: 'column', alignItems: 'center', 
+  errorContainer: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
     justifyContent: 'center', minHeight: 'calc(100vh - 90px)', gap: '20px',
-    textAlign: 'center', padding: '40px' 
+    textAlign: 'center', padding: '40px'
   },
-  homeButton: { 
-    padding: '12px 24px', backgroundColor: '#6b7280', color: 'white', 
-    border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' 
+  homeButton: {
+    padding: '12px 24px', backgroundColor: '#6b7280', color: 'white',
+    border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600'
   },
-  loginButton: { 
-    padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white', 
-    textDecoration: 'none', borderRadius: '8px', fontWeight: '600' 
+  loginButton: {
+    padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white',
+    textDecoration: 'none', borderRadius: '8px', fontWeight: '600'
   },
-  header: { 
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+  header: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     marginBottom: '20px', backgroundColor: 'white', borderRadius: '12px',
     padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
-  backButton: { 
-    background: 'none', border: 'none', cursor: 'pointer', 
+  backButton: {
+    background: 'none', border: 'none', cursor: 'pointer',
     color: '#3b82f6', padding: '8px', borderRadius: '6px',
     transition: 'all 0.2s'
   },
-  title: { 
-    fontSize: '20px', fontWeight: '700', color: '#1f2937', 
+  title: {
+    fontSize: '20px', fontWeight: '700', color: '#1f2937',
     flex: 1, textAlign: 'center', margin: '0 16px'
   },
   headerActions: {
-    display: 'flex', alignItems: 'center', gap: '8px'
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap', // ✅ allows wrapping when needed
   },
   refreshButton: {
     background: 'none', border: '1px solid #d1d5db', borderRadius: '6px',
-    padding: '8px', color: '#6b7280', cursor: 'pointer',
+    padding: '8px', color: '#1a4845', cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     transition: 'all 0.2s'
   },
-  logoutButton: { 
-    background: 'none', border: '2px solid #ef4444', borderRadius: '8px', 
-    padding: '8px 12px', color: '#ef4444', cursor: 'pointer', 
+  logoutButton: {
+    background: 'none', border: '2px solid #ef4444', borderRadius: '8px',
+    padding: '8px 12px', color: '#ef4444', cursor: 'pointer',
     display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px',
     transition: 'all 0.2s'
   },
-  storeIndicator: { 
-    display: 'flex', alignItems: 'center', gap: '12px', 
-    backgroundColor: '#ecfdf5', border: '2px solid #10b981', 
-    borderRadius: '12px', padding: '16px', marginBottom: '20px' 
+  storeIndicator: {
+    display: 'flex', alignItems: 'center', gap: '12px',
+    backgroundColor: '#ecfdf5', border: '2px solid #10b981',
+    borderRadius: '12px', padding: '16px', marginBottom: '20px'
   },
   storeTitle: { fontSize: '16px', fontWeight: '700', color: '#047857' },
   storeSubtitle: { fontSize: '13px', color: '#059669', marginTop: '2px' },
-  profileCard: { 
-    display: 'flex', alignItems: 'center', gap: '16px', 
-    backgroundColor: 'white', borderRadius: '12px', 
-    padding: '24px', marginBottom: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+  profileCard: {
+    display: 'flex', alignItems: 'center', gap: '16px',
+    backgroundColor: '#FDFFF0', borderRadius: '12px',
+    padding: '24px', marginBottom: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
   },
-  avatar: { 
-    width: '60px', height: '60px', borderRadius: '50%', 
-    backgroundColor: '#3b82f6', color: 'white', 
-    display: 'flex', alignItems: 'center', justifyContent: 'center', 
+  avatar: {
+    width: '60px', height: '60px', borderRadius: '50%',
+    backgroundColor: '#1a4845', color: 'white',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontSize: '24px', fontWeight: '700', flexShrink: 0
   },
   profileInfo: { flex: 1 },
-  userName: { 
-    fontSize: '20px', fontWeight: '700', color: '#1f2937', 
-    margin: '0 0 4px 0' 
+  userName: {
+    fontSize: '20px', fontWeight: '700', color: '#1f2937',
+    margin: '0 0 4px 0'
   },
   userEmail: { color: '#6b7280', margin: '0 0 2px 0', fontSize: '14px' },
   userPhone: { color: '#6b7280', margin: 0, fontSize: '14px' },
-  statsGrid: { 
-    display: 'grid', gridTemplateColumns: '1fr 1fr', 
-    gap: '16px', marginBottom: '20px' 
+  statsGrid: {
+    display: 'grid', gridTemplateColumns: '1fr 1fr',
+    gap: '16px', marginBottom: '20px'
   },
-  statCard: { 
-    display: 'flex', alignItems: 'center', gap: '12px', 
-    backgroundColor: 'white', borderRadius: '12px', padding: '20px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', transition: 'all 0.2s'
+  statCard: {
+    display: 'flex', alignItems: 'center', gap: '12px',
+    backgroundColor: '#FDFFF0', borderRadius: '12px', padding: '20px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.3)', transition: 'all 0.2s'
   },
   statNumber: { fontSize: '24px', fontWeight: '700', color: '#1f2937' },
   statLabel: { fontSize: '13px', color: '#6b7280', fontWeight: '500' },
   menuSection: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  menuItem: { 
-    display: 'flex', alignItems: 'center', gap: '16px', 
-    backgroundColor: 'white', borderRadius: '12px', padding: '20px', 
-    textDecoration: 'none', color: 'inherit', position: 'relative',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', transition: 'all 0.2s'
+  menuItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    backgroundColor: '#FDFFF0',
+    borderRadius: '12px',
+    padding: '20px',
+    textDecoration: 'none',
+    color: 'inherit',
+    position: 'relative',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+    transition: 'all 0.2s',
+    width: '100%',             // ✅ Prevent flex items from expanding horizontally
+    boxSizing: 'border-box'
   },
   menuLabel: { fontSize: '16px', fontWeight: '600', color: '#1f2937' },
   menuDesc: { fontSize: '14px', color: '#6b7280', marginTop: '2px' },
-  menuArrow: { 
-    marginLeft: 'auto', fontSize: '18px', color: '#d1d5db',
+  menuArrow: {
+    marginLeft: 'auto', fontSize: '18px', color: '#1a4845',
     transition: 'all 0.2s'
   }
 };
