@@ -7,13 +7,39 @@ import { ArrowLeft, Heart, ShoppingCart, Trash2, Plus, Store, AlertTriangle } fr
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
 export default function ShopWishlistPage() {
-  const { shopSlug } = useParams(); // ✅ FIXED: Use shopSlug instead of sellerPhone
-  const searchParams = useSearchParams(); // ✅ ADDED: Get search parameters
+  const { shopSlug } = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState(null);
   const [urlError, setUrlError] = useState(null);
+
+  // ✅ FIXED: Enhanced image URL builder
+  const buildImageUrl = (imagePath) => {
+    if (!imagePath) {
+      console.log('🖼️ No image path provided, using placeholder');
+      return '/placeholder.svg';
+    }
+
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      console.log('🖼️ Using full URL:', imagePath);
+      return imagePath;
+    }
+
+    // If it starts with a slash, it's already a proper path
+    if (imagePath.startsWith('/')) {
+      const fullUrl = `${API_BASE_URL}${imagePath}`;
+      console.log('🖼️ Built image URL from path:', fullUrl);
+      return fullUrl;
+    }
+
+    // If it doesn't start with slash, add one
+    const fullUrl = `${API_BASE_URL}/${imagePath}`;
+    console.log('🖼️ Built image URL with added slash:', fullUrl);
+    return fullUrl;
+  };
 
   // ✅ CRITICAL FIX: Get the actual store ID from query parameter or shopSlug
   const getActualStoreId = () => {
@@ -104,8 +130,24 @@ export default function ShopWishlistPage() {
           const wishlistData = await wishlistRes.value.json();
           const wishlistItems = Array.isArray(wishlistData) ? wishlistData : 
                                wishlistData.results || wishlistData.items || [];
-          setWishlist(wishlistItems);
-          console.log('✅ Wishlist loaded:', wishlistItems.length, 'items');
+          
+          // ✅ FIXED: Process wishlist items to ensure proper image URLs
+          const processedWishlist = wishlistItems.map(item => {
+            const product = item.product || item;
+            const imageUrl = product?.main_image_url || product?.image_url || product?.main_image || item?.main_image_url;
+            
+            return {
+              ...item,
+              processedImageUrl: buildImageUrl(imageUrl),
+              product: {
+                ...product,
+                processedImageUrl: buildImageUrl(imageUrl)
+              }
+            };
+          });
+          
+          setWishlist(processedWishlist);
+          console.log('✅ Wishlist loaded and processed:', processedWishlist.length, 'items');
         } else {
           console.warn('⚠️ Wishlist API failed');
           setWishlist([]);
@@ -182,7 +224,7 @@ export default function ShopWishlistPage() {
           price: product.price,
           quantity: 1,
           seller_phone: actualStoreId,
-          main_image_url: product.main_image_url || product.image_url,
+          main_image_url: product.processedImageUrl || product.main_image_url || product.image_url,
           description: product.description
         });
         console.log('➕ Added new item to cart');
@@ -217,6 +259,13 @@ export default function ShopWishlistPage() {
   };
 
   const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
+
+  // ✅ ENHANCED: Image error handler with logging
+  const handleImageError = (e, productName) => {
+    console.warn('🖼️ Image failed to load for:', productName);
+    console.warn('🖼️ Failed URL:', e.target.src);
+    e.target.src = '/placeholder.svg';
+  };
 
   // Show loading while redirecting or loading
   if (loading || urlError) {
@@ -280,7 +329,7 @@ export default function ShopWishlistPage() {
         marginBottom: '20px', fontSize: '12px', color: '#666'
       }}>
         <strong>Debug:</strong> Store: {actualStoreId} | Wishlist: {wishlist.length} items | 
-        Store Name: {storeData?.name || 'Loading...'}
+        Store Name: {storeData?.name || 'Loading...'} | API Base: {API_BASE_URL}
       </div>
 
       {/* Wishlist Items */}
@@ -301,17 +350,29 @@ export default function ShopWishlistPage() {
             const productId = product.id || item.product_id;
             const productName = product.name || item.name;
             const productPrice = product.price || item.price;
-            const productImage = product.main_image_url || product.image_url || item.main_image_url;
+            
+            // ✅ FIXED: Use processed image URL with multiple fallbacks
+            const productImage = item.processedImageUrl || 
+                                product.processedImageUrl || 
+                                buildImageUrl(product.main_image_url) || 
+                                buildImageUrl(product.image_url) || 
+                                buildImageUrl(product.main_image) ||
+                                buildImageUrl(item.main_image_url) ||
+                                '/placeholder.svg';
+            
             const productDescription = product.description || item.description;
+
+            console.log('🖼️ Rendering product image:', productName, '→', productImage);
 
             return (
               <div key={item.id} style={styles.wishlistCard}>
                 <div style={styles.productImage}>
                   <img 
-                    src={productImage || '/placeholder.svg'}
+                    src={productImage}
                     alt={productName}
                     style={styles.image}
-                    onError={(e) => { e.target.src = '/placeholder.svg'; }}
+                    onError={(e) => handleImageError(e, productName)}
+                    onLoad={() => console.log('✅ Image loaded successfully for:', productName)}
                   />
                   <button 
                     onClick={() => removeFromWishlist(item.id)}
@@ -332,6 +393,11 @@ export default function ShopWishlistPage() {
                   <p style={styles.productDescription}>
                     {productDescription || 'No description available'}
                   </p>
+                  
+                  {/* ✅ ADDED: Debug info for image URL */}
+                  <div style={{fontSize: '10px', color: '#999', marginTop: '4px'}}>
+                    Image: {productImage?.includes('placeholder') ? 'Placeholder' : 'Real image'}
+                  </div>
                 </div>
 
                 <div style={styles.productActions}>
@@ -343,12 +409,12 @@ export default function ShopWishlistPage() {
                     <ShoppingCart size={16} />
                     Add to Cart
                   </button>
-                  <button 
+                  {/* <button 
                     onClick={() => handleViewProduct(productId)}
                     style={styles.viewButton}
                   >
                     View Details
-                  </button>
+                  </button> */}
                 </div>
               </div>
             );
@@ -417,7 +483,13 @@ const styles = {
     border: '1px solid #e5e7eb'
   },
   productImage: { position: 'relative', height: '200px', overflow: 'hidden' },
-  image: { width: '100%', height: '100%', objectFit: 'cover' },
+  image: { 
+    width: '100%', 
+    height: '100%', 
+    objectFit: 'cover',
+    backgroundColor: '#f3f4f6', // ✅ ADDED: Background color while loading
+    transition: 'opacity 0.3s ease' // ✅ ADDED: Smooth transition
+  },
   removeButton: { 
     position: 'absolute', top: '12px', right: '12px', 
     backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', 
