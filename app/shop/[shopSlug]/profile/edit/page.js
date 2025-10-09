@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Save, User, Phone, MapPin, AlertTriangle } from 'lucide-react';
-
+import SHeader from '../../../../../components/common/SHeader';
+import "../../../../../styles/ShopProfileEdit.css";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
 export default function ShopEditProfilePage() {
@@ -18,6 +19,23 @@ export default function ShopEditProfilePage() {
   const [saving, setSaving] = useState(false);
   const [storeData, setStoreData] = useState(null);
   const [urlError, setUrlError] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ ADD: Login state for SHeader
+
+
+
+  // ✅ ADD: Check login status for SHeader
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('buyerAccessToken') ||
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('accessToken');
+      setIsLoggedIn(!!token);
+    } catch (error) {
+      console.warn('localStorage access error:', error);
+      setIsLoggedIn(false);
+    }
+  }, []);
+
 
   // Get actual store ID from URL parameters (matching profile page logic)
   const getActualStoreId = () => {
@@ -34,11 +52,11 @@ export default function ShopEditProfilePage() {
     if (queryId && queryId !== 'undefined' && queryId.trim() !== '') {
       return queryId.trim();
     }
-    
+
     if (shopSlug && shopSlug !== 'new' && shopSlug !== 'undefined') {
       return shopSlug;
     }
-    
+
     setUrlError('No valid store ID found');
     return null;
   };
@@ -52,7 +70,7 @@ export default function ShopEditProfilePage() {
       console.error('❌ Cannot generate URL - no store ID available');
       return '/';
     }
-    
+
     if (searchParams.get('id') && shopSlug === 'new') {
       const basePath = `/shop/new${path}`;
       return `${basePath}?id=${actualStoreId}`;
@@ -98,7 +116,7 @@ export default function ShopEditProfilePage() {
 
       try {
         console.log('📡 Fetching profile data for store ID:', actualStoreId);
-        
+
         const [profileRes, storeRes] = await Promise.allSettled([
           fetch(`${API_BASE_URL}/api/buyer/profile/`, { headers }),
           fetch(`${API_BASE_URL}/shop/${actualStoreId}/`)
@@ -155,7 +173,7 @@ export default function ShopEditProfilePage() {
     try {
       console.log('💾 Saving profile data...');
       console.log('📤 Profile data to save:', profileData);
-      
+
       const response = await fetch(`${API_BASE_URL}/api/buyer/profile/`, {
         method: 'PATCH', // ✅ FIXED: Changed from PUT to PATCH
         headers: {
@@ -170,12 +188,12 @@ export default function ShopEditProfilePage() {
       if (response.ok) {
         const responseData = await response.json();
         console.log('✅ Profile updated successfully:', responseData);
-        
+
         // Update local state with server response
         if (responseData.data) {
           setProfileData(responseData.data);
         }
-        
+
         alert('Profile updated successfully!');
         const profileUrl = getShopUrl('/profile');
         router.push(profileUrl);
@@ -183,7 +201,7 @@ export default function ShopEditProfilePage() {
         console.error('❌ Profile update failed:', response.status);
         const errorData = await response.text().catch(() => 'Unable to read error');
         console.error('❌ Error details:', errorData);
-        
+
         if (response.status === 400) {
           alert('Please check your input data and try again');
         } else if (response.status === 401) {
@@ -211,7 +229,7 @@ export default function ShopEditProfilePage() {
 
   // Handle input changes with validation
   const handleInputChange = (field, value) => {
-    setProfileData({...profileData, [field]: value});
+    setProfileData({ ...profileData, [field]: value });
   };
 
   // Loading state
@@ -229,7 +247,7 @@ export default function ShopEditProfilePage() {
           <>
             <div style={styles.spinner}></div>
             <p>Loading profile...</p>
-            <p style={{fontSize: '12px', color: '#666'}}>
+            <p style={{ fontSize: '12px', color: '#666' }}>
               Store ID: {actualStoreId || 'Not found'}
             </p>
           </>
@@ -253,147 +271,160 @@ export default function ShopEditProfilePage() {
   }
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <button onClick={handleBack} style={styles.backButton}>
-          <ArrowLeft size={20} />
-        </button>
-        <h1 style={styles.title}>
-          Edit Profile - {storeData?.name || `Store ${actualStoreId}`}
-        </h1>
-        <button 
-          onClick={handleSave} 
-          disabled={saving || !profileData.full_name || !profileData.email} 
-          style={{
-            ...styles.saveButton, 
-            opacity: (saving || !profileData.full_name || !profileData.email) ? 0.6 : 1,
-            cursor: (saving || !profileData.full_name || !profileData.email) ? 'not-allowed' : 'pointer'
-          }}
-        >
-          <Save size={18} />
-          {saving ? 'Saving...' : 'Save'}
-        </button>
-      </div>
+    <div  style={styles.pagecontainer}>
+      {/* ✅ ADD: SHeader during loading */}
+      <SHeader
+        store={storeData}
+        isLoggedIn={isLoggedIn}
+      />
 
-      {/* Store Context Info */}
-      <div style={styles.storeContext}>
+      <div className='shopprofileeditpagecont' style={styles.container}>
+
+
+
+
+        {/* Store Context Info */}
+        {/* <div style={styles.storeContext}>
         <p>Editing your profile for <strong>{storeData?.name || `Store ${actualStoreId}`}</strong></p>
         <p style={{fontSize: '12px', color: '#6b7280'}}>Store ID: {actualStoreId}</p>
-      </div>
+      </div> */}
 
-      <div style={styles.form}>
-        <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>
-            <User size={20} />
-            Personal Information
-          </h2>
-          
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Full Name *</label>
-            <input
-              type="text"
-              value={profileData.full_name || ''}
-              onChange={(e) => handleInputChange('full_name', e.target.value)}
-              style={{
-                ...styles.input,
-                borderColor: !profileData.full_name ? '#ef4444' : '#e5e7eb'
-              }}
-              placeholder="Enter your full name"
-              required
-            />
-            {!profileData.full_name && (
-              <p style={styles.errorText}>Full name is required</p>
-            )}
-          </div>
+        <div style={styles.form}>
+          <div style={styles.section}>
+            <h2 className='shopprofiledittitle' style={styles.sectionTitle}>
+              <User size={20} color='red' />
+              Personal Information
+            </h2>
 
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Email Address *</label>
-            <input
-              type="email"
-              value={profileData.email || ''}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              style={{
-                ...styles.input,
-                borderColor: !profileData.email ? '#ef4444' : '#e5e7eb'
-              }}
-              placeholder="Enter your email"
-              required
-            />
-            {!profileData.email && (
-              <p style={styles.errorText}>Email is required</p>
-            )}
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Phone Number</label>
-            <input
-              type="tel"
-              value={profileData.phone_number || ''}
-              onChange={(e) => handleInputChange('phone_number', e.target.value)}
-              style={styles.input}
-              placeholder="Enter your phone number"
-            />
-          </div>
-        </div>
-
-        <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>
-            <MapPin size={20} />
-            Address Information
-          </h2>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Address Line 1</label>
-            <input
-              type="text"
-              value={profileData.address_line_1 || ''}
-              onChange={(e) => handleInputChange('address_line_1', e.target.value)}
-              style={styles.input}
-              placeholder="Enter your address"
-            />
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Address Line 2 (Optional)</label>
-            <input
-              type="text"
-              value={profileData.address_line_2 || ''}
-              onChange={(e) => handleInputChange('address_line_2', e.target.value)}
-              style={styles.input}
-              placeholder="Apartment, suite, etc."
-            />
-          </div>
-
-          <div style={styles.inputRow}>
             <div style={styles.inputGroup}>
-              <label style={styles.label}>City</label>
+              {/* <label style={styles.label}>Full Name *</label> */}
               <input
                 type="text"
-                value={profileData.city || ''}
-                onChange={(e) => handleInputChange('city', e.target.value)}
+                className='shopprofileditinput'
+                value={profileData.full_name || ''}
+                onChange={(e) => handleInputChange('full_name', e.target.value)}
+                style={{
+                  ...styles.input,
+                  borderColor: !profileData.full_name ? '#ef4444' : '#e5e7eb'
+                }}
+                placeholder="Enter your full name"
+                required
+              />
+              {!profileData.full_name && (
+                <p style={styles.errorText}>Full name is required</p>
+              )}
+            </div>
+
+            <div style={styles.inputGroup}>
+              {/* <label style={styles.label}>Email Address *</label> */}
+              <input
+                type="email"
+                className='shopprofileditinput'
+                value={profileData.email || ''}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                style={{
+                  ...styles.input,
+                  borderColor: !profileData.email ? '#ef4444' : '#e5e7eb'
+                }}
+                placeholder="Enter your email"
+                required
+              />
+              {!profileData.email && (
+                <p style={styles.errorText}>Email is required</p>
+              )}
+            </div>
+
+            <div style={styles.inputGroup}>
+              {/* <label style={styles.label}>Phone Number</label> */}
+              <input
+                type="tel"
+                className='shopprofileditinput'
+                value={profileData.phone_number || ''}
+                onChange={(e) => handleInputChange('phone_number', e.target.value)}
                 style={styles.input}
-                placeholder="City"
+                placeholder="Enter your phone number"
+              />
+            </div>
+          </div>
+
+          <div style={styles.section}>
+            <h2 className='shopprofiledittitle' style={styles.sectionTitle}>
+              <MapPin size={20} color='red' />
+              Address Information
+            </h2>
+
+            <div style={styles.inputGroup}>
+              {/* <label style={styles.label}>Address Line 1</label> */}
+              <input
+                type="text"
+                className='shopprofileditinput'
+                value={profileData.address_line_1 || ''}
+                onChange={(e) => handleInputChange('address_line_1', e.target.value)}
+                style={styles.input}
+                placeholder="Enter your address"
               />
             </div>
 
             <div style={styles.inputGroup}>
-              <label style={styles.label}>Pincode</label>
+              {/* <label style={styles.label}>Address Line 2 (Optional)</label> */}
               <input
                 type="text"
-                value={profileData.pincode || ''}
-                onChange={(e) => handleInputChange('pincode', e.target.value)}
+                className='shopprofileditinput'
+                value={profileData.address_line_2 || ''}
+                onChange={(e) => handleInputChange('address_line_2', e.target.value)}
                 style={styles.input}
-                placeholder="Pincode"
-                maxLength="6"
+                placeholder="Apartment, suite, etc. (optional)"
               />
             </div>
+
+            <div style={styles.inputRow}>
+              <div style={styles.inputGroup}>
+                {/* <label style={styles.label}>City</label> */}
+                <input
+                  type="text"
+                  className='shopprofileditinput'
+                  value={profileData.city || ''}
+                  onChange={(e) => handleInputChange('city', e.target.value)}
+                  style={styles.input}
+                  placeholder="City"
+                />
+              </div>
+
+              <div style={styles.inputGroup}>
+                {/* <label style={styles.label}>Pincode</label> */}
+                <input
+                  type="text"
+                  className='shopprofileditinput'
+                  value={profileData.pincode || ''}
+                  onChange={(e) => handleInputChange('pincode', e.target.value)}
+                  style={styles.input}
+                  placeholder="Pincode"
+                  maxLength="6"
+                />
+              </div>
+
+            </div>
+
+          </div>
+          <div  style={styles.buttonWrapper}>
+          <button
+            onClick={handleSave}
+            className='shopprofilesavebtn'
+            disabled={saving || !profileData.full_name || !profileData.email}
+            style={{
+              ...styles.saveButton,
+              opacity: (saving || !profileData.full_name || !profileData.email) ? 0.6 : 1,
+              cursor: (saving || !profileData.full_name || !profileData.email) ? 'not-allowed' : 'pointer'
+            }}
+          >
+            <Save size={18} />
+            {saving ? 'Saving...' : 'Save'}
+          </button>
           </div>
         </div>
-      </div>
 
-      {/* Debug Info */}
-      <div style={{
+        {/* Debug Info */}
+        {/* <div style={{
         backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '8px',
         marginTop: '20px', fontSize: '12px', color: '#666', fontFamily: 'monospace'
       }}>
@@ -405,65 +436,83 @@ export default function ShopEditProfilePage() {
         <div><strong>Profile Email:</strong> {profileData.email || 'Not loaded'}</div>
         <div><strong>HTTP Method:</strong> PATCH (Fixed from PUT)</div>
         <div><strong>Save Disabled:</strong> {!profileData.full_name || !profileData.email ? 'Yes (missing required fields)' : 'No'}</div>
+      </div> */}
       </div>
     </div>
+
   );
 }
 
 const styles = {
-  container: { minHeight: '100vh', backgroundColor: '#f8fafc', padding: '20px', maxWidth: '800px', margin: '0 auto' },
-  loadingContainer: { 
-    display: 'flex', flexDirection: 'column', alignItems: 'center', 
-    justifyContent: 'center', minHeight: '100vh', gap: '20px', textAlign: 'center' 
+  pagecontainer: {backgroundColor: "#FDFFF0"},
+  container: { minHeight: '100vh', backgroundColor: '#FDFFF0', padding: '20px', maxWidth: '800px', margin: '0 auto', paddingTop: "150px", paddingBottom: "60px" },
+  loadingContainer: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    justifyContent: 'center', minHeight: '100vh', gap: '20px', textAlign: 'center'
   },
-  spinner: { 
-    width: '32px', height: '32px', border: '3px solid #f3f3f3', 
-    borderTop: '3px solid #3b82f6', borderRadius: '50%', 
-    animation: 'spin 1s linear infinite' 
+  spinner: {
+    width: '32px', height: '32px', border: '3px solid #f3f3f3',
+    borderTop: '3px solid #3b82f6', borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
   },
-  header: { 
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
-    marginBottom: '20px', backgroundColor: 'white', borderRadius: '12px', 
-    padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' 
+  header: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    marginBottom: '20px', backgroundColor: '#FDFFF0', borderRadius: '12px',
+    padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
-  backButton: { 
-    background: 'none', border: 'none', cursor: 'pointer', 
+  backButton: {
+    background: 'none', border: 'none', cursor: 'pointer',
     color: '#3b82f6', padding: '8px', borderRadius: '6px',
     transition: 'all 0.2s'
   },
-  title: { 
-    fontSize: '20px', fontWeight: '700', color: '#1f2937', 
+  title: {
+    fontSize: '20px', fontWeight: '700', color: '#1f2937',
     flex: 1, textAlign: 'center', margin: '0 16px'
   },
-  saveButton: { 
-    display: 'flex', alignItems: 'center', gap: '8px', 
-    backgroundColor: '#10b981', color: 'white', border: 'none', 
-    borderRadius: '8px', padding: '8px 16px', cursor: 'pointer',
-    fontSize: '14px', fontWeight: '600', transition: 'all 0.2s'
-  },
+buttonWrapper: {
+  display: 'flex',
+  justifyContent: 'center',
+},
+
+saveButton: {
+  backgroundColor: '#10b981',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '8px',
+  padding: '10px 20px',
+  fontSize: '16px',
+  fontWeight: '500',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '8px',
+  minWidth: '220px',    // ✅ ensures consistent size
+  transition: 'background 0.3s ease',
+},
+
   storeContext: {
     backgroundColor: '#ecfdf5', border: '2px solid #10b981',
     borderRadius: '12px', padding: '16px', marginBottom: '20px',
     textAlign: 'center'
   },
   form: { display: 'flex', flexDirection: 'column', gap: '24px' },
-  section: { 
-    backgroundColor: 'white', borderRadius: '12px', padding: '24px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+  section: {
+    backgroundColor: '#FDFFF0', borderRadius: '12px', padding: '24px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
   },
-  sectionTitle: { 
-    display: 'flex', alignItems: 'center', gap: '8px', 
-    fontSize: '18px', fontWeight: '600', color: '#1f2937', 
-    marginBottom: '20px' 
+  sectionTitle: {
+    display: 'flex', alignItems: 'center', gap: '8px',
+    fontSize: '18px', fontWeight: '600', color: '#1a4845',
+    marginBottom: '30px',
   },
   inputGroup: { marginBottom: '16px' },
   inputRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' },
-  label: { 
-    display: 'block', fontSize: '14px', fontWeight: '600', 
-    color: '#374151', marginBottom: '6px' 
+  label: {
+    display: 'block', fontSize: '14px', fontWeight: '600',
+    color: '#1a4845', marginBottom: '6px'
   },
-  input: { 
-    width: '100%', padding: '12px 16px', border: '2px solid #e5e7eb', 
+  input: {
+    width: '100%', padding: '12px 16px', backgroundColor:'#FDFFF0' ,color:'#1a4845', border: '2px solid #e5e7eb',
     borderRadius: '8px', fontSize: '16px', transition: 'all 0.2s',
     boxSizing: 'border-box'
   },
