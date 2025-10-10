@@ -350,6 +350,8 @@ export default function ShopWishlistPage() {
             const productId = product.id || item.product_id;
             const productName = product.name || item.name;
             const productPrice = product.price || item.price;
+            const productmrp = product.mrp || item.mrp;
+            const productModel = product.model_name || item.model_name;
             
             // ✅ FIXED: Use processed image URL with multiple fallbacks
             const productImage = item.processedImageUrl || 
@@ -387,17 +389,20 @@ export default function ShopWishlistPage() {
                   <h3 style={styles.productName}>
                     {productName || 'Product Name'}
                   </h3>
+                   <h3 style={styles.productName}>
+                    {productModel || 'Product Model'}
+                  </h3>
                   <p style={styles.productPrice}>
                     {productPrice ? formatPrice(productPrice) : 'Price not available'}
                   </p>
-                  <p style={styles.productDescription}>
+                  {/* <p style={styles.productDescription}>
                     {productDescription || 'No description available'}
-                  </p>
+                  </p> */}
                   
                   {/* ✅ ADDED: Debug info for image URL */}
-                  <div style={{fontSize: '10px', color: '#999', marginTop: '4px'}}>
+                  {/* <div style={{fontSize: '10px', color: '#999', marginTop: '4px'}}>
                     Image: {productImage?.includes('placeholder') ? 'Placeholder' : 'Real image'}
-                  </div>
+                  </div> */}
                 </div>
 
                 <div style={styles.productActions}>
