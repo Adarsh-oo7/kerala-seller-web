@@ -216,7 +216,7 @@ function OrderCard({ order, getStatusStyle, getPaymentStatusStyle }) {
                             <span>{order.payment_method === 'ONLINE' ? 'Online Payment' : 'Cash on Delivery'}</span>
                         </div>
                         <div style={{...styles.statusBadge, ...getPaymentStatusStyle(order.payment_status)}}>
-                            {order.payment_status}
+                            {order.payment_status || (order.payment_method === 'ONLINE' ? 'PAID' : 'COD')}
                         </div>
                     </div>
                 )}
@@ -287,7 +287,7 @@ export default function OrdersListPage() {
 
   // ✅ FIXED: Changed Token to Bearer authentication
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('sellerAccessToken');
     if (!token) {
       router.push('/login/seller');
       return null;
@@ -310,6 +310,7 @@ export default function OrdersListPage() {
       setNotifications(listResponse.data.results || listResponse.data || []);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
+      // Don't show error for notifications - they're not critical
     }
   }, [getAuthHeaders]);
 
@@ -460,7 +461,7 @@ export default function OrdersListPage() {
     }
 
     const csvContent = [
-      ['Order ID', 'Date', 'Customer', 'Phone', 'Amount', 'Status', 'Payment Status', 'Items Count'],
+      ['Order ID', 'Date', 'Customer', 'Phone', 'Amount', 'Status', 'Payment Method', 'Items Count'],
       ...orders.map(order => [
         order.id,
         new Date(order.created_at).toLocaleString(),
@@ -468,7 +469,7 @@ export default function OrdersListPage() {
         order.customer_phone || '',
         order.total_amount,
         order.status,
-        order.payment_status || '',
+        order.payment_method || '',
         order.items?.length || 0
       ])
     ].map(row => row.join(',')).join('\n');
@@ -523,10 +524,43 @@ export default function OrdersListPage() {
         </div>
         <div style={styles.headerActions}>
           {/* ✅ NEW: Notification Bell */}
-          <NotificationBell 
-            count={notificationCount} 
-            onClick={() => setShowNotifications(!showNotifications)}
-          />
+          <div style={styles.notificationWrapper}>
+            <NotificationBell 
+              count={notificationCount} 
+              onClick={() => setShowNotifications(!showNotifications)}
+            />
+            
+            {/* ✅ FIXED: Proper positioning for notifications dropdown */}
+            {showNotifications && (
+              <div style={styles.notificationsDropdown}>
+                <div style={styles.notificationsHeader}>
+                  <h3>Notifications</h3>
+                  <button onClick={() => setShowNotifications(false)} style={styles.closeNotificationsBtn}>
+                    <X size={18} />
+                  </button>
+                </div>
+                <div style={styles.notificationsList}>
+                  {notifications.length > 0 ? (
+                    notifications.slice(0, 5).map(notification => (
+                      <div 
+                        key={notification.id} 
+                        style={styles.notificationItem}
+                        onClick={() => markNotificationAsRead(notification.id)}
+                      >
+                        <p style={styles.notificationMessage}>{notification.message}</p>
+                        <small style={styles.notificationTime}>
+                          {new Date(notification.created_at).toLocaleString()}
+                        </small>
+                        {!notification.is_read && <div style={styles.unreadDot}></div>}
+                      </div>
+                    ))
+                  ) : (
+                    <p style={styles.noNotifications}>No notifications</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           
           <button onClick={handleExportOrders} style={styles.exportButton}>
             <Download size={18} />
@@ -538,37 +572,6 @@ export default function OrdersListPage() {
           </button>
         </div>
       </div>
-
-      {/* ✅ NEW: Notifications Dropdown */}
-      {showNotifications && (
-        <div style={styles.notificationsDropdown}>
-          <div style={styles.notificationsHeader}>
-            <h3>Notifications</h3>
-            <button onClick={() => setShowNotifications(false)}>
-              <X size={18} />
-            </button>
-          </div>
-          <div style={styles.notificationsList}>
-            {notifications.length > 0 ? (
-              notifications.slice(0, 5).map(notification => (
-                <div 
-                  key={notification.id} 
-                  style={styles.notificationItem}
-                  onClick={() => markNotificationAsRead(notification.id)}
-                >
-                  <p style={styles.notificationMessage}>{notification.message}</p>
-                  <small style={styles.notificationTime}>
-                    {new Date(notification.created_at).toLocaleString()}
-                  </small>
-                  {!notification.is_read && <div style={styles.unreadDot}></div>}
-                </div>
-              ))
-            ) : (
-              <p style={styles.noNotifications}>No notifications</p>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* ✅ ENHANCED: Search Bar */}
       <div style={styles.searchContainer}>
@@ -749,7 +752,11 @@ const styles = {
     gap: '12px'
   },
 
-  // ✅ NEW: Notification Styles
+  // ✅ FIXED: Notification Styles with proper positioning
+  notificationWrapper: {
+    position: 'relative'
+  },
+
   notificationContainer: {
     position: 'relative',
     cursor: 'pointer',
@@ -790,7 +797,8 @@ const styles = {
     width: '320px',
     zIndex: 1000,
     maxHeight: '400px',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    marginTop: '8px'
   },
 
   notificationsHeader: {
@@ -799,6 +807,14 @@ const styles = {
     alignItems: 'center',
     padding: '16px',
     borderBottom: '1px solid #f3f4f6'
+  },
+
+  closeNotificationsBtn: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#6b7280',
+    padding: '4px'
   },
 
   notificationsList: {
@@ -839,7 +855,8 @@ const styles = {
     padding: '20px',
     textAlign: 'center',
     color: '#6b7280',
-    fontStyle: 'italic'
+    fontStyle: 'italic',
+    margin: 0
   },
   
   exportButton: {
@@ -909,7 +926,7 @@ const styles = {
     fontWeight: '500'
   },
 
-  // ✅ NEW: Advanced Filter Styles
+  // ✅ Advanced Filter Styles
   advancedFilters: {
     backgroundColor: '#f8fafc',
     border: '1px solid #e2e8f0',
@@ -971,13 +988,6 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500'
-  },
-  
-  filterContainer: { 
-    display: 'flex', 
-    gap: '12px', 
-    marginBottom: '24px', 
-    flexWrap: 'wrap'
   },
   
   filterButton: { 
@@ -1107,7 +1117,8 @@ const styles = {
     fontSize: '16px',
     fontWeight: '600',
     color: '#1f2937',
-    marginBottom: '12px'
+    marginBottom: '12px',
+    margin: '0 0 12px 0'
   },
   
   itemList: { 

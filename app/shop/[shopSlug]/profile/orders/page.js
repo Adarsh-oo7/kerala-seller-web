@@ -2,18 +2,42 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Package, Clock, CheckCircle, XCircle, Store, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Package, Clock, CheckCircle, XCircle, Store, AlertTriangle, X, User, MapPin, Phone, Calendar, CreditCard, AlertOctagon } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
 export default function ShopOrdersPage() {
-  const { shopSlug } = useParams(); // ✅ FIXED: Use shopSlug instead of sellerPhone
-  const searchParams = useSearchParams(); // ✅ ADDED: Get search parameters
+  const { shopSlug } = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState(null);
   const [urlError, setUrlError] = useState(null);
+  
+  // ✅ Modal states
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
+  
+  // ✅ NEW: Cancel order states
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
+  const [cancelLoading, setCancelLoading] = useState(false);
+
+  // ✅ NEW: Pre-defined cancellation reasons
+  const cancelReasons = [
+    { value: 'change_mind', label: 'Changed my mind' },
+    { value: 'found_better_price', label: 'Found a better price elsewhere' },
+    { value: 'wrong_item', label: 'Ordered wrong item by mistake' },
+    { value: 'delivery_delay', label: 'Delivery taking too long' },
+    { value: 'payment_issue', label: 'Payment/billing issue' },
+    { value: 'quality_concern', label: 'Concerned about product quality' },
+    { value: 'duplicate_order', label: 'Duplicate order placed by mistake' },
+    { value: 'seller_request', label: 'Seller requested cancellation' },
+    { value: 'other', label: 'Other reason (please specify)' }
+  ];
 
   // ✅ CRITICAL FIX: Get the actual store ID from query parameter or shopSlug
   const getActualStoreId = () => {
@@ -79,7 +103,7 @@ export default function ShopOrdersPage() {
   useEffect(() => {
     if (urlError || !actualStoreId) {
       console.log('🔍 Invalid orders URL, redirecting...');
-      router.replace('/profile'); // Redirect to global profile
+      router.replace('/profile');
       return;
     }
   }, [urlError, actualStoreId, router]);
@@ -135,6 +159,133 @@ export default function ShopOrdersPage() {
     }
   }, [actualStoreId]);
 
+  // ✅ Handle view details
+  const handleViewDetails = (order) => {
+    console.log('👁️ Viewing order details:', order.id);
+    setSelectedOrder(order);
+    setShowOrderDetails(true);
+  };
+
+  // ✅ Close details modal
+  const closeOrderDetails = () => {
+    setShowOrderDetails(false);
+    setSelectedOrder(null);
+  };
+
+  // ✅ NEW: Handle cancel order request
+  const handleCancelOrderRequest = (order) => {
+    console.log('❌ Requesting to cancel order:', order.id);
+    setOrderToCancel(order);
+    setCancelReason('');
+    setCustomReason('');
+    setShowCancelModal(true);
+  };
+
+  // ✅ NEW: Close cancel modal
+  const closeCancelModal = () => {
+    setShowCancelModal(false);
+    setOrderToCancel(null);
+    setCancelReason('');
+    setCustomReason('');
+  };
+
+  // ✅ NEW: Handle cancel order submission
+  const handleCancelOrder = async () => {
+    if (!orderToCancel) return;
+
+    // Validate reason
+    if (!cancelReason) {
+      alert('Please select a reason for cancellation');
+      return;
+    }
+
+    if (cancelReason === 'other' && !customReason.trim()) {
+      alert('Please provide a specific reason for cancellation');
+      return;
+    }
+
+    const headers = checkAuth();
+    if (!headers) return;
+
+    setCancelLoading(true);
+
+    try {
+      const reasonText = cancelReason === 'other' ? customReason : 
+                        cancelReasons.find(r => r.value === cancelReason)?.label || cancelReason;
+
+      console.log('🚫 Cancelling order:', orderToCancel.id, 'with reason:', reasonText);
+
+      const response = await fetch(`${API_BASE_URL}/user/orders/${orderToCancel.id}/cancel/`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          reason: reasonText,
+          cancel_reason_code: cancelReason
+        })
+      });
+
+      if (response.ok) {
+        // Update order status in local state
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            order.id === orderToCancel.id 
+              ? { ...order, status: 'cancelled', cancel_reason: reasonText }
+              : order
+          )
+        );
+
+        console.log('✅ Order cancelled successfully');
+        alert('Order cancelled successfully! The seller has been notified.');
+        closeCancelModal();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || errorData.error || 'Failed to cancel order';
+        console.error('❌ Cancel order failed:', errorMessage);
+        alert(`Failed to cancel order: ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error('❌ Cancel order error:', error);
+      alert('Network error. Please check your connection and try again.');
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  // ✅ Check if order can be cancelled
+  const canCancelOrder = (order) => {
+    const status = order.status?.toLowerCase();
+    const cancelableStatuses = ['pending', 'processing', 'confirmed'];
+    return cancelableStatuses.includes(status);
+  };
+
+  // ✅ Handle keyboard events for modals
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key === 'Escape') {
+        if (showCancelModal) {
+          closeCancelModal();
+        } else if (showOrderDetails) {
+          closeOrderDetails();
+        }
+      }
+    };
+
+    if (showOrderDetails || showCancelModal) {
+      document.addEventListener('keydown', handleKeyPress);
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showOrderDetails, showCancelModal]);
+
   const getStatusIcon = (status) => {
     switch (status?.toLowerCase()) {
       case 'pending': return <Clock size={20} color="#f59e0b" />;
@@ -162,6 +313,20 @@ export default function ShopOrdersPage() {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
+      });
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+
+  const formatDateTime = (date) => {
+    try {
+      return new Date(date).toLocaleString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
       });
     } catch (error) {
       return 'Invalid date';
@@ -320,6 +485,13 @@ export default function ShopOrdersPage() {
                     {order.shipping_address}
                   </div>
                 )}
+
+                {/* ✅ Show cancel reason if cancelled */}
+                {order.status?.toLowerCase() === 'cancelled' && order.cancel_reason && (
+                  <div style={styles.cancelReason}>
+                    <strong>Cancellation Reason:</strong> {order.cancel_reason}
+                  </div>
+                )}
               </div>
 
               {/* Order Actions */}
@@ -329,17 +501,290 @@ export default function ShopOrdersPage() {
                     Rate Order
                   </button>
                 )}
-                {order.status?.toLowerCase() === 'pending' && (
-                  <button style={{...styles.actionButton, backgroundColor: '#ef4444'}}>
+                {canCancelOrder(order) && (
+                  <button 
+                    style={{...styles.actionButton, backgroundColor: '#ef4444'}}
+                    onClick={() => handleCancelOrderRequest(order)}
+                  >
                     Cancel Order
                   </button>
                 )}
-                <button style={{...styles.actionButton, backgroundColor: '#6b7280'}}>
+                <button 
+                  style={{...styles.actionButton, backgroundColor: '#6b7280'}}
+                  onClick={() => handleViewDetails(order)}
+                >
                   View Details
                 </button>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ✅ Order Details Modal */}
+      {showOrderDetails && selectedOrder && (
+        <div style={styles.modalOverlay} onClick={closeOrderDetails}>
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>Order Details #{selectedOrder.id}</h2>
+              <button style={styles.closeButton} onClick={closeOrderDetails}>
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={styles.modalBody}>
+              {/* Order Status */}
+              <div style={styles.detailSection}>
+                <h3 style={styles.sectionTitle}>Order Status</h3>
+                <div style={styles.statusDetail}>
+                  {getStatusIcon(selectedOrder.status)}
+                  <span style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: getStatusColor(selectedOrder.status),
+                    textTransform: 'capitalize'
+                  }}>
+                    {selectedOrder.status || 'Pending'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Order Info */}
+              <div style={styles.detailSection}>
+                <h3 style={styles.sectionTitle}>Order Information</h3>
+                <div style={styles.infoGrid}>
+                  <div style={styles.infoItem}>
+                    <Calendar size={16} />
+                    <div>
+                      <div style={styles.infoLabel}>Order Date</div>
+                      <div style={styles.infoValue}>{formatDateTime(selectedOrder.created_at)}</div>
+                    </div>
+                  </div>
+                  
+                  <div style={styles.infoItem}>
+                    <CreditCard size={16} />
+                    <div>
+                      <div style={styles.infoLabel}>Payment Method</div>
+                      <div style={styles.infoValue}>
+                        {selectedOrder.payment_method === 'COD' ? 'Cash on Delivery' : 
+                         selectedOrder.payment_method === 'ONLINE' ? 'Online Payment' : 
+                         selectedOrder.payment_method || 'COD'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedOrder.customer_name && (
+                    <div style={styles.infoItem}>
+                      <User size={16} />
+                      <div>
+                        <div style={styles.infoLabel}>Customer</div>
+                        <div style={styles.infoValue}>{selectedOrder.customer_name}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedOrder.phone && (
+                    <div style={styles.infoItem}>
+                      <Phone size={16} />
+                      <div>
+                        <div style={styles.infoLabel}>Phone</div>
+                        <div style={styles.infoValue}>{selectedOrder.phone}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Items */}
+              <div style={styles.detailSection}>
+                <h3 style={styles.sectionTitle}>Order Items</h3>
+                <div style={styles.itemsList}>
+                  {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                    selectedOrder.items.map(item => (
+                      <div key={item.id} style={styles.modalOrderItem}>
+                        <div style={styles.modalItemInfo}>
+                          <div style={styles.modalItemName}>
+                            {item.product?.name || item.name || 'Product'}
+                          </div>
+                          <div style={styles.modalItemPrice}>
+                            {formatPrice(item.price)} × {item.quantity}
+                          </div>
+                          {item.product?.description && (
+                            <div style={styles.modalItemDesc}>
+                              {item.product.description}
+                            </div>
+                          )}
+                        </div>
+                        <div style={styles.modalItemTotal}>
+                          {formatPrice(item.price * item.quantity)}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={styles.noItemsModal}>No items information available</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Delivery Address */}
+              {selectedOrder.shipping_address && (
+                <div style={styles.detailSection}>
+                  <h3 style={styles.sectionTitle}>Delivery Address</h3>
+                  <div style={styles.addressBox}>
+                    <MapPin size={16} />
+                    <div style={styles.addressText}>{selectedOrder.shipping_address}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Cancel Reason */}
+              {selectedOrder.status?.toLowerCase() === 'cancelled' && selectedOrder.cancel_reason && (
+                <div style={styles.detailSection}>
+                  <h3 style={styles.sectionTitle}>Cancellation Reason</h3>
+                  <div style={styles.cancelReasonBox}>
+                    <AlertOctagon size={16} />
+                    <div style={styles.cancelReasonText}>{selectedOrder.cancel_reason}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Order Total */}
+              <div style={styles.detailSection}>
+                <div style={styles.totalSection}>
+                  <div style={styles.totalLabel}>Order Total</div>
+                  <div style={styles.totalAmount}>{formatPrice(selectedOrder.total_amount)}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={styles.modalFooter}>
+              <button style={styles.closeModalButton} onClick={closeOrderDetails}>
+                Close
+              </button>
+              {selectedOrder.status?.toLowerCase() === 'delivered' && (
+                <button style={styles.rateButton}>
+                  Rate Order
+                </button>
+              )}
+              {canCancelOrder(selectedOrder) && (
+                <button 
+                  style={styles.cancelModalButton}
+                  onClick={() => {
+                    closeOrderDetails();
+                    handleCancelOrderRequest(selectedOrder);
+                  }}
+                >
+                  Cancel Order
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ NEW: Cancel Order Modal */}
+      {showCancelModal && orderToCancel && (
+        <div style={styles.modalOverlay} onClick={closeCancelModal}>
+          <div style={styles.cancelModalContent} onClick={(e) => e.stopPropagation()}>
+            {/* Cancel Modal Header */}
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>
+                <AlertOctagon size={24} style={{marginRight: '8px'}} />
+                Cancel Order #{orderToCancel.id}
+              </h2>
+              <button style={styles.closeButton} onClick={closeCancelModal}>
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Cancel Modal Body */}
+            <div style={styles.modalBody}>
+              <div style={styles.cancelWarning}>
+                <p><strong>Are you sure you want to cancel this order?</strong></p>
+                <p>This action cannot be undone. The seller will be notified immediately.</p>
+              </div>
+
+              {/* Cancellation Reason Selection */}
+              <div style={styles.detailSection}>
+                <h3 style={styles.sectionTitle}>Please select a reason for cancellation:</h3>
+                <div style={styles.reasonsList}>
+                  {cancelReasons.map(reason => (
+                    <label key={reason.value} style={styles.reasonOption}>
+                      <input
+                        type="radio"
+                        name="cancelReason"
+                        value={reason.value}
+                        checked={cancelReason === reason.value}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        style={styles.reasonRadio}
+                      />
+                      <span style={styles.reasonLabel}>{reason.label}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {/* Custom reason text area */}
+                {cancelReason === 'other' && (
+                  <div style={styles.customReasonSection}>
+                    <label style={styles.customReasonLabel}>
+                      Please specify your reason:
+                    </label>
+                    <textarea
+                      value={customReason}
+                      onChange={(e) => setCustomReason(e.target.value)}
+                      placeholder="Please provide specific details about why you want to cancel this order..."
+                      style={styles.customReasonTextarea}
+                      rows={4}
+                      maxLength={500}
+                    />
+                    <div style={styles.characterCount}>
+                      {customReason.length}/500 characters
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Order Summary */}
+              <div style={styles.detailSection}>
+                <h3 style={styles.sectionTitle}>Order Summary</h3>
+                <div style={styles.cancelOrderSummary}>
+                  <div style={styles.summaryRow}>
+                    <span>Order Total:</span>
+                    <span style={styles.summaryAmount}>{formatPrice(orderToCancel.total_amount)}</span>
+                  </div>
+                  <div style={styles.summaryRow}>
+                    <span>Payment Method:</span>
+                    <span>{orderToCancel.payment_method === 'COD' ? 'Cash on Delivery' : 'Online Payment'}</span>
+                  </div>
+                  <div style={styles.summaryRow}>
+                    <span>Items:</span>
+                    <span>{orderToCancel.items?.length || 0} item(s)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Cancel Modal Footer */}
+            <div style={styles.modalFooter}>
+              <button 
+                style={styles.closeModalButton} 
+                onClick={closeCancelModal}
+                disabled={cancelLoading}
+              >
+                Keep Order
+              </button>
+              <button 
+                style={styles.confirmCancelButton}
+                onClick={handleCancelOrder}
+                disabled={cancelLoading || !cancelReason || (cancelReason === 'other' && !customReason.trim())}
+              >
+                {cancelLoading ? 'Cancelling...' : 'Confirm Cancellation'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -440,7 +885,13 @@ const styles = {
   },
   shippingAddress: { 
     fontSize: '13px', color: '#6b7280', backgroundColor: '#f8fafc',
-    padding: '12px', borderRadius: '6px', lineHeight: '1.4'
+    padding: '12px', borderRadius: '6px', lineHeight: '1.4', marginBottom: '12px'
+  },
+  // ✅ NEW: Cancel reason display
+  cancelReason: { 
+    fontSize: '13px', color: '#dc2626', backgroundColor: '#fef2f2',
+    padding: '12px', borderRadius: '6px', lineHeight: '1.4',
+    border: '1px solid #fecaca'
   },
   orderActions: {
     display: 'flex', gap: '8px', flexWrap: 'wrap'
@@ -448,6 +899,192 @@ const styles = {
   actionButton: {
     padding: '8px 16px', backgroundColor: '#10b981', color: 'white',
     border: 'none', borderRadius: '6px', cursor: 'pointer',
+    fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
+  },
+
+  // ✅ Modal Styles
+  modalOverlay: {
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    padding: '20px'
+  },
+  modalContent: {
+    backgroundColor: 'white', borderRadius: '16px', maxWidth: '600px',
+    width: '100%', maxHeight: '90vh', overflow: 'hidden',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+  },
+  // ✅ NEW: Cancel modal specific styling
+  cancelModalContent: {
+    backgroundColor: 'white', borderRadius: '16px', maxWidth: '500px',
+    width: '100%', maxHeight: '90vh', overflow: 'hidden',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+  },
+  modalHeader: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '24px', borderBottom: '1px solid #e5e7eb'
+  },
+  modalTitle: {
+    fontSize: '20px', fontWeight: '700', color: '#1f2937', margin: 0,
+    display: 'flex', alignItems: 'center'
+  },
+  closeButton: {
+    background: 'none', border: 'none', cursor: 'pointer',
+    color: '#6b7280', padding: '8px', borderRadius: '8px',
+    transition: 'all 0.2s'
+  },
+  modalBody: {
+    padding: '24px', overflowY: 'auto', maxHeight: 'calc(90vh - 180px)'
+  },
+  detailSection: {
+    marginBottom: '24px'
+  },
+  sectionTitle: {
+    fontSize: '16px', fontWeight: '600', color: '#1f2937',
+    marginBottom: '12px', margin: '0 0 12px 0'
+  },
+  statusDetail: {
+    display: 'flex', alignItems: 'center', gap: '12px',
+    backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px'
+  },
+  infoGrid: {
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px'
+  },
+  infoItem: {
+    display: 'flex', alignItems: 'flex-start', gap: '12px',
+    padding: '12px', backgroundColor: '#f9fafb', borderRadius: '8px'
+  },
+  infoLabel: {
+    fontSize: '12px', color: '#6b7280', fontWeight: '500',
+    textTransform: 'uppercase', letterSpacing: '0.05em'
+  },
+  infoValue: {
+    fontSize: '14px', color: '#1f2937', fontWeight: '500', marginTop: '2px'
+  },
+  itemsList: {
+    display: 'flex', flexDirection: 'column', gap: '12px'
+  },
+  modalOrderItem: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+    padding: '16px', backgroundColor: '#f9fafb', borderRadius: '8px'
+  },
+  modalItemInfo: {
+    flex: 1
+  },
+  modalItemName: {
+    fontSize: '16px', fontWeight: '600', color: '#1f2937', marginBottom: '4px'
+  },
+  modalItemPrice: {
+    fontSize: '14px', color: '#6b7280', marginBottom: '6px'
+  },
+  modalItemDesc: {
+    fontSize: '12px', color: '#9ca3af', lineHeight: '1.4'
+  },
+  modalItemTotal: {
+    fontSize: '16px', fontWeight: '700', color: '#1f2937'
+  },
+  noItemsModal: {
+    textAlign: 'center', padding: '20px', color: '#9ca3af',
+    fontStyle: 'italic'
+  },
+  addressBox: {
+    display: 'flex', alignItems: 'flex-start', gap: '12px',
+    padding: '16px', backgroundColor: '#f0f8ff', borderRadius: '8px',
+    border: '1px solid #dbeafe'
+  },
+  addressText: {
+    fontSize: '14px', color: '#1f2937', lineHeight: '1.5'
+  },
+  // ✅ NEW: Cancel reason display in modal
+  cancelReasonBox: {
+    display: 'flex', alignItems: 'flex-start', gap: '12px',
+    padding: '16px', backgroundColor: '#fef2f2', borderRadius: '8px',
+    border: '1px solid #fecaca'
+  },
+  cancelReasonText: {
+    fontSize: '14px', color: '#dc2626', lineHeight: '1.5'
+  },
+  totalSection: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '16px', backgroundColor: '#f0f8ff', borderRadius: '8px',
+    border: '2px solid #3b82f6'
+  },
+  totalLabel: {
+    fontSize: '16px', fontWeight: '600', color: '#1f2937'
+  },
+  totalAmount: {
+    fontSize: '20px', fontWeight: '700', color: '#3b82f6'
+  },
+  modalFooter: {
+    display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
+    gap: '12px', padding: '24px', borderTop: '1px solid #e5e7eb'
+  },
+  closeModalButton: {
+    padding: '10px 20px', backgroundColor: '#6b7280', color: 'white',
+    border: 'none', borderRadius: '8px', cursor: 'pointer',
+    fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
+  },
+  rateButton: {
+    padding: '10px 20px', backgroundColor: '#10b981', color: 'white',
+    border: 'none', borderRadius: '8px', cursor: 'pointer',
+    fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
+  },
+  cancelModalButton: {
+    padding: '10px 20px', backgroundColor: '#ef4444', color: 'white',
+    border: 'none', borderRadius: '8px', cursor: 'pointer',
+    fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
+  },
+
+  // ✅ NEW: Cancel Modal Specific Styles
+  cancelWarning: {
+    backgroundColor: '#fef2f2', border: '1px solid #fecaca',
+    borderRadius: '8px', padding: '16px', marginBottom: '24px'
+  },
+  reasonsList: {
+    display: 'flex', flexDirection: 'column', gap: '12px',
+    backgroundColor: '#f9fafb', padding: '16px', borderRadius: '8px'
+  },
+  reasonOption: {
+    display: 'flex', alignItems: 'center', gap: '12px',
+    cursor: 'pointer', padding: '8px', borderRadius: '6px',
+    transition: 'background-color 0.2s'
+  },
+  reasonRadio: {
+    width: '16px', height: '16px', cursor: 'pointer'
+  },
+  reasonLabel: {
+    fontSize: '14px', color: '#1f2937', cursor: 'pointer'
+  },
+  customReasonSection: {
+    marginTop: '16px'
+  },
+  customReasonLabel: {
+    display: 'block', fontSize: '14px', fontWeight: '500',
+    color: '#1f2937', marginBottom: '8px'
+  },
+  customReasonTextarea: {
+    width: '100%', padding: '12px', border: '1px solid #d1d5db',
+    borderRadius: '8px', fontSize: '14px', resize: 'vertical',
+    fontFamily: 'inherit', outline: 'none', transition: 'border-color 0.2s'
+  },
+  characterCount: {
+    fontSize: '12px', color: '#6b7280', textAlign: 'right',
+    marginTop: '4px'
+  },
+  cancelOrderSummary: {
+    backgroundColor: '#f9fafb', padding: '16px', borderRadius: '8px'
+  },
+  summaryRow: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '8px 0', borderBottom: '1px solid #e5e7eb'
+  },
+  summaryAmount: {
+    fontWeight: '600', color: '#1f2937'
+  },
+  confirmCancelButton: {
+    padding: '10px 20px', backgroundColor: '#ef4444', color: 'white',
+    border: 'none', borderRadius: '8px', cursor: 'pointer',
     fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
   }
 };

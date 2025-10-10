@@ -24,14 +24,15 @@ import {
   Download,
   MessageSquare,
   Star,
-  Copy
+  Copy,
+  Eye
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
 
-// ✅ NEW: Order Timeline Component
+// ✅ Order Timeline Component
 function OrderTimeline({ order }) {
   const timelineSteps = [
     { 
@@ -66,6 +67,11 @@ function OrderTimeline({ order }) {
         <div style={styles.cancelledTimeline}>
           <AlertCircle size={20} color="#ef4444" />
           <span>Order was cancelled on {new Date(order.updated_at || order.created_at).toLocaleDateString()}</span>
+          {order.cancel_reason && (
+            <div style={styles.cancelReasonInline}>
+              <strong>Reason:</strong> {order.cancel_reason}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -108,20 +114,36 @@ function OrderTimeline({ order }) {
   );
 }
 
-// Enhanced Update Status Modal with better validation and UX
+// ✅ FIXED: Enhanced Update Status Modal with cancellation prevention
 function UpdateStatusModal({ order, onClose, onUpdate }) {
     const [status, setStatus] = useState(order.status);
     const [trackingId, setTrackingId] = useState(order.tracking_id || '');
     const [shippingProvider, setShippingProvider] = useState(order.shipping_provider || '');
-    const [notes, setNotes] = useState(''); // ✅ NEW: Add notes field
+    const [notes, setNotes] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
 
+    // ✅ NEW: Check if order can be modified
+    const canModifyOrder = order.status !== 'CANCELLED' && order.status !== 'DELIVERED';
+    const isOrderCancelled = order.status === 'CANCELLED';
+    const isOrderDelivered = order.status === 'DELIVERED';
+
     const handleSave = async () => {
+        // ✅ FIXED: Prevent saving if order is cancelled or delivered
+        if (isOrderCancelled) {
+            setError('Cannot update status of a cancelled order.');
+            return;
+        }
+
+        if (isOrderDelivered) {
+            setError('Cannot update status of a delivered order.');
+            return;
+        }
+
         setIsSaving(true);
         setError('');
         
-        const token = localStorage.getItem('accessToken');
+        const token = localStorage.getItem('accessToken') || localStorage.getItem('sellerAccessToken');
         if (!token) {
             setError('Authentication token not found. Please log in again.');
             setIsSaving(false);
@@ -146,11 +168,10 @@ function UpdateStatusModal({ order, onClose, onUpdate }) {
 
         try {
             console.log('Updating order status:', updateData);
-            // ✅ FIXED: Changed Token to Bearer authentication
             await axios.patch(`${ORDERS_API_URL}${order.id}/update_status/`, updateData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            onUpdate(); // Refresh the order details on the main page
+            onUpdate();
             onClose();
         } catch (error) {
             console.error('Status update failed:', error);
@@ -180,11 +201,36 @@ function UpdateStatusModal({ order, onClose, onUpdate }) {
         <div style={styles.modalOverlay} onClick={handleOverlayClick}>
             <div style={styles.modalContent}>
                 <div style={styles.modalHeader}>
-                    <h2 style={styles.modalTitle}>Update Order #{order.id}</h2>
+                    <h2 style={styles.modalTitle}>
+                        {isOrderCancelled ? 'Order Details' : isOrderDelivered ? 'Order Details' : 'Update Order'} #{order.id}
+                    </h2>
                     <button onClick={onClose} style={styles.closeButton}>
                         <X size={20} />
                     </button>
                 </div>
+
+                {/* ✅ NEW: Show warning for cancelled orders */}
+                {isOrderCancelled && (
+                    <div style={styles.cancelledWarning}>
+                        <AlertCircle size={16} />
+                        <div>
+                            <span>This order has been cancelled and cannot be modified.</span>
+                            {order.cancel_reason && (
+                                <div style={styles.cancelReason}>
+                                    <strong>Cancellation Reason:</strong> {order.cancel_reason}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* ✅ NEW: Show warning for delivered orders */}
+                {isOrderDelivered && (
+                    <div style={styles.deliveredWarning}>
+                        <CheckCircle size={16} />
+                        <span>This order has been delivered and cannot be modified further.</span>
+                    </div>
+                )}
 
                 {error && (
                     <div style={styles.errorMessage}>
@@ -199,8 +245,12 @@ function UpdateStatusModal({ order, onClose, onUpdate }) {
                         <select 
                             value={status} 
                             onChange={e => setStatus(e.target.value)} 
-                            style={styles.input}
-                            disabled={isSaving}
+                            style={{
+                                ...styles.input,
+                                backgroundColor: !canModifyOrder ? '#f3f4f6' : 'white',
+                                cursor: !canModifyOrder ? 'not-allowed' : 'pointer'
+                            }}
+                            disabled={isSaving || !canModifyOrder}
                         >
                             <option value="PENDING">Pending</option>
                             <option value="PROCESSING">Processing</option>
@@ -208,9 +258,14 @@ function UpdateStatusModal({ order, onClose, onUpdate }) {
                             <option value="DELIVERED">Delivered</option>
                             <option value="CANCELLED">Cancelled</option>
                         </select>
+                        {!canModifyOrder && (
+                            <small style={styles.disabledNote}>
+                                Status cannot be changed for {isOrderCancelled ? 'cancelled' : 'delivered'} orders
+                            </small>
+                        )}
                     </div>
 
-                    {status === 'SHIPPED' && (
+                    {status === 'SHIPPED' && canModifyOrder && (
                         <>
                             <div style={styles.formGroup}>
                                 <label style={styles.label}>
@@ -243,21 +298,42 @@ function UpdateStatusModal({ order, onClose, onUpdate }) {
                         </>
                     )}
 
-                    {/* ✅ NEW: Notes field */}
+                    {/* ✅ Show existing shipping info for cancelled/delivered orders */}
+                    {!canModifyOrder && order.shipping_provider && (
+                        <div style={styles.formGroup}>
+                            <label style={styles.label}>Shipping Information</label>
+                            <div style={styles.readOnlyInfo}>
+                                <div><strong>Provider:</strong> {order.shipping_provider}</div>
+                                {order.tracking_id && (
+                                    <div><strong>Tracking ID:</strong> {order.tracking_id}</div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Notes field - always show for reference */}
                     <div style={styles.formGroup}>
                         <label style={styles.label}>
                             <MessageSquare size={16} />
-                            Additional Notes (Optional)
+                            {canModifyOrder ? 'Additional Notes (Optional)' : 'Order Notes'}
                         </label>
                         <textarea 
                             value={notes} 
                             onChange={e => setNotes(e.target.value)} 
-                            style={{...styles.input, minHeight: '80px', resize: 'vertical'}}
-                            placeholder="Add any additional information or instructions..."
-                            disabled={isSaving}
+                            style={{
+                                ...styles.input, 
+                                minHeight: '80px', 
+                                resize: 'vertical',
+                                backgroundColor: !canModifyOrder ? '#f3f4f6' : 'white'
+                            }}
+                            placeholder={canModifyOrder ? "Add any additional information or instructions..." : "No additional notes available"}
+                            disabled={isSaving || !canModifyOrder}
                             maxLength={500}
+                            readOnly={!canModifyOrder}
                         />
-                        <small style={styles.charCount}>{notes.length}/500 characters</small>
+                        {canModifyOrder && (
+                            <small style={styles.charCount}>{notes.length}/500 characters</small>
+                        )}
                     </div>
                 </div>
 
@@ -267,25 +343,29 @@ function UpdateStatusModal({ order, onClose, onUpdate }) {
                         style={styles.buttonSecondary} 
                         disabled={isSaving}
                     >
-                        Cancel
+                        {canModifyOrder ? 'Cancel' : 'Close'}
                     </button>
-                    <button 
-                        onClick={handleSave} 
-                        style={styles.buttonPrimary} 
-                        disabled={isSaving}
-                    >
-                        {isSaving ? (
-                            <>
-                                <div style={styles.spinner}></div>
-                                Saving...
-                            </>
-                        ) : (
-                            <>
-                                <CheckCircle size={16} />
-                                Save Status
-                            </>
-                        )}
-                    </button>
+                    
+                    {/* ✅ Only show save button for modifiable orders */}
+                    {canModifyOrder && (
+                        <button 
+                            onClick={handleSave} 
+                            style={styles.buttonPrimary} 
+                            disabled={isSaving}
+                        >
+                            {isSaving ? (
+                                <>
+                                    <div style={styles.spinner}></div>
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <CheckCircle size={16} />
+                                    Save Status
+                                </>
+                            )}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
@@ -298,13 +378,12 @@ export default function OrderDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState('');
-  const [copied, setCopied] = useState(false); // ✅ NEW: Copy tracking ID state
+  const [copied, setCopied] = useState(false);
   const { orderId } = useParams();
   const router = useRouter();
   
-  // ✅ FIXED: Changed Token to Bearer authentication
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('sellerAccessToken');
     if (!token) {
       router.push('/login/seller');
       return null;
@@ -345,7 +424,6 @@ export default function OrderDetailPage() {
     fetchOrderDetails();
   }, [fetchOrderDetails]);
 
-  // ✅ NEW: Copy tracking ID to clipboard
   const copyTrackingId = async (trackingId) => {
     try {
       await navigator.clipboard.writeText(trackingId);
@@ -384,7 +462,6 @@ export default function OrderDetailPage() {
     }
   };
 
-  // ✅ NEW: Download PDF bill
   const handleDownloadBill = async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -528,14 +605,26 @@ export default function OrderDetailPage() {
             <FileText size={16}/>
             View Bill
           </button>
-          <button onClick={() => setIsModalOpen(true)} style={styles.buttonPrimary}>
-            <Edit size={16}/>
-            Update Status
-          </button>
+          
+          {/* ✅ FIXED: Only show Update Status button for non-cancelled, non-delivered orders */}
+          {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
+            <button onClick={() => setIsModalOpen(true)} style={styles.buttonPrimary}>
+              <Edit size={16}/>
+              Update Status
+            </button>
+          )}
+          
+          {/* ✅ NEW: Show "View Details" button for cancelled/delivered orders */}
+          {(order.status === 'CANCELLED' || order.status === 'DELIVERED') && (
+            <button onClick={() => setIsModalOpen(true)} style={styles.buttonInfo}>
+              <Eye size={16}/>
+              View Details
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ✅ NEW: Order Timeline */}
+      {/* ✅ Order Timeline */}
       <div style={styles.timelineCard}>
         <h3 style={styles.cardTitle}>
           <Truck size={20}/>
@@ -566,7 +655,6 @@ export default function OrderDetailPage() {
               <span>{order.shipping_address}</span>
             </div>
           )}
-          {/* ✅ NEW: Order type indicator */}
           <div style={styles.detailItem}>
             <strong>Order Type:</strong>
             <span style={{
@@ -635,7 +723,6 @@ export default function OrderDetailPage() {
               </span>
             </div>
           )}
-          {/* ✅ NEW: Total amount highlight */}
           <div style={styles.detailItem}>
             <strong>Total Amount:</strong>
             <span style={styles.totalAmountHighlight}>₹{parseFloat(order.total_amount).toFixed(2)}</span>
@@ -742,8 +829,8 @@ const styles = {
   spinner: {
     width: '16px',
     height: '16px',
-    border: '2px solid rgba(255, 255, 255, 0.3)',
-    borderTop: '2px solid #ffffff',
+    border: '2px solid rgba(59, 130, 246, 0.3)',
+    borderTop: '2px solid #3b82f6',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
     display: 'inline-block'
@@ -850,7 +937,7 @@ const styles = {
     flexWrap: 'wrap'
   },
 
-  // ✅ NEW: Timeline styles
+  // Timeline styles
   timelineCard: {
     border: '1px solid #e5e7eb', 
     borderRadius: '12px', 
@@ -917,12 +1004,21 @@ const styles = {
 
   cancelledTimeline: {
     display: 'flex',
-    alignItems: 'center',
+    flexDirection: 'column',
     gap: '12px',
     padding: '16px',
     backgroundColor: '#fef2f2',
     borderRadius: '8px',
     color: '#991b1b'
+  },
+
+  // ✅ NEW: Cancel reason in timeline
+  cancelReasonInline: {
+    fontSize: '13px',
+    padding: '8px',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: '4px',
+    marginTop: '8px'
   },
   
   grid: { 
@@ -969,7 +1065,6 @@ const styles = {
     fontSize: '14px'
   },
 
-  // ✅ NEW: Order type styling
   orderType: {
     padding: '4px 8px',
     borderRadius: '12px',
@@ -977,7 +1072,6 @@ const styles = {
     fontWeight: '600'
   },
 
-  // ✅ NEW: Total amount highlight
   totalAmountHighlight: {
     fontSize: '16px',
     fontWeight: '700',
@@ -988,7 +1082,6 @@ const styles = {
     marginBottom: '16px'
   },
 
-  // ✅ ENHANCED: Tracking ID with copy button
   trackingIdContainer: {
     display: 'flex',
     alignItems: 'center',
@@ -1170,6 +1263,59 @@ const styles = {
     margin: '0 24px 20px 24px',
     fontSize: '14px'
   },
+
+  // ✅ NEW: Warning styles for cancelled orders
+  cancelledWarning: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px',
+    padding: '16px',
+    backgroundColor: '#fef2f2',
+    border: '1px solid #ef4444',
+    borderRadius: '8px',
+    color: '#991b1b',
+    margin: '0 24px 20px 24px',
+    fontSize: '14px'
+  },
+
+  cancelReason: {
+    marginTop: '8px',
+    padding: '8px',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: '4px',
+    fontSize: '13px'
+  },
+
+  // ✅ NEW: Warning for delivered orders
+  deliveredWarning: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '16px',
+    backgroundColor: '#f0fdf4',
+    border: '1px solid #10b981',
+    borderRadius: '8px',
+    color: '#065f46',
+    margin: '0 24px 20px 24px',
+    fontSize: '14px'
+  },
+
+  // ✅ NEW: Disabled field note
+  disabledNote: {
+    fontSize: '12px',
+    color: '#6b7280',
+    marginTop: '4px',
+    fontStyle: 'italic'
+  },
+
+  // ✅ NEW: Read-only info display
+  readOnlyInfo: {
+    padding: '12px',
+    backgroundColor: '#f8fafc',
+    border: '1px solid #e5e7eb',
+    borderRadius: '6px',
+    fontSize: '14px'
+  },
   
   formGroup: { 
     marginBottom: '20px'
@@ -1196,7 +1342,6 @@ const styles = {
     transition: 'border-color 0.2s'
   },
 
-  // ✅ NEW: Character count styling
   charCount: {
     fontSize: '12px',
     color: '#6b7280',
@@ -1243,13 +1388,28 @@ const styles = {
     transition: 'background-color 0.2s'
   },
 
-  // ✅ NEW: Tertiary button style
   buttonTertiary: {
     display: 'inline-flex', 
     alignItems: 'center', 
     gap: '8px', 
     padding: '12px 20px', 
     backgroundColor: '#059669', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '8px', 
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'background-color 0.2s'
+  },
+
+  // ✅ NEW: Info button style
+  buttonInfo: {
+    display: 'inline-flex', 
+    alignItems: 'center', 
+    gap: '8px', 
+    padding: '12px 20px', 
+    backgroundColor: '#0ea5e9', 
     color: 'white', 
     border: 'none', 
     borderRadius: '8px', 
