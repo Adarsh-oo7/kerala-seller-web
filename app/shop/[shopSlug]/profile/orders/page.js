@@ -2,12 +2,338 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import axios from 'axios';
 import { 
   ArrowLeft, Package, Clock, CheckCircle, XCircle, Store, AlertTriangle, X, User, 
-  MapPin, Phone, Calendar, CreditCard, AlertOctagon, Star, ThumbsUp 
+  MapPin, Phone, Calendar, CreditCard, AlertOctagon, Star, RefreshCw, Check
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+
+// ✅ Enhanced auth headers function
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('access_token') ||
+    localStorage.getItem('buyerAccessToken') ||
+    localStorage.getItem('buyerToken') ||
+    localStorage.getItem('accessToken');
+
+  return token ? { 'Authorization': `Bearer ${token}` } : null;
+};
+
+// ✅ ENHANCED: Product Review Form Component
+function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose }) {
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hoverRating, setHoverRating] = useState(0);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (comment.trim().length < 10) {
+      setError('Review must be at least 10 characters long');
+      return;
+    }
+
+    if (rating < 1 || rating > 5) {
+      setError('Please select a rating between 1 and 5 stars');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError('');
+    setSuccess('');
+    
+    const headers = getAuthHeaders();
+    if (!headers) {
+      setError('Please login to submit a review');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      console.log('📝 Submitting product review:', { productId, rating, comment: comment.trim() });
+      
+      const response = await axios.post(
+        `${API_BASE_URL}/api/products/${productId}/create-review/`,
+ 
+        { 
+          rating, 
+          comment: comment.trim() 
+        }, 
+        { 
+          headers,
+          timeout: 15000
+        }
+      );
+      
+      console.log('✅ Review submitted successfully:', response.data);
+      
+      setComment('');
+      setRating(5);
+      setHoverRating(0);
+      setSuccess('Review submitted successfully! Thank you for your feedback.');
+      
+      // Call parent callback to refresh reviews
+      if (onReviewSubmitted) {
+        setTimeout(() => {
+          onReviewSubmitted();
+          onClose && onClose();
+        }, 2000);
+      }
+      
+    } catch (err) {
+      console.error('❌ Review submission error:', err);
+      
+      let errorMessage = 'Failed to submit review. Please try again.';
+      
+      if (err.response?.status === 401) {
+        errorMessage = 'Your session has expired. Please login again.';
+      } else if (err.response?.status === 400) {
+        errorMessage = err.response.data?.error || err.response.data?.message || 'Invalid review data. Please check your input.';
+      } else if (err.response?.status === 403) {
+        errorMessage = 'You can only review products you have purchased.';
+      } else if (err.response?.status === 409) {
+        errorMessage = 'You have already reviewed this product.';
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Request timed out. Please try again.';
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const getRatingDescription = (rating) => {
+    switch (rating) {
+      case 1: return "Poor - Not satisfied";
+      case 2: return "Fair - Below expectations";
+      case 3: return "Good - Met expectations";
+      case 4: return "Very Good - Above expectations";
+      case 5: return "Excellent - Outstanding product";
+      default: return "";
+    }
+  };
+
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose && onClose();
+    }
+  };
+  
+  return (
+    <div style={styles.modalOverlay} onClick={handleOverlayClick}>
+      <div style={styles.reviewModalContent} onClick={(e) => e.stopPropagation()}>
+        <div style={styles.modalHeader}>
+          <h2 style={styles.modalTitle}>
+            <Star size={24} style={{marginRight: '8px'}} />
+            Review Product: {productName}
+          </h2>
+          <button style={styles.closeButton} onClick={onClose}>
+            <X size={24} />
+          </button>
+        </div>
+
+        <div style={styles.modalBody}>
+          <div style={styles.reviewFormDescription}>
+            Share your experience with this product to help other customers make informed decisions.
+          </div>
+          
+          {error && (
+            <div style={styles.errorMessage}>
+              <AlertTriangle size={16} />
+              <span>{error}</span>
+            </div>
+          )}
+          
+          {success && (
+            <div style={styles.successMessage}>
+              <Check size={16} />
+              <span>{success}</span>
+            </div>
+          )}
+          
+          <form onSubmit={handleSubmit}>
+            <div style={styles.detailSection}>
+              <h3 style={styles.sectionTitle}>Your Rating:</h3>
+              <div style={styles.starRatingInput}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={32}
+                    onClick={() => setRating(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    color={(hoverRating || rating) >= star ? "#fbbf24" : "#d1d5db"}
+                    fill={(hoverRating || rating) >= star ? "#fbbf24" : "none"}
+                    style={styles.ratingStarButton}
+                  />
+                ))}
+              </div>
+              <div style={styles.ratingDescription}>
+                {getRatingDescription(hoverRating || rating)}
+              </div>
+            </div>
+            
+            <div style={styles.detailSection}>
+              <h3 style={styles.sectionTitle}>Your Review:</h3>
+              <textarea 
+                value={comment} 
+                onChange={e => setComment(e.target.value)} 
+                placeholder="Share your experience with this product. What did you like or dislike about it? How was the quality, delivery, and overall experience?" 
+                style={styles.reviewTextarea}
+                rows={5}
+                maxLength={1000}
+                disabled={isSubmitting}
+              />
+              <div style={styles.charCountContainer}>
+                <small style={styles.characterCount}>
+                  {comment.length}/1000 characters (minimum 10 required)
+                </small>
+                {comment.length >= 10 && (
+                  <span style={styles.validIndicator}>
+                    <Check size={14} />
+                    Ready to submit
+                  </span>
+                )}
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div style={styles.modalFooter}>
+          <button 
+            style={styles.closeModalButton} 
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleSubmit}
+            disabled={isSubmitting || comment.trim().length < 10}
+            style={{
+              ...styles.submitReviewButton,
+              ...(isSubmitting || comment.trim().length < 10 ? styles.disabledButton : {})
+            }}
+          >
+            {isSubmitting ? (
+              <span style={styles.buttonContent}>
+                <RefreshCw size={16} className="spinning" />
+                Submitting Review...
+              </span>
+            ) : (
+              <span style={styles.buttonContent}>
+                <Star size={16} />
+                Submit Review
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ ENHANCED: Product Review Button Component
+function ProductReviewButton({ product, onReviewSubmitted }) {
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [checkingPermission, setCheckingPermission] = useState(false);
+
+  // Check if user can review this product
+  useEffect(() => {
+    const checkReviewPermission = async () => {
+      const headers = getAuthHeaders();
+      if (!headers || !product?.id) {
+        setCanReview(false);
+        return;
+      }
+
+      setCheckingPermission(true);
+      try {
+        console.log('🔍 Checking review permission for product:', product.id);
+        
+        const response = await axios.get(
+          `${API_BASE_URL}/api/products/${product.id}/can-review/`,
+          { 
+            headers,
+            timeout: 8000
+          }
+        );
+        
+        const canReviewProduct = response.data.can_review || false;
+        console.log('✅ Can review status:', canReviewProduct);
+        
+        setCanReview(canReviewProduct);
+      } catch (error) {
+        console.warn('⚠️ Can review check failed:', error.message);
+        
+        // If endpoint doesn't exist, allow reviews for logged in users
+        if (error.response?.status === 404) {
+          setCanReview(true);
+        } else {
+          setCanReview(false);
+        }
+      } finally {
+        setCheckingPermission(false);
+      }
+    };
+
+    if (product?.id) {
+      checkReviewPermission();
+    }
+  }, [product?.id]);
+
+  const handleReviewClick = () => {
+    setShowReviewModal(true);
+  };
+
+  const handleReviewSubmitted = () => {
+    setShowReviewModal(false);
+    setCanReview(false); // Prevent multiple reviews
+    if (onReviewSubmitted) {
+      onReviewSubmitted();
+    }
+  };
+
+  if (checkingPermission) {
+    return (
+      <div style={styles.checkingReview}>
+        <RefreshCw size={14} className="spinning" />
+        <span>Checking...</span>
+      </div>
+    );
+  }
+
+  if (!canReview) {
+    return null;
+  }
+
+  return (
+    <>
+      <button 
+        style={styles.reviewProductButton}
+        onClick={handleReviewClick}
+      >
+        <Star size={16} />
+        Review Product
+      </button>
+
+      {showReviewModal && (
+        <ProductReviewForm
+          productId={product.id}
+          productName={product.name}
+          onReviewSubmitted={handleReviewSubmitted}
+          onClose={() => setShowReviewModal(false)}
+        />
+      )}
+    </>
+  );
+}
 
 export default function ShopOrdersPage() {
   const { shopSlug } = useParams();
@@ -28,14 +354,6 @@ export default function ShopOrdersPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [customReason, setCustomReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
-
-  // ✅ SIMPLIFIED: Rating modal states (frontend only)
-  const [showRatingModal, setShowRatingModal] = useState(false);
-  const [orderToRate, setOrderToRate] = useState(null);
-  const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [reviewText, setReviewText] = useState('');
-  const [ratingLoading, setRatingLoading] = useState(false);
 
   // Pre-defined cancellation reasons
   const cancelReasons = [
@@ -257,107 +575,6 @@ export default function ShopOrdersPage() {
     }
   };
 
-  // ✅ SIMPLIFIED: Handle rate order request (frontend only)
-  const handleRateOrderRequest = (order) => {
-    console.log('⭐ Requesting to rate order:', order.id);
-    setOrderToRate(order);
-    setRating(0);
-    setHoverRating(0);
-    setReviewText('');
-    setShowRatingModal(true);
-  };
-
-  // ✅ Close rating modal
-  const closeRatingModal = () => {
-    setShowRatingModal(false);
-    setOrderToRate(null);
-    setRating(0);
-    setHoverRating(0);
-    setReviewText('');
-  };
-
-  // ✅ SIMPLIFIED: Handle rating submission (frontend only - no backend call)
-  const handleSubmitRating = async () => {
-    if (!orderToRate) return;
-
-    if (rating === 0) {
-      alert('Please select a rating (1-5 stars)');
-      return;
-    }
-
-    setRatingLoading(true);
-
-    try {
-      // ✅ SIMULATE: Just update local state since backend doesn't have the endpoint
-      console.log('⭐ Simulating rating submission for order:', orderToRate.id, 'Rating:', rating);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update order in local state
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.id === orderToRate.id 
-            ? { ...order, rating: rating, review: reviewText, is_rated: true }
-            : order
-        )
-      );
-
-      // Store rating in localStorage for persistence
-      const ratingKey = `order_${orderToRate.id}_rating`;
-      localStorage.setItem(ratingKey, JSON.stringify({
-        rating: rating,
-        review: reviewText.trim(),
-        rated_at: new Date().toISOString()
-      }));
-
-      console.log('✅ Rating saved locally');
-      alert('Thank you for rating this order! Your feedback has been recorded.');
-      closeRatingModal();
-      
-    } catch (error) {
-      console.error('❌ Rating submission error:', error);
-      alert('Failed to save rating. Please try again.');
-    } finally {
-      setRatingLoading(false);
-    }
-  };
-
-  // ✅ Load saved ratings from localStorage
-  useEffect(() => {
-    if (orders.length > 0) {
-      const updatedOrders = orders.map(order => {
-        const ratingKey = `order_${order.id}_rating`;
-        const savedRating = localStorage.getItem(ratingKey);
-        
-        if (savedRating) {
-          try {
-            const ratingData = JSON.parse(savedRating);
-            return {
-              ...order,
-              rating: ratingData.rating,
-              review: ratingData.review,
-              is_rated: true
-            };
-          } catch (error) {
-            console.warn('Failed to parse saved rating for order', order.id);
-          }
-        }
-        
-        return order;
-      });
-      
-      // Only update if there are changes
-      const hasChanges = updatedOrders.some((order, index) => 
-        order.is_rated !== orders[index].is_rated
-      );
-      
-      if (hasChanges) {
-        setOrders(updatedOrders);
-      }
-    }
-  }, [orders.length]);
-
   // ✅ Check if order can be cancelled
   const canCancelOrder = (order) => {
     const status = order.status?.toLowerCase();
@@ -365,19 +582,11 @@ export default function ShopOrdersPage() {
     return cancelableStatuses.includes(status);
   };
 
-  // ✅ Check if order can be rated
-  const canRateOrder = (order) => {
-    const status = order.status?.toLowerCase();
-    return status === 'delivered' && !order.is_rated;
-  };
-
   // ✅ Handle keyboard events for modals
   useEffect(() => {
     const handleKeyPress = (e) => {
       if (e.key === 'Escape') {
-        if (showRatingModal) {
-          closeRatingModal();
-        } else if (showCancelModal) {
+        if (showCancelModal) {
           closeCancelModal();
         } else if (showOrderDetails) {
           closeOrderDetails();
@@ -385,7 +594,7 @@ export default function ShopOrdersPage() {
       }
     };
 
-    if (showOrderDetails || showCancelModal || showRatingModal) {
+    if (showOrderDetails || showCancelModal) {
       document.addEventListener('keydown', handleKeyPress);
       document.body.style.overflow = 'hidden';
     } else {
@@ -396,7 +605,7 @@ export default function ShopOrdersPage() {
       document.removeEventListener('keydown', handleKeyPress);
       document.body.style.overflow = 'unset';
     };
-  }, [showOrderDetails, showCancelModal, showRatingModal]);
+  }, [showOrderDetails, showCancelModal]);
 
   const getStatusIcon = (status) => {
     switch (status?.toLowerCase()) {
@@ -455,6 +664,12 @@ export default function ShopOrdersPage() {
     const shopUrl = getShopUrl('');
     console.log('🛍️ Start shopping:', shopUrl);
     router.push(shopUrl);
+  };
+
+  // ✅ Handle review submitted callback
+  const handleReviewSubmitted = () => {
+    console.log('🔄 Product review submitted successfully! Reviews will appear in product pages.');
+    alert('Review submitted successfully! Your review will appear on the product page.');
   };
 
   // Show loading while redirecting or loading
@@ -558,6 +773,15 @@ export default function ShopOrdersPage() {
                         <div style={styles.itemDetails}>
                           {formatPrice(item.price)} × {item.quantity}
                         </div>
+                        {/* ✅ ONLY Product Review Button for delivered orders */}
+                        {order.status?.toLowerCase() === 'delivered' && item.product && (
+                          <div style={styles.productReviewSection}>
+                            <ProductReviewButton 
+                              product={item.product} 
+                              onReviewSubmitted={handleReviewSubmitted}
+                            />
+                          </div>
+                        )}
                       </div>
                       <div style={styles.itemTotal}>
                         {formatPrice(item.price * item.quantity)}
@@ -594,49 +818,10 @@ export default function ShopOrdersPage() {
                     <strong>Cancellation Reason:</strong> {order.cancel_reason}
                   </div>
                 )}
-
-                {/* ✅ Show rating if already rated */}
-                {order.is_rated && order.rating && (
-                  <div style={styles.ratingDisplay}>
-                    <strong>Your Rating:</strong>
-                    <div style={styles.ratingStars}>
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <Star 
-                          key={star} 
-                          size={16} 
-                          fill={star <= order.rating ? '#fbbf24' : 'none'}
-                          color={star <= order.rating ? '#fbbf24' : '#d1d5db'}
-                        />
-                      ))}
-                      <span style={styles.ratingText}>({order.rating}/5)</span>
-                    </div>
-                    {order.review && (
-                      <div style={styles.reviewText}>"{order.review}"</div>
-                    )}
-                  </div>
-                )}
               </div>
 
-              {/* Order Actions */}
+              {/* Order Actions - NO ORDER RATING, ONLY PRODUCT REVIEWS */}
               <div style={styles.orderActions}>
-                {/* ✅ SIMPLIFIED: Only Rate Order Button (No Detailed Review) */}
-                {canRateOrder(order) && (
-                  <button 
-                    style={styles.actionButton}
-                    onClick={() => handleRateOrderRequest(order)}
-                  >
-                    ⭐ Rate Order
-                  </button>
-                )}
-                
-                {/* ✅ Show "Rated" indicator for already rated orders */}
-                {order.status?.toLowerCase() === 'delivered' && order.is_rated && (
-                  <div style={styles.ratedIndicator}>
-                    <ThumbsUp size={16} />
-                    <span>Order Rated</span>
-                  </div>
-                )}
-
                 {canCancelOrder(order) && (
                   <button 
                     style={{...styles.actionButton, backgroundColor: '#ef4444'}}
@@ -657,7 +842,6 @@ export default function ShopOrdersPage() {
         </div>
       )}
 
-      {/* All the modals (Order Details, Cancel, Rating) */}
       {/* ✅ Order Details Modal */}
       {showOrderDetails && selectedOrder && (
         <div style={styles.modalOverlay} onClick={closeOrderDetails}>
@@ -748,6 +932,15 @@ export default function ShopOrdersPage() {
                               {item.product.description}
                             </div>
                           )}
+                          {/* ✅ Product Review in Modal for delivered orders */}
+                          {selectedOrder.status?.toLowerCase() === 'delivered' && item.product && (
+                            <div style={styles.modalProductReview}>
+                              <ProductReviewButton 
+                                product={item.product} 
+                                onReviewSubmitted={handleReviewSubmitted}
+                              />
+                            </div>
+                          )}
                         </div>
                         <div style={styles.modalItemTotal}>
                           {formatPrice(item.price * item.quantity)}
@@ -792,17 +985,6 @@ export default function ShopOrdersPage() {
               <button style={styles.closeModalButton} onClick={closeOrderDetails}>
                 Close
               </button>
-              {canRateOrder(selectedOrder) && (
-                <button 
-                  style={styles.rateButton}
-                  onClick={() => {
-                    closeOrderDetails();
-                    handleRateOrderRequest(selectedOrder);
-                  }}
-                >
-                  Rate Order
-                </button>
-              )}
               {canCancelOrder(selectedOrder) && (
                 <button 
                   style={styles.cancelModalButton}
@@ -916,105 +1098,6 @@ export default function ShopOrdersPage() {
         </div>
       )}
 
-      {/* ✅ SIMPLIFIED: Rating Modal (Frontend Only) */}
-      {showRatingModal && orderToRate && (
-        <div style={styles.modalOverlay} onClick={closeRatingModal}>
-          <div style={styles.ratingModalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>
-                <Star size={24} style={{marginRight: '8px'}} />
-                Rate Order #{orderToRate.id}
-              </h2>
-              <button style={styles.closeButton} onClick={closeRatingModal}>
-                <X size={24} />
-              </button>
-            </div>
-
-            <div style={styles.modalBody}>
-              <div style={styles.ratingIntro}>
-                <p><strong>How was your experience with this order?</strong></p>
-                <p>Your feedback helps improve the service quality.</p>
-              </div>
-
-              <div style={styles.detailSection}>
-                <h3 style={styles.sectionTitle}>Overall Rating</h3>
-                <div style={styles.starRating}>
-                  {[1, 2, 3, 4, 5].map(star => (
-                    <Star
-                      key={star}
-                      size={32}
-                      fill={(hoverRating || rating) >= star ? '#fbbf24' : 'none'}
-                      color={(hoverRating || rating) >= star ? '#fbbf24' : '#d1d5db'}
-                      style={styles.ratingStarButton}
-                      onClick={() => setRating(star)}
-                      onMouseEnter={() => setHoverRating(star)}
-                      onMouseLeave={() => setHoverRating(0)}
-                    />
-                  ))}
-                </div>
-                <div style={styles.ratingDescription}>
-                  {(hoverRating || rating) === 1 && "Poor - Not satisfied"}
-                  {(hoverRating || rating) === 2 && "Fair - Below expectations"}
-                  {(hoverRating || rating) === 3 && "Good - Met expectations"}
-                  {(hoverRating || rating) === 4 && "Very Good - Above expectations"}
-                  {(hoverRating || rating) === 5 && "Excellent - Outstanding service"}
-                </div>
-              </div>
-
-              <div style={styles.detailSection}>
-                <h3 style={styles.sectionTitle}>Write a Review (Optional)</h3>
-                <textarea
-                  value={reviewText}
-                  onChange={(e) => setReviewText(e.target.value)}
-                  placeholder="Share details about your experience with this order..."
-                  style={styles.reviewTextarea}
-                  rows={4}
-                  maxLength={500}
-                />
-                <div style={styles.characterCount}>
-                  {reviewText.length}/500 characters
-                </div>
-              </div>
-
-              <div style={styles.detailSection}>
-                <h3 style={styles.sectionTitle}>Order Summary</h3>
-                <div style={styles.ratingOrderSummary}>
-                  <div style={styles.summaryRow}>
-                    <span>Order Total:</span>
-                    <span style={styles.summaryAmount}>{formatPrice(orderToRate.total_amount)}</span>
-                  </div>
-                  <div style={styles.summaryRow}>
-                    <span>Items:</span>
-                    <span>{orderToRate.items?.length || 0} item(s)</span>
-                  </div>
-                  <div style={styles.summaryRow}>
-                    <span>Delivered:</span>
-                    <span>{formatDate(orderToRate.updated_at || orderToRate.created_at)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={styles.modalFooter}>
-              <button 
-                style={styles.closeModalButton} 
-                onClick={closeRatingModal}
-                disabled={ratingLoading}
-              >
-                Cancel
-              </button>
-              <button 
-                style={styles.submitRatingButton}
-                onClick={handleSubmitRating}
-                disabled={ratingLoading || rating === 0}
-              >
-                {ratingLoading ? 'Submitting...' : 'Submit Rating'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
@@ -1022,9 +1105,8 @@ export default function ShopOrdersPage() {
           100% { transform: rotate(360deg); }
         }
         
-        .rating-star:hover {
-          transform: scale(1.1);
-          transition: transform 0.2s ease;
+        .spinning {
+          animation: spin 1s linear infinite;
         }
       `}</style>
     </div>
@@ -1100,13 +1182,42 @@ const styles = {
   },
   orderItems: { marginBottom: '16px' },
   orderItem: { 
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-    padding: '10px 0', borderBottom: '1px solid #f3f4f6' 
+    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', 
+    padding: '12px 0', borderBottom: '1px solid #f3f4f6' 
   },
   itemInfo: { flex: 1 },
   itemName: { fontSize: '15px', color: '#1f2937', fontWeight: '500' },
   itemDetails: { fontSize: '13px', color: '#6b7280', marginTop: '2px' },
   itemTotal: { fontSize: '14px', fontWeight: '600', color: '#1f2937' },
+  
+  // ✅ Product Review Section Styles
+  productReviewSection: {
+    marginTop: '8px'
+  },
+  
+  checkingReview: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '12px',
+    color: '#6b7280'
+  },
+  
+  reviewProductButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '6px 12px',
+    backgroundColor: '#059669',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '500',
+    transition: 'all 0.2s'
+  },
+  
   noItems: { 
     fontSize: '14px', color: '#9ca3af', textAlign: 'center', 
     padding: '20px', fontStyle: 'italic' 
@@ -1131,26 +1242,6 @@ const styles = {
     fontSize: '13px', color: '#dc2626', backgroundColor: '#fef2f2',
     padding: '12px', borderRadius: '6px', lineHeight: '1.4',
     border: '1px solid #fecaca', marginBottom: '12px'
-  },
-  ratingDisplay: {
-    fontSize: '13px', backgroundColor: '#f0fdf4',
-    padding: '12px', borderRadius: '6px', lineHeight: '1.4',
-    border: '1px solid #bbf7d0', marginBottom: '12px'
-  },
-  ratingStars: {
-    display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px'
-  },
-  ratingText: {
-    fontSize: '12px', color: '#065f46', fontWeight: '600', marginLeft: '8px'
-  },
-  reviewText: {
-    fontSize: '12px', color: '#065f46', marginTop: '6px',
-    fontStyle: 'italic', lineHeight: '1.3'
-  },
-  ratedIndicator: {
-    display: 'flex', alignItems: 'center', gap: '6px',
-    padding: '8px 16px', backgroundColor: '#10b981', color: 'white',
-    border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: '500'
   },
   orderActions: {
     display: 'flex', gap: '8px', flexWrap: 'wrap'
@@ -1178,11 +1269,14 @@ const styles = {
     width: '100%', maxHeight: '90vh', overflow: 'hidden',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
   },
-  ratingModalContent: {
+  
+  // ✅ Review Modal Content
+  reviewModalContent: {
     backgroundColor: 'white', borderRadius: '16px', maxWidth: '500px',
     width: '100%', maxHeight: '90vh', overflow: 'hidden',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
   },
+  
   modalHeader: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     padding: '24px', borderBottom: '1px solid #e5e7eb'
@@ -1242,8 +1336,14 @@ const styles = {
     fontSize: '14px', color: '#6b7280', marginBottom: '6px'
   },
   modalItemDesc: {
-    fontSize: '12px', color: '#9ca3af', lineHeight: '1.4'
+    fontSize: '12px', color: '#9ca3af', lineHeight: '1.4', marginBottom: '8px'
   },
+  
+  // ✅ Product Review in Modal
+  modalProductReview: {
+    marginTop: '8px'
+  },
+  
   modalItemTotal: {
     fontSize: '16px', fontWeight: '700', color: '#1f2937'
   },
@@ -1284,11 +1384,6 @@ const styles = {
   },
   closeModalButton: {
     padding: '10px 20px', backgroundColor: '#6b7280', color: 'white',
-    border: 'none', borderRadius: '8px', cursor: 'pointer',
-    fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
-  },
-  rateButton: {
-    padding: '10px 20px', backgroundColor: '#10b981', color: 'white',
     border: 'none', borderRadius: '8px', cursor: 'pointer',
     fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
   },
@@ -1350,34 +1445,67 @@ const styles = {
     fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
   },
 
-  // ✅ Rating Modal Specific Styles
-  ratingIntro: {
-    backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0',
-    borderRadius: '8px', padding: '16px', marginBottom: '24px'
+  // ✅ Product Review Form Styles
+  reviewFormDescription: {
+    fontSize: '14px', color: '#6b7280', marginBottom: '24px', lineHeight: '1.5'
   },
-  starRating: {
+
+  errorMessage: {
     display: 'flex', alignItems: 'center', gap: '8px',
-    justifyContent: 'center', padding: '20px'
+    color: '#991b1b', backgroundColor: '#fef2f2',
+    border: '1px solid #fecaca', padding: '12px 16px',
+    borderRadius: '8px', marginBottom: '20px', fontSize: '14px'
   },
+
+  successMessage: {
+    display: 'flex', alignItems: 'center', gap: '8px',
+    color: '#065f46', backgroundColor: '#ecfdf5',
+    border: '1px solid #a7f3d0', padding: '12px 16px',
+    borderRadius: '8px', marginBottom: '20px', fontSize: '14px'
+  },
+
+  starRatingInput: {
+    display: 'flex', alignItems: 'center', gap: '8px',
+    marginBottom: '8px', justifyContent: 'center'
+  },
+
   ratingStarButton: {
     cursor: 'pointer', transition: 'all 0.2s ease',
     filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
   },
+
   ratingDescription: {
     textAlign: 'center', fontSize: '14px', color: '#374151',
     fontWeight: '500', marginTop: '12px', minHeight: '20px'
   },
+
   reviewTextarea: {
     width: '100%', padding: '12px', border: '1px solid #d1d5db',
     borderRadius: '8px', fontSize: '14px', resize: 'vertical',
     fontFamily: 'inherit', outline: 'none', transition: 'border-color 0.2s'
   },
-  ratingOrderSummary: {
-    backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px'
+
+  charCountContainer: {
+    display: 'flex', justifyContent: 'space-between',
+    alignItems: 'center', marginTop: '8px'
   },
-  submitRatingButton: {
-    padding: '10px 20px', backgroundColor: '#fbbf24', color: 'white',
+
+  validIndicator: {
+    display: 'flex', alignItems: 'center', gap: '4px',
+    color: '#059669', fontSize: '12px', fontWeight: '500'
+  },
+
+  buttonContent: {
+    display: 'flex', alignItems: 'center', gap: '8px'
+  },
+
+  submitReviewButton: {
+    padding: '10px 20px', backgroundColor: '#059669', color: 'white',
     border: 'none', borderRadius: '8px', cursor: 'pointer',
     fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
+  },
+
+  disabledButton: {
+    backgroundColor: '#9ca3af', cursor: 'not-allowed'
   }
 };
