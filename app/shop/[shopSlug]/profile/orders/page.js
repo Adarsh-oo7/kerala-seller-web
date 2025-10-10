@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Package, Clock, CheckCircle, XCircle, Store, AlertTriangle, X, User, MapPin, Phone, Calendar, CreditCard, AlertOctagon } from 'lucide-react';
+import { 
+  ArrowLeft, Package, Clock, CheckCircle, XCircle, Store, AlertTriangle, X, User, 
+  MapPin, Phone, Calendar, CreditCard, AlertOctagon, Star, ThumbsUp 
+} from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
@@ -19,14 +22,22 @@ export default function ShopOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   
-  // ✅ NEW: Cancel order states
+  // ✅ Cancel order states
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [customReason, setCustomReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
 
-  // ✅ NEW: Pre-defined cancellation reasons
+  // ✅ SIMPLIFIED: Rating modal states (frontend only)
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [orderToRate, setOrderToRate] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewText, setReviewText] = useState('');
+  const [ratingLoading, setRatingLoading] = useState(false);
+
+  // Pre-defined cancellation reasons
   const cancelReasons = [
     { value: 'change_mind', label: 'Changed my mind' },
     { value: 'found_better_price', label: 'Found a better price elsewhere' },
@@ -39,19 +50,17 @@ export default function ShopOrdersPage() {
     { value: 'other', label: 'Other reason (please specify)' }
   ];
 
-  // ✅ CRITICAL FIX: Get the actual store ID from query parameter or shopSlug
+  // ✅ Get the actual store ID from query parameter or shopSlug
   const getActualStoreId = () => {
     console.log('🔍 Getting store ID for orders...');
     console.log('- shopSlug from params:', shopSlug);
     console.log('- id from search params:', searchParams.get('id'));
 
-    // Check for undefined values
     if (shopSlug === 'undefined' || shopSlug === undefined) {
       setUrlError('Invalid shop slug in URL');
       return null;
     }
 
-    // Get store ID from query parameter or slug
     const queryId = searchParams.get('id');
     if (queryId && queryId !== 'undefined' && queryId.trim() !== '') {
       return queryId.trim();
@@ -66,10 +75,9 @@ export default function ShopOrdersPage() {
   };
 
   const actualStoreId = getActualStoreId();
-  
   console.log('📦 Orders store ID:', actualStoreId);
 
-  // ✅ ENHANCED: URL generation with validation
+  // ✅ URL generation with validation
   const getShopUrl = (path = '') => {
     if (!actualStoreId) {
       console.error('❌ Cannot generate URL - no store ID available');
@@ -77,11 +85,9 @@ export default function ShopOrdersPage() {
     }
     
     if (searchParams.get('id') && shopSlug === 'new') {
-      // Pattern: /shop/new/path?id=123
       const basePath = `/shop/new${path}`;
       return `${basePath}?id=${actualStoreId}`;
     } else {
-      // Pattern: /shop/123/path
       return `/shop/${actualStoreId}${path}`;
     }
   };
@@ -118,7 +124,6 @@ export default function ShopOrdersPage() {
       console.log('📦 Loading orders for store:', actualStoreId);
 
       try {
-        // ✅ ENHANCED: Use store_id parameter for better filtering
         const [ordersRes, storeRes] = await Promise.allSettled([
           fetch(`${API_BASE_URL}/user/orders/?store_id=${actualStoreId}`, { headers }),
           fetch(`${API_BASE_URL}/shop/${actualStoreId}/`)
@@ -172,7 +177,7 @@ export default function ShopOrdersPage() {
     setSelectedOrder(null);
   };
 
-  // ✅ NEW: Handle cancel order request
+  // ✅ Handle cancel order request
   const handleCancelOrderRequest = (order) => {
     console.log('❌ Requesting to cancel order:', order.id);
     setOrderToCancel(order);
@@ -181,7 +186,7 @@ export default function ShopOrdersPage() {
     setShowCancelModal(true);
   };
 
-  // ✅ NEW: Close cancel modal
+  // ✅ Close cancel modal
   const closeCancelModal = () => {
     setShowCancelModal(false);
     setOrderToCancel(null);
@@ -189,11 +194,10 @@ export default function ShopOrdersPage() {
     setCustomReason('');
   };
 
-  // ✅ NEW: Handle cancel order submission
+  // ✅ Handle cancel order submission
   const handleCancelOrder = async () => {
     if (!orderToCancel) return;
 
-    // Validate reason
     if (!cancelReason) {
       alert('Please select a reason for cancellation');
       return;
@@ -228,7 +232,6 @@ export default function ShopOrdersPage() {
       });
 
       if (response.ok) {
-        // Update order status in local state
         setOrders(prevOrders => 
           prevOrders.map(order => 
             order.id === orderToCancel.id 
@@ -254,6 +257,107 @@ export default function ShopOrdersPage() {
     }
   };
 
+  // ✅ SIMPLIFIED: Handle rate order request (frontend only)
+  const handleRateOrderRequest = (order) => {
+    console.log('⭐ Requesting to rate order:', order.id);
+    setOrderToRate(order);
+    setRating(0);
+    setHoverRating(0);
+    setReviewText('');
+    setShowRatingModal(true);
+  };
+
+  // ✅ Close rating modal
+  const closeRatingModal = () => {
+    setShowRatingModal(false);
+    setOrderToRate(null);
+    setRating(0);
+    setHoverRating(0);
+    setReviewText('');
+  };
+
+  // ✅ SIMPLIFIED: Handle rating submission (frontend only - no backend call)
+  const handleSubmitRating = async () => {
+    if (!orderToRate) return;
+
+    if (rating === 0) {
+      alert('Please select a rating (1-5 stars)');
+      return;
+    }
+
+    setRatingLoading(true);
+
+    try {
+      // ✅ SIMULATE: Just update local state since backend doesn't have the endpoint
+      console.log('⭐ Simulating rating submission for order:', orderToRate.id, 'Rating:', rating);
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update order in local state
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === orderToRate.id 
+            ? { ...order, rating: rating, review: reviewText, is_rated: true }
+            : order
+        )
+      );
+
+      // Store rating in localStorage for persistence
+      const ratingKey = `order_${orderToRate.id}_rating`;
+      localStorage.setItem(ratingKey, JSON.stringify({
+        rating: rating,
+        review: reviewText.trim(),
+        rated_at: new Date().toISOString()
+      }));
+
+      console.log('✅ Rating saved locally');
+      alert('Thank you for rating this order! Your feedback has been recorded.');
+      closeRatingModal();
+      
+    } catch (error) {
+      console.error('❌ Rating submission error:', error);
+      alert('Failed to save rating. Please try again.');
+    } finally {
+      setRatingLoading(false);
+    }
+  };
+
+  // ✅ Load saved ratings from localStorage
+  useEffect(() => {
+    if (orders.length > 0) {
+      const updatedOrders = orders.map(order => {
+        const ratingKey = `order_${order.id}_rating`;
+        const savedRating = localStorage.getItem(ratingKey);
+        
+        if (savedRating) {
+          try {
+            const ratingData = JSON.parse(savedRating);
+            return {
+              ...order,
+              rating: ratingData.rating,
+              review: ratingData.review,
+              is_rated: true
+            };
+          } catch (error) {
+            console.warn('Failed to parse saved rating for order', order.id);
+          }
+        }
+        
+        return order;
+      });
+      
+      // Only update if there are changes
+      const hasChanges = updatedOrders.some((order, index) => 
+        order.is_rated !== orders[index].is_rated
+      );
+      
+      if (hasChanges) {
+        setOrders(updatedOrders);
+      }
+    }
+  }, [orders.length]);
+
   // ✅ Check if order can be cancelled
   const canCancelOrder = (order) => {
     const status = order.status?.toLowerCase();
@@ -261,11 +365,19 @@ export default function ShopOrdersPage() {
     return cancelableStatuses.includes(status);
   };
 
+  // ✅ Check if order can be rated
+  const canRateOrder = (order) => {
+    const status = order.status?.toLowerCase();
+    return status === 'delivered' && !order.is_rated;
+  };
+
   // ✅ Handle keyboard events for modals
   useEffect(() => {
     const handleKeyPress = (e) => {
       if (e.key === 'Escape') {
-        if (showCancelModal) {
+        if (showRatingModal) {
+          closeRatingModal();
+        } else if (showCancelModal) {
           closeCancelModal();
         } else if (showOrderDetails) {
           closeOrderDetails();
@@ -273,9 +385,9 @@ export default function ShopOrdersPage() {
       }
     };
 
-    if (showOrderDetails || showCancelModal) {
+    if (showOrderDetails || showCancelModal || showRatingModal) {
       document.addEventListener('keydown', handleKeyPress);
-      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+      document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -284,7 +396,7 @@ export default function ShopOrdersPage() {
       document.removeEventListener('keydown', handleKeyPress);
       document.body.style.overflow = 'unset';
     };
-  }, [showOrderDetails, showCancelModal]);
+  }, [showOrderDetails, showCancelModal, showRatingModal]);
 
   const getStatusIcon = (status) => {
     switch (status?.toLowerCase()) {
@@ -369,7 +481,6 @@ export default function ShopOrdersPage() {
     );
   }
 
-  // Show error if no store ID found (shouldn't reach here due to redirect)
   if (!actualStoreId) {
     return (
       <div style={styles.errorContainer}>
@@ -399,15 +510,6 @@ export default function ShopOrdersPage() {
       <div style={styles.storeIndicator}>
         <Store size={16} />
         <span>Your orders from {storeData?.name || `Store ${actualStoreId}`} • {orders.length} order{orders.length !== 1 ? 's' : ''}</span>
-      </div>
-
-      {/* Debug Info (remove in production) */}
-      <div style={{
-        backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '4px',
-        marginBottom: '20px', fontSize: '12px', color: '#666'
-      }}>
-        <strong>Debug:</strong> Store: {actualStoreId} | Orders: {orders.length} | 
-        Store Name: {storeData?.name || 'Loading...'}
       </div>
 
       {/* Orders List */}
@@ -492,15 +594,49 @@ export default function ShopOrdersPage() {
                     <strong>Cancellation Reason:</strong> {order.cancel_reason}
                   </div>
                 )}
+
+                {/* ✅ Show rating if already rated */}
+                {order.is_rated && order.rating && (
+                  <div style={styles.ratingDisplay}>
+                    <strong>Your Rating:</strong>
+                    <div style={styles.ratingStars}>
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <Star 
+                          key={star} 
+                          size={16} 
+                          fill={star <= order.rating ? '#fbbf24' : 'none'}
+                          color={star <= order.rating ? '#fbbf24' : '#d1d5db'}
+                        />
+                      ))}
+                      <span style={styles.ratingText}>({order.rating}/5)</span>
+                    </div>
+                    {order.review && (
+                      <div style={styles.reviewText}>"{order.review}"</div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Order Actions */}
               <div style={styles.orderActions}>
-                {order.status?.toLowerCase() === 'delivered' && (
-                  <button style={styles.actionButton}>
-                    Rate Order
+                {/* ✅ SIMPLIFIED: Only Rate Order Button (No Detailed Review) */}
+                {canRateOrder(order) && (
+                  <button 
+                    style={styles.actionButton}
+                    onClick={() => handleRateOrderRequest(order)}
+                  >
+                    ⭐ Rate Order
                   </button>
                 )}
+                
+                {/* ✅ Show "Rated" indicator for already rated orders */}
+                {order.status?.toLowerCase() === 'delivered' && order.is_rated && (
+                  <div style={styles.ratedIndicator}>
+                    <ThumbsUp size={16} />
+                    <span>Order Rated</span>
+                  </div>
+                )}
+
                 {canCancelOrder(order) && (
                   <button 
                     style={{...styles.actionButton, backgroundColor: '#ef4444'}}
@@ -521,11 +657,11 @@ export default function ShopOrdersPage() {
         </div>
       )}
 
+      {/* All the modals (Order Details, Cancel, Rating) */}
       {/* ✅ Order Details Modal */}
       {showOrderDetails && selectedOrder && (
         <div style={styles.modalOverlay} onClick={closeOrderDetails}>
           <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            {/* Modal Header */}
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>Order Details #{selectedOrder.id}</h2>
               <button style={styles.closeButton} onClick={closeOrderDetails}>
@@ -533,9 +669,7 @@ export default function ShopOrdersPage() {
               </button>
             </div>
 
-            {/* Modal Body */}
             <div style={styles.modalBody}>
-              {/* Order Status */}
               <div style={styles.detailSection}>
                 <h3 style={styles.sectionTitle}>Order Status</h3>
                 <div style={styles.statusDetail}>
@@ -551,7 +685,6 @@ export default function ShopOrdersPage() {
                 </div>
               </div>
 
-              {/* Order Info */}
               <div style={styles.detailSection}>
                 <h3 style={styles.sectionTitle}>Order Information</h3>
                 <div style={styles.infoGrid}>
@@ -597,7 +730,6 @@ export default function ShopOrdersPage() {
                 </div>
               </div>
 
-              {/* Items */}
               <div style={styles.detailSection}>
                 <h3 style={styles.sectionTitle}>Order Items</h3>
                 <div style={styles.itemsList}>
@@ -628,7 +760,6 @@ export default function ShopOrdersPage() {
                 </div>
               </div>
 
-              {/* Delivery Address */}
               {selectedOrder.shipping_address && (
                 <div style={styles.detailSection}>
                   <h3 style={styles.sectionTitle}>Delivery Address</h3>
@@ -639,7 +770,6 @@ export default function ShopOrdersPage() {
                 </div>
               )}
 
-              {/* Cancel Reason */}
               {selectedOrder.status?.toLowerCase() === 'cancelled' && selectedOrder.cancel_reason && (
                 <div style={styles.detailSection}>
                   <h3 style={styles.sectionTitle}>Cancellation Reason</h3>
@@ -650,7 +780,6 @@ export default function ShopOrdersPage() {
                 </div>
               )}
 
-              {/* Order Total */}
               <div style={styles.detailSection}>
                 <div style={styles.totalSection}>
                   <div style={styles.totalLabel}>Order Total</div>
@@ -659,13 +788,18 @@ export default function ShopOrdersPage() {
               </div>
             </div>
 
-            {/* Modal Footer */}
             <div style={styles.modalFooter}>
               <button style={styles.closeModalButton} onClick={closeOrderDetails}>
                 Close
               </button>
-              {selectedOrder.status?.toLowerCase() === 'delivered' && (
-                <button style={styles.rateButton}>
+              {canRateOrder(selectedOrder) && (
+                <button 
+                  style={styles.rateButton}
+                  onClick={() => {
+                    closeOrderDetails();
+                    handleRateOrderRequest(selectedOrder);
+                  }}
+                >
                   Rate Order
                 </button>
               )}
@@ -685,11 +819,10 @@ export default function ShopOrdersPage() {
         </div>
       )}
 
-      {/* ✅ NEW: Cancel Order Modal */}
+      {/* ✅ Cancel Order Modal */}
       {showCancelModal && orderToCancel && (
         <div style={styles.modalOverlay} onClick={closeCancelModal}>
           <div style={styles.cancelModalContent} onClick={(e) => e.stopPropagation()}>
-            {/* Cancel Modal Header */}
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>
                 <AlertOctagon size={24} style={{marginRight: '8px'}} />
@@ -700,14 +833,12 @@ export default function ShopOrdersPage() {
               </button>
             </div>
 
-            {/* Cancel Modal Body */}
             <div style={styles.modalBody}>
               <div style={styles.cancelWarning}>
                 <p><strong>Are you sure you want to cancel this order?</strong></p>
                 <p>This action cannot be undone. The seller will be notified immediately.</p>
               </div>
 
-              {/* Cancellation Reason Selection */}
               <div style={styles.detailSection}>
                 <h3 style={styles.sectionTitle}>Please select a reason for cancellation:</h3>
                 <div style={styles.reasonsList}>
@@ -726,7 +857,6 @@ export default function ShopOrdersPage() {
                   ))}
                 </div>
 
-                {/* Custom reason text area */}
                 {cancelReason === 'other' && (
                   <div style={styles.customReasonSection}>
                     <label style={styles.customReasonLabel}>
@@ -747,7 +877,6 @@ export default function ShopOrdersPage() {
                 )}
               </div>
 
-              {/* Order Summary */}
               <div style={styles.detailSection}>
                 <h3 style={styles.sectionTitle}>Order Summary</h3>
                 <div style={styles.cancelOrderSummary}>
@@ -767,7 +896,6 @@ export default function ShopOrdersPage() {
               </div>
             </div>
 
-            {/* Cancel Modal Footer */}
             <div style={styles.modalFooter}>
               <button 
                 style={styles.closeModalButton} 
@@ -787,6 +915,118 @@ export default function ShopOrdersPage() {
           </div>
         </div>
       )}
+
+      {/* ✅ SIMPLIFIED: Rating Modal (Frontend Only) */}
+      {showRatingModal && orderToRate && (
+        <div style={styles.modalOverlay} onClick={closeRatingModal}>
+          <div style={styles.ratingModalContent} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>
+                <Star size={24} style={{marginRight: '8px'}} />
+                Rate Order #{orderToRate.id}
+              </h2>
+              <button style={styles.closeButton} onClick={closeRatingModal}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <div style={styles.modalBody}>
+              <div style={styles.ratingIntro}>
+                <p><strong>How was your experience with this order?</strong></p>
+                <p>Your feedback helps improve the service quality.</p>
+              </div>
+
+              <div style={styles.detailSection}>
+                <h3 style={styles.sectionTitle}>Overall Rating</h3>
+                <div style={styles.starRating}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <Star
+                      key={star}
+                      size={32}
+                      fill={(hoverRating || rating) >= star ? '#fbbf24' : 'none'}
+                      color={(hoverRating || rating) >= star ? '#fbbf24' : '#d1d5db'}
+                      style={styles.ratingStarButton}
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                    />
+                  ))}
+                </div>
+                <div style={styles.ratingDescription}>
+                  {(hoverRating || rating) === 1 && "Poor - Not satisfied"}
+                  {(hoverRating || rating) === 2 && "Fair - Below expectations"}
+                  {(hoverRating || rating) === 3 && "Good - Met expectations"}
+                  {(hoverRating || rating) === 4 && "Very Good - Above expectations"}
+                  {(hoverRating || rating) === 5 && "Excellent - Outstanding service"}
+                </div>
+              </div>
+
+              <div style={styles.detailSection}>
+                <h3 style={styles.sectionTitle}>Write a Review (Optional)</h3>
+                <textarea
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  placeholder="Share details about your experience with this order..."
+                  style={styles.reviewTextarea}
+                  rows={4}
+                  maxLength={500}
+                />
+                <div style={styles.characterCount}>
+                  {reviewText.length}/500 characters
+                </div>
+              </div>
+
+              <div style={styles.detailSection}>
+                <h3 style={styles.sectionTitle}>Order Summary</h3>
+                <div style={styles.ratingOrderSummary}>
+                  <div style={styles.summaryRow}>
+                    <span>Order Total:</span>
+                    <span style={styles.summaryAmount}>{formatPrice(orderToRate.total_amount)}</span>
+                  </div>
+                  <div style={styles.summaryRow}>
+                    <span>Items:</span>
+                    <span>{orderToRate.items?.length || 0} item(s)</span>
+                  </div>
+                  <div style={styles.summaryRow}>
+                    <span>Delivered:</span>
+                    <span>{formatDate(orderToRate.updated_at || orderToRate.created_at)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={styles.modalFooter}>
+              <button 
+                style={styles.closeModalButton} 
+                onClick={closeRatingModal}
+                disabled={ratingLoading}
+              >
+                Cancel
+              </button>
+              <button 
+                style={styles.submitRatingButton}
+                onClick={handleSubmitRating}
+                disabled={ratingLoading || rating === 0}
+              >
+                {ratingLoading ? 'Submitting...' : 'Submit Rating'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CSS Animations */}
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        .rating-star:hover {
+          transform: scale(1.1);
+          transition: transform 0.2s ease;
+        }
+      `}</style>
     </div>
   );
 }
@@ -887,11 +1127,30 @@ const styles = {
     fontSize: '13px', color: '#6b7280', backgroundColor: '#f8fafc',
     padding: '12px', borderRadius: '6px', lineHeight: '1.4', marginBottom: '12px'
   },
-  // ✅ NEW: Cancel reason display
   cancelReason: { 
     fontSize: '13px', color: '#dc2626', backgroundColor: '#fef2f2',
     padding: '12px', borderRadius: '6px', lineHeight: '1.4',
-    border: '1px solid #fecaca'
+    border: '1px solid #fecaca', marginBottom: '12px'
+  },
+  ratingDisplay: {
+    fontSize: '13px', backgroundColor: '#f0fdf4',
+    padding: '12px', borderRadius: '6px', lineHeight: '1.4',
+    border: '1px solid #bbf7d0', marginBottom: '12px'
+  },
+  ratingStars: {
+    display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px'
+  },
+  ratingText: {
+    fontSize: '12px', color: '#065f46', fontWeight: '600', marginLeft: '8px'
+  },
+  reviewText: {
+    fontSize: '12px', color: '#065f46', marginTop: '6px',
+    fontStyle: 'italic', lineHeight: '1.3'
+  },
+  ratedIndicator: {
+    display: 'flex', alignItems: 'center', gap: '6px',
+    padding: '8px 16px', backgroundColor: '#10b981', color: 'white',
+    border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: '500'
   },
   orderActions: {
     display: 'flex', gap: '8px', flexWrap: 'wrap'
@@ -902,7 +1161,7 @@ const styles = {
     fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
   },
 
-  // ✅ Modal Styles
+  // Modal Styles
   modalOverlay: {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
@@ -914,8 +1173,12 @@ const styles = {
     width: '100%', maxHeight: '90vh', overflow: 'hidden',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
   },
-  // ✅ NEW: Cancel modal specific styling
   cancelModalContent: {
+    backgroundColor: 'white', borderRadius: '16px', maxWidth: '500px',
+    width: '100%', maxHeight: '90vh', overflow: 'hidden',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+  },
+  ratingModalContent: {
     backgroundColor: 'white', borderRadius: '16px', maxWidth: '500px',
     width: '100%', maxHeight: '90vh', overflow: 'hidden',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
@@ -996,7 +1259,6 @@ const styles = {
   addressText: {
     fontSize: '14px', color: '#1f2937', lineHeight: '1.5'
   },
-  // ✅ NEW: Cancel reason display in modal
   cancelReasonBox: {
     display: 'flex', alignItems: 'flex-start', gap: '12px',
     padding: '16px', backgroundColor: '#fef2f2', borderRadius: '8px',
@@ -1036,7 +1298,7 @@ const styles = {
     fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
   },
 
-  // ✅ NEW: Cancel Modal Specific Styles
+  // Cancel Modal Specific Styles
   cancelWarning: {
     backgroundColor: '#fef2f2', border: '1px solid #fecaca',
     borderRadius: '8px', padding: '16px', marginBottom: '24px'
@@ -1084,6 +1346,37 @@ const styles = {
   },
   confirmCancelButton: {
     padding: '10px 20px', backgroundColor: '#ef4444', color: 'white',
+    border: 'none', borderRadius: '8px', cursor: 'pointer',
+    fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
+  },
+
+  // ✅ Rating Modal Specific Styles
+  ratingIntro: {
+    backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0',
+    borderRadius: '8px', padding: '16px', marginBottom: '24px'
+  },
+  starRating: {
+    display: 'flex', alignItems: 'center', gap: '8px',
+    justifyContent: 'center', padding: '20px'
+  },
+  ratingStarButton: {
+    cursor: 'pointer', transition: 'all 0.2s ease',
+    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+  },
+  ratingDescription: {
+    textAlign: 'center', fontSize: '14px', color: '#374151',
+    fontWeight: '500', marginTop: '12px', minHeight: '20px'
+  },
+  reviewTextarea: {
+    width: '100%', padding: '12px', border: '1px solid #d1d5db',
+    borderRadius: '8px', fontSize: '14px', resize: 'vertical',
+    fontFamily: 'inherit', outline: 'none', transition: 'border-color 0.2s'
+  },
+  ratingOrderSummary: {
+    backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px'
+  },
+  submitRatingButton: {
+    padding: '10px 20px', backgroundColor: '#fbbf24', color: 'white',
     border: 'none', borderRadius: '8px', cursor: 'pointer',
     fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
   }
