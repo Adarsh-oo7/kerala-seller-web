@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Heart, ShoppingCart, Trash2, Plus, Store, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingCart, Trash2, Plus, Store, AlertTriangle, Star, RefreshCw, X } from 'lucide-react';
+import Link from 'next/link';
+import "../../../../../styles/ShopProfileWishlist.css";
+import SHeader from '../../../../../components/common/SHeader';
+
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
@@ -14,6 +18,21 @@ export default function ShopWishlistPage() {
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState(null);
   const [urlError, setUrlError] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ ADD: Login state for SHeader
+
+
+  // ✅ ADD: Check login status for SHeader
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('buyerAccessToken') ||
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('accessToken');
+      setIsLoggedIn(!!token);
+    } catch (error) {
+      console.warn('localStorage access error:', error);
+      setIsLoggedIn(false);
+    }
+  }, []);
 
   // ✅ FIXED: Enhanced image URL builder
   const buildImageUrl = (imagePath) => {
@@ -58,17 +77,17 @@ export default function ShopWishlistPage() {
     if (queryId && queryId !== 'undefined' && queryId.trim() !== '') {
       return queryId.trim();
     }
-    
+
     if (shopSlug && shopSlug !== 'new' && shopSlug !== 'undefined') {
       return shopSlug;
     }
-    
+
     setUrlError('No valid store ID found');
     return null;
   };
 
   const actualStoreId = getActualStoreId();
-  
+
   console.log('❤️ Wishlist store ID:', actualStoreId);
 
   // ✅ ENHANCED: URL generation with validation
@@ -77,7 +96,7 @@ export default function ShopWishlistPage() {
       console.error('❌ Cannot generate URL - no store ID available');
       return '/';
     }
-    
+
     if (searchParams.get('id') && shopSlug === 'new') {
       // Pattern: /shop/new/path?id=123
       const basePath = `/shop/new${path}`;
@@ -128,14 +147,14 @@ export default function ShopWishlistPage() {
 
         if (wishlistRes.status === 'fulfilled' && wishlistRes.value.ok) {
           const wishlistData = await wishlistRes.value.json();
-          const wishlistItems = Array.isArray(wishlistData) ? wishlistData : 
-                               wishlistData.results || wishlistData.items || [];
-          
+          const wishlistItems = Array.isArray(wishlistData) ? wishlistData :
+            wishlistData.results || wishlistData.items || [];
+
           // ✅ FIXED: Process wishlist items to ensure proper image URLs
           const processedWishlist = wishlistItems.map(item => {
             const product = item.product || item;
             const imageUrl = product?.main_image_url || product?.image_url || product?.main_image || item?.main_image_url;
-            
+
             return {
               ...item,
               processedImageUrl: buildImageUrl(imageUrl),
@@ -145,7 +164,7 @@ export default function ShopWishlistPage() {
               }
             };
           });
-          
+
           setWishlist(processedWishlist);
           console.log('✅ Wishlist loaded and processed:', processedWishlist.length, 'items');
         } else {
@@ -211,9 +230,9 @@ export default function ShopWishlistPage() {
       // ✅ FIXED: Use actualStoreId instead of sellerPhone
       const cartData = JSON.parse(localStorage.getItem('multiCarts') || '{}');
       const storeCart = cartData[actualStoreId] || [];
-      
+
       const existingItem = storeCart.find(item => item.id === product.id);
-      
+
       if (existingItem) {
         existingItem.quantity += 1;
         console.log('🔄 Updated quantity in cart:', existingItem.quantity);
@@ -229,10 +248,10 @@ export default function ShopWishlistPage() {
         });
         console.log('➕ Added new item to cart');
       }
-      
+
       cartData[actualStoreId] = storeCart;
       localStorage.setItem('multiCarts', JSON.stringify(cartData));
-      
+
       alert(`${product.name} added to cart! 🛒`);
     } catch (error) {
       console.error('❌ Failed to add to cart:', error);
@@ -282,7 +301,7 @@ export default function ShopWishlistPage() {
           <>
             <div style={styles.spinner}></div>
             <p>Loading your wishlist...</p>
-            <p style={{fontSize: '12px', color: '#666'}}>
+            <p style={{ fontSize: '12px', color: '#666' }}>
               Store: {actualStoreId || 'Not found'}
             </p>
           </>
@@ -306,230 +325,612 @@ export default function ShopWishlistPage() {
   }
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <button onClick={handleBackClick} style={styles.backButton}>
-          <ArrowLeft size={20} />
-        </button>
-        <h1 style={styles.title}>
-          {storeData?.name || `Store ${actualStoreId}`} Wishlist
-        </h1>
-      </div>
 
-      {/* Store Context */}
-      <div style={styles.storeInfo}>
+    <div className='profilwishlistpagecont' style={styles.pagecontainer}>
+      <SHeader
+        store={storeData}
+        isLoggedIn={isLoggedIn}
+      />
+
+      <div
+        style={{
+          ...styles.container,
+          paddingTop: wishlist.length > 0 ? '100px' : '0px',
+        }}
+      >
+
+        {/* Store Context */}
+        {/* <div style={styles.storeInfo}>
         <Heart size={18} color="#ef4444" />
         <span>Items you've saved from {storeData?.name || `Store ${actualStoreId}`} • {wishlist.length} item{wishlist.length !== 1 ? 's' : ''}</span>
-      </div>
+      </div> */}
 
-      {/* Debug Info (remove in production) */}
-      <div style={{
+        {/* Debug Info (remove in production) */}
+        {/* <div style={{
         backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '4px',
         marginBottom: '20px', fontSize: '12px', color: '#666'
       }}>
         <strong>Debug:</strong> Store: {actualStoreId} | Wishlist: {wishlist.length} items | 
         Store Name: {storeData?.name || 'Loading...'} | API Base: {API_BASE_URL}
-      </div>
+      </div> */}
 
-      {/* Wishlist Items */}
-      {wishlist.length === 0 ? (
-        <div style={styles.emptyState}>
-          <Heart size={48} color="#ccc" />
-          <h2>No items in wishlist</h2>
-          <p>You haven't saved any items from {storeData?.name || 'this store'} yet.</p>
-          <button onClick={handleBrowseStore} style={styles.shopButton}>
-            Browse Store
-          </button>
-        </div>
-      ) : (
-        <div style={styles.wishlistGrid}>
-          {wishlist.map(item => {
-            // Handle different API response structures
-            const product = item.product || item;
-            const productId = product.id || item.product_id;
-            const productName = product.name || item.name;
-            const productPrice = product.price || item.price;
-            const productmrp = product.mrp || item.mrp;
-            const productModel = product.model_name || item.model_name;
-            
-            // ✅ FIXED: Use processed image URL with multiple fallbacks
-            const productImage = item.processedImageUrl || 
-                                product.processedImageUrl || 
-                                buildImageUrl(product.main_image_url) || 
-                                buildImageUrl(product.image_url) || 
-                                buildImageUrl(product.main_image) ||
-                                buildImageUrl(item.main_image_url) ||
-                                '/placeholder.svg';
-            
-            const productDescription = product.description || item.description;
+        {/* Wishlist Items */}
+        {wishlist.length === 0 ? (
+          <div style={styles.emptyState}>
+            <Heart size={48} color="#ccc" />
+            <h2>No items in wishlist</h2>
+            <p>You haven't saved any items from {storeData?.name || 'this store'} yet.</p>
+            <button onClick={handleBrowseStore} style={styles.shopButton}>
+              Browse Store
+            </button>
+          </div>
+        ) : (
+          <div className='profilewishlistgrid' style={styles.wishlistGrid}>
 
-            console.log('🖼️ Rendering product image:', productName, '→', productImage);
+            {wishlist.map(item => {
+              // Handle different API response structures
+              const product = item.product || item;
+              const productId = product.id || item.product_id;
+              const productName = product.name || item.name;
+              const productPrice = product.price || item.price;
+              const productmrp = product.mrp || item.mrp;
+              const productModel = product.model_name || item.model_name;
+              const productReview = product.review_count || item.review_count;
+              const ProductRating = product.average_rating || item.average_rating;
 
-            return (
-              <div key={item.id} style={styles.wishlistCard}>
-                <div style={styles.productImage}>
-                  <img 
-                    src={productImage}
-                    alt={productName}
-                    style={styles.image}
-                    onError={(e) => handleImageError(e, productName)}
-                    onLoad={() => console.log('✅ Image loaded successfully for:', productName)}
-                  />
-                  <button 
-                    onClick={() => removeFromWishlist(item.id)}
-                    style={styles.removeButton}
-                    title="Remove from wishlist"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+              // ✅ FIXED: Use processed image URL with multiple fallbacks
+              const productImage = item.processedImageUrl ||
+                product.processedImageUrl ||
+                buildImageUrl(product.main_image_url) ||
+                buildImageUrl(product.image_url) ||
+                buildImageUrl(product.main_image) ||
+                buildImageUrl(item.main_image_url) ||
+                '/placeholder.svg';
+
+              const productDescription = product.description || item.description;
+
+              console.log('🖼️ Rendering product image:', productName, '→', productImage);
+
+              const getStockStatus = () => {
+                const stock = product.online_stock || 0;
+                if (stock === 0) return 'out-of-stock';
+                if (stock <= 5) return 'low-stock';
+                return 'in-stock';
+              };
+
+              const getDiscountPercentage = () => {
+                if (product.mrp && product.mrp > product.price && product.price) {
+                  return Math.round(((product.mrp - product.price) / product.mrp) * 100);
+                }
+                return 0;
+              };
+
+              return (
+
+                <div
+                  className={`shop-product-card ${getStockStatus()}`}
+                  style={styles.shopProductCard}
+                  data-product-id={product.id}
+                >
+                  {/* ✅ FIXED: Image section without Link wrapper for wishlist button */}
+                  <div className="product-image-wrapper" style={styles.productImageWrapper}>
+                    {/* ✅ Link only wraps the image itself */}
+
+                    <img
+                      src={productImage}
+                      alt={productName}
+                      style={styles.productImageLink}
+                      onError={(e) => handleImageError(e, productName)}
+                      onLoad={() => console.log('✅ Image loaded successfully for:', productName)}
+                    />
+
+
+                    {/* ✅ Rating overlay (existing) - shows on image hover */}
+                    {/* {product.average_rating > 0 && ( */}
+                    <div style={styles.ratingOverlay}>
+                      <div style={styles.ratingLeft}>
+                        <Star
+                          size={12}
+                          fill={product.average_rating > 0 ? "#fbbf24" : "none"}
+                          color="#fbbf24"
+                        />
+                        <span style={styles.ratingLeftText}>
+                          {product.average_rating > 0 ? `(${product.average_rating.toFixed(1)})` : ""}
+                        </span>
+                      </div>
+
+                      {product.review_count > 0 ? (
+                        <span style={styles.ratingRight}>
+                          {product.review_count} reviews
+                        </span>
+                      ) : (
+                        <span style={styles.ratingRight}>No reviews</span>
+                      )}
+                    </div>
+                    {/* )} */}
+
+                    {/* Product badges */}
+                    <div className="product-badges" style={styles.productBadges}>
+                      {getDiscountPercentage() > 0 && (
+                        <span className="badge discount" style={styles.badgeDiscount}>
+                          {getDiscountPercentage()}% OFF
+                        </span>
+                      )}
+                      {(product.online_stock || 0) <= 5 && (product.online_stock || 0) > 0 && (
+                        <span className="badge low-stock" style={styles.badgeLowStock}>
+                          Only {product.online_stock} left
+                        </span>
+                      )}
+                      {(product.online_stock || 0) === 0 && (
+                        <span className="badge out-of-stock" style={styles.badgeOutOfStock}>
+                          Out of Stock
+                        </span>
+                      )}
+                    </div>
+
+                    {/* ✅ FIXED: Wishlist button outside Link - this is the key fix */}
+                    <div className="quick-actions" style={styles.quickActions}>
+
+                      <button
+                        onClick={() => removeFromWishlist(item.id)}
+                        style={styles.removeButton}
+                        title="Remove from wishlist"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+
+                    </div>
+                  </div>
+
+                  {/* ✅ Product info section wrapped in Link */}
+                  <div className="product-info" style={styles.productInfo}>
+
+                    {/* Product details */}
+                    <div className="product-header" style={styles.productHeader}>
+                      <h3 className="product-name" style={styles.productName}>
+                        {product.name || 'Unnamed Product'}
+                        {product.model_name && (
+                          <span className='product-model' style={styles.productModel}> ({product.model_name})</span>
+                        )}
+                      </h3>
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="product-pricing" style={styles.productPricing}>
+                      <div className="price-section" style={styles.priceSection}>
+                        <span className="current-price" style={styles.currentPrice}>
+                          {formatPrice(product.price)}
+                        </span>
+                        {product.mrp && product.mrp > product.price && (
+                          <span className="original-price" style={styles.originalPrice}>
+                            {formatPrice(product.mrp)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => addToCart(product)}
+                      style={styles.addToCartButton}
+                      disabled={!productPrice}
+                    >
+                      <ShoppingCart size={16} />
+                      Add to Cart
+                    </button>
+
+                  </div>
                 </div>
-                
-                <div style={styles.productInfo}>
-                  <h3 style={styles.productName}>
-                    {productName || 'Product Name'}
-                  </h3>
-                   <h3 style={styles.productName}>
-                    {productModel || 'Product Model'}
-                  </h3>
-                  <p style={styles.productPrice}>
-                    {productPrice ? formatPrice(productPrice) : 'Price not available'}
-                  </p>
-                  {/* <p style={styles.productDescription}>
-                    {productDescription || 'No description available'}
-                  </p> */}
-                  
-                  {/* ✅ ADDED: Debug info for image URL */}
-                  {/* <div style={{fontSize: '10px', color: '#999', marginTop: '4px'}}>
-                    Image: {productImage?.includes('placeholder') ? 'Placeholder' : 'Real image'}
-                  </div> */}
-                </div>
 
-                <div style={styles.productActions}>
-                  <button 
-                    onClick={() => addToCart(product)}
-                    style={styles.addToCartButton}
-                    disabled={!productPrice}
-                  >
-                    <ShoppingCart size={16} />
-                    Add to Cart
-                  </button>
-                  {/* <button 
-                    onClick={() => handleViewProduct(productId)}
-                    style={styles.viewButton}
-                  >
-                    View Details
-                  </button> */}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )
+        }
+      </div >
     </div>
   );
 }
 
 const styles = {
-  container: { minHeight: '100vh', backgroundColor: '#f8fafc', padding: '20px', maxWidth: '1200px', margin: '0 auto' },
-  loadingContainer: { 
-    display: 'flex', flexDirection: 'column', alignItems: 'center', 
-    justifyContent: 'center', minHeight: '100vh', gap: '20px', textAlign: 'center' 
+  pagecontainer: { backgroundColor: "#FDFFF0", paddingTop: "100px", },
+  container: { minHeight: '100vh', backgroundColor: '#FDFFF0', padding: '20px', maxWidth: '1200px', margin: '0 auto', },
+  loadingContainer: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    justifyContent: 'center', minHeight: '100vh', gap: '20px', textAlign: 'center'
   },
-  spinner: { 
-    width: '32px', height: '32px', border: '3px solid #f3f3f3', 
-    borderTop: '3px solid #3b82f6', borderRadius: '50%', 
-    animation: 'spin 1s linear infinite' 
+  spinner: {
+    width: '32px', height: '32px', border: '3px solid #f3f3f3',
+    borderTop: '3px solid #3b82f6', borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
   },
-  errorContainer: { 
-    display: 'flex', flexDirection: 'column', alignItems: 'center', 
+  errorContainer: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
     justifyContent: 'center', minHeight: '100vh', gap: '20px',
-    textAlign: 'center', padding: '40px' 
+    textAlign: 'center', padding: '40px'
   },
-  homeButton: { 
-    padding: '12px 24px', backgroundColor: '#6b7280', color: 'white', 
-    border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' 
+  homeButton: {
+    padding: '12px 24px', backgroundColor: '#6b7280', color: 'white',
+    border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600'
   },
-  header: { 
+  header: {
     display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px',
-    backgroundColor: 'white', borderRadius: '12px', padding: '16px',
+    backgroundColor: '#FDFFF0', borderRadius: '12px', padding: '16px',
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
-  backButton: { 
-    background: 'none', border: 'none', cursor: 'pointer', 
-    color: '#3b82f6', padding: '8px', borderRadius: '6px' 
+  backButton: {
+    background: 'none', border: 'none', cursor: 'pointer',
+    color: '#3b82f6', padding: '8px', borderRadius: '6px'
   },
-  title: { 
-    fontSize: '24px', fontWeight: '700', color: '#1f2937', flex: 1 
+  title: {
+    fontSize: '24px', fontWeight: '700', color: '#1f2937', flex: 1
   },
-  storeInfo: { 
-    display: 'flex', alignItems: 'center', gap: '8px', 
-    backgroundColor: '#fef2f2', border: '1px solid #fecaca', 
-    borderRadius: '8px', padding: '12px', marginBottom: '16px', 
+  storeInfo: {
+    display: 'flex', alignItems: 'center', gap: '8px',
+    backgroundColor: '#fef2f2', border: '1px solid #fecaca',
+    borderRadius: '8px', padding: '12px', marginBottom: '16px',
     color: '#991b1b', fontSize: '14px', fontWeight: '500'
   },
-  emptyState: { 
-    display: 'flex', flexDirection: 'column', alignItems: 'center', 
-    justifyContent: 'center', textAlign: 'center', padding: '60px', 
-    backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' 
+  emptyState: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    justifyContent: 'center', textAlign: 'center', padding: '60px', marginTop: "120px",
+    backgroundColor: '#FDFFF0', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
   },
-  shopButton: { 
-    padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white', 
+  shopButton: {
+    padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white',
     border: 'none', borderRadius: '8px', cursor: 'pointer', marginTop: '20px',
     fontSize: '16px', fontWeight: '600', transition: 'all 0.2s'
   },
-  wishlistGrid: { 
-    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-    gap: '20px' 
+  wishlistGrid: {
+    display: 'grid',
+    gap: '16px',
+    justifyContent: 'center', // centers grid items horizontally
+    width: '100%',
+    margin: '0 auto',
+    padding: '10px 0',
+    boxSizing: 'border-box',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
   },
-  wishlistCard: { 
-    backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', 
+  wishlistCard: {
+    backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s',
     border: '1px solid #e5e7eb'
   },
   productImage: { position: 'relative', height: '200px', overflow: 'hidden' },
-  image: { 
-    width: '100%', 
-    height: '100%', 
+  image: {
+    width: '100%',
+    height: '100%',
     objectFit: 'cover',
     backgroundColor: '#f3f4f6', // ✅ ADDED: Background color while loading
     transition: 'opacity 0.3s ease' // ✅ ADDED: Smooth transition
   },
-  removeButton: { 
-    position: 'absolute', top: '12px', right: '12px', 
-    backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', 
-    borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', 
-    display: 'flex', alignItems: 'center', justifyContent: 'center', 
+  removeButton: {
+    position: 'absolute', top: '12px', right: '12px',
+    backgroundColor: 'rgba(255,255,255,0.95)', border: 'none',
+    borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: '#ef4444', boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
     transition: 'all 0.2s'
   },
   productInfo: { padding: '16px' },
-  productName: { 
-    fontSize: '16px', fontWeight: '600', color: '#1f2937', 
+  productName: {
+    fontSize: '16px', fontWeight: '600', color: '#1f2937',
     margin: '0 0 8px 0', lineHeight: '1.4'
   },
-  productPrice: { 
-    fontSize: '18px', fontWeight: '700', color: '#059669', 
-    margin: '0 0 8px 0' 
+  productPrice: {
+    fontSize: '18px', fontWeight: '700', color: '#059669',
+    margin: '0 0 8px 0'
   },
-  productDescription: { 
-    fontSize: '14px', color: '#6b7280', margin: '0', lineHeight: '1.4', 
-    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', 
-    overflow: 'hidden' 
+  productDescription: {
+    fontSize: '14px', color: '#6b7280', margin: '0', lineHeight: '1.4',
+    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
   },
-  productActions: { 
-    padding: '16px', borderTop: '1px solid #f3f4f6', 
-    display: 'flex', gap: '8px' 
+  productActions: {
+    padding: '16px', borderTop: '1px solid #f3f4f6',
+    display: 'flex', gap: '8px'
   },
-  addToCartButton: { 
-    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', 
-    gap: '6px', backgroundColor: '#10b981', color: 'white', border: 'none', 
+  addToCartButton: {
+    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    gap: '6px', backgroundColor: '#10b981', color: 'white', border: 'none',
     borderRadius: '6px', padding: '10px 12px', cursor: 'pointer', fontSize: '14px',
     fontWeight: '500', transition: 'all 0.2s'
   },
-  viewButton: { 
-    backgroundColor: '#f3f4f6', color: '#374151', border: 'none', 
-    borderRadius: '6px', padding: '10px 12px', cursor: 'pointer', 
+  viewButton: {
+    backgroundColor: '#f3f4f6', color: '#374151', border: 'none',
+    borderRadius: '6px', padding: '10px 12px', cursor: 'pointer',
     fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
-  }
+  },
+  shopProductCard: {
+    width: "100%",
+    maxWidth: "210px",
+    border: "1px solid #eee",
+    borderRadius: "10px",
+    overflow: "hidden",
+    background: "#fff",
+    display: "flex",
+    flexDirection: "column",
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+    position: "relative"
+  },
+
+  productLink: {
+    textDecoration: 'none',
+    color: 'inherit',
+    display: 'block'
+  },
+
+  productImageWrapper: {
+    width: "100%",
+    height: "185px",
+    position: "relative",
+    overflow: "hidden",
+    backgroundColor: "#f5f5f5",
+    borderBottom: "1px solid #eee",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+
+  productImageLink: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+    transition: "transform 0.3s ease",
+  },
+
+  productImage: {
+    width: '100%',
+    height: '180px',
+    objectFit: 'cover',
+    transition: 'transform 0.3s ease'
+  },
+
+
+
+  productBadges: {
+    position: 'absolute',
+    top: '8px',
+    left: '8px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    zIndex: 2
+  },
+
+
+
+
+  badgeDiscount: {
+    padding: '4px 8px',
+    background: 'rgba(40, 167, 69, 0.9)',
+    color: 'white',
+    fontSize: '10px',
+    borderRadius: '6px',
+    fontWeight: '600',
+    backdropFilter: 'blur(4px)',
+  },
+
+  badgeLowStock: {
+    padding: '4px 8px',
+    backgroundColor: '#be1e237a',
+    color: 'white',
+    fontSize: '10px',
+    borderRadius: '6px',
+    fontWeight: '600'
+  },
+
+  badgeOutOfStock: {
+    padding: '4px 8px',
+    backgroundColor: '#6b7280',
+    color: 'white',
+    fontSize: '0.75rem',
+    borderRadius: '4px',
+    fontWeight: '600'
+  },
+
+  quickActions: {
+    position: 'absolute',
+    top: '8px',
+    right: '8px',
+    zIndex: 10,
+  },
+
+  quickActionBtn: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#059669',
+    transition: 'all 0.2s',
+    backdropFilter: 'blur(4px)',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+    position: 'relative'
+  },
+
+  quickActionBtnActive: {
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    color: '#ef4444',
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    boxShadow: '0 2px 12px rgba(239, 68, 68, 0.25)'
+  },
+
+  quickActionBtnLoading: {
+    cursor: 'not-allowed',
+    opacity: 0.7,
+    pointerEvents: 'none'
+  },
+
+  productInfo: {
+    padding: '10px',
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+
+
+  storeName: {
+    fontSize: '0.8rem',
+    color: '#059669',
+    fontWeight: '500',
+    marginBottom: '8px'
+  },
+
+  productHeader: {
+    marginBottom: '8px',
+    flex: 1
+  },
+
+  productName: {
+    fontSize: '15px',
+    fontWeight: '600',
+    color: '#1a4845',
+    margin: '0',
+    lineHeight: '1.3',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
+  },
+
+
+  productModel: {
+    fontSize: '0.85rem',
+    fontWeight: '400',
+    color: '#6b7280',
+    marginLeft: '4px',
+    whiteSpace: "nowrap",       // force one line
+    overflow: "hidden",         // cut extra text
+    textOverflow: "ellipsis",   // add "..."
+    maxWidth: "120px",          // width decides how much text is visible
+    display: "inline-block",    // required for ellipsis
+    verticalAlign: "middle"
+  },
+
+  productRating: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    marginBottom: '8px'
+  },
+
+  ratingStars: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1px'
+  },
+
+  ratingNumber: {
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    color: '#1f2937'
+  },
+
+  reviewCountText: {
+    fontSize: '0.8rem',
+    color: '#6b7280'
+  },
+
+  productPricing: {
+    marginBottom: '8px'
+  },
+
+  priceSection: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'nowrap',
+  },
+
+  currentPrice: {
+    fontWeight: '600',
+    color: '#059669'
+  },
+
+  originalPrice: {
+    fontSize: '0.9rem',
+    color: 'rgb(156, 163, 175)',
+    textDecoration: 'line-through'
+  },
+
+  wishlistIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '0.8rem',
+    color: '#ef4444',
+    fontWeight: '500',
+    marginBottom: '8px',
+    padding: '4px 6px',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: '12px',
+    width: 'fit-content'
+  },
+
+  productActions: {
+    padding: '16px',
+    borderTop: '1px solid #f3f4f6'
+  },
+
+  addToCartBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    width: '100%',
+    padding: '7px 42px',
+    backgroundColor: '#059669',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '12px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+
+
+
+  // ✅ Rating overlay (existing) - on image
+  ratingOverlay: {
+    position: "absolute",
+    bottom: "0px",
+    left: "0",
+    width: "100%",
+    background: "rgba(0,0,0,0.6)",
+    color: "white",
+    display: "flex",
+    alignItems: "center",
+    padding: "13px 12px",
+    boxSizing: "border-box",
+    zIndex: 2,
+  },
+
+  ratingLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+  },
+
+  ratingLeftText: {
+    fontSize: "0.8rem",
+    fontWeight: 500,
+    color: "white",
+  },
+
+  ratingRight: {
+    fontSize: "0.8rem",
+    fontWeight: 500,
+    color: "white",
+    marginLeft: "auto",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
 };
