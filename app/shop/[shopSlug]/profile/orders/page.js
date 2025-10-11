@@ -3,12 +3,18 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
-import { 
-  ArrowLeft, Package, Clock, CheckCircle, XCircle, Store, AlertTriangle, X, User, 
+import "../../../../../styles/ShopProfileOrders.css";
+import SHeader from '../../../../../components/common/SHeader';
+
+import {
+  ArrowLeft, Package, Clock, CheckCircle, XCircle, Store, AlertTriangle, X, User,
   MapPin, Phone, Calendar, CreditCard, AlertOctagon, Star, RefreshCw, Check
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+
+
+
 
 // ✅ Enhanced auth headers function
 const getAuthHeaders = () => {
@@ -29,9 +35,11 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
 
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (comment.trim().length < 10) {
       setError('Review must be at least 10 characters long');
       return;
@@ -45,7 +53,7 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
     setIsSubmitting(true);
     setError('');
     setSuccess('');
-    
+
     const headers = getAuthHeaders();
     if (!headers) {
       setError('Please login to submit a review');
@@ -55,27 +63,27 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
 
     try {
       console.log('📝 Submitting product review:', { productId, rating, comment: comment.trim() });
-      
+
       const response = await axios.post(
         `${API_BASE_URL}/api/products/${productId}/create-review/`,
- 
-        { 
-          rating, 
-          comment: comment.trim() 
-        }, 
-        { 
+
+        {
+          rating,
+          comment: comment.trim()
+        },
+        {
           headers,
           timeout: 15000
         }
       );
-      
+
       console.log('✅ Review submitted successfully:', response.data);
-      
+
       setComment('');
       setRating(5);
       setHoverRating(0);
       setSuccess('Review submitted successfully! Thank you for your feedback.');
-      
+
       // Call parent callback to refresh reviews
       if (onReviewSubmitted) {
         setTimeout(() => {
@@ -83,12 +91,12 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
           onClose && onClose();
         }, 2000);
       }
-      
+
     } catch (err) {
       console.error('❌ Review submission error:', err);
-      
+
       let errorMessage = 'Failed to submit review. Please try again.';
-      
+
       if (err.response?.status === 401) {
         errorMessage = 'Your session has expired. Please login again.';
       } else if (err.response?.status === 400) {
@@ -100,7 +108,7 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
       } else if (err.code === 'ECONNABORTED') {
         errorMessage = 'Request timed out. Please try again.';
       }
-      
+
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -123,13 +131,13 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
       onClose && onClose();
     }
   };
-  
+
   return (
     <div style={styles.modalOverlay} onClick={handleOverlayClick}>
       <div style={styles.reviewModalContent} onClick={(e) => e.stopPropagation()}>
         <div style={styles.modalHeader}>
           <h2 style={styles.modalTitle}>
-            <Star size={24} style={{marginRight: '8px'}} />
+            <Star size={24} style={{ marginRight: '8px' }} />
             Review Product: {productName}
           </h2>
           <button style={styles.closeButton} onClick={onClose}>
@@ -141,21 +149,21 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
           <div style={styles.reviewFormDescription}>
             Share your experience with this product to help other customers make informed decisions.
           </div>
-          
+
           {error && (
             <div style={styles.errorMessage}>
               <AlertTriangle size={16} />
               <span>{error}</span>
             </div>
           )}
-          
+
           {success && (
             <div style={styles.successMessage}>
               <Check size={16} />
               <span>{success}</span>
             </div>
           )}
-          
+
           <form onSubmit={handleSubmit}>
             <div style={styles.detailSection}>
               <h3 style={styles.sectionTitle}>Your Rating:</h3>
@@ -177,13 +185,13 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
                 {getRatingDescription(hoverRating || rating)}
               </div>
             </div>
-            
+
             <div style={styles.detailSection}>
               <h3 style={styles.sectionTitle}>Your Review:</h3>
-              <textarea 
-                value={comment} 
-                onChange={e => setComment(e.target.value)} 
-                placeholder="Share your experience with this product. What did you like or dislike about it? How was the quality, delivery, and overall experience?" 
+              <textarea
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+                placeholder="Share your experience with this product. What did you like or dislike about it? How was the quality, delivery, and overall experience?"
                 style={styles.reviewTextarea}
                 rows={5}
                 maxLength={1000}
@@ -205,14 +213,14 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
         </div>
 
         <div style={styles.modalFooter}>
-          <button 
-            style={styles.closeModalButton} 
+          <button
+            style={styles.closeModalButton}
             onClick={onClose}
             disabled={isSubmitting}
           >
             Cancel
           </button>
-          <button 
+          <button
             onClick={handleSubmit}
             disabled={isSubmitting || comment.trim().length < 10}
             style={{
@@ -256,22 +264,22 @@ function ProductReviewButton({ product, onReviewSubmitted }) {
       setCheckingPermission(true);
       try {
         console.log('🔍 Checking review permission for product:', product.id);
-        
+
         const response = await axios.get(
           `${API_BASE_URL}/api/products/${product.id}/can-review/`,
-          { 
+          {
             headers,
             timeout: 8000
           }
         );
-        
+
         const canReviewProduct = response.data.can_review || false;
         console.log('✅ Can review status:', canReviewProduct);
-        
+
         setCanReview(canReviewProduct);
       } catch (error) {
         console.warn('⚠️ Can review check failed:', error.message);
-        
+
         // If endpoint doesn't exist, allow reviews for logged in users
         if (error.response?.status === 404) {
           setCanReview(true);
@@ -315,7 +323,7 @@ function ProductReviewButton({ product, onReviewSubmitted }) {
 
   return (
     <>
-      <button 
+      <button
         style={styles.reviewProductButton}
         onClick={handleReviewClick}
       >
@@ -343,11 +351,13 @@ export default function ShopOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState(null);
   const [urlError, setUrlError] = useState(null);
-  
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ ADD: Login state for SHeader
+
+
   // ✅ Modal states
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
-  
+
   // ✅ Cancel order states
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
@@ -383,11 +393,11 @@ export default function ShopOrdersPage() {
     if (queryId && queryId !== 'undefined' && queryId.trim() !== '') {
       return queryId.trim();
     }
-    
+
     if (shopSlug && shopSlug !== 'new' && shopSlug !== 'undefined') {
       return shopSlug;
     }
-    
+
     setUrlError('No valid store ID found');
     return null;
   };
@@ -401,7 +411,7 @@ export default function ShopOrdersPage() {
       console.error('❌ Cannot generate URL - no store ID available');
       return '/';
     }
-    
+
     if (searchParams.get('id') && shopSlug === 'new') {
       const basePath = `/shop/new${path}`;
       return `${basePath}?id=${actualStoreId}`;
@@ -431,6 +441,20 @@ export default function ShopOrdersPage() {
       return;
     }
   }, [urlError, actualStoreId, router]);
+
+
+  // ✅ ADD: Check login status for SHeader
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('buyerAccessToken') ||
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('accessToken');
+      setIsLoggedIn(!!token);
+    } catch (error) {
+      console.warn('localStorage access error:', error);
+      setIsLoggedIn(false);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -532,8 +556,8 @@ export default function ShopOrdersPage() {
     setCancelLoading(true);
 
     try {
-      const reasonText = cancelReason === 'other' ? customReason : 
-                        cancelReasons.find(r => r.value === cancelReason)?.label || cancelReason;
+      const reasonText = cancelReason === 'other' ? customReason :
+        cancelReasons.find(r => r.value === cancelReason)?.label || cancelReason;
 
       console.log('🚫 Cancelling order:', orderToCancel.id, 'with reason:', reasonText);
 
@@ -550,9 +574,9 @@ export default function ShopOrdersPage() {
       });
 
       if (response.ok) {
-        setOrders(prevOrders => 
-          prevOrders.map(order => 
-            order.id === orderToCancel.id 
+        setOrders(prevOrders =>
+          prevOrders.map(order =>
+            order.id === orderToCancel.id
               ? { ...order, status: 'cancelled', cancel_reason: reasonText }
               : order
           )
@@ -609,11 +633,11 @@ export default function ShopOrdersPage() {
 
   const getStatusIcon = (status) => {
     switch (status?.toLowerCase()) {
-      case 'pending': return <Clock size={20} color="#f59e0b" />;
-      case 'processing': return <Package size={20} color="#3b82f6" />;
-      case 'delivered': return <CheckCircle size={20} color="#10b981" />;
-      case 'cancelled': return <XCircle size={20} color="#ef4444" />;
-      default: return <Package size={20} color="#6b7280" />;
+      case 'pending': return <Clock size={20} className='profileordericonsize' color="#f59e0b" />;
+      case 'processing': return <Package size={20} className='profileordericonsize' color="#3b82f6" />;
+      case 'delivered': return <CheckCircle size={20} className='profileordericonsize' color="#10b981" />;
+      case 'cancelled': return <XCircle size={20} className='profileordericonsize' color="#ef4444" />;
+      default: return <Package size={20} className='profileordericonsize' color="#6b7280" />;
     }
   };
 
@@ -687,7 +711,7 @@ export default function ShopOrdersPage() {
           <>
             <div style={styles.spinner}></div>
             <p>Loading your orders...</p>
-            <p style={{fontSize: '12px', color: '#666'}}>
+            <p style={{ fontSize: '12px', color: '#666' }}>
               Store: {actualStoreId || 'Not found'}
             </p>
           </>
@@ -710,396 +734,389 @@ export default function ShopOrdersPage() {
   }
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <button onClick={handleBackClick} style={styles.backButton}>
-          <ArrowLeft size={20} />
-        </button>
-        <h1 style={styles.title}>
-          Orders from {storeData?.name || `Store ${actualStoreId}`}
-        </h1>
-      </div>
+    <div className='profilorderspagecont' style={styles.pagecontainer}>
+      <SHeader
+        store={storeData}
+        isLoggedIn={isLoggedIn}
+      />
+      <div style={styles.container}>
+        {/* Header */}
 
-      {/* Store Context */}
-      <div style={styles.storeIndicator}>
-        <Store size={16} />
-        <span>Your orders from {storeData?.name || `Store ${actualStoreId}`} • {orders.length} order{orders.length !== 1 ? 's' : ''}</span>
-      </div>
 
-      {/* Orders List */}
-      {orders.length === 0 ? (
-        <div style={styles.emptyState}>
-          <Package size={48} color="#ccc" />
-          <h2>No orders yet</h2>
-          <p>You haven't placed any orders from {storeData?.name || 'this store'}.</p>
-          <button onClick={handleStartShopping} style={styles.shopButton}>
-            Start Shopping
+        {/* Store Context */}
+        <div style={styles.storeIndicator}>
+          <button onClick={handleBackClick} style={styles.backButton}>
+            <ArrowLeft size={20} />
           </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Package size={16} />
+            <span>Total {orders.length} order{orders.length !== 1 ? 's' : ''} you got.</span>
+          </div>
         </div>
-      ) : (
-        <div style={styles.ordersList}>
-          {orders.map(order => (
-            <div key={order.id} style={styles.orderCard}>
-              <div style={styles.orderHeader}>
-                <div>
-                  <div style={styles.orderId}>Order #{order.id}</div>
-                  <div style={styles.orderDate}>{formatDate(order.created_at)}</div>
-                  {order.customer_name && (
-                    <div style={styles.customerName}>Customer: {order.customer_name}</div>
-                  )}
-                </div>
-                <div style={styles.orderStatus}>
-                  {getStatusIcon(order.status)}
-                  <span 
-                    style={{
-                      ...styles.statusText,
-                      color: getStatusColor(order.status)
-                    }}
-                  >
-                    {order.status || 'Pending'}
-                  </span>
-                </div>
-              </div>
 
-              <div style={styles.orderItems}>
-                {order.items && order.items.length > 0 ? (
-                  order.items.map(item => (
-                    <div key={item.id} style={styles.orderItem}>
-                      <div style={styles.itemInfo}>
-                        <div style={styles.itemName}>
-                          {item.product?.name || item.name || 'Product'}
-                        </div>
-                        <div style={styles.itemDetails}>
-                          {formatPrice(item.price)} × {item.quantity}
-                        </div>
-                        {/* ✅ ONLY Product Review Button for delivered orders */}
-                        {order.status?.toLowerCase() === 'delivered' && item.product && (
-                          <div style={styles.productReviewSection}>
-                            <ProductReviewButton 
-                              product={item.product} 
-                              onReviewSubmitted={handleReviewSubmitted}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      <div style={styles.itemTotal}>
-                        {formatPrice(item.price * item.quantity)}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={styles.noItems}>Items information not available</div>
-                )}
-              </div>
 
-              <div style={styles.orderFooter}>
-                <div style={styles.orderMeta}>
-                  <div style={styles.orderTotal}>
-                    Total: {formatPrice(order.total_amount)}
-                  </div>
-                  <div style={styles.paymentMethod}>
-                    {order.payment_method === 'COD' ? 'Cash on Delivery' : 
-                     order.payment_method === 'ONLINE' ? 'Online Payment' : 
-                     order.payment_method || 'COD'}
-                  </div>
-                </div>
-                
-                {order.shipping_address && (
-                  <div style={styles.shippingAddress}>
-                    <strong>Delivery Address:</strong><br />
-                    {order.shipping_address}
-                  </div>
-                )}
+        {/* Orders List */}
+        {orders.length === 0 ? (
+          <div style={styles.emptyState}>
+            <Package size={48} color="#ccc" />
+            <h2>No orders yet</h2>
+            <p>You haven't placed any orders from {storeData?.name || 'this store'}.</p>
+            <button onClick={handleStartShopping} style={styles.shopButton}>
+              Start Shopping
+            </button>
+          </div>
+        ) : (
+          <div style={styles.ordersList}>
+            {orders.map(order => (
+              <div key={order.id} style={styles.orderCard}>
 
-                {/* ✅ Show cancel reason if cancelled */}
-                {order.status?.toLowerCase() === 'cancelled' && order.cancel_reason && (
-                  <div style={styles.cancelReason}>
-                    <strong>Cancellation Reason:</strong> {order.cancel_reason}
-                  </div>
-                )}
-              </div>
 
-              {/* Order Actions - NO ORDER RATING, ONLY PRODUCT REVIEWS */}
-              <div style={styles.orderActions}>
-                {canCancelOrder(order) && (
-                  <button 
-                    style={{...styles.actionButton, backgroundColor: '#ef4444'}}
-                    onClick={() => handleCancelOrderRequest(order)}
-                  >
-                    Cancel Order
-                  </button>
-                )}
-                <button 
-                  style={{...styles.actionButton, backgroundColor: '#6b7280'}}
-                  onClick={() => handleViewDetails(order)}
-                >
-                  View Details
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ✅ Order Details Modal */}
-      {showOrderDetails && selectedOrder && (
-        <div style={styles.modalOverlay} onClick={closeOrderDetails}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Order Details #{selectedOrder.id}</h2>
-              <button style={styles.closeButton} onClick={closeOrderDetails}>
-                <X size={24} />
-              </button>
-            </div>
-
-            <div style={styles.modalBody}>
-              <div style={styles.detailSection}>
-                <h3 style={styles.sectionTitle}>Order Status</h3>
-                <div style={styles.statusDetail}>
-                  {getStatusIcon(selectedOrder.status)}
-                  <span style={{
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    color: getStatusColor(selectedOrder.status),
-                    textTransform: 'capitalize'
-                  }}>
-                    {selectedOrder.status || 'Pending'}
-                  </span>
-                </div>
-              </div>
-
-              <div style={styles.detailSection}>
-                <h3 style={styles.sectionTitle}>Order Information</h3>
-                <div style={styles.infoGrid}>
-                  <div style={styles.infoItem}>
-                    <Calendar size={16} />
-                    <div>
-                      <div style={styles.infoLabel}>Order Date</div>
-                      <div style={styles.infoValue}>{formatDateTime(selectedOrder.created_at)}</div>
-                    </div>
-                  </div>
-                  
-                  <div style={styles.infoItem}>
-                    <CreditCard size={16} />
-                    <div>
-                      <div style={styles.infoLabel}>Payment Method</div>
-                      <div style={styles.infoValue}>
-                        {selectedOrder.payment_method === 'COD' ? 'Cash on Delivery' : 
-                         selectedOrder.payment_method === 'ONLINE' ? 'Online Payment' : 
-                         selectedOrder.payment_method || 'COD'}
-                      </div>
-                    </div>
-                  </div>
-
-                  {selectedOrder.customer_name && (
-                    <div style={styles.infoItem}>
-                      <User size={16} />
-                      <div>
-                        <div style={styles.infoLabel}>Customer</div>
-                        <div style={styles.infoValue}>{selectedOrder.customer_name}</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedOrder.phone && (
-                    <div style={styles.infoItem}>
-                      <Phone size={16} />
-                      <div>
-                        <div style={styles.infoLabel}>Phone</div>
-                        <div style={styles.infoValue}>{selectedOrder.phone}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div style={styles.detailSection}>
-                <h3 style={styles.sectionTitle}>Order Items</h3>
-                <div style={styles.itemsList}>
-                  {selectedOrder.items && selectedOrder.items.length > 0 ? (
-                    selectedOrder.items.map(item => (
-                      <div key={item.id} style={styles.modalOrderItem}>
-                        <div style={styles.modalItemInfo}>
-                          <div style={styles.modalItemName}>
+                <div style={styles.orderItems}>
+                  {order.items && order.items.length > 0 ? (
+                    order.items.map(item => (
+                      <div key={item.id} style={styles.orderItem}>
+                        <div style={styles.itemInfo}>
+                          <div className='profileorderitemname' style={styles.itemName}>
                             {item.product?.name || item.name || 'Product'}
                           </div>
-                          <div style={styles.modalItemPrice}>
+                          <div className='profileorderitemdetails' style={styles.itemDetails}>
                             {formatPrice(item.price)} × {item.quantity}
+                            <div className='profileorderdate' style={styles.orderDate}>{formatDate(order.created_at)}</div>
+
                           </div>
-                          {item.product?.description && (
-                            <div style={styles.modalItemDesc}>
-                              {item.product.description}
-                            </div>
-                          )}
-                          {/* ✅ Product Review in Modal for delivered orders */}
-                          {selectedOrder.status?.toLowerCase() === 'delivered' && item.product && (
-                            <div style={styles.modalProductReview}>
-                              <ProductReviewButton 
-                                product={item.product} 
+
+                          {/* ✅ ONLY Product Review Button for delivered orders */}
+                          {order.status?.toLowerCase() === 'delivered' && item.product && (
+                            <div style={styles.productReviewSection}>
+                              <ProductReviewButton
+                                product={item.product}
                                 onReviewSubmitted={handleReviewSubmitted}
                               />
                             </div>
                           )}
                         </div>
-                        <div style={styles.modalItemTotal}>
-                          {formatPrice(item.price * item.quantity)}
+
+                        <div style={styles.orderHeader}>
+
+                          <div style={styles.orderStatus}>
+                            {getStatusIcon(order.status)}
+                            <span
+                            className='profileorderstatustext'
+                              style={{
+                                ...styles.statusText,
+                                color: getStatusColor(order.status)
+                              }}
+                            >
+                              {order.status || 'Pending'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div style={styles.noItemsModal}>No items information available</div>
+                    <div style={styles.noItems}>Items information not available</div>
                   )}
                 </div>
-              </div>
 
-              {selectedOrder.shipping_address && (
-                <div style={styles.detailSection}>
-                  <h3 style={styles.sectionTitle}>Delivery Address</h3>
-                  <div style={styles.addressBox}>
-                    <MapPin size={16} />
-                    <div style={styles.addressText}>{selectedOrder.shipping_address}</div>
+                <div style={styles.orderFooter}>
+                  <div style={styles.orderMeta}>
+                    <div className='profileordertotalprice' style={styles.orderTotal}>
+                      Total: {formatPrice(order.total_amount)}
+                    </div>
+
+                    <div style={styles.orderActions}>
+                      {canCancelOrder(order) && (
+                        <button
+                        className='profileorderactionbtn'
+                          style={{ ...styles.actionButton, backgroundColor: '#ef4444' }}
+                          onClick={() => handleCancelOrderRequest(order)}
+                        >
+                          Cancel Order
+                        </button>
+                      )}
+                      <button
+                      className='profileorderactionbtn'
+                        style={{ ...styles.actionButton }}
+                        onClick={() => handleViewDetails(order)}
+                      >
+                        View Details
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
 
-              {selectedOrder.status?.toLowerCase() === 'cancelled' && selectedOrder.cancel_reason && (
-                <div style={styles.detailSection}>
-                  <h3 style={styles.sectionTitle}>Cancellation Reason</h3>
-                  <div style={styles.cancelReasonBox}>
-                    <AlertOctagon size={16} />
-                    <div style={styles.cancelReasonText}>{selectedOrder.cancel_reason}</div>
-                  </div>
+                  {/* ✅ Show cancel reason if cancelled */}
+                  {order.status?.toLowerCase() === 'cancelled' && order.cancel_reason && (
+                    <div style={styles.cancelReason}>
+                      <strong>Cancellation Reason:</strong> {order.cancel_reason}
+                    </div>
+                  )}
                 </div>
-              )}
 
-              <div style={styles.detailSection}>
-                <div style={styles.totalSection}>
-                  <div style={styles.totalLabel}>Order Total</div>
-                  <div style={styles.totalAmount}>{formatPrice(selectedOrder.total_amount)}</div>
-                </div>
+                {/* Order Actions - NO ORDER RATING, ONLY PRODUCT REVIEWS */}
+
               </div>
-            </div>
-
-            <div style={styles.modalFooter}>
-              <button style={styles.closeModalButton} onClick={closeOrderDetails}>
-                Close
-              </button>
-              {canCancelOrder(selectedOrder) && (
-                <button 
-                  style={styles.cancelModalButton}
-                  onClick={() => {
-                    closeOrderDetails();
-                    handleCancelOrderRequest(selectedOrder);
-                  }}
-                >
-                  Cancel Order
-                </button>
-              )}
-            </div>
+            ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ✅ Cancel Order Modal */}
-      {showCancelModal && orderToCancel && (
-        <div style={styles.modalOverlay} onClick={closeCancelModal}>
-          <div style={styles.cancelModalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>
-                <AlertOctagon size={24} style={{marginRight: '8px'}} />
-                Cancel Order #{orderToCancel.id}
-              </h2>
-              <button style={styles.closeButton} onClick={closeCancelModal}>
-                <X size={24} />
-              </button>
-            </div>
-
-            <div style={styles.modalBody}>
-              <div style={styles.cancelWarning}>
-                <p><strong>Are you sure you want to cancel this order?</strong></p>
-                <p>This action cannot be undone. The seller will be notified immediately.</p>
+        {/* ✅ Order Details Modal */}
+        {showOrderDetails && selectedOrder && (
+          <div style={styles.modalOverlay} onClick={closeOrderDetails}>
+            <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.modalHeader}>
+                <h2 style={styles.modalTitle}>Order Details #{selectedOrder.id}</h2>
+                <button style={styles.closeButton} onClick={closeOrderDetails}>
+                  <X size={24} />
+                </button>
               </div>
 
-              <div style={styles.detailSection}>
-                <h3 style={styles.sectionTitle}>Please select a reason for cancellation:</h3>
-                <div style={styles.reasonsList}>
-                  {cancelReasons.map(reason => (
-                    <label key={reason.value} style={styles.reasonOption}>
-                      <input
-                        type="radio"
-                        name="cancelReason"
-                        value={reason.value}
-                        checked={cancelReason === reason.value}
-                        onChange={(e) => setCancelReason(e.target.value)}
-                        style={styles.reasonRadio}
-                      />
-                      <span style={styles.reasonLabel}>{reason.label}</span>
-                    </label>
-                  ))}
+              <div style={styles.modalBody}>
+                <div style={styles.detailSection}>
+                  <h3 style={styles.sectionTitle}>Order Status</h3>
+                  <div style={styles.statusDetail}>
+                    {getStatusIcon(selectedOrder.status)}
+                    <span style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: getStatusColor(selectedOrder.status),
+                      textTransform: 'capitalize'
+                    }}>
+                      {selectedOrder.status || 'Pending'}
+                    </span>
+                  </div>
                 </div>
 
-                {cancelReason === 'other' && (
-                  <div style={styles.customReasonSection}>
-                    <label style={styles.customReasonLabel}>
-                      Please specify your reason:
-                    </label>
-                    <textarea
-                      value={customReason}
-                      onChange={(e) => setCustomReason(e.target.value)}
-                      placeholder="Please provide specific details about why you want to cancel this order..."
-                      style={styles.customReasonTextarea}
-                      rows={4}
-                      maxLength={500}
-                    />
-                    <div style={styles.characterCount}>
-                      {customReason.length}/500 characters
+                <div style={styles.detailSection}>
+                  <h3 style={styles.sectionTitle}>Order Information</h3>
+                  <div style={styles.infoGrid}>
+                    <div style={styles.infoItem}>
+                      <Calendar size={16} />
+                      <div>
+                        <div style={styles.infoLabel}>Order Date</div>
+                        <div style={styles.infoValue}>{formatDateTime(selectedOrder.created_at)}</div>
+                      </div>
+                    </div>
+
+                    <div style={styles.infoItem}>
+                      <CreditCard size={16} />
+                      <div>
+                        <div style={styles.infoLabel}>Payment Method</div>
+                        <div style={styles.infoValue}>
+                          {selectedOrder.payment_method === 'COD' ? 'Cash on Delivery' :
+                            selectedOrder.payment_method === 'ONLINE' ? 'Online Payment' :
+                              selectedOrder.payment_method || 'COD'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedOrder.customer_name && (
+                      <div style={styles.infoItem}>
+                        <User size={16} />
+                        <div>
+                          <div style={styles.infoLabel}>Customer</div>
+                          <div style={styles.infoValue}>{selectedOrder.customer_name}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedOrder.phone && (
+                      <div style={styles.infoItem}>
+                        <Phone size={16} />
+                        <div>
+                          <div style={styles.infoLabel}>Phone</div>
+                          <div style={styles.infoValue}>{selectedOrder.phone}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div style={styles.detailSection}>
+                  <h3 style={styles.sectionTitle}>Order Items</h3>
+                  <div style={styles.itemsList}>
+                    {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                      selectedOrder.items.map(item => (
+                        <div key={item.id} style={styles.modalOrderItem}>
+                          <div style={styles.modalItemInfo}>
+                            <div style={styles.modalItemName}>
+                              {item.product?.name || item.name || 'Product'}
+                            </div>
+                            <div style={styles.modalItemPrice}>
+                              {formatPrice(item.price)} × {item.quantity}
+                            </div>
+                            {item.product?.description && (
+                              <div style={styles.modalItemDesc}>
+                                {item.product.description}
+                              </div>
+                            )}
+                            {/* ✅ Product Review in Modal for delivered orders */}
+                            {selectedOrder.status?.toLowerCase() === 'delivered' && item.product && (
+                              <div style={styles.modalProductReview}>
+                                <ProductReviewButton
+                                  product={item.product}
+                                  onReviewSubmitted={handleReviewSubmitted}
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <div style={styles.modalItemTotal}>
+                            {formatPrice(item.price * item.quantity)}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={styles.noItemsModal}>No items information available</div>
+                    )}
+                  </div>
+                </div>
+
+                {selectedOrder.shipping_address && (
+                  <div style={styles.detailSection}>
+                    <h3 style={styles.sectionTitle}>Delivery Address</h3>
+                    <div style={styles.addressBox}>
+                      <MapPin size={16} />
+                      <div style={styles.addressText}>{selectedOrder.shipping_address}</div>
                     </div>
                   </div>
                 )}
-              </div>
 
-              <div style={styles.detailSection}>
-                <h3 style={styles.sectionTitle}>Order Summary</h3>
-                <div style={styles.cancelOrderSummary}>
-                  <div style={styles.summaryRow}>
-                    <span>Order Total:</span>
-                    <span style={styles.summaryAmount}>{formatPrice(orderToCancel.total_amount)}</span>
+                {selectedOrder.status?.toLowerCase() === 'cancelled' && selectedOrder.cancel_reason && (
+                  <div style={styles.detailSection}>
+                    <h3 style={styles.sectionTitle}>Cancellation Reason</h3>
+                    <div style={styles.cancelReasonBox}>
+                      <AlertOctagon size={16} />
+                      <div style={styles.cancelReasonText}>{selectedOrder.cancel_reason}</div>
+                    </div>
                   </div>
-                  <div style={styles.summaryRow}>
-                    <span>Payment Method:</span>
-                    <span>{orderToCancel.payment_method === 'COD' ? 'Cash on Delivery' : 'Online Payment'}</span>
-                  </div>
-                  <div style={styles.summaryRow}>
-                    <span>Items:</span>
-                    <span>{orderToCancel.items?.length || 0} item(s)</span>
+                )}
+
+                <div style={styles.detailSection}>
+                  <div style={styles.totalSection}>
+                    <div style={styles.totalLabel}>Order Total</div>
+                    <div style={styles.totalAmount}>{formatPrice(selectedOrder.total_amount)}</div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div style={styles.modalFooter}>
-              <button 
-                style={styles.closeModalButton} 
-                onClick={closeCancelModal}
-                disabled={cancelLoading}
-              >
-                Keep Order
-              </button>
-              <button 
-                style={styles.confirmCancelButton}
-                onClick={handleCancelOrder}
-                disabled={cancelLoading || !cancelReason || (cancelReason === 'other' && !customReason.trim())}
-              >
-                {cancelLoading ? 'Cancelling...' : 'Confirm Cancellation'}
-              </button>
+              <div style={styles.modalFooter}>
+                <button style={styles.closeModalButton} onClick={closeOrderDetails}>
+                  Close
+                </button>
+                {canCancelOrder(selectedOrder) && (
+                  <button
+                    style={styles.cancelModalButton}
+                    onClick={() => {
+                      closeOrderDetails();
+                      handleCancelOrderRequest(selectedOrder);
+                    }}
+                  >
+                    Cancel Order
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* CSS Animations */}
-      <style jsx>{`
+        {/* ✅ Cancel Order Modal */}
+        {showCancelModal && orderToCancel && (
+          <div style={styles.modalOverlay} onClick={closeCancelModal}>
+            <div style={styles.cancelModalContent} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.modalHeader}>
+                <h2 style={styles.modalTitle}>
+                  <AlertOctagon size={24} style={{ marginRight: '8px' }} />
+                  Cancel Order #{orderToCancel.id}
+                </h2>
+                <button style={styles.closeButton} onClick={closeCancelModal}>
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div style={styles.modalBody}>
+                <div style={styles.cancelWarning}>
+                  <p><strong>Are you sure you want to cancel this order?</strong></p>
+                  <p>This action cannot be undone. The seller will be notified immediately.</p>
+                </div>
+
+                <div style={styles.detailSection}>
+                  <h3 style={styles.sectionTitle}>Please select a reason for cancellation:</h3>
+                  <div style={styles.reasonsList}>
+                    {cancelReasons.map(reason => (
+                      <label key={reason.value} style={styles.reasonOption}>
+                        <input
+                          type="radio"
+                          name="cancelReason"
+                          value={reason.value}
+                          checked={cancelReason === reason.value}
+                          onChange={(e) => setCancelReason(e.target.value)}
+                          style={styles.reasonRadio}
+                        />
+                        <span style={styles.reasonLabel}>{reason.label}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {cancelReason === 'other' && (
+                    <div style={styles.customReasonSection}>
+                      <label style={styles.customReasonLabel}>
+                        Please specify your reason:
+                      </label>
+                      <textarea
+                        value={customReason}
+                        onChange={(e) => setCustomReason(e.target.value)}
+                        placeholder="Please provide specific details about why you want to cancel this order..."
+                        style={styles.customReasonTextarea}
+                        rows={4}
+                        maxLength={500}
+                      />
+                      <div style={styles.characterCount}>
+                        {customReason.length}/500 characters
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div style={styles.detailSection}>
+                  <h3 style={styles.sectionTitle}>Order Summary</h3>
+                  <div style={styles.cancelOrderSummary}>
+                    <div style={styles.summaryRow}>
+                      <span>Order Total:</span>
+                      <span style={styles.summaryAmount}>{formatPrice(orderToCancel.total_amount)}</span>
+                    </div>
+                    <div style={styles.summaryRow}>
+                      <span>Payment Method:</span>
+                      <span>{orderToCancel.payment_method === 'COD' ? 'Cash on Delivery' : 'Online Payment'}</span>
+                    </div>
+                    <div style={styles.summaryRow}>
+                      <span>Items:</span>
+                      <span>{orderToCancel.items?.length || 0} item(s)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={styles.modalFooter}>
+                <button
+                  style={styles.closeModalButton}
+                  onClick={closeCancelModal}
+                  disabled={cancelLoading}
+                >
+                  Keep Order
+                </button>
+                <button
+                  style={styles.confirmCancelButton}
+                  onClick={handleCancelOrder}
+                  disabled={cancelLoading || !cancelReason || (cancelReason === 'other' && !customReason.trim())}
+                >
+                  {cancelLoading ? 'Cancelling...' : 'Confirm Cancellation'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CSS Animations */}
+        <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
@@ -1109,92 +1126,102 @@ export default function ShopOrdersPage() {
           animation: spin 1s linear infinite;
         }
       `}</style>
+      </div>
     </div>
   );
 }
 
 const styles = {
-  container: { minHeight: '100vh', backgroundColor: '#f8fafc', padding: '20px', maxWidth: '1200px', margin: '0 auto' },
-  loadingContainer: { 
-    display: 'flex', flexDirection: 'column', alignItems: 'center', 
-    justifyContent: 'center', minHeight: '100vh', gap: '20px', textAlign: 'center' 
+  pagecontainer: { backgroundColor: "#FDFFF0", paddingTop: "140px", },
+  container: { minHeight: '100vh', backgroundColor: '#FDFFF0', padding: '20px', maxWidth: '1200px', margin: '0 auto' },
+  loadingContainer: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    justifyContent: 'center', minHeight: '100vh', gap: '20px', textAlign: 'center'
   },
-  spinner: { 
-    width: '32px', height: '32px', border: '3px solid #f3f3f3', 
-    borderTop: '3px solid #3b82f6', borderRadius: '50%', 
-    animation: 'spin 1s linear infinite' 
+  spinner: {
+    width: '32px', height: '32px', border: '3px solid #f3f3f3',
+    borderTop: '3px solid #3b82f6', borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
   },
-  errorContainer: { 
-    display: 'flex', flexDirection: 'column', alignItems: 'center', 
+  errorContainer: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
     justifyContent: 'center', minHeight: '100vh', gap: '20px',
-    textAlign: 'center', padding: '40px' 
+    textAlign: 'center', padding: '40px'
   },
-  homeButton: { 
-    padding: '12px 24px', backgroundColor: '#6b7280', color: 'white', 
-    border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' 
+  homeButton: {
+    padding: '12px 24px', backgroundColor: '#6b7280', color: 'white',
+    border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600'
   },
-  header: { 
+  header: {
     display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px',
     backgroundColor: 'white', borderRadius: '12px', padding: '16px',
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
-  backButton: { 
-    background: 'none', border: 'none', cursor: 'pointer', 
-    color: '#3b82f6', padding: '8px', borderRadius: '6px' 
+  backButton: {
+    background: 'none', border: 'none', cursor: 'pointer',
+    color: '#1a4845', padding: '8px', borderRadius: '6px'
   },
-  title: { 
-    fontSize: '24px', fontWeight: '700', color: '#1f2937', flex: 1 
+  title: {
+    fontSize: '24px', fontWeight: '700', color: '#1f2937', flex: 1
   },
   storeIndicator: {
-    display: 'flex', alignItems: 'center', gap: '8px',
-    backgroundColor: '#f0f8ff', border: '1px solid #3b82f6',
-    borderRadius: '8px', padding: '12px 16px', marginBottom: '16px',
-    fontSize: '14px', color: '#1e40af', fontWeight: '500'
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between', // ✅ push items to edges
+    backgroundColor: '#0e451e25',
+    border: '1px solid #0e451e25',
+    borderRadius: '8px',
+    padding: '12px 16px',
+    marginBottom: '16px',
+    fontSize: '14px',
+    color: '#1a4845',
+    fontWeight: '500'
   },
-  emptyState: { 
-    display: 'flex', flexDirection: 'column', alignItems: 'center', 
-    justifyContent: 'center', textAlign: 'center', padding: '60px', 
-    backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' 
+
+  emptyState: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    justifyContent: 'center', textAlign: 'center', padding: '60px',
+    backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
-  shopButton: { 
-    padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white', 
+  shopButton: {
+    padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white',
     border: 'none', borderRadius: '8px', cursor: 'pointer', marginTop: '20px',
     fontSize: '16px', fontWeight: '600', transition: 'all 0.2s'
   },
   ordersList: { display: 'flex', flexDirection: 'column', gap: '16px' },
-  orderCard: { 
-    backgroundColor: 'white', borderRadius: '12px', padding: '24px', 
-    border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' 
+  orderCard: {
+    backgroundColor: '#FDFFF0', borderRadius: '12px', padding: '5px 24px',
+    border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
   },
-  orderHeader: { 
-    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', 
-    marginBottom: '16px' 
+  orderHeader: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+    marginBottom: '16px'
   },
   orderId: { fontSize: '18px', fontWeight: '700', color: '#1f2937' },
-  orderDate: { fontSize: '14px', color: '#6b7280', marginTop: '4px' },
+  orderDate: { fontSize: '13px', color: '#6b7280', marginTop: '4px' },
   customerName: { fontSize: '12px', color: '#9ca3af', marginTop: '2px' },
-  orderStatus: { 
+  orderStatus: {
     display: 'flex', alignItems: 'center', gap: '8px',
-    backgroundColor: '#f8fafc', padding: '8px 12px', borderRadius: '8px'
+    borderRadius: '8px'
   },
-  statusText: { 
-    fontSize: '14px', fontWeight: '600', textTransform: 'capitalize' 
+  statusText: {
+    fontSize: '14px', fontWeight: '600', textTransform: 'capitalize'
   },
   orderItems: { marginBottom: '16px' },
-  orderItem: { 
-    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', 
-    padding: '12px 0', borderBottom: '1px solid #f3f4f6' 
+  orderItem: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+    padding: '12px 0', borderBottom: '1px solid #f3f4f6'
   },
   itemInfo: { flex: 1 },
-  itemName: { fontSize: '15px', color: '#1f2937', fontWeight: '500' },
-  itemDetails: { fontSize: '13px', color: '#6b7280', marginTop: '2px' },
+  itemName: { fontSize: '16px', color: '#1f2937', fontWeight: '600' },
+  itemDetails: { fontSize: '13px', color: '#6b7280', marginTop: '5px' },
   itemTotal: { fontSize: '14px', fontWeight: '600', color: '#1f2937' },
-  
+
   // ✅ Product Review Section Styles
   productReviewSection: {
     marginTop: '8px'
   },
-  
+
   checkingReview: {
     display: 'flex',
     alignItems: 'center',
@@ -1202,7 +1229,7 @@ const styles = {
     fontSize: '12px',
     color: '#6b7280'
   },
-  
+
   reviewProductButton: {
     display: 'flex',
     alignItems: 'center',
@@ -1217,28 +1244,26 @@ const styles = {
     fontWeight: '500',
     transition: 'all 0.2s'
   },
-  
-  noItems: { 
-    fontSize: '14px', color: '#9ca3af', textAlign: 'center', 
-    padding: '20px', fontStyle: 'italic' 
+
+  noItems: {
+    fontSize: '14px', color: '#9ca3af', textAlign: 'center',
+    padding: '20px', fontStyle: 'italic'
   },
-  orderFooter: { 
-    paddingTop: '16px', borderTop: '2px solid #f3f4f6', marginBottom: '16px' 
-  },
-  orderMeta: { 
+
+  orderMeta: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     marginBottom: '12px'
   },
-  orderTotal: { fontSize: '18px', fontWeight: '700', color: '#1f2937' },
-  paymentMethod: { 
-    fontSize: '13px', color: '#6b7280', backgroundColor: '#f3f4f6', 
+  orderTotal: { fontSize: '17px', fontWeight: '600', color: '#1f2937' },
+  paymentMethod: {
+    fontSize: '13px', color: '#6b7280', backgroundColor: '#f3f4f6',
     padding: '6px 10px', borderRadius: '6px', fontWeight: '500'
   },
-  shippingAddress: { 
+  shippingAddress: {
     fontSize: '13px', color: '#6b7280', backgroundColor: '#f8fafc',
     padding: '12px', borderRadius: '6px', lineHeight: '1.4', marginBottom: '12px'
   },
-  cancelReason: { 
+  cancelReason: {
     fontSize: '13px', color: '#dc2626', backgroundColor: '#fef2f2',
     padding: '12px', borderRadius: '6px', lineHeight: '1.4',
     border: '1px solid #fecaca', marginBottom: '12px'
@@ -1247,7 +1272,7 @@ const styles = {
     display: 'flex', gap: '8px', flexWrap: 'wrap'
   },
   actionButton: {
-    padding: '8px 16px', backgroundColor: '#10b981', color: 'white',
+    padding: '8px 16px', backgroundColor: 'rgb(5, 150, 105)', color: 'white', 
     border: 'none', borderRadius: '6px', cursor: 'pointer',
     fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
   },
@@ -1269,14 +1294,14 @@ const styles = {
     width: '100%', maxHeight: '90vh', overflow: 'hidden',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
   },
-  
+
   // ✅ Review Modal Content
   reviewModalContent: {
     backgroundColor: 'white', borderRadius: '16px', maxWidth: '500px',
     width: '100%', maxHeight: '90vh', overflow: 'hidden',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
   },
-  
+
   modalHeader: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     padding: '24px', borderBottom: '1px solid #e5e7eb'
@@ -1338,12 +1363,12 @@ const styles = {
   modalItemDesc: {
     fontSize: '12px', color: '#9ca3af', lineHeight: '1.4', marginBottom: '8px'
   },
-  
+
   // ✅ Product Review in Modal
   modalProductReview: {
     marginTop: '8px'
   },
-  
+
   modalItemTotal: {
     fontSize: '16px', fontWeight: '700', color: '#1f2937'
   },

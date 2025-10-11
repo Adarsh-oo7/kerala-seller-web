@@ -1,0 +1,45 @@
+/*   */
+
+@media (max-width: 576px) {
+    .profileordericonsize {
+        width: 17px !important;
+        height: 17px !important;
+    }
+
+    .profileorderstatustext {
+        font-size: 14px !important;
+    }
+
+    .profileorderactionbtn {
+        padding: 6px 14px !important;
+        font-size: 13px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .profileordericonsize {
+        width: 15px !important;
+        height: 15px !important;
+    }
+
+    .profileorderstatustext {
+        font-size: 12px !important;
+    }
+
+    .profileorderactionbtn {
+        padding: 6px 8px !important;
+        font-size: 11px !important;
+    }
+    .profileorderitemname{
+        font-size: 13px !important;
+    }
+    .profileorderitemdetails{
+        font-size: 13px !important;
+    }
+    .profileorderdate{
+        font-size: 13px !important;
+    }
+    .profileordertotalprice{
+        font-size: 13px !important;
+    }
+}
