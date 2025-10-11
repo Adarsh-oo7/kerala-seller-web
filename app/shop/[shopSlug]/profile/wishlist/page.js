@@ -490,7 +490,7 @@ export default function ShopWishlistPage() {
                       <h3 className="product-name" style={styles.productName}>
                         {product.name || 'Unnamed Product'}
                         {product.model_name && (
-                          <span className='product-model' style={styles.productModel}> ({product.model_name})</span>
+                          <span className='wishlistproduct-model' style={styles.productModel}> ({product.model_name})</span>
                         )}
                       </h3>
                     </div>

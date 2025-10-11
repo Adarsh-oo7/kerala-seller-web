@@ -1,4 +1,4 @@
-.product-model {
+.wishlistproduct-model {
     font-size: 0.85rem !important;
     color: #6b7280 !important;
     font-weight: 400 !important;
@@ -46,7 +46,7 @@
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
     }
 
-    .product-model {
+    .wishlistproduct-model {
         max-width: 70px !important;
         font-size: 14px !important;
         color: #6b7280 !important;
@@ -85,7 +85,7 @@
         font-size: 13px !important;
     }
 
-    .product-model {
+    .wishlistproduct-model {
         max-width: 70px !important;
         font-size: 14px !important;
         color: #6b7280 !important;
