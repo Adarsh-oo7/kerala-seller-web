@@ -34,10 +34,20 @@ export default function ProductCard({
   onlineStock = 1,
   storeName,
   modelName,
-  sellerPhone
+  sellerPhone,
+  // ✅ NEW: Enhanced image props from enhanced serializers
+  thumbnailUrl,
+  largeImageUrl,
+  cloudinaryUrl,
+  imageMetadata,
+  hasDiscount,
+  discountPercentage,
+  isInStock,
+  canBePurchasedOnline
 }) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [imageError, setImageError] = useState(false)
   const [touchStarted, setTouchStarted] = useState(false)
   const [wishlistState, setWishlistState] = useState(isWishlisted)
   const [localWishlistLoading, setLocalWishlistLoading] = useState(false)
@@ -86,7 +96,10 @@ export default function ProductCard({
     e.preventDefault()
     e.stopPropagation()
 
-    if (onlineStock === 0) {
+    // Use enhanced stock checking
+    const stockCheck = canBePurchasedOnline !== undefined ? canBePurchasedOnline : (onlineStock > 0)
+    
+    if (!stockCheck) {
       console.warn('⚠️ Attempted to add out-of-stock item to cart')
       return
     }
@@ -98,19 +111,26 @@ export default function ProductCard({
           name: title,
           price: parseFloat(price) || 0,
           mrp: mrp ? parseFloat(mrp) : null,
-          main_image_url: primaryImage,
-          image_url: primaryImage,
+          // ✅ ENHANCED: Use best available image URL
+          main_image_url: getBestImageUrl(),
+          image_url: getBestImageUrl(),
+          thumbnail_url: thumbnailUrl || getBestImageUrl('thumbnail'),
           online_stock: onlineStock,
           seller_phone: sellerPhone,
           store: storeName ? { name: storeName } : null,
           model_name: modelName,
           average_rating: rating,
-          review_count: reviewCount
+          review_count: reviewCount,
+          // ✅ NEW: Enhanced product data
+          has_discount: hasDiscount,
+          discount_percentage: discountPercentage,
+          is_in_stock: isInStock,
+          can_be_purchased_online: canBePurchasedOnline,
+          image_metadata: imageMetadata
         }
 
         console.log('🛒 Adding to cart:', productData)
         await onAddToCart(e, productData)
-
       }
     } catch (error) {
       console.error('❌ Add to cart error:', error)
@@ -127,7 +147,14 @@ export default function ProductCard({
     }).format(numPrice)
   }
 
+  // ✅ ENHANCED: Use API-provided discount or calculate fallback
   const getDiscountPercentage = () => {
+    // Use API-provided discount percentage if available
+    if (discountPercentage !== undefined && discountPercentage > 0) {
+      return Math.round(discountPercentage)
+    }
+
+    // Fallback to manual calculation
     const numPrice = parseFloat(price) || 0
     const numMrp = parseFloat(mrp) || 0
 
@@ -154,18 +181,50 @@ export default function ProductCard({
     return `/product/${id}`
   }
 
-  // ✅ Enhanced image URL handling
+  // ✅ SMART: Get best available image URL with multiple fallbacks
+  const getBestImageUrl = (size = 'default') => {
+    // Priority order: Cloudinary optimized > thumbnailUrl > primaryImage > placeholder
+    
+    if (size === 'thumbnail' && thumbnailUrl) {
+      return thumbnailUrl
+    }
+    
+    if (size === 'large' && largeImageUrl) {
+      return largeImageUrl
+    }
+    
+    // For default size, prefer optimized URLs
+    if (thumbnailUrl && size === 'default') {
+      return thumbnailUrl
+    }
+    
+    if (primaryImage) {
+      return getImageUrl(primaryImage)
+    }
+    
+    return "/placeholder.svg"
+  }
+
+  // ✅ Enhanced image URL handling with Cloudinary support
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return "/placeholder.svg"
 
+    // ✅ CLOUDINARY: If it's already a Cloudinary URL, use it directly
+    if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
+      return imageUrl
+    }
+
+    // ✅ Handle local media URLs
     if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
       return `${getApiBaseUrl()}${imageUrl}`
     }
 
+    // ✅ Handle full URLs
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl
     }
 
+    // ✅ Handle relative URLs
     if (imageUrl.startsWith('/')) {
       return `${getApiBaseUrl()}${imageUrl}`
     }
@@ -173,13 +232,55 @@ export default function ProductCard({
     return imageUrl || "/placeholder.svg"
   }
 
-  // Determine if wishlist is loading
+  // ✅ ENHANCED: Smart image error handling with multiple fallbacks
+  const handleImageError = (e) => {
+    if (imageError) return // Prevent infinite loop
+
+    setImageError(true)
+    
+    // Try fallback URLs in order
+    const fallbacks = [
+      primaryImage && getImageUrl(primaryImage),
+      thumbnailUrl,
+      cloudinaryUrl,
+      "/placeholder.svg"
+    ].filter(Boolean)
+
+    let currentSrc = e.target.src
+    let nextFallback = null
+
+    for (let i = 0; i < fallbacks.length; i++) {
+      if (fallbacks[i] === currentSrc && i < fallbacks.length - 1) {
+        nextFallback = fallbacks[i + 1]
+        break
+      }
+    }
+
+    if (nextFallback && nextFallback !== currentSrc) {
+      console.warn(`Failed to load image for product ${id}, trying fallback:`, nextFallback)
+      e.target.src = nextFallback
+    } else {
+      console.warn(`All image fallbacks failed for product ${id}, using placeholder`)
+      e.target.src = "/placeholder.svg"
+    }
+  }
+
+  // ✅ ENHANCED: Determine stock status
+  const getStockStatus = () => {
+    if (canBePurchasedOnline === false) return 'unavailable'
+    if (isInStock === false || onlineStock === 0) return 'out-of-stock'
+    if (onlineStock <= 3) return 'low-stock'
+    return 'in-stock'
+  }
+
+  const stockStatus = getStockStatus()
+  const discount = getDiscountPercentage()
   const isWishlistCurrentlyLoading = isWishlistLoading || localWishlistLoading
 
   return (
     <>
       <div
-        className={`product-card ${className || ""} ${onlineStock === 0 ? "out-of-stock" : ""}`}
+        className={`product-card ${className || ""} ${stockStatus}`}
         data-product-id={id}
         onMouseEnter={() => !touchStarted && setIsHovered(true)}
         onMouseLeave={() => !touchStarted && setIsHovered(false)}
@@ -187,21 +288,37 @@ export default function ProductCard({
         onTouchEnd={handleTouchEnd}
       >
         <div className="image-container">
-          {onlineStock === 0 && (
-            <div className="stock-badge">
+          {/* ✅ ENHANCED: Stock badges */}
+          {stockStatus === 'out-of-stock' && (
+            <div className="stock-badge out-of-stock">
               Out of Stock
             </div>
           )}
 
-          {getDiscountPercentage() && (
-            <div className="discount-badge">
-              {getDiscountPercentage()}% OFF
+          {stockStatus === 'unavailable' && (
+            <div className="stock-badge unavailable">
+              <Ban size={16} />
+              Not Available
             </div>
           )}
 
-          {onlineStock > 0 && onlineStock <= 3 && (
+          {/* ✅ ENHANCED: Use API-provided discount */}
+          {discount && (
+            <div className="discount-badge">
+              {discount}% OFF
+            </div>
+          )}
+
+          {stockStatus === 'low-stock' && (
             <div className="low-stock-badge">
               Only {onlineStock} left!
+            </div>
+          )}
+
+          {/* ✅ ENHANCED: Optimized badge for Cloudinary images */}
+          {imageMetadata?.optimized && (
+            <div className="optimized-badge" title="Fast loading optimized image">
+              ⚡
             </div>
           )}
 
@@ -223,7 +340,6 @@ export default function ProductCard({
                   stroke={wishlistState ? "#dc3545" : "currentColor"}
                   size={16}
                 />
-
               )}
             </button>
           </div>
@@ -231,19 +347,33 @@ export default function ProductCard({
           <Link href={getProductUrl()} className="image-link">
             <div className="image-wrapper">
               <img
-                src={getImageUrl(primaryImage)}
+                src={getBestImageUrl()}
                 alt={title || 'Product'}
-                className={`primary-image `}
-                onLoad={() => setImageLoaded(true)}
-                onError={(e) => {
-                  console.warn(`Failed to load primary image for product ${id}:`, primaryImage)
-                  e.target.src = "/placeholder.svg"
+                className={`primary-image ${imageLoaded ? 'loaded' : ''}`}
+                onLoad={() => {
+                  setImageLoaded(true)
+                  setImageError(false)
                 }}
+                onError={handleImageError}
                 loading="lazy"
+                // ✅ ENHANCED: Add responsive image attributes
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
               />
 
-              {!imageLoaded && (
-                <div className="image-skeleton"></div>
+              {!imageLoaded && !imageError && (
+                <div className="image-skeleton">
+                  <div className="skeleton-shimmer"></div>
+                </div>
+              )}
+
+              {/* ✅ NEW: Hover effect with large image */}
+              {isHovered && largeImageUrl && largeImageUrl !== getBestImageUrl() && (
+                <img
+                  src={largeImageUrl}
+                  alt={`${title} - detailed view`}
+                  className="hover-image"
+                  loading="lazy"
+                />
               )}
             </div>
           </Link>
@@ -262,10 +392,8 @@ export default function ProductCard({
                 ({rating.toFixed(1)})
                 {reviewCount > 0 && <span>{reviewCount} reviews</span>}
               </span>
-
             </div>
           )}
-
         </div>
 
         <div className="product-info">
@@ -287,34 +415,41 @@ export default function ProductCard({
                   <>
                     <span className="original-price">{formatPrice(mrp)}</span>
                     {/* <span className="savings">Save {formatPrice(parseFloat(mrp) - parseFloat(price))}</span> */}
-                  </>)}
+                  </>
+                )}
               </div>
             </div>
 
             <div className="cart-section">
               <button
-                className={`cart-btn ${onlineStock === 0 ? "disabled" : ""}`}
+                className={`cart-btn ${stockStatus !== 'in-stock' && stockStatus !== 'low-stock' ? "disabled" : ""}`}
                 onClick={handleAddToCart}
-                disabled={onlineStock === 0}
+                disabled={stockStatus === 'out-of-stock' || stockStatus === 'unavailable'}
                 type="button"
               >
                 <ShoppingCart className="cart-icon" />
                 <span className="cart-text">
-                  {onlineStock > 0 ? "ADD TO CART" : "OUT OF STOCK"}
+                  {stockStatus === 'in-stock' || stockStatus === 'low-stock' 
+                    ? "ADD TO CART" 
+                    : stockStatus === 'unavailable' 
+                      ? "NOT AVAILABLE"
+                      : "OUT OF STOCK"
+                  }
                 </span>
               </button>
             </div>
-
           </div>
-
-          {/* <div className="product-right"> */}
-
-          {/* </div> */}
         </div>
-      </div>
 
+        {/* ✅ NEW: Debug info in development */}
+        {process.env.NODE_ENV === 'development' && imageMetadata && (
+          <div className="debug-info" style={{ fontSize: '10px', opacity: 0.5, position: 'absolute', bottom: 0, right: 0, background: 'rgba(0,0,0,0.8)', color: 'white', padding: '2px' }}>
+            {imageMetadata.optimized ? '⚡' : '📁'} 
+            {imageMetadata.has_cloudinary ? 'C' : 'L'}
+            {imageMetadata.sub_images_count > 0 && ` +${imageMetadata.sub_images_count}`}
+          </div>
+        )}
+      </div>
     </>
   )
 }
-
-

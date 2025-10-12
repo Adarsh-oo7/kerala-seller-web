@@ -27,7 +27,8 @@ import {
   Tag,
   Camera,
   Zap,
-  User
+  User,
+  CreditCard
 } from 'lucide-react';
 
 // ✅ Helper function to get API base URL
@@ -60,6 +61,21 @@ const getAuthHeaders = () => {
     localStorage.getItem('accessToken');
 
   return token ? { 'Authorization': `Bearer ${token}` } : null;
+};
+
+// ✅ NEW: Razorpay Script Loader
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => {
+      resolve(true);
+    };
+    script.onerror = () => {
+      resolve(false);
+    };
+    document.body.appendChild(script);
+  });
 };
 
 // ✅ Helper function to extract phone from slug or query params
@@ -353,11 +369,12 @@ function ProductImageGallery({ product }) {
   );
 }
 
-// ✅ ENHANCED: Product Info Component with Wishlist
+// ✅ ENHANCED: Product Info Component with Buy Now + Share
 function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isLoggedIn, router }) {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [buyingNow, setBuyingNow] = useState(false);
 
   // ✅ Check if product is wishlisted on component mount
   useEffect(() => {
@@ -441,6 +458,207 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
       }
     } finally {
       setIsWishlistLoading(false);
+    }
+  };
+
+  // ✅ NEW: Buy Now Handler with Direct Payment
+  const handleBuyNow = async () => {
+    if (!product) return;
+
+    if (!isLoggedIn) {
+      router.push('/login/buyer');
+      return;
+    }
+
+    setBuyingNow(true);
+
+    try {
+      // ✅ Load Razorpay script
+      const isRazorpayLoaded = await loadRazorpayScript();
+      if (!isRazorpayLoaded) {
+        alert('Payment gateway failed to load. Please try again.');
+        setBuyingNow(false);
+        return;
+      }
+
+      const headers = getAuthHeaders();
+      if (!headers) {
+        router.push('/login/buyer');
+        return;
+      }
+
+      // ✅ Get seller phone from store
+      const sellerPhone = store?.seller_phone || store?.phone;
+      if (!sellerPhone) {
+        alert('Store information missing. Cannot process payment.');
+        setBuyingNow(false);
+        return;
+      }
+
+      // ✅ Create order data for single product
+      const orderData = {
+        seller_phone: sellerPhone,
+        items: [{
+          id: product.id,
+          quantity: quantity,
+          name: product.name,
+          price: product.price
+        }],
+        customer_name: 'Customer', // You can get this from user profile
+        customer_phone: '', // You can get this from user profile
+        shipping_address: "Default Address" // You can enhance this with address selection
+      };
+
+      const totalAmount = product.price * quantity;
+
+      console.log('🛒 Creating Razorpay order for Buy Now:', orderData);
+
+      // ✅ Create Razorpay order using existing endpoint
+      const createOrderResponse = await axios.post(
+        `${API_BASE_URL}/api/orders/create-razorpay-order/`, 
+        {
+          amount: totalAmount,
+          order_data: orderData
+        },
+        {
+          headers,
+          timeout: 15000
+        }
+      );
+
+      const { razorpay_order_id, amount, currency, key } = createOrderResponse.data;
+
+      console.log('✅ Razorpay order created:', createOrderResponse.data);
+
+      // ✅ Configure Razorpay payment options
+      const options = {
+        key: key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: amount, // Amount in paise
+        currency: currency,
+        name: 'Kerala Sellers',
+        description: `Buy Now: ${product.name}`,
+        order_id: razorpay_order_id,
+        
+        // ✅ Payment success handler
+        handler: async function (response) {
+          console.log('💳 Payment successful:', response);
+          
+          try {
+            // ✅ Use existing payment verification endpoint
+            const verifyResponse = await axios.post(
+              `${API_BASE_URL}/api/orders/verify-payment-and-create-order/`,
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                order_data: orderData
+              },
+              { headers }
+            );
+
+            console.log('✅ Payment verified and order created:', verifyResponse.data);
+
+            // ✅ Show success message
+            alert(`🎉 Payment successful! Your order #${verifyResponse.data.order_id} has been placed.`);
+            
+            // ✅ Redirect to orders page
+            router.push('/profile/orders');
+            
+          } catch (verifyError) {
+            console.error('❌ Payment verification failed:', verifyError);
+            alert('Payment completed but order creation failed. Please contact support.');
+          }
+        },
+        
+        // ✅ Prefill user information
+        prefill: {
+          name: 'Customer',
+          email: '',
+          contact: ''
+        },
+        
+        // ✅ Order notes
+        notes: {
+          product_id: product.id,
+          product_name: product.name,
+          seller_phone: sellerPhone,
+          order_type: 'buy_now'
+        },
+        
+        // ✅ Theme
+        theme: {
+          color: '#3b82f6'
+        },
+        
+        // ✅ Modal close handler
+        modal: {
+          ondismiss: function() {
+            console.log('💳 Payment cancelled by user');
+            setBuyingNow(false);
+          }
+        }
+      };
+
+      // ✅ Open Razorpay payment modal
+      const razorpayInstance = new window.Razorpay(options);
+      
+      // ✅ Handle payment failure
+      razorpayInstance.on('payment.failed', function (response) {
+        console.error('❌ Payment failed:', response.error);
+        alert(`Payment failed: ${response.error.description}`);
+        setBuyingNow(false);
+      });
+
+      // ✅ Open the payment modal
+      razorpayInstance.open();
+
+    } catch (error) {
+      console.error('❌ Buy now error:', error);
+      
+      if (error.response?.status === 401) {
+        localStorage.removeItem('buyerAccessToken');
+        alert('Session expired. Please login again.');
+        router.push('/login/buyer');
+      } else if (error.response?.data?.error) {
+        alert(`Error: ${error.response.data.error}`);
+      } else {
+        alert('Failed to process payment. Please try again.');
+      }
+      
+      setBuyingNow(false);
+    }
+  };
+
+  // ✅ NEW: Share Handler
+  const handleShare = async () => {
+    const shareData = {
+      title: `${product.name} - ${store?.name || 'Kerala Sellers'}`,
+      text: `Check out this amazing product: ${product.name} for just ₹${product.price?.toLocaleString('en-IN')}`,
+      url: window.location.href
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        console.log('✅ Shared successfully via native sharing');
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Product link copied to clipboard! Share it with your friends.');
+        console.log('✅ Link copied to clipboard');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      // Final fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Product link copied to clipboard!');
+      } catch (clipboardError) {
+        console.error('Clipboard error:', clipboardError);
+        // Last resort: show the URL
+        const urlToCopy = window.location.href;
+        prompt('Copy this link to share:', urlToCopy);
+      }
     }
   };
 
@@ -540,7 +758,7 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
         </div>
       )}
 
-      {/* Action Buttons */}
+      {/* ✅ ENHANCED: Action Buttons with Buy Now */}
       <div style={styles.actionButtons}>
         <button
           onClick={() => onAddToCart(quantity)}
@@ -564,29 +782,67 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
             </>
           )}
         </button>
-        
-        {/* ✅ FIXED: Working Wishlist Button */}
+
+        {/* ✅ NEW: Buy Now Button */}
         <button
-          onClick={handleWishlistToggle}
-          disabled={isWishlistLoading}
+          onClick={handleBuyNow}
+          disabled={stockInfo.status === 'out-of-stock' || buyingNow}
           style={{
-            ...styles.wishlistButton,
-            ...(isWishlisted ? styles.wishlistActive : {}),
-            ...(isWishlistLoading ? styles.wishlistLoading : {})
+            ...styles.buyNowButton,
+            ...(stockInfo.status === 'out-of-stock' ? styles.disabledButton : {}),
+            ...(buyingNow ? styles.buyNowLoading : {})
           }}
         >
-          {isWishlistLoading ? (
+          {buyingNow ? (
             <>
               <RefreshCw size={18} className="spinning" />
-              {isWishlisted ? 'Removing...' : 'Adding...'}
+              Processing Payment...
             </>
+          ) : stockInfo.status === 'out-of-stock' ? (
+            'Out of Stock'
           ) : (
             <>
-              <Heart size={18} fill={isWishlisted ? 'currentColor' : 'none'} />
-              {isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+              <CreditCard size={18} />
+              Buy Now - {formatPrice(product.price * quantity)}
             </>
           )}
         </button>
+        
+        {/* ✅ ENHANCED: Secondary Actions Row */}
+        <div style={styles.secondaryActions}>
+          {/* ✅ Wishlist Button */}
+          <button
+            onClick={handleWishlistToggle}
+            disabled={isWishlistLoading}
+            style={{
+              ...styles.wishlistButton,
+              ...(isWishlisted ? styles.wishlistActive : {}),
+              ...(isWishlistLoading ? styles.wishlistLoading : {})
+            }}
+          >
+            {isWishlistLoading ? (
+              <>
+                <RefreshCw size={18} className="spinning" />
+                {isWishlisted ? 'Removing...' : 'Adding...'}
+              </>
+            ) : (
+              <>
+                <Heart size={18} fill={isWishlisted ? 'currentColor' : 'none'} />
+                {isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+              </>
+            )}
+          </button>
+
+          {/* ✅ NEW: Share Button */}
+          <button
+            onClick={handleShare}
+            style={styles.shareButton}
+            title="Share this product"
+          >
+            <Share2 size={18} />
+            Share Product
+          </button>
+        </div>
       </div>
 
       {/* Product Features */}
@@ -973,7 +1229,7 @@ function ShopProductPageContent() {
           Back to {store?.name || 'Store'}
         </Link>
 
-        {/* Product Content */}
+        {/* ✅ ENHANCED: Product Content with Mobile-First Layout */}
         <div style={styles.productContainer}>
           <ProductImageGallery product={product} />
           <ProductInfo 
@@ -1070,7 +1326,7 @@ function ShopProductPageContent() {
 
       <Footer />
 
-      {/* ✅ Enhanced CSS Animations */}
+      {/* ✅ FULLY RESPONSIVE CSS */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -1089,6 +1345,428 @@ function ShopProductPageContent() {
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.7; }
+        }
+
+        /* ✅ MOBILE FIRST: Extra Small Devices (320px - 479px) */
+        @media (max-width: 479px) {
+          .page-container {
+            padding: 0 !important;
+          }
+          
+          .container {
+            padding: 8px !important;
+          }
+          
+          .product-container {
+            grid-template-columns: 1fr !important;
+            gap: 15px !important;
+            padding: 12px !important;
+            margin-bottom: 15px !important;
+            border-radius: 8px !important;
+          }
+          
+          /* Image at top - compact but visible */
+          .image-gallery {
+            order: 1 !important;
+            margin-bottom: 12px !important;
+          }
+          
+          .main-image-container {
+            height: 65vw !important;
+            max-height: 250px !important;
+            min-height: 200px !important;
+            border-radius: 12px !important;
+          }
+          
+          .main-image {
+            border-radius: 12px !important;
+          }
+          
+          /* Product info below image */
+          .product-info {
+            order: 2 !important;
+            gap: 12px !important;
+            padding: 0 !important;
+          }
+          
+          .product-title {
+            font-size: 1.1rem !important;
+            line-height: 1.2 !important;
+          }
+          
+          .current-price {
+            font-size: 1.3rem !important;
+          }
+          
+          .action-buttons {
+            gap: 10px !important;
+            margin-top: 15px !important;
+          }
+          
+          .add-to-cart-button,
+          .buy-now-button {
+            padding: 14px 16px !important;
+            font-size: 0.9rem !important;
+            min-height: 44px !important;
+            border-radius: 8px !important;
+          }
+          
+          .secondary-actions {
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+          
+          .wishlist-button,
+          .share-button {
+            padding: 12px 16px !important;
+            font-size: 13px !important;
+            min-height: 42px !important;
+          }
+          
+          .thumbnail {
+            width: 45px !important;
+            height: 45px !important;
+          }
+          
+          .breadcrumb-container {
+            display: none !important;
+          }
+          
+          .related-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+          }
+          
+          .related-product-name {
+            font-size: 12px !important;
+          }
+          
+          .related-product-price {
+            font-size: 13px !important;
+          }
+        }
+
+        /* ✅ MOBILE: Small Devices (480px - 767px) */
+        @media (min-width: 480px) and (max-width: 767px) {
+          .container {
+            padding: 12px !important;
+          }
+          
+          .product-container {
+            grid-template-columns: 1fr !important;
+            gap: 20px !important;
+            padding: 16px !important;
+            margin-bottom: 20px !important;
+          }
+          
+          .image-gallery {
+            order: 1 !important;
+            margin-bottom: 15px !important;
+          }
+          
+          .main-image-container {
+            height: 70vw !important;
+            max-height: 300px !important;
+            min-height: 240px !important;
+            border-radius: 14px !important;
+          }
+          
+          .main-image {
+            border-radius: 14px !important;
+          }
+          
+          .product-info {
+            order: 2 !important;
+            gap: 16px !important;
+            padding: 0 !important;
+          }
+          
+          .product-title {
+            font-size: 1.3rem !important;
+            line-height: 1.2 !important;
+          }
+          
+          .current-price {
+            font-size: 1.5rem !important;
+          }
+          
+          .action-buttons {
+            gap: 12px !important;
+            margin-top: 18px !important;
+          }
+          
+          .add-to-cart-button,
+          .buy-now-button {
+            padding: 15px 20px !important;
+            font-size: 0.95rem !important;
+            min-height: 48px !important;
+            border-radius: 10px !important;
+          }
+          
+          .secondary-actions {
+            flex-direction: column !important;
+            gap: 10px !important;
+          }
+          
+          .wishlist-button,
+          .share-button {
+            padding: 13px 18px !important;
+            font-size: 14px !important;
+            min-height: 46px !important;
+          }
+          
+          .thumbnail {
+            width: 50px !important;
+            height: 50px !important;
+          }
+          
+          .related-grid {
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+            gap: 12px !important;
+          }
+        }
+
+        /* ✅ TABLET: Medium Devices (768px - 1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .container {
+            padding: 16px !important;
+          }
+          
+          .product-container {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 30px !important;
+            padding: 24px !important;
+            margin-bottom: 30px !important;
+          }
+          
+          .image-gallery {
+            order: unset !important;
+          }
+          
+          .main-image-container {
+            height: auto !important;
+            max-height: 450px !important;
+            aspect-ratio: 1 !important;
+            border-radius: 12px !important;
+          }
+          
+          .product-info {
+            order: unset !important;
+            gap: 18px !important;
+            padding: 0 !important;
+          }
+          
+          .product-title {
+            font-size: 1.6rem !important;
+          }
+          
+          .current-price {
+            font-size: 1.7rem !important;
+          }
+          
+          .action-buttons {
+            gap: 14px !important;
+          }
+          
+          .add-to-cart-button,
+          .buy-now-button {
+            padding: 16px 24px !important;
+            font-size: 1rem !important;
+            min-height: 52px !important;
+          }
+          
+          .secondary-actions {
+            flex-direction: row !important;
+            gap: 12px !important;
+          }
+          
+          .wishlist-button,
+          .share-button {
+            flex: 1 !important;
+            padding: 14px 18px !important;
+            font-size: 14px !important;
+          }
+          
+          .related-grid {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+            gap: 16px !important;
+          }
+        }
+
+        /* ✅ DESKTOP: Large Devices (1024px - 1439px) */
+        @media (min-width: 1024px) and (max-width: 1439px) {
+          .container {
+            padding: 20px !important;
+            max-width: 1200px !important;
+          }
+          
+          .product-container {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 40px !important;
+            padding: 32px !important;
+          }
+          
+          .main-image-container {
+            max-height: 500px !important;
+            aspect-ratio: 1 !important;
+          }
+          
+          .main-image {
+            object-fit: contain !important;
+          }
+          
+          .product-title {
+            font-size: 1.8rem !important;
+          }
+          
+          .current-price {
+            font-size: 1.75rem !important;
+          }
+          
+          .secondary-actions {
+            flex-direction: row !important;
+          }
+          
+          .related-grid {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+            gap: 20px !important;
+          }
+        }
+
+        /* ✅ LARGE DESKTOP: Extra Large Devices (1440px+) */
+        @media (min-width: 1440px) {
+          .container {
+            max-width: 1400px !important;
+            padding: 24px !important;
+          }
+          
+          .product-container {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 50px !important;
+            padding: 40px !important;
+          }
+          
+          .main-image-container {
+            max-height: 600px !important;
+          }
+          
+          .product-title {
+            font-size: 2rem !important;
+          }
+          
+          .current-price {
+            font-size: 1.9rem !important;
+          }
+          
+          .related-grid {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+            gap: 24px !important;
+          }
+        }
+
+        /* ✅ RELATED PRODUCTS: Responsive Square Images */
+        @media (max-width: 479px) {
+          .related-product-image-container {
+            aspect-ratio: 1 !important;
+            height: auto !important;
+          }
+          
+          .related-product-image {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+          }
+        }
+
+        @media (min-width: 480px) {
+          .related-product-image-container {
+            aspect-ratio: 1 !important;
+            overflow: hidden !important;
+          }
+          
+          .related-product-image {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+          }
+        }
+
+        /* ✅ HOVER EFFECTS: Desktop Only */
+        @media (min-width: 1024px) {
+          .related-product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+          }
+          
+          .main-image-container:hover .main-image {
+            transform: scale(1.02);
+          }
+          
+          .add-to-cart-button:hover,
+          .buy-now-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          }
+        }
+
+        /* ✅ TOUCH INTERACTIONS: Mobile & Tablet */
+        @media (max-width: 1023px) {
+          .related-product-card:active {
+            transform: scale(0.98);
+          }
+          
+          .thumbnail:active {
+            transform: scale(0.95);
+          }
+          
+          .add-to-cart-button:active,
+          .buy-now-button:active {
+            transform: scale(0.98);
+          }
+          
+          .wishlist-button:active,
+          .share-button:active {
+            transform: scale(0.97);
+          }
+        }
+
+        /* ✅ ACCESSIBILITY: Focus States */
+        @media (prefers-reduced-motion: no-preference) {
+          .add-to-cart-button,
+          .buy-now-button,
+          .wishlist-button,
+          .share-button {
+            transition: all 0.2s ease;
+          }
+          
+          .related-product-card {
+            transition: all 0.3s ease;
+          }
+        }
+
+        /* ✅ HIGH DPI DISPLAYS */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+          .main-image,
+          .related-product-image {
+            image-rendering: -webkit-optimize-contrast;
+          }
+        }
+
+        /* ✅ PRINT STYLES */
+        @media print {
+          .breadcrumb-container,
+          .back-button,
+          .action-buttons,
+          .secondary-actions,
+          .related-container {
+            display: none !important;
+          }
+          
+          .product-container {
+            grid-template-columns: 1fr !important;
+            gap: 20px !important;
+            page-break-inside: avoid;
+          }
         }
       `}</style>
     </div>
@@ -1123,7 +1801,7 @@ export default function ShopProductPage() {
   );
 }
 
-// ✅ Enhanced styles with reviews and wishlist support
+// ✅ FULLY RESPONSIVE STYLES: Perfect for All Devices
 const styles = {
   pageContainer: {
     minHeight: '100vh',
@@ -1255,7 +1933,7 @@ const styles = {
     border: '1px solid #e5e7eb'
   },
 
-  // Image Gallery
+  // ✅ RESPONSIVE: Image Gallery
   imageGallery: {
     display: 'flex',
     flexDirection: 'column',
@@ -1267,13 +1945,15 @@ const styles = {
     aspectRatio: '1',
     borderRadius: '12px',
     overflow: 'hidden',
-    border: '1px solid #e5e7eb'
+    border: '1px solid #e5e7eb',
+    backgroundColor: '#f9fafb'
   },
 
   mainImage: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover'
+    objectFit: 'cover',
+    transition: 'transform 0.3s ease'
   },
 
   discountBadge: {
@@ -1291,7 +1971,8 @@ const styles = {
   thumbnailContainer: {
     display: 'flex',
     gap: '8px',
-    overflowX: 'auto'
+    overflowX: 'auto',
+    justifyContent: 'center'
   },
 
   thumbnail: {
@@ -1301,14 +1982,15 @@ const styles = {
     objectFit: 'cover',
     border: '2px solid transparent',
     cursor: 'pointer',
-    transition: 'all 0.2s'
+    transition: 'all 0.2s',
+    flexShrink: 0
   },
 
   activeThumbnail: {
     borderColor: '#3b82f6'
   },
 
-  // Product Info
+  // ✅ RESPONSIVE: Product Info
   productInfo: {
     display: 'flex',
     flexDirection: 'column',
@@ -1325,7 +2007,7 @@ const styles = {
   },
 
   productTitle: {
-    fontSize: '2rem',
+    fontSize: 'clamp(1.2rem, 4vw, 2rem)',
     fontWeight: '700',
     color: '#1f2937',
     margin: 0,
@@ -1341,7 +2023,8 @@ const styles = {
   ratingContainer: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px'
+    gap: '8px',
+    flexWrap: 'wrap'
   },
 
   stars: {
@@ -1362,13 +2045,13 @@ const styles = {
   },
 
   currentPrice: {
-    fontSize: '1.75rem',
+    fontSize: 'clamp(1.3rem, 5vw, 1.75rem)',
     fontWeight: '700',
     color: '#059669'
   },
 
   originalPrice: {
-    fontSize: '1.25rem',
+    fontSize: 'clamp(1rem, 3vw, 1.25rem)',
     color: '#9ca3af',
     textDecoration: 'line-through'
   },
@@ -1395,7 +2078,8 @@ const styles = {
   quantityContainer: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px'
+    gap: '12px',
+    flexWrap: 'wrap'
   },
 
   quantityLabel: {
@@ -1420,14 +2104,17 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#374151'
+    color: '#374151',
+    transition: 'background-color 0.2s'
   },
 
   quantityValue: {
     padding: '8px 16px',
     fontSize: '16px',
     fontWeight: '500',
-    color: '#1f2937'
+    color: '#1f2937',
+    minWidth: '50px',
+    textAlign: 'center'
   },
 
   actionButtons: {
@@ -1449,21 +2136,52 @@ const styles = {
     fontSize: '16px',
     fontWeight: '600',
     cursor: 'pointer',
-    transition: 'all 0.2s'
+    transition: 'all 0.2s',
+    minHeight: '48px'
+  },
+
+  // ✅ RESPONSIVE: Buy Now Button
+  buyNowButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '16px 24px',
+    backgroundColor: '#ff6b35',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '16px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 12px rgba(255, 107, 53, 0.3)',
+    minHeight: '52px'
+  },
+
+  buyNowLoading: {
+    cursor: 'not-allowed',
+    opacity: 0.8
   },
 
   disabledButton: {
     backgroundColor: '#9ca3af',
-    cursor: 'not-allowed'
+    cursor: 'not-allowed',
+    boxShadow: 'none'
   },
 
-  // ✅ ENHANCED: Wishlist button styles
+  // ✅ RESPONSIVE: Secondary Actions
+  secondaryActions: {
+    display: 'flex',
+    gap: '12px'
+  },
+
   wishlistButton: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    padding: '12px 24px',
+    padding: '12px 20px',
     backgroundColor: 'white',
     color: '#374151',
     border: '1px solid #d1d5db',
@@ -1471,7 +2189,9 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500',
     cursor: 'pointer',
-    transition: 'all 0.2s'
+    transition: 'all 0.2s',
+    flex: 1,
+    minHeight: '44px'
   },
 
   wishlistActive: {
@@ -1483,6 +2203,24 @@ const styles = {
   wishlistLoading: {
     cursor: 'not-allowed',
     opacity: 0.7
+  },
+
+  shareButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '12px 20px',
+    backgroundColor: 'white',
+    color: '#374151',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    flex: 1,
+    minHeight: '44px'
   },
 
   features: {
@@ -1503,17 +2241,17 @@ const styles = {
     color: '#374151'
   },
 
-  // Description
+  // ✅ RESPONSIVE: Description Section
   descriptionContainer: {
     backgroundColor: 'white',
-    padding: '32px',
+    padding: 'clamp(20px, 4vw, 32px)',
     borderRadius: '12px',
     border: '1px solid #e5e7eb',
     marginBottom: '40px'
   },
 
   sectionTitle: {
-    fontSize: '1.5rem',
+    fontSize: 'clamp(1.2rem, 3vw, 1.5rem)',
     fontWeight: '600',
     color: '#1f2937',
     marginBottom: '16px'
@@ -1525,10 +2263,10 @@ const styles = {
     lineHeight: '1.7'
   },
 
-  // ✅ NEW: Reviews Section Styles
+  // ✅ RESPONSIVE: Reviews Section
   reviewsSection: { 
     backgroundColor: 'white',
-    padding: '40px 32px',
+    padding: 'clamp(20px, 4vw, 40px) clamp(16px, 3vw, 32px)',
     borderRadius: '12px',
     border: '1px solid #e5e7eb',
     marginBottom: '40px'
@@ -1567,17 +2305,17 @@ const styles = {
     border: '1px solid #fbbf24'
   },
   
-  // Review Form Styles
+  // ✅ RESPONSIVE: Review Form
   reviewForm: { 
     backgroundColor: '#f8fafc',
     border: '1px solid #e5e7eb', 
     borderRadius: '12px', 
-    padding: '30px', 
+    padding: 'clamp(20px, 4vw, 30px)', 
     margin: '30px 0'
   },
   
   reviewFormTitle: {
-    fontSize: '1.2rem',
+    fontSize: 'clamp(1.1rem, 2.5vw, 1.2rem)',
     fontWeight: '600',
     color: '#1f2937',
     marginBottom: '20px'
@@ -1616,7 +2354,8 @@ const styles = {
     display: 'flex', 
     alignItems: 'center',
     gap: '5px',
-    marginTop: '8px'
+    marginTop: '8px',
+    flexWrap: 'wrap'
   },
   
   starButton: {
@@ -1664,7 +2403,8 @@ const styles = {
     cursor: 'pointer',
     fontSize: '1rem',
     fontWeight: '600',
-    transition: 'all 0.3s ease'
+    transition: 'all 0.3s ease',
+    minHeight: '44px'
   },
 
   buttonContent: {
@@ -1673,7 +2413,6 @@ const styles = {
     gap: '8px'
   },
   
-  // Reviews List Styles
   reviewsList: {
     marginTop: '40px'
   },
@@ -1689,7 +2428,7 @@ const styles = {
     backgroundColor: '#f8fafc',
     border: '1px solid #e5e7eb',
     borderRadius: '12px',
-    padding: '25px'
+    padding: 'clamp(16px, 3vw, 25px)'
   },
   
   reviewHeader: {
@@ -1715,7 +2454,8 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#6b7280'
+    color: '#6b7280',
+    flexShrink: 0
   },
   
   reviewerName: {
@@ -1774,10 +2514,10 @@ const styles = {
     padding: '20px'
   },
 
-  // ✅ ENHANCED: Related Products with wishlist
+  // ✅ FULLY RESPONSIVE: Related Products
   relatedContainer: {
     backgroundColor: 'white',
-    padding: '32px',
+    padding: 'clamp(20px, 4vw, 32px)',
     borderRadius: '12px',
     border: '1px solid #e5e7eb'
   },
@@ -1791,10 +2531,11 @@ const styles = {
   relatedProductCard: {
     position: 'relative',
     border: '1px solid #e5e7eb',
-    borderRadius: '8px',
+    borderRadius: '12px',
     overflow: 'hidden',
     transition: 'all 0.2s',
-    backgroundColor: 'white'
+    backgroundColor: 'white',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
   },
 
   relatedProductLink: {
@@ -1804,22 +2545,25 @@ const styles = {
   },
 
   relatedProductImageContainer: {
-    position: 'relative'
+    position: 'relative',
+    width: '100%',
+    aspectRatio: '1',
+    overflow: 'hidden'
   },
 
   relatedProductImage: {
     width: '100%',
-    height: '150px',
-    objectFit: 'cover'
+    height: '100%',
+    objectFit: 'cover',
+    transition: 'transform 0.3s ease'
   },
 
-  // ✅ NEW: Wishlist button for related products
   relatedWishlistButton: {
     position: 'absolute',
     top: '8px',
     right: '8px',
-    width: '24px',
-    height: '24px',
+    width: '28px',
+    height: '28px',
     borderRadius: '50%',
     backgroundColor: 'rgba(255,255,255,0.9)',
     border: 'none',
@@ -1829,33 +2573,36 @@ const styles = {
     justifyContent: 'center',
     color: '#6b7280',
     transition: 'all 0.2s',
-    backdropFilter: 'blur(4px)'
+    backdropFilter: 'blur(4px)',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
   },
 
   relatedWishlistActive: {
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    color: '#ef4444'
+    color: '#ef4444',
+    borderColor: 'rgba(239, 68, 68, 0.3)'
   },
 
   relatedProductInfo: {
-    padding: '12px'
+    padding: '15px'
   },
 
   relatedProductName: {
     fontSize: '14px',
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#1f2937',
-    margin: '0 0 4px 0',
+    margin: '0 0 6px 0',
     display: '-webkit-box',
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    lineHeight: '1.3'
   },
 
   relatedProductPrice: {
-    fontSize: '14px',
+    fontSize: '16px',
     color: '#059669',
-    fontWeight: '600',
+    fontWeight: '700',
     margin: 0
   }
 };

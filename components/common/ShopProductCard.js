@@ -10,7 +10,9 @@ import {
   Heart,
   Star,
   RefreshCw,
-  X
+  X,
+  Zap,
+  Eye
 } from 'lucide-react';
 
 // ✅ Helper function to get API base URL
@@ -59,11 +61,15 @@ export default function ShopProductCard({
   showStoreName = false,
   // ✅ Wishlist props
   isWishlisted = false,
-  onWishlistUpdate = null // Callback to update parent state
+  onWishlistUpdate = null, // Callback to update parent state
+  // ✅ NEW: Enhanced props
+  showQuickView = false,
+  compact = false // For mobile grid view
 }) {
   const [imageError, setImageError] = useState(false);
   const [localWishlistState, setLocalWishlistState] = useState(isWishlisted);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   // ✅ Sync with parent wishlist state + debug logging
   useEffect(() => {
@@ -110,17 +116,33 @@ export default function ShopProductCard({
     return `/shop/${sellerPhone}/product/${product.id}`;
   };
 
-  // ✅ Enhanced image URL function
+  // ✅ Enhanced image URL function with Cloudinary support
   const getImageUrl = (product) => {
     if (!product) return 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
 
-    const imageUrl = product.main_image_url || product.image_url;
+    // Priority order for different image types
+    const imageUrl = product.main_image_url || 
+                    product.image_url || 
+                    product.cloudinary_url ||
+                    product.thumbnail_url;
 
-    if (imageUrl && imageUrl.startsWith('/media/')) {
+    if (!imageUrl) return 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
+
+    // If it's already a Cloudinary URL, return as is
+    if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
+      return imageUrl;
+    }
+
+    // Handle local URLs
+    if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
       return `${API_BASE_URL}${imageUrl}`;
     }
 
-    return imageUrl || 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+
+    return imageUrl.startsWith('/') ? `${API_BASE_URL}${imageUrl}` : imageUrl;
   };
 
   // ✅ FIXED: Proper wishlist toggle with better event handling
@@ -244,13 +266,24 @@ export default function ShopProductCard({
     return 'in-stock';
   };
 
+  // ✅ NEW: Quick actions handler
+  const handleQuickView = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // You can implement a modal or redirect to product page
+    window.open(getProductUrl(), '_blank');
+  };
+
   return (
     <div
-      className={`shop-product-card ${getStockStatus()}`}
-      style={styles.shopProductCard}
+      className={`shop-product-card ${getStockStatus()} ${compact ? 'compact' : ''}`}
+      style={{
+        ...styles.shopProductCard,
+        ...(compact ? styles.compactCard : {})
+      }}
       data-product-id={product.id}
     >
-      {/* ✅ FIXED: Image section without Link wrapper for wishlist button */}
+      {/* ✅ ENHANCED: Image section with loading states */}
       <div className="product-image-wrapper" style={styles.productImageWrapper}>
         {/* ✅ Link only wraps the image itself */}
         <Link
@@ -259,18 +292,30 @@ export default function ShopProductCard({
           style={styles.productImageLink}
           aria-label={`View ${product.name || 'product'} in ${store?.name || 'store'}`}
         >
+          {!imageLoaded && (
+            <div style={styles.imageLoader}>
+              <div style={styles.spinner}></div>
+            </div>
+          )}
+          
           <img
             src={imageError ? 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image' : getImageUrl(product)}
             alt={product.name || 'Product image'}
             className="product-image"
-            style={styles.productImage}
+            style={{
+              ...styles.productImage,
+              opacity: imageLoaded ? 1 : 0
+            }}
             loading="lazy"
-            onError={() => setImageError(true)}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => {
+              setImageError(true);
+              setImageLoaded(true);
+            }}
           />
         </Link>
 
-        {/* ✅ Rating overlay (existing) - shows on image hover */}
-        {/* {product.average_rating > 0 && ( */}
+        {/* ✅ Enhanced Rating overlay with better mobile display */}
         <div style={styles.ratingOverlay}>
           <div style={styles.ratingLeft}>
             <Star
@@ -279,19 +324,18 @@ export default function ShopProductCard({
               color="#fbbf24"
             />
             <span style={styles.ratingLeftText}>
-              {product.average_rating > 0 ? `(${product.average_rating.toFixed(1)})` : ""}
+              {product.average_rating > 0 ? `${product.average_rating.toFixed(1)}` : "New"}
             </span>
           </div>
 
           {product.review_count > 0 ? (
             <span style={styles.ratingRight}>
-              {product.review_count} reviews
+              {product.review_count} review{product.review_count !== 1 ? 's' : ''}
             </span>
           ) : (
             <span style={styles.ratingRight}>No reviews</span>
           )}
         </div>
-        {/* )} */}
 
         {/* Product badges */}
         <div className="product-badges" style={styles.productBadges}>
@@ -310,10 +354,28 @@ export default function ShopProductCard({
               Out of Stock
             </span>
           )}
+          {/* ✅ NEW: Fast loading badge for optimized images */}
+          {product.image_metadata?.optimized && (
+            <span className="badge fast-loading" style={styles.badgeFastLoading}>
+              <Zap size={8} /> Fast
+            </span>
+          )}
         </div>
 
-        {/* ✅ FIXED: Wishlist button outside Link - this is the key fix */}
+        {/* ✅ ENHANCED: Quick actions with better mobile experience */}
         <div className="quick-actions" style={styles.quickActions}>
+          {showQuickView && (
+            <button
+              className="quick-action-btn quick-view"
+              style={styles.quickActionBtn}
+              onClick={handleQuickView}
+              aria-label="Quick view product"
+              type="button"
+            >
+              <Eye size={14} />
+            </button>
+          )}
+          
           <button
             className={`quick-action-btn wishlist-heart ${localWishlistState ? 'active' : ''} ${isWishlistLoading ? 'loading' : ''}`}
             style={{
@@ -339,14 +401,17 @@ export default function ShopProductCard({
         </div>
       </div>
 
-      {/* ✅ Product info section wrapped in Link */}
+      {/* ✅ ENHANCED: Product info section with better mobile layout */}
       <Link
         href={getProductUrl()}
         className="shop-product-link"
         style={styles.productLink}
         aria-label={`View ${product.name || 'product'} details`}
       >
-        <div className="product-info" style={styles.productInfo}>
+        <div className="product-info" style={{
+          ...styles.productInfo,
+          ...(compact ? styles.compactInfo : {})
+        }}>
           {/* Store name (optional) */}
           {showStoreName && store?.name && (
             <div className="store-name" style={styles.storeName}>
@@ -358,15 +423,13 @@ export default function ShopProductCard({
           <div className="product-header" style={styles.productHeader}>
             <h3 className="product-name" style={styles.productName}>
               {product.name || 'Unnamed Product'}
-              {product.model_name && (
+              {product.model_name && !compact && (
                 <span className='product-model' style={styles.productModel}> ({product.model_name})</span>
               )}
             </h3>
           </div>
 
-
-
-          {/* Pricing */}
+          {/* ✅ ENHANCED: Pricing with better mobile display */}
           <div className="product-pricing" style={styles.productPricing}>
             <div className="price-section" style={styles.priceSection}>
               <span className="current-price" style={styles.currentPrice}>
@@ -378,8 +441,15 @@ export default function ShopProductCard({
                 </span>
               )}
             </div>
+            {/* ✅ Show savings amount on mobile */}
+            {getDiscountPercentage() > 0 && !compact && (
+              <div className="savings-text" style={styles.savingsText}>
+                Save {formatPrice(product.mrp - product.price)}
+              </div>
+            )}
           </div>
 
+          {/* ✅ ENHANCED: Add to cart button with better states */}
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -389,7 +459,12 @@ export default function ShopProductCard({
               }
             }}
             className={`add-to-cart-btn ${(product.online_stock || 0) === 0 ? 'disabled' : ''} ${isLoading ? 'loading' : ''} ${isInCart ? 'in-cart' : ''}`}
-            style={styles.addToCartBtn}
+            style={{
+              ...styles.addToCartBtn,
+              ...(compact ? styles.compactButton : {}),
+              ...((product.online_stock || 0) === 0 ? styles.disabledButton : {}),
+              ...(isInCart ? styles.inCartButton : {})
+            }}
             disabled={(product.online_stock || 0) === 0 || isLoading}
             aria-label={(product.online_stock || 0) > 0 ?
               (isInCart ? `Add more ${product.name || 'product'} to cart (${getCartQuantity()} in cart)` : `Add ${product.name || 'product'} to cart`) :
@@ -398,32 +473,28 @@ export default function ShopProductCard({
           >
             {isLoading ? (
               <>
-                <RefreshCw size={16} className="spinning" />
-                <span>Adding...</span>
+                <RefreshCw size={compact ? 14 : 16} className="spinning" />
+                <span>{compact ? 'Adding...' : 'Adding...'}</span>
               </>
             ) : (product.online_stock || 0) === 0 ? (
               <>
-                <X size={16} />
-                <span>Out of Stock</span>
+                <X size={compact ? 14 : 16} />
+                <span>{compact ? 'Stock' : 'Out of Stock'}</span>
               </>
             ) : isInCart ? (
               <>
-                <ShoppingCart size={16} fill="currentColor" />
-                <span>Add More ({getCartQuantity()})</span>
+                <ShoppingCart size={compact ? 14 : 16} fill="currentColor" />
+                <span>{compact ? `+ (${getCartQuantity()})` : `Add More (${getCartQuantity()})`}</span>
               </>
             ) : (
               <>
-                <ShoppingCart size={16} />
-                <span>Add to Cart</span>
+                <ShoppingCart size={compact ? 14 : 16} />
+                <span>{compact ? 'Add' : 'Add to Cart'}</span>
               </>
             )}
           </button>
-
-
         </div>
       </Link>
-
-
 
       {/* ✅ CSS for animations */}
       <style jsx>{`
@@ -435,12 +506,55 @@ export default function ShopProductCard({
         .spinning {
           animation: spin 1s linear infinite;
         }
+
+        /* ✅ Mobile optimizations */
+        @media (max-width: 768px) {
+          .shop-product-card.compact {
+            max-width: 180px !important;
+          }
+          
+          .shop-product-card.compact .product-image {
+            height: 140px !important;
+          }
+          
+          .shop-product-card.compact .product-info {
+            padding: 8px !important;
+          }
+          
+          .shop-product-card.compact .add-to-cart-btn {
+            padding: 6px 8px !important;
+            font-size: 11px !important;
+          }
+          
+          .quick-actions {
+            flex-direction: column !important;
+            gap: 4px !important;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .shop-product-card {
+            max-width: 165px !important;
+          }
+          
+          .product-image {
+            height: 130px !important;
+          }
+          
+          .product-name {
+            font-size: 13px !important;
+          }
+          
+          .current-price {
+            font-size: 14px !important;
+          }
+        }
       `}</style>
     </div>
   );
 }
 
-// ✅ Enhanced styles with rating in product info
+// ✅ Enhanced styles with better mobile support and loading states
 const styles = {
   shopProductCard: {
     width: "100%",
@@ -455,6 +569,10 @@ const styles = {
     position: "relative"
   },
 
+  compactCard: {
+    maxWidth: "180px"
+  },
+
   productLink: {
     textDecoration: 'none',
     color: 'inherit',
@@ -463,7 +581,8 @@ const styles = {
 
   productImageLink: {
     display: 'block',
-    textDecoration: 'none'
+    textDecoration: 'none',
+    position: 'relative'
   },
 
   productImageWrapper: {
@@ -477,10 +596,25 @@ const styles = {
     width: '100%',
     height: '180px',
     objectFit: 'cover',
-    transition: 'transform 0.3s ease'
+    transition: 'all 0.3s ease'
   },
 
+  imageLoader: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    zIndex: 1
+  },
 
+  spinner: {
+    width: '20px',
+    height: '20px',
+    border: '2px solid #f3f3f3',
+    borderTop: '2px solid #059669',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  },
 
   productBadges: {
     position: 'absolute',
@@ -491,9 +625,6 @@ const styles = {
     gap: '4px',
     zIndex: 2
   },
-
-
-
 
   badgeDiscount: {
     padding: '4px 8px',
@@ -523,11 +654,26 @@ const styles = {
     fontWeight: '600'
   },
 
+  badgeFastLoading: {
+    padding: '3px 6px',
+    backgroundColor: 'rgba(34, 197, 94, 0.9)',
+    color: 'white',
+    fontSize: '9px',
+    borderRadius: '4px',
+    fontWeight: '600',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '2px'
+  },
+
   quickActions: {
     position: 'absolute',
     top: '8px',
     right: '8px',
     zIndex: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px'
   },
 
   quickActionBtn: {
@@ -568,6 +714,9 @@ const styles = {
     justifyContent: 'space-between',
   },
 
+  compactInfo: {
+    padding: '8px'
+  },
 
   storeName: {
     fontSize: '0.8rem',
@@ -593,42 +742,17 @@ const styles = {
     overflow: 'hidden'
   },
 
-
   productModel: {
     fontSize: '0.85rem',
     fontWeight: '400',
     color: '#6b7280',
     marginLeft: '4px',
-    whiteSpace: "nowrap",       // force one line
-    overflow: "hidden",         // cut extra text
-    textOverflow: "ellipsis",   // add "..."
-    maxWidth: "120px",          // width decides how much text is visible
-    display: "inline-block",    // required for ellipsis
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: "120px",
+    display: "inline-block",
     verticalAlign: "middle"
-  },
-
-  productRating: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    marginBottom: '8px'
-  },
-
-  ratingStars: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1px'
-  },
-
-  ratingNumber: {
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    color: '#1f2937'
-  },
-
-  reviewCountText: {
-    fontSize: '0.8rem',
-    color: '#6b7280'
   },
 
   productPricing: {
@@ -654,23 +778,11 @@ const styles = {
     textDecoration: 'line-through'
   },
 
-  wishlistIndicator: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    fontSize: '0.8rem',
-    color: '#ef4444',
+  savingsText: {
+    fontSize: '0.75rem',
+    color: '#059669',
     fontWeight: '500',
-    marginBottom: '8px',
-    padding: '4px 6px',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: '12px',
-    width: 'fit-content'
-  },
-
-  productActions: {
-    padding: '16px',
-    borderTop: '1px solid #f3f4f6'
+    marginTop: '2px'
   },
 
   addToCartBtn: {
@@ -690,7 +802,19 @@ const styles = {
     transition: 'all 0.2s'
   },
 
+  compactButton: {
+    padding: '6px 8px',
+    fontSize: '11px'
+  },
 
+  disabledButton: {
+    backgroundColor: '#9ca3af',
+    cursor: 'not-allowed'
+  },
+
+  inCartButton: {
+    backgroundColor: '#3b82f6'
+  },
 
   // ✅ Rating overlay (existing) - on image
   ratingOverlay: {
@@ -702,7 +826,7 @@ const styles = {
     color: "white",
     display: "flex",
     alignItems: "center",
-    padding: "13px 12px",
+    padding: "8px 12px",
     boxSizing: "border-box",
     zIndex: 2,
   },
@@ -710,7 +834,7 @@ const styles = {
   ratingLeft: {
     display: "flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "4px",
   },
 
   ratingLeftText: {
@@ -720,7 +844,7 @@ const styles = {
   },
 
   ratingRight: {
-    fontSize: "0.8rem",
+    fontSize: "0.75rem",
     fontWeight: 500,
     color: "white",
     marginLeft: "auto",

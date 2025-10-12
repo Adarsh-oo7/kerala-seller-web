@@ -19,7 +19,10 @@ import {
   Store,
   AlertCircle,
   X,
-  SlidersHorizontal
+  SlidersHorizontal,
+  ShoppingBag,
+  Clock,
+  Users
 } from 'lucide-react';
 
 // ✅ Enhanced environment variable handling
@@ -216,20 +219,13 @@ export default function ShopPage() {
     <div className="ShoppageContainer">
       <Header />
 
-      {/* Hero Section */}
-      {/* <div className="ShopheroSection"> */}
-
-        <img
-          src="/assets/images/Shoppagebanner.jpg"
-          alt="Promotional Banner"
-          className="Shopbanner-image"
-        />
-        {/* <div className="ShopheroContent"> */}
-          
-
-         
-        {/* </div> */}
-      {/* </div> */}
+      {/* Hero Banner */}
+      <img
+        src="/assets/images/Shoppagebanner.jpg"
+        alt="Discover Local Shops in Kerala"
+        className="Shopbanner-image"
+        loading="eager"
+      />
 
       <div className="Shopcontainer">
         {/* Mobile Toolbar */}
@@ -242,7 +238,7 @@ export default function ShopPage() {
             <span>Sort</span>
           </button>
 
-           <div className="ShopsearchContainer">
+          <div className="ShopsearchContainer">
             <div className="ShopsearchBox">
               <Search size={18} className="ShopsearchIcon" />
               <input
@@ -323,10 +319,9 @@ export default function ShopPage() {
           )}
         </div>
 
-        {/* ✅ ENHANCED: SEO-friendly shop cards with slugs */}
+        {/* ✅ ENHANCED: Shop Cards with Better Mobile Experience */}
         {filteredShops.length > 0 ? (
-          <div
-            className="shopsContainer">
+          <div className={`shopsContainer ${viewMode === 'list' ? 'listView' : 'gridView'}`}>
             {filteredShops.map((shop, index) => {
               // ✅ Enhanced seller phone detection with multiple fallbacks
               const sellerPhone = shop.seller_phone ||
@@ -339,10 +334,8 @@ export default function ShopPage() {
               const shopSlug = generateShopSlug(shop);
 
               return (
-                
-
-                <div className="shopCard">
-                  {/* Header: logo + name + tagline */}
+                <div key={shop.id || index} className={`shopCard ${viewMode === 'list' ? 'listCard' : 'gridCard'}`}>
+                  {/* ✅ Enhanced Header with Better Mobile Layout */}
                   <div className="shopHeader">
                     <div className="ShoplogoContainer">
                       <img
@@ -350,48 +343,49 @@ export default function ShopPage() {
                           shop.logo_url ||
                           shop.logo ||
                           shop.image ||
-                          'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' + encodeURIComponent(shop.name?.charAt(0) || 'S')
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(shop.name || 'Shop')}&size=80&background=3b82f6&color=ffffff&rounded=true`
                         }
-                        alt={`${shop.name} - ${shop.seller_address || shop.address || 'Kerala'}`}
+                        alt={`${shop.name} logo`}
                         className="shopLogo"
                         onError={(e) => {
-                          e.target.src = 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=' +
-                            encodeURIComponent(shop.name?.charAt(0) || 'S');
+                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(shop.name || 'Shop')}&size=80&background=3b82f6&color=ffffff&rounded=true`;
                         }}
                         loading="lazy"
                       />
+                      {/* ✅ Shop Status Indicator */}
+                      <div className="shopStatusIndicator online" title="Shop is active"></div>
                     </div>
+                    
                     <div className="shopHeaderText">
                       <h3 className="shopName">{shop.name || 'Shop Name'}</h3>
-
                       {shop.tagline && (
                         <p className="shopTagline">{shop.tagline}</p>
+                      )}
+                      {shop.category && (
+                        <span className="shopCategory">{shop.category}</span>
                       )}
                     </div>
                   </div>
 
-
-
-                  {/* Description */}
+                  {/* ✅ Enhanced Description */}
                   {shop.description && (
                     <p className="shopDescription">
-                      {shop.description.length > 50
-                        ? shop.description.substring(0, 50) + '...'
+                      {shop.description.length > 80
+                        ? shop.description.substring(0, 80) + '...'
                         : shop.description}
                     </p>
                   )}
 
-
-
+                  {/* ✅ Enhanced Info Container with Better Icons */}
                   <div className="shopInfoContainer">
                     {(shop.seller_address || shop.seller?.address || shop.address) && (
                       <div className="shopInfoItem">
-                        <MapPin size={12} />
+                        <MapPin size={14} />
                         <span className="ShoplocationText">
                           {(() => {
                             const address = shop.seller_address || shop.seller?.address || shop.address;
-                            return address.length > 25
-                              ? address.substring(0, 25) + '...'
+                            return address.length > 30
+                              ? address.substring(0, 30) + '...'
                               : address;
                           })()}
                         </span>
@@ -400,48 +394,79 @@ export default function ShopPage() {
 
                     {(shop.products_count || shop.product_count) && (
                       <div className="shopInfoItem">
-                        <Store size={12} />
+                        <ShoppingBag size={14} />
                         <span>{shop.products_count || shop.product_count} Products</span>
                       </div>
                     )}
 
                     {shop.average_rating && shop.average_rating > 0 && (
                       <div className="shopInfoItem">
-                        <Star size={12} fill="#ffc107" color="#ffc107" />
-                        <span>{Number(shop.average_rating).toFixed(1)}</span>
+                        <Star size={14} fill="#ffc107" color="#ffc107" />
+                        <span>{Number(shop.average_rating).toFixed(1)} ({shop.total_reviews || 0} reviews)</span>
                       </div>
                     )}
 
                     {sellerPhone && (
                       <div className="shopInfoItem">
-                        <div className="phoneIconWrapper">
-                          <Phone size={14} />
-                        </div>
+                        <Phone size={14} />
                         <span>{sellerPhone.substring(0, 4)}****{sellerPhone.substring(8)}</span>
+                      </div>
+                    )}
+
+                    {/* ✅ Additional Info */}
+                    {shop.created_at && (
+                      <div className="shopInfoItem">
+                        <Clock size={14} />
+                        <span>Since {new Date(shop.created_at).getFullYear()}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Visit Store button */}
+                  {/* ✅ Enhanced Visit Store Button */}
                   <div className="shopActions">
                     {sellerPhone ? (
                       <Link
                         href={`/shop/${shopSlug}?id=${sellerPhone}`}
                         className="ShoplinkButton"
-                        title={`Visit ${shop.name} in ${shop.seller_address || shop.address || 'Kerala'}`}
+                        title={`Visit ${shop.name} - ${shop.products_count || 0} products available`}
                       >
                         <button className="viewShopButton">
-                          {/* <Store size={14} /> */}
+                          <Store size={16} />
                           <span>Visit Store</span>
+                          {(shop.products_count || shop.product_count) && (
+                            <span className="productCount">
+                              {shop.products_count || shop.product_count}
+                            </span>
+                          )}
                         </button>
                       </Link>
                     ) : (
                       <button className="ShopdisabledButton" disabled>
-                        <AlertCircle size={14} />
+                        <AlertCircle size={16} />
                         <span>Contact Info Missing</span>
                       </button>
                     )}
                   </div>
+
+                  {/* ✅ Quick Shop Preview (Optional) */}
+                  {shop.featured_products && shop.featured_products.length > 0 && (
+                    <div className="shopPreview">
+                      <h4>Featured Products</h4>
+                      <div className="previewProducts">
+                        {shop.featured_products.slice(0, 3).map((product, idx) => (
+                          <div key={idx} className="previewProduct">
+                            <img 
+                              src={product.main_image_url || product.image} 
+                              alt={product.name}
+                              className="previewImage"
+                            />
+                            <span className="previewName">{product.name}</span>
+                            <span className="previewPrice">₹{product.price}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -453,20 +478,33 @@ export default function ShopPage() {
             <p>
               {searchTerm
                 ? `No shops match "${searchTerm}". Try different search terms or browse by location.`
-                : "No shops available at the moment."}
+                : "No shops available at the moment. Check back later!"}
             </p>
-            <button onClick={clearAllFilters} className="ShopclearFiltersButton">
-              {searchTerm ? 'Clear Search' : 'Refresh'}
+            <div className="emptyStateActions">
+              <button onClick={clearAllFilters} className="ShopclearFiltersButton">
+                {searchTerm ? 'Clear Search' : 'Refresh'}
+              </button>
+              {searchTerm && (
+                <button onClick={() => setSortBy('newest')} className="ShopbrowseButton">
+                  Browse Latest Shops
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ✅ Load More Button (if pagination needed) */}
+        {filteredShops.length > 0 && filteredShops.length >= 20 && (
+          <div className="loadMoreContainer">
+            <button className="loadMoreButton" onClick={fetchShops}>
+              <Users size={16} />
+              Load More Shops
             </button>
           </div>
         )}
       </div>
 
       <Footer />
-
-
     </div>
   );
 }
-
-
