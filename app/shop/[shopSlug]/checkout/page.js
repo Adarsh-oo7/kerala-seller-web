@@ -535,11 +535,11 @@ export default function ShopCheckoutPage() {
         store={storeData}
         isLoggedIn={isLoggedIn}
       />
-      <div style={styles.container}>
+      <div className='shopslugcheckoutcontainer' style={styles.container}>
 
 
         {/* Store Context */}
-        <div style={styles.storeIndicator}>
+        <div className='shopslugcheckoutstoreindicator' style={styles.storeIndicator}>
           <button onClick={handleBackClick} style={styles.backButton}>
             <ArrowLeft size={20} />
           </button>
@@ -735,7 +735,7 @@ export default function ShopCheckoutPage() {
               {cartItems.map(item => (
                 <div key={item.id} style={styles.summaryItem}>
                   <div style={styles.itemLeft}>
-                    <div style={styles.itemName}>{item.name}</div>
+                    <div className='shopslugcheckoutitemname' style={styles.itemName}>{item.name}</div>
                     <div style={styles.itemDetails}>
                       {formatPrice(item.price)} × {item.quantity}
                     </div>
@@ -758,11 +758,12 @@ export default function ShopCheckoutPage() {
               </div>
               <div style={styles.totalRow}>
                 <span>Total:</span>
-                <span style={styles.totalAmount}>{formatPrice(calculateTotal())}</span>
+                <span className='shopslugcheckoutitemname' style={styles.totalAmount}>{formatPrice(calculateTotal())}</span>
               </div>
             </div>
 
             <button
+            className='shopslugcheckoutbtn'
               onClick={handlePlaceOrder}
               disabled={submitting || cartItems.length === 0}
               style={{
