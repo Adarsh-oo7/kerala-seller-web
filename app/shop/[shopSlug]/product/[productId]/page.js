@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useCallback, Suspense } from 'react
 import axios from 'axios';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import "../../../../../styles/Shopslugproduct.css";
 import { useCart } from '../../../../context/CartContext';
 import SHeader from '../../../../../components/common/SHeader';
 import Footer from '../../../../../components/common/Footer';
