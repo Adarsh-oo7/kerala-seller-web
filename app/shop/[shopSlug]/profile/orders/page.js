@@ -801,7 +801,7 @@ export default function ShopOrdersPage() {
                           <div style={styles.orderStatus}>
                             {getStatusIcon(order.status)}
                             <span
-                            className='profileorderstatustext'
+                              className='profileorderstatustext'
                               style={{
                                 ...styles.statusText,
                                 color: getStatusColor(order.status)
@@ -824,10 +824,10 @@ export default function ShopOrdersPage() {
                       Total: {formatPrice(order.total_amount)}
                     </div>
 
-                    <div style={styles.orderActions}>
+                    <div className="order-actions" style={styles.orderActions}>
                       {canCancelOrder(order) && (
                         <button
-                        className='profileorderactionbtn'
+                          className='profileorderactionbtn'
                           style={{ ...styles.actionButton, backgroundColor: '#ef4444' }}
                           onClick={() => handleCancelOrderRequest(order)}
                         >
@@ -835,7 +835,7 @@ export default function ShopOrdersPage() {
                         </button>
                       )}
                       <button
-                      className='profileorderactionbtn'
+                        className='profileorderactionbtn'
                         style={{ ...styles.actionButton }}
                         onClick={() => handleViewDetails(order)}
                       >
@@ -866,7 +866,7 @@ export default function ShopOrdersPage() {
               <div style={styles.modalHeader}>
                 <h2 style={styles.modalTitle}>Order Details #{selectedOrder.id}</h2>
                 <button style={styles.closeButton} onClick={closeOrderDetails}>
-                  <X size={24} />
+                  <X color='white' size={24} />
                 </button>
               </div>
 
@@ -992,7 +992,7 @@ export default function ShopOrdersPage() {
 
                 <div style={styles.detailSection}>
                   <div style={styles.totalSection}>
-                    <div style={styles.totalLabel}>Order Total</div>
+                    <div style={styles.totalLabel}>Total</div>
                     <div style={styles.totalAmount}>{formatPrice(selectedOrder.total_amount)}</div>
                   </div>
                 </div>
@@ -1197,9 +1197,9 @@ const styles = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
     marginBottom: '16px'
   },
-  orderId: { fontSize: '18px', fontWeight: '700', color: '#1f2937' },
-  orderDate: { fontSize: '13px', color: '#6b7280', marginTop: '4px' },
-  customerName: { fontSize: '12px', color: '#9ca3af', marginTop: '2px' },
+  orderId: { fontSize: '18px', fontWeight: '700', color: '#1a4845' },
+  orderDate: { fontSize: '13px', color: '#1a4845', marginTop: '4px' },
+  customerName: { fontSize: '12px', color: '#1a4845', marginTop: '2px' },
   orderStatus: {
     display: 'flex', alignItems: 'center', gap: '8px',
     borderRadius: '8px'
@@ -1272,27 +1272,51 @@ const styles = {
     display: 'flex', gap: '8px', flexWrap: 'wrap'
   },
   actionButton: {
-    padding: '8px 16px', backgroundColor: 'rgb(5, 150, 105)', color: 'white', 
+    padding: '8px 16px', backgroundColor: 'rgb(5, 150, 105)', color: 'white',
     border: 'none', borderRadius: '6px', cursor: 'pointer',
     fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
   },
 
   // Modal Styles
   modalOverlay: {
-    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-    padding: '20px'
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '20px',
+    overflowY: 'auto', // ✅ allow scroll if modal too tall
   },
+
   modalContent: {
-    backgroundColor: 'white', borderRadius: '16px', maxWidth: '600px',
-    width: '100%', maxHeight: '90vh', overflow: 'hidden',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+    borderRadius: '16px',
+    maxWidth: '600px',
+    width: '100%',
+    maxHeight: '90vh',
+    display: 'flex', // ✅ enable body+footer flex layout
+    flexDirection: 'column',
+    overflow: 'hidden',
+    backgroundColor: 'rgba(49, 47, 47, 0.2)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    color: 'white',
   },
   cancelModalContent: {
-    backgroundColor: 'white', borderRadius: '16px', maxWidth: '500px',
+    borderRadius: '16px', maxWidth: '500px',
     width: '100%', maxHeight: '90vh', overflow: 'hidden',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+    backgroundColor: 'rgba(49, 47, 47, 0.2)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    color: 'white',
   },
 
   // ✅ Review Modal Content
@@ -1307,7 +1331,7 @@ const styles = {
     padding: '24px', borderBottom: '1px solid #e5e7eb'
   },
   modalTitle: {
-    fontSize: '20px', fontWeight: '700', color: '#1f2937', margin: 0,
+    fontSize: '20px', fontWeight: '700', color: '#1a4845', margin: 0,
     display: 'flex', alignItems: 'center'
   },
   closeButton: {
@@ -1316,18 +1340,25 @@ const styles = {
     transition: 'all 0.2s'
   },
   modalBody: {
-    padding: '24px', overflowY: 'auto', maxHeight: 'calc(90vh - 180px)'
+    flex: 1, // ✅ allow it to grow & scroll inside modal
+    padding: '24px',
+    overflowY: 'auto',
+    maxHeight: 'calc(90vh - 140px)', // ✅ adjusted to leave room for footer
+    boxSizing: 'border-box',
   },
+
   detailSection: {
     marginBottom: '24px'
   },
   sectionTitle: {
-    fontSize: '16px', fontWeight: '600', color: '#1f2937',
+    fontSize: '16px', fontWeight: '600', color: '#1a4845',
     marginBottom: '12px', margin: '0 0 12px 0'
   },
   statusDetail: {
     display: 'flex', alignItems: 'center', gap: '12px',
-    backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px'
+    backgroundColor: 'transparent', padding: '12px', borderRadius: '8px',
+    border: '1px solid rgba(255, 255, 255, 0.38)',
+    color: 'white',
   },
   infoGrid: {
     display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -1335,33 +1366,37 @@ const styles = {
   },
   infoItem: {
     display: 'flex', alignItems: 'flex-start', gap: '12px',
-    padding: '12px', backgroundColor: '#f9fafb', borderRadius: '8px'
+    padding: '12px', borderRadius: '8px', backgroundColor: 'transparent',
+    border: '1px solid rgba(255, 255, 255, 0.38)',
+    color: '#1a4845',
   },
   infoLabel: {
-    fontSize: '12px', color: '#6b7280', fontWeight: '500',
+    fontSize: '12px', color: '#1a4845', fontWeight: '500',
     textTransform: 'uppercase', letterSpacing: '0.05em'
   },
   infoValue: {
-    fontSize: '14px', color: '#1f2937', fontWeight: '500', marginTop: '2px'
+    fontSize: '14px', color: '#6b7280', fontWeight: '500', marginTop: '2px'
   },
   itemsList: {
     display: 'flex', flexDirection: 'column', gap: '12px'
   },
   modalOrderItem: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-    padding: '16px', backgroundColor: '#f9fafb', borderRadius: '8px'
+    padding: '16px', backgroundColor: 'transparent',
+    border: '1px solid rgba(255, 255, 255, 0.38)',
+    color: 'white', borderRadius: '8px'
   },
   modalItemInfo: {
     flex: 1
   },
   modalItemName: {
-    fontSize: '16px', fontWeight: '600', color: '#1f2937', marginBottom: '4px'
+    fontSize: '16px', fontWeight: '600', color: '#1a4845', marginBottom: '4px'
   },
   modalItemPrice: {
     fontSize: '14px', color: '#6b7280', marginBottom: '6px'
   },
   modalItemDesc: {
-    fontSize: '12px', color: '#9ca3af', lineHeight: '1.4', marginBottom: '8px'
+    fontSize: '12px', color: '#6b7280', lineHeight: '1.4', marginBottom: '8px'
   },
 
   // ✅ Product Review in Modal
@@ -1370,19 +1405,20 @@ const styles = {
   },
 
   modalItemTotal: {
-    fontSize: '16px', fontWeight: '700', color: '#1f2937'
+    fontSize: '16px', fontWeight: '700', color: '#1a4845'
   },
   noItemsModal: {
     textAlign: 'center', padding: '20px', color: '#9ca3af',
     fontStyle: 'italic'
   },
   addressBox: {
-    display: 'flex', alignItems: 'flex-start', gap: '12px',
-    padding: '16px', backgroundColor: '#f0f8ff', borderRadius: '8px',
-    border: '1px solid #dbeafe'
+    display: 'flex', alignItems: 'center', gap: '12px',
+    padding: '16px', backgroundColor: 'transparent',
+    border: '1px solid rgba(255, 255, 255, 0.38)',
+    color: '#1a4845', borderRadius: '8px',
   },
   addressText: {
-    fontSize: '14px', color: '#1f2937', lineHeight: '1.5'
+    fontSize: '14px', color: '#1a4845', lineHeight: '1.5'
   },
   cancelReasonBox: {
     display: 'flex', alignItems: 'flex-start', gap: '12px',
@@ -1394,18 +1430,27 @@ const styles = {
   },
   totalSection: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '16px', backgroundColor: '#f0f8ff', borderRadius: '8px',
-    border: '2px solid #3b82f6'
+    padding: '16px', backgroundColor: 'transparent',
+    border: '1px solid rgba(255, 255, 255, 0.38)',
+    color: 'white', borderRadius: '8px',
   },
   totalLabel: {
-    fontSize: '16px', fontWeight: '600', color: '#1f2937'
+    fontSize: '16px', fontWeight: '600', color: '#1a4845'
   },
   totalAmount: {
-    fontSize: '20px', fontWeight: '700', color: '#3b82f6'
+    fontSize: '20px', fontWeight: '700', color: '#1a4845'
   },
   modalFooter: {
-    display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
-    gap: '12px', padding: '24px', borderTop: '1px solid #e5e7eb'
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '16px 24px',
+    borderTop: '1px solid #e5e7eb',
+    backgroundColor: 'rgba(14, 69, 30, 0.145)',
+    position: 'sticky',
+    bottom: 0,
+    zIndex: 1,
   },
   closeModalButton: {
     padding: '10px 20px', backgroundColor: '#6b7280', color: 'white',
@@ -1421,11 +1466,11 @@ const styles = {
   // Cancel Modal Specific Styles
   cancelWarning: {
     backgroundColor: '#fef2f2', border: '1px solid #fecaca',
-    borderRadius: '8px', padding: '16px', marginBottom: '24px'
+    borderRadius: '8px', padding: '16px', marginBottom: '24px',color: "#1a4845",
   },
   reasonsList: {
     display: 'flex', flexDirection: 'column', gap: '12px',
-    backgroundColor: '#f9fafb', padding: '16px', borderRadius: '8px'
+    backgroundColor: 'transparent', padding: '16px', borderRadius: '8px',color:"#1a4845",
   },
   reasonOption: {
     display: 'flex', alignItems: 'center', gap: '12px',
@@ -1436,14 +1481,14 @@ const styles = {
     width: '16px', height: '16px', cursor: 'pointer'
   },
   reasonLabel: {
-    fontSize: '14px', color: '#1f2937', cursor: 'pointer'
+    fontSize: '14px', color:"#1a4845", cursor: 'pointer'
   },
   customReasonSection: {
     marginTop: '16px'
   },
   customReasonLabel: {
     display: 'block', fontSize: '14px', fontWeight: '500',
-    color: '#1f2937', marginBottom: '8px'
+    color: '#1a4845', marginBottom: '8px'
   },
   customReasonTextarea: {
     width: '100%', padding: '12px', border: '1px solid #d1d5db',
@@ -1455,14 +1500,14 @@ const styles = {
     marginTop: '4px'
   },
   cancelOrderSummary: {
-    backgroundColor: '#f9fafb', padding: '16px', borderRadius: '8px'
+    backgroundColor: 'transparent', padding: '16px', borderRadius: '8px'
   },
   summaryRow: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '8px 0', borderBottom: '1px solid #e5e7eb'
+    padding: '8px 0', borderBottom: '1px solid #e5e7eb',color: "#1a4845",
   },
   summaryAmount: {
-    fontWeight: '600', color: '#1f2937'
+    fontWeight: '600', color: '#1a4845'
   },
   confirmCancelButton: {
     padding: '10px 20px', backgroundColor: '#ef4444', color: 'white',
