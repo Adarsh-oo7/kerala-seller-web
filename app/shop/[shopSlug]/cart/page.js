@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ShoppingCart, Plus, Minus, Trash2, CreditCard, Store, AlertTriangle, Loader } from 'lucide-react';
 import "../../../../styles/Shopslugcart.css";
-// ✅ ADD: Import the SHeader component
 import SHeader from '../../../../components/common/SHeader';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
