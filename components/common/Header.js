@@ -183,7 +183,7 @@ export default function Header() {
           align-items: center;
           justify-content: space-between;
           padding: 12px 20px;
-          background: white;
+          background: #FDFFF0;
         }
 
         .mobile-menu-button {

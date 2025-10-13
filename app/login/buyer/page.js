@@ -4,30 +4,32 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
+import "../../../styles/BuyerLogin.css";
+
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import { 
-  ArrowLeft, 
-  Mail, 
-  Lock, 
-  AlertCircle, 
-  User, 
-  Eye, 
-  EyeOff,
-  Globe,
-  Shield,
-  CheckCircle 
+import {
+    ArrowLeft,
+    Mail,
+    Lock,
+    AlertCircle,
+    User,
+    Eye,
+    EyeOff,
+    Globe,
+    Shield,
+    CheckCircle
 } from 'lucide-react';
 
 // ✅ Enhanced API configuration
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
-  if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:8000';
-  }
-  return 'https://keralaseller-backend.onrender.com';
+    const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+    if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+        return envUrl.trim();
+    }
+    if (process.env.NODE_ENV === 'development') {
+        return 'http://localhost:8000';
+    }
+    return 'https://keralaseller-backend.onrender.com';
 };
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -35,9 +37,9 @@ const API_BASE_URL = getApiBaseUrl();
 const GOOGLE_LOGIN_API = `${API_BASE_URL}/user/buyer/login/google/`;
 const EMAIL_LOGIN_API = `${API_BASE_URL}/user/buyer/login/`;
 
-console.log('🌐 Buyer Login API URLs configured:', { 
-  API_BASE_URL, 
-  GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'Not configured' 
+console.log('🌐 Buyer Login API URLs configured:', {
+    API_BASE_URL,
+    GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'Not configured'
 });
 
 // ✅ Enhanced EmailLoginForm with better UX
@@ -48,7 +50,7 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [fieldErrors, setFieldErrors] = useState({});
-    
+
     const validateEmail = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
@@ -70,7 +72,7 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
                 setFieldErrors(prev => ({ ...prev, password: '' }));
             }
         }
-        
+
         // Clear general error when user starts typing
         if (error) setError('');
     };
@@ -79,57 +81,57 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
         e.preventDefault();
         setError('');
         setFieldErrors({});
-        
+
         // Enhanced validation
         const newFieldErrors = {};
-        
+
         if (!email.trim()) {
             newFieldErrors.email = 'Email is required';
         } else if (!validateEmail(email.trim())) {
             newFieldErrors.email = 'Please enter a valid email address';
         }
-        
+
         if (!password) {
             newFieldErrors.password = 'Password is required';
         } else if (!validatePassword(password)) {
             newFieldErrors.password = 'Password must be at least 6 characters';
         }
-        
+
         if (Object.keys(newFieldErrors).length > 0) {
             setFieldErrors(newFieldErrors);
             return;
         }
-        
+
         setIsLoading(true);
-        
+
         try {
             console.log('🔐 Attempting buyer login for:', email.trim());
-            
-            const response = await axios.post(EMAIL_LOGIN_API, { 
-                email: email.trim().toLowerCase(), 
-                password: password 
+
+            const response = await axios.post(EMAIL_LOGIN_API, {
+                email: email.trim().toLowerCase(),
+                password: password
             }, {
                 timeout: 15000
             });
-            
+
             console.log('✅ Login successful:', response.data);
-            
+
             // Handle different token field names
-            const token = response.data.access_token || 
-                         response.data.token || 
-                         response.data.access;
-            
+            const token = response.data.access_token ||
+                response.data.token ||
+                response.data.access;
+
             if (!token) {
                 throw new Error('No token received from server');
             }
-            
+
             onLoginSuccess(token, response.data);
-            
+
         } catch (err) {
             console.error('❌ Login error:', err);
-            
+
             let errorMessage = 'Login failed. Please try again.';
-            
+
             if (err.response?.status === 401) {
                 errorMessage = 'Invalid email or password. Please check your credentials.';
             } else if (err.response?.status === 404) {
@@ -139,12 +141,12 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
             } else if (err.code === 'ECONNABORTED') {
                 errorMessage = 'Request timed out. Please check your connection and try again.';
             } else if (err.response?.data) {
-                errorMessage = err.response.data.error || 
-                             err.response.data.message || 
-                             err.response.data.detail || 
-                             errorMessage;
+                errorMessage = err.response.data.error ||
+                    err.response.data.message ||
+                    err.response.data.detail ||
+                    errorMessage;
             }
-            
+
             setError(errorMessage);
         } finally {
             setIsLoading(false);
@@ -162,15 +164,16 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
             )}
 
             <div style={styles.inputGroup}>
-                <label style={styles.label}>Email Address</label>
+                {/* <label style={styles.label}>Email Address</label> */}
                 <div style={styles.inputWrapper}>
                     <Mail size={18} style={styles.inputIcon} />
-                    <input 
-                        type="email" 
-                        value={email} 
+                    <input
+                        type="email"
+                        value={email}
                         onChange={e => handleFieldChange('email', e.target.value)}
-                        placeholder="Enter your email address" 
-                        required 
+                        placeholder="Enter your email address"
+                        required
+                        className='buyerlogininput'
                         style={{
                             ...styles.input,
                             ...(fieldErrors.email ? styles.inputError : {})
@@ -184,17 +187,18 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
                     <span style={styles.fieldError}>{fieldErrors.email}</span>
                 )}
             </div>
-            
+
             <div style={styles.inputGroup}>
-                <label style={styles.label}>Password</label>
+                {/* <label style={styles.label}>Password</label> */}
                 <div style={styles.inputWrapper}>
                     <Lock size={18} style={styles.inputIcon} />
-                    <input 
+                    <input
                         type={showPassword ? "text" : "password"}
-                        value={password} 
+                        value={password}
                         onChange={e => handleFieldChange('password', e.target.value)}
-                        placeholder="Enter your password" 
-                        required 
+                        placeholder="Enter your password"
+                        className='buyerloginpasswordinput'
+                        required
                         style={{
                             ...styles.passwordInput,
                             ...(fieldErrors.password ? styles.inputError : {})
@@ -205,6 +209,7 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
                     <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
+                        className='buyerlogineye'
                         style={styles.eyeButton}
                         tabIndex={-1}
                     >
@@ -215,20 +220,21 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
                     <span style={styles.fieldError}>{fieldErrors.password}</span>
                 )}
             </div>
-            
+
             {error && (
                 <div style={styles.errorContainer}>
                     <AlertCircle size={16} />
                     <span>{error}</span>
                 </div>
             )}
-            
-            <button 
-                type="submit" 
+
+            <button
+                type="submit"
+                className='buyerloginsigninbtn'
                 style={{
                     ...styles.button,
                     ...(isLoading ? styles.buttonLoading : {})
-                }} 
+                }}
                 disabled={isLoading || !email || !password}
             >
                 {isLoading ? (
@@ -252,7 +258,7 @@ function LoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
-    
+
     // ✅ Get current store info from URL
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -264,22 +270,22 @@ function LoginContent() {
             });
         }
     }, []);
-    
+
     const handleLoginSuccess = useCallback((token, userData = {}) => {
         console.log('🎉 Login successful, storing token and redirecting...');
-        
+
         // Store token with multiple keys for compatibility
         localStorage.setItem('access_token', token);
         localStorage.setItem('buyerAccessToken', token);
-        
+
         // Store user data if provided
         if (userData.user) {
             localStorage.setItem('userInfo', JSON.stringify(userData.user));
         }
-        
+
         // ✅ Store-aware redirect logic
         const redirectTo = searchParams.get('redirect');
-        
+
         if (redirectTo) {
             router.push(decodeURIComponent(redirectTo));
         } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
@@ -290,7 +296,7 @@ function LoginContent() {
             router.push('/profile');
         }
     }, [router, searchParams, currentStoreInfo]);
-    
+
     // ✅ Check for existing token on mount
     useEffect(() => {
         const token = localStorage.getItem('buyerAccessToken') || localStorage.getItem('access_token');
@@ -304,7 +310,7 @@ function LoginContent() {
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
             console.log('🔍 Google credential received, processing...');
-            
+
             const response = await axios.post(GOOGLE_LOGIN_API, {
                 credential: credentialResponse.credential,
                 store_context: currentStoreInfo.isInStore ? currentStoreInfo.storeId : null
@@ -315,24 +321,24 @@ function LoginContent() {
                 },
                 timeout: 15000
             });
-            
+
             console.log('✅ Google login response:', response.data);
-            
-            const token = response.data.access_token || 
-                         response.data.token || 
-                         response.data.access;
-            
+
+            const token = response.data.access_token ||
+                response.data.token ||
+                response.data.access;
+
             if (token) {
                 handleLoginSuccess(token, response.data);
             } else {
                 throw new Error('No token received from server');
             }
-            
+
         } catch (error) {
             console.error("❌ Google login failed:", error);
-            
+
             let errorMessage = 'Google login failed. Please try again.';
-            
+
             if (error.response?.status === 400) {
                 errorMessage = 'Invalid Google credential. Please try again.';
             } else if (error.response?.status === 403) {
@@ -340,11 +346,11 @@ function LoginContent() {
             } else if (error.code === 'ECONNABORTED') {
                 errorMessage = 'Request timed out. Please try again.';
             } else if (error.response?.data) {
-                errorMessage = error.response.data.error || 
-                             error.response.data.message || 
-                             errorMessage;
+                errorMessage = error.response.data.error ||
+                    error.response.data.message ||
+                    errorMessage;
             }
-            
+
             alert(errorMessage);
         }
     };
@@ -355,19 +361,19 @@ function LoginContent() {
     };
 
     // ✅ Store-aware back navigation
-    const handleBackClick = () => {
-        const redirectTo = searchParams.get('redirect');
-        
-        if (redirectTo) {
-            router.push(decodeURIComponent(redirectTo));
-        } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
-            router.push(`/store/${currentStoreInfo.storeId}`);
-        } else if (window.history.length > 1) {
-            router.back();
-        } else {
-            router.push('/');
-        }
-    };
+    // const handleBackClick = () => {
+    //     const redirectTo = searchParams.get('redirect');
+
+    //     if (redirectTo) {
+    //         router.push(decodeURIComponent(redirectTo));
+    //     } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
+    //         router.push(`/store/${currentStoreInfo.storeId}`);
+    //     } else if (window.history.length > 1) {
+    //         router.back();
+    //     } else {
+    //         router.push('/');
+    //     }
+    // };
 
     // ✅ Store-aware links
     const getForgotPasswordLink = () => {
@@ -388,7 +394,7 @@ function LoginContent() {
 
     return (
         <div style={styles.pageContainer}>
-            <header style={styles.header}>
+            {/* <header style={styles.header}>
                 <div style={styles.headerContainer}>
                     <button onClick={handleBackClick} style={styles.backButton}>
                         <ArrowLeft size={20} />
@@ -399,48 +405,48 @@ function LoginContent() {
                     </h1>
                     <div style={styles.headerSpacer}></div>
                 </div>
-            </header>
-            
+            </header> */}
+
             <div style={styles.container}>
                 <div style={styles.card}>
                     <div style={styles.cardHeader}>
-                        <div style={styles.iconContainer}>
-                            <User size={32} color="#3b82f6" />
+                        <div className='buyerloginiconcontainer' style={styles.iconContainer}>
+                            <User className='byerloginiconsize' style={styles.iconsize} color="#1a4845" />
                         </div>
-                        <h2 style={styles.cardTitle}>
+                        <h2 className='buyerlogincardtitle' style={styles.cardTitle}>
                             {currentStoreInfo.isInStore ? 'Store Access' : 'Welcome Back!'}
                         </h2>
-                        <p style={styles.cardSubtitle}>
-                            {currentStoreInfo.isInStore 
+                        <p className='buyerlogincardsubtitle' style={styles.cardSubtitle}>
+                            {currentStoreInfo.isInStore
                                 ? `Sign in to access ${currentStoreInfo.storeId} store features`
                                 : 'Sign in to your account to continue shopping'
                             }
                         </p>
                     </div>
-                    
-                    <EmailLoginForm 
-                        onLoginSuccess={handleLoginSuccess} 
+
+                    <EmailLoginForm
+                        onLoginSuccess={handleLoginSuccess}
                         currentStoreInfo={currentStoreInfo}
                     />
-                    
+
                     <div style={styles.divider}>
                         <span style={styles.dividerLine}></span>
                         <span style={styles.dividerText}>OR</span>
                         <span style={styles.dividerLine}></span>
                     </div>
-                    
-                    <div style={styles.googleButtonWrapper}>
-                        <GoogleLogin 
-                            onSuccess={handleGoogleSuccess} 
+
+                    <div className='google-login-wrapper' style={styles.googleButtonWrapper}>
+                        <GoogleLogin
+                            onSuccess={handleGoogleSuccess}
                             onError={handleGoogleError}
                             theme="outline"
                             size="large"
-                            width="350"
+                            width="100%"
                             text="signin_with"
-                            shape="rectangular"
+                            shape="pill"
                         />
                     </div>
-                    
+
                     {/* ✅ Security badges */}
                     <div style={styles.securityBadges}>
                         <div style={styles.securityBadge}>
@@ -452,7 +458,7 @@ function LoginContent() {
                             <span>Verified Platform</span>
                         </div>
                     </div>
-                    
+
                     <div style={styles.footerLinks}>
                         <Link href={getForgotPasswordLink()} style={styles.link}>
                             Forgot Password?
@@ -462,7 +468,7 @@ function LoginContent() {
                             Create an Account
                         </Link>
                     </div>
-                    
+
                     {/* ✅ Seller login link */}
                     <div style={styles.sellerLink}>
                         <p style={styles.sellerText}>Are you a seller?</p>
@@ -490,7 +496,7 @@ function LoginLoading() {
                     <div style={styles.headerSpacer}></div>
                 </div>
             </header>
-            
+
             <div style={styles.container}>
                 <div style={styles.card}>
                     <div style={styles.loadingContainer}>
@@ -523,18 +529,18 @@ export default function BuyerLoginPage() {
                 <div style={styles.container}>
                     <div style={styles.card}>
                         <div style={styles.cardHeader}>
-                            <div style={styles.iconContainer}>
-                                <AlertCircle size={32} color="#ef4444" />
+                            <div className='buyerloginiconcontainer' style={styles.iconContainer}>
+                                <AlertCircle className='byerloginiconsize' style={styles.iconsize} color="#ef4444" />
                             </div>
                             <h2 style={styles.cardTitle}>Configuration Error</h2>
                             <p style={styles.cardSubtitle}>
                                 Google authentication is not properly configured. Please contact support.
                             </p>
                         </div>
-                        
+
                         {/* Still allow email login */}
                         <Suspense fallback={<LoginLoading />}>
-                            <EmailLoginForm onLoginSuccess={() => {}} currentStoreInfo={{ isInStore: false }} />
+                            <EmailLoginForm onLoginSuccess={() => { }} currentStoreInfo={{ isInStore: false }} />
                         </Suspense>
                     </div>
                 </div>
@@ -553,98 +559,123 @@ export default function BuyerLoginPage() {
 
 // ✅ Enhanced styles with new components
 const styles = {
-    pageContainer: { 
-        minHeight: '100vh', 
-        backgroundColor: '#f8fafc' 
+    pageContainer: {
+        minHeight: '100vh',
+        backgroundColor: '#f8fafc',
     },
-    
-    header: { 
-        backgroundColor: 'white', 
-        borderBottom: '1px solid #e2e8f0', 
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)' 
+
+    header: {
+        backgroundColor: 'white',
+        borderBottom: '1px solid #e2e8f0',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
     },
-    
-    headerContainer: { 
-        maxWidth: '1200px', 
-        margin: '0 auto', 
-        padding: '16px 20px', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between' 
+
+    headerContainer: {
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '16px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
     },
-    
-    backButton: { 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '8px', 
-        color: '#3b82f6', 
-        background: 'none', 
-        border: 'none', 
-        fontSize: '16px', 
-        fontWeight: '500', 
-        padding: '8px', 
-        cursor: 'pointer', 
+
+    backButton: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        color: '#3b82f6',
+        background: 'none',
+        border: 'none',
+        fontSize: '16px',
+        fontWeight: '500',
+        padding: '8px',
+        cursor: 'pointer',
         borderRadius: '6px',
         transition: 'all 0.2s ease'
     },
-    
-    backText: { 
+    iconsize: {
+        width: "32px",
+        height: "32px",
+    },
+
+    backText: {
         display: 'block'
     },
-    
-    headerTitle: { 
-        fontSize: '20px', 
-        fontWeight: '700', 
-        color: '#1e293b', 
-        margin: 0 
+
+    headerTitle: {
+        fontSize: '20px',
+        fontWeight: '700',
+        color: '#1e293b',
+        margin: 0
     },
-    
-    headerSpacer: { 
-        width: '60px' 
+
+    headerSpacer: {
+        width: '60px'
     },
-    
-    container: { 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: 'calc(100vh - 80px)', 
-        padding: '20px' 
+
+    container: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: 'calc(100vh - 170px)', // ✅ UPDATE: Account for SHeader
+        padding: '20px',
+        backgroundColor: '#FDFFF0'
     },
-    
-    card: { 
-        backgroundColor: 'white', 
-        padding: '32px', 
-        borderRadius: '16px', 
-        boxShadow: '0 4px 20px rgba(0,0,0,0.1)', 
-        width: '100%', 
-        maxWidth: '420px',
-        border: '1px solid #e5e7eb'
+
+
+
+    card: {
+        backgroundImage: 'url("/assets/images/Shoppagebanner.png")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        position: 'relative',
+        backgroundAttachment: 'fixed',
+        marginTop: '50px',
+        padding: '40px',
+        borderRadius: '16px',
+        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
+        width: '90%',
+        maxWidth: '400px',
+        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        color: '#fff',
+        textAlign: 'center',
+        zIndex: 2,
+        transition: 'all 0.3s ease',
     },
-    
+
     cardHeader: {
         textAlign: 'center',
         marginBottom: '32px'
     },
-    
+
     iconContainer: {
         width: '64px',
         height: '64px',
-        backgroundColor: '#eff6ff',
+        Scale: '0.9',
+        backgroundColor: '#FDFFF0',
         borderRadius: '50%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         margin: '0 auto 16px auto'
     },
-    
-    cardTitle: { 
-        fontSize: '1.5rem', 
-        fontWeight: '700', 
-        color: '#1e293b', 
-        marginBottom: '8px', 
+
+    iconsize: {
+        width: "32px",
+        height: "32px",
+    },
+
+    cardTitle: {
+        fontSize: '1.5rem',
+        fontWeight: '700',
+        color: '#1a4845',
+        marginBottom: '8px',
         margin: '0 0 8px 0'
     },
-    
+
     cardSubtitle: {
         fontSize: '0.95rem',
         color: '#6b7280',
@@ -665,13 +696,13 @@ const styles = {
         color: '#1e40af',
         marginBottom: '20px'
     },
-    
+
     form: {
         display: 'flex',
         flexDirection: 'column',
         gap: '20px'
     },
-    
+
     inputGroup: {
         display: 'flex',
         flexDirection: 'column'
@@ -683,40 +714,40 @@ const styles = {
         color: '#374151',
         marginBottom: '8px'
     },
-    
+
     inputWrapper: {
         position: 'relative',
         display: 'flex',
         alignItems: 'center'
     },
-    
+
     inputIcon: {
         position: 'absolute',
         left: '16px',
         color: '#6b7280',
         zIndex: 1
     },
-    
-    input: { 
-        width: '100%', 
-        padding: '14px 16px 14px 48px', 
-        border: '1px solid #d1d5db', 
-        borderRadius: '8px', 
-        boxSizing: 'border-box', 
+
+    input: {
+        width: '100%',
+        padding: '14px 16px 14px 48px',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
+        boxSizing: 'border-box',
         fontSize: '16px',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#FDFFF0',
         transition: 'all 0.2s ease',
         outline: 'none'
     },
 
     passwordInput: {
-        width: '100%', 
-        padding: '14px 48px 14px 48px', 
-        border: '1px solid #d1d5db', 
-        borderRadius: '8px', 
-        boxSizing: 'border-box', 
+        width: '100%',
+        padding: '14px 48px 14px 48px',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
+        boxSizing: 'border-box',
         fontSize: '16px',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#FDFFF0',
         transition: 'all 0.2s ease',
         outline: 'none'
     },
@@ -731,7 +762,7 @@ const styles = {
         padding: '4px',
         borderRadius: '4px'
     },
-    
+
     inputError: {
         borderColor: '#ef4444'
     },
@@ -741,7 +772,7 @@ const styles = {
         fontSize: '0.8rem',
         marginTop: '4px'
     },
-    
+
     errorContainer: {
         display: 'flex',
         alignItems: 'center',
@@ -753,35 +784,35 @@ const styles = {
         color: '#991b1b',
         fontSize: '0.9rem'
     },
-    
-    button: { 
-        width: '100%', 
-        padding: '16px 24px', 
-        border: 'none', 
-        borderRadius: '8px', 
-        backgroundColor: '#3b82f6', 
-        color: 'white', 
-        cursor: 'pointer', 
-        fontSize: '16px', 
+
+    button: {
+        width: '100%',
+        padding: '16px 24px',
+        border: 'none',
+        borderRadius: '8px',
+        backgroundColor: '#1a4845',
+        color: 'white',
+        cursor: 'pointer',
+        fontSize: '16px',
         fontWeight: '600',
         transition: 'all 0.2s ease',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '52px'
+        minHeight: '46px'
     },
-    
+
     buttonLoading: {
         backgroundColor: '#9ca3af',
         cursor: 'not-allowed'
     },
-    
+
     buttonContent: {
         display: 'flex',
         alignItems: 'center',
         gap: '8px'
     },
-    
+
     spinner: {
         width: '16px',
         height: '16px',
@@ -790,32 +821,32 @@ const styles = {
         borderRadius: '50%',
         animation: 'spin 1s linear infinite'
     },
-    
-    divider: { 
-        margin: '24px 0', 
+
+    divider: {
+        margin: '24px 0',
         display: 'flex',
         alignItems: 'center',
         gap: '12px'
     },
-    
+
     dividerLine: {
         flex: 1,
         height: '1px',
         backgroundColor: '#e5e7eb'
     },
-    
+
     dividerText: {
-        color: '#6b7280', 
-        textTransform: 'uppercase', 
-        fontSize: '12px', 
+        color: '#6b7280',
+        textTransform: 'uppercase',
+        fontSize: '12px',
         fontWeight: '600',
         padding: '0 8px'
     },
-    
-    googleButtonWrapper: { 
-        display: 'flex', 
-        justifyContent: 'center', 
-        marginBottom: '24px' 
+
+    googleButtonWrapper: {
+        display: 'flex',
+        justifyContent: 'center',
+        marginBottom: '24px'
     },
 
     // ✅ Security badges
@@ -836,21 +867,21 @@ const styles = {
         color: '#059669',
         fontWeight: '500'
     },
-    
-    footerLinks: { 
-        marginTop: '24px', 
-        fontSize: '14px', 
+
+    footerLinks: {
+        marginTop: '24px',
+        fontSize: '14px',
         color: '#6b7280',
         textAlign: 'center'
     },
-    
-    link: { 
-        color: '#3b82f6', 
-        textDecoration: 'none', 
+
+    link: {
+        color: '#3b82f6',
+        textDecoration: 'none',
         fontWeight: '500',
         transition: 'color 0.2s ease'
     },
-    
+
     linkDivider: {
         color: '#d1d5db'
     },
@@ -882,7 +913,7 @@ const styles = {
         fontWeight: '500',
         transition: 'background-color 0.2s'
     },
-    
+
     loadingContainer: {
         display: 'flex',
         flexDirection: 'column',
