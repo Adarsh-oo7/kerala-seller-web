@@ -1078,6 +1078,16 @@ function RelatedProductCard({ product, shopSlug, sellerPhone }) {
     return url;
   };
 
+  // Pricing functions
+  const formatPrice = (price) => {
+    if (!price || isNaN(price)) return '₹0';
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0
+    }).format(price);
+  };
+
   return (
     <div style={styles.relatedProductCard}>
       <Link
@@ -1093,7 +1103,6 @@ function RelatedProductCard({ product, shopSlug, sellerPhone }) {
               e.target.src = 'https://placehold.co/200x200/e9ecef/6c757d?text=No+Image';
             }}
           />
-          {/* ✅ Wishlist button for related products */}
           <button
             onClick={handleWishlistToggle}
             disabled={isWishlistLoading}
@@ -1109,14 +1118,23 @@ function RelatedProductCard({ product, shopSlug, sellerPhone }) {
             )}
           </button>
         </div>
+
         <div style={styles.relatedProductInfo}>
           <h3 style={styles.relatedProductName}>{product.name}</h3>
-          <p style={styles.relatedProductPrice}>
-            ₹{product.price?.toLocaleString('en-IN')}
-          </p>
+
+          <div style={styles.priceRow}>
+            <p style={styles.relatedProductPrice}>
+              ₹{product.price?.toLocaleString('en-IN')}
+            </p>
+            {product.mrp && product.mrp > product.price && (
+              <span style={styles.originalPrice}>{formatPrice(product.mrp)}</span>
+            )}
+          </div>
         </div>
       </Link>
     </div>
+
+
   );
 }
 
@@ -1440,7 +1458,7 @@ function ShopProductPageContent() {
         {relatedProducts.length > 0 && (
           <div style={styles.relatedContainer}>
             <h2 style={styles.sectionTitle}>You May Also Like</h2>
-            <div style={styles.relatedGrid}>
+            <div className='shopslugproductrelatedprod' style={styles.relatedGrid}>
               {relatedProducts.map((relatedProduct) => (
                 <RelatedProductCard
                   key={relatedProduct.id}
@@ -2793,85 +2811,96 @@ const styles = {
 
   relatedGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '20px'
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: '20px',
+    justifyContent: "center",
   },
 
   relatedProductCard: {
-    position: 'relative',
-    border: '1px solid #e5e7eb',
-    borderRadius: '12px',
+    width: '100%',
+    maxWidth: '220px',
+    margin: '10px',
+    borderRadius: '10px',
     overflow: 'hidden',
-    transition: 'all 0.2s',
-    backgroundColor: 'white',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+    backgroundColor: 'var(--glassy-bg, rgba(255,255,255,0.1))',
+    backdropFilter: 'blur(10px)',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
   },
 
   relatedProductLink: {
-    display: 'block',
+    display: 'flex',
+    flexDirection: 'column',
     textDecoration: 'none',
-    color: 'inherit'
+    color: 'inherit',
   },
 
   relatedProductImageContainer: {
     position: 'relative',
     width: '100%',
-    aspectRatio: '1',
-    overflow: 'hidden'
+    height: '200px', // default image height
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: '#f8f9fa',
   },
 
   relatedProductImage: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
-    transition: 'transform 0.3s ease'
+    objectFit: 'contain',   // ✅ ensures full image is shown
+    objectPosition: 'center',
+    backgroundColor: '#fff',
+    borderRadius: '10px 10px 0 0',
   },
 
   relatedWishlistButton: {
     position: 'absolute',
     top: '8px',
     right: '8px',
-    width: '28px',
-    height: '28px',
-    borderRadius: '50%',
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    background: 'rgba(255,255,255,0.8)',
     border: 'none',
+    borderRadius: '50%',
+    padding: '6px',
     cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#6b7280',
-    transition: 'all 0.2s',
-    backdropFilter: 'blur(4px)',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+    transition: 'transform 0.2s ease, background 0.2s ease',
   },
 
   relatedWishlistActive: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    color: '#ef4444',
-    borderColor: 'rgba(239, 68, 68, 0.3)'
+    color: 'red',
+    background: 'rgba(255,255,255,1)',
   },
 
   relatedProductInfo: {
-    padding: '15px'
+    padding: '10px',
+    textAlign: 'left', // ✅ Left-aligned text
   },
 
   relatedProductName: {
     fontSize: '14px',
-    fontWeight: '600',
-    color: '#1f2937',
-    margin: '0 0 6px 0',
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-    lineHeight: '1.3'
+    fontWeight: '500',
+    margin: '5px 0',
+    textAlign: 'left', // ✅ Left-aligned
+  },
+
+  priceRow: {
+    display: 'flex',
+    alignItems: 'center', // ✅ Vertical alignment
+    gap: '8px',
+    marginTop: '4px',
   },
 
   relatedProductPrice: {
-    fontSize: '16px',
-    color: '#059669',
-    fontWeight: '700',
-    margin: 0
-  }
+    fontSize: '15px',
+    fontWeight: '600',
+    color: '#28a745',
+    margin: 0,
+  },
+
+  originalPrice: {
+    textDecoration: 'line-through',
+    fontSize: '13px',
+    color: '#888',
+  },
 };

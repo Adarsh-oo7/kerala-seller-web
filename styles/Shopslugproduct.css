@@ -87,6 +87,10 @@
     .shopslugproductpagedescription {
         font-size: 15px !important;
     }
+
+    .shopslugproductrelatedprod {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
 }
 
 @media (max-width: 767px) {
@@ -155,6 +159,10 @@
 
     .shopslugproductpagedescription {
         font-size: 14px !important;
+    }
+
+    .shopslugproductrelatedprod {
+        grid-template-columns: repeat(3, 1fr) !important;
     }
 }
 
@@ -243,6 +251,10 @@
         scale: 0.8 !important;
     }
 
+    .shopslugproductrelatedprod {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+
 }
 
 
@@ -328,7 +340,8 @@
     .shopslugproductpagedescription {
         font-size: 13px !important;
     }
-    .shopslugproductpagestarsicongap{
+
+    .shopslugproductpagestarsicongap {
         gap: 0px !important;
     }
 
@@ -350,8 +363,13 @@
         font-size: 12px !important;
         opacity: 0.8;
     }
+
     .shopslugproductreviewtext {
         font-size: 12px !important;
+    }
+
+    .shopslugproductrelatedprod {
+        grid-template-columns: repeat(2, 1fr) !important;
     }
 
 }
