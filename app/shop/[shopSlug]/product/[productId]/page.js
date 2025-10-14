@@ -259,9 +259,10 @@ function StarRating({ rating = 0, reviewCount = 0, showCount = true }) {
 
   return (
     <div style={styles.starContainer}>
-      <div style={styles.stars}>
+      <div className='shopslugproductpagestarsicongap' style={styles.stars}>
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
+            className='shopslugproductpagestarsicon'
             key={star}
             size={20}
             color={star <= fullStars || (star === fullStars + 1 && hasHalfStar) ? "#ffc107" : "#e4e5e9"}
@@ -270,12 +271,12 @@ function StarRating({ rating = 0, reviewCount = 0, showCount = true }) {
         ))}
       </div>
       {rating > 0 && (
-        <span style={styles.ratingDisplay}>
+        <span className='shopslugproductreviewtext' style={styles.ratingDisplay}>
           {rating.toFixed(1)} out of 5
         </span>
       )}
       {showCount && reviewCount > 0 && (
-        <span style={styles.reviewCount}>({reviewCount} reviews)</span>
+        <span className='shopslugproductreviewtext' style={styles.reviewCount}>({reviewCount} reviews)</span>
       )}
     </div>
   );
@@ -285,19 +286,19 @@ function StarRating({ rating = 0, reviewCount = 0, showCount = true }) {
 function ReviewItem({ review }) {
   return (
     <div style={styles.reviewItem}>
-      <div style={styles.reviewHeader}>
+      <div className='shopslugproductreview-header' style={styles.reviewHeader}>
         <div style={styles.reviewerInfo}>
           <div style={styles.reviewerAvatar}>
             <User size={16} />
           </div>
           <div>
             <StarRating rating={review.rating} showCount={false} />
-            <h5 style={styles.reviewerName}>
+            <h5 className='shopslugproductpagedescription' style={styles.reviewerName}>
               {review.buyer?.full_name || 'Anonymous Customer'}
             </h5>
           </div>
         </div>
-        <span style={styles.reviewDate}>
+        <span className='shopslugproductreview-date' style={styles.reviewDate}>
           {new Date(review.created_at).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -305,7 +306,7 @@ function ReviewItem({ review }) {
           })}
         </span>
       </div>
-      <p style={styles.reviewComment}>{review.comment}</p>
+      <p className='shopslugproductpagedescription' style={styles.reviewComment}>{review.comment}</p>
     </div>
   );
 }
@@ -849,7 +850,7 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
         <div className="right-column" style={styles.rightcolumn} >
           {/* Rating */}
           {product.average_rating && (
-            <div className='shopslugproductstars' style={styles.ratingContainer}>
+            <div style={styles.ratingContainer}>
               <div style={styles.stars}>
                 {[...Array(5)].map((_, i) => (
                   <Star
@@ -1375,8 +1376,8 @@ function ShopProductPageContent() {
         {/* Product Description */}
         {product.description && (
           <div style={styles.descriptionContainer}>
-            <h2 style={styles.sectionTitle}>Product Description</h2>
-            <div style={styles.description}>
+            <h2 className='shopslugproductpagedescriptiontitle' style={styles.sectionTitle}>Product Description</h2>
+            <div className='shopslugproductpagedescription' style={styles.description}>
               <p>{product.description}</p>
             </div>
           </div>
@@ -1385,7 +1386,7 @@ function ShopProductPageContent() {
         {/* ✅ NEW: Reviews Section */}
         <div style={styles.reviewsSection}>
           <div style={styles.reviewsHeader}>
-            <h2>Customer Reviews</h2>
+            <h2 className='shopslugproductpagedescriptiontitle'>Customer Reviews</h2>
             <div style={styles.reviewsSummary}>
               <StarRating
                 rating={product.average_rating || 0}
@@ -1402,19 +1403,19 @@ function ShopProductPageContent() {
               />
             ) : (
               <div style={styles.cannotReviewMessage}>
-                <p>You can only review products you have purchased and received.</p>
+                <p className='shopslugproductpagedescription'>You can only review products you have purchased and received.</p>
               </div>
             )
           ) : (
             <div style={styles.loginPrompt}>
-              <p>
+              <p className='shopslugproductpagedescription'>
                 Please <Link href="/login/buyer" style={styles.loginLink}>login</Link> to write a review
               </p>
             </div>
           )}
 
           <div style={styles.reviewsList}>
-            <h3>All Reviews ({reviews.length})</h3>
+            <h3 className='shopslugproductpagedescriptiontitle'>All Reviews ({reviews.length})</h3>
 
             {reviewsLoading ? (
               <div style={styles.loadingText}>
@@ -1428,7 +1429,7 @@ function ShopProductPageContent() {
                 ))}
               </div>
             ) : (
-              <div style={styles.noReviews}>
+              <div className='shopslugproductpagedescription' style={styles.noReviews}>
                 <p>No reviews yet. Be the first to review this product!</p>
               </div>
             )}
@@ -1438,7 +1439,7 @@ function ShopProductPageContent() {
         {/* ✅ ENHANCED: Related Products with Wishlist */}
         {relatedProducts.length > 0 && (
           <div style={styles.relatedContainer}>
-            <h2 style={styles.sectionTitle}>More from {store?.name}</h2>
+            <h2 style={styles.sectionTitle}>You May Also Like</h2>
             <div style={styles.relatedGrid}>
               {relatedProducts.map((relatedProduct) => (
                 <RelatedProductCard
@@ -1974,7 +1975,7 @@ const styles = {
     width: '100%',          // take full container width
     maxWidth: '550px',      // max width on desktop
     aspectRatio: '1 / 1',   // maintain square ratio
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#FDFFF0',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -2244,12 +2245,12 @@ const styles = {
     gap: '15px',/* same as your current styles.productInfo spacing */
   },
 
-   leftcolumn: {
+  leftcolumn: {
     display: 'flex', /* or whatever your original layout used */
     flexDirection: 'column',
     gap: '15px',/* same as your current styles.productInfo spacing */
   },
-   rightcolumn: {
+  rightcolumn: {
     display: 'flex', /* or whatever your original layout used */
     flexDirection: 'column',
     gap: '15px',/* same as your current styles.productInfo spacing */
@@ -2786,10 +2787,8 @@ const styles = {
 
   // ✅ FULLY RESPONSIVE: Related Products
   relatedContainer: {
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     padding: 'clamp(20px, 4vw, 32px)',
-    borderRadius: '12px',
-    border: '1px solid #e5e7eb'
   },
 
   relatedGrid: {

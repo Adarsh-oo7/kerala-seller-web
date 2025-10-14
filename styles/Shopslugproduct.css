@@ -79,6 +79,14 @@
         font-size: 13px !important;
         padding: 2px 2px !important;
     }
+
+    .shopslugproductpagedescriptiontitle {
+        font-size: 20px !important;
+    }
+
+    .shopslugproductpagedescription {
+        font-size: 15px !important;
+    }
 }
 
 @media (max-width: 767px) {
@@ -139,6 +147,14 @@
         flex-direction: column !important;
         gap: 10px !important;
         margin-top: 10px !important;
+    }
+
+    .shopslugproductpagedescriptiontitle {
+        font-size: 18px !important;
+    }
+
+    .shopslugproductpagedescription {
+        font-size: 14px !important;
     }
 }
 
@@ -210,8 +226,21 @@
         flex-direction: column !important;
         gap: 15px !important;
     }
-     .shopslugproductactnbtngap{
+
+    .shopslugproductactnbtngap {
         gap: 15px !important;
+    }
+
+    .shopslugproductpagedescriptiontitle {
+        font-size: 18px !important;
+    }
+
+    .shopslugproductpagedescription {
+        font-size: 14px !important;
+    }
+
+    .shopslugproductpagestarsicon {
+        scale: 0.8 !important;
     }
 
 }
@@ -283,11 +312,46 @@
         text-align: left !important;
         gap: 8px !important;
     }
-    .shopslugproductpagecontainer{
+
+    .shopslugproductpagecontainer {
         padding: 80px 20px 20px !important;
     }
-    .shopslugproductactnbtngap{
+
+    .shopslugproductactnbtngap {
         gap: 15px !important;
+    }
+
+    .shopslugproductpagedescriptiontitle {
+        font-size: 17px !important;
+    }
+
+    .shopslugproductpagedescription {
+        font-size: 13px !important;
+    }
+    .shopslugproductpagestarsicongap{
+        gap: 0px !important;
+    }
+
+    .shopslugproductpagestarsicon {
+        scale: 0.7 !important;
+    }
+
+    .shopslugproductreview-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+    }
+
+    .shopslugproductreview-date {
+        display: block !important;
+        margin-left: 52px !important;
+        /* aligns under name, matching avatar width */
+        margin-top: -2px !important;
+        font-size: 12px !important;
+        opacity: 0.8;
+    }
+    .shopslugproductreviewtext {
+        font-size: 12px !important;
     }
 
 }
