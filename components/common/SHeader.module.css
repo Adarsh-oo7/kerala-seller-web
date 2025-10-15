@@ -938,15 +938,15 @@
 
 .menuBrand img,
 .menuLogoPlaceholder {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--glassy-radius-sm);
   object-fit: cover;
 }
 
 .menuLogoPlaceholder {
   background: linear-gradient(135deg, var(--glassy-white), var(--glassy-white-dark));
-  color: var(--glassy-text);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -956,25 +956,25 @@
 
 .menuBrandName {
   font-weight: 700;
-  color: var(--glassy-text);
+  color: white;
   font-size: 1rem;
   display: block;
 }
 
 .menuBrandTagline {
   font-size: 0.75rem;
-  color: var(--glassy-text-muted);
+  color: white;
   font-weight: 500;
   display: block;
   margin-top: 2px;
 }
 
 .menuHeader button {
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(8px);
+  background: none;
+  /* backdrop-filter: blur(8px); */
   border: none;
   cursor: pointer;
-  color: var(--glassy-text-muted);
+  color: white;
   padding: 8px;
   border-radius: var(--glassy-radius-sm);
   transition: var(--glassy-transition);
@@ -984,7 +984,7 @@
 
 .menuHeader button:hover {
   background: rgba(255, 255, 255, 0.4);
-  color: var(--glassy-accent);
+  color: white;
   transform: scale(1.1) rotate(90deg);
 }
 
@@ -999,7 +999,7 @@
   justify-content: space-between;
   gap: 10px;
   padding: 16px 0;
-  color: var(--glassy-text);
+  color: white;
   text-decoration: none;
   border-bottom: 1px solid rgba(240, 240, 240, 0.85);
   font-weight: 500;
@@ -1064,10 +1064,10 @@
   background: linear-gradient(135deg, #ef4444, #dc2626);
   color: white;
   border-radius: 10px;
-  padding: 3px 7px;
+  padding: 5px 5px;
   font-size: 0.65rem;
   font-weight: 600;
-  min-width: 18px;
+  min-width: 15px;
   text-align: center;
   box-shadow: 0 1px 6px rgba(239, 68, 68, 0.25);
 }

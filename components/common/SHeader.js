@@ -464,11 +464,11 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
               )}
               <div>
                 <span className={styles.menuBrandName}>{storeData.name}</span>
-                <span className={styles.menuBrandTagline}>Premium Store</span>
+                <span className={styles.menuBrandTagline}>{storeData.tagline}</span>
               </div>
             </div>
             <button onClick={() => setIsMobileMenuOpen(false)} aria-label="Close menu">
-              <CloseIcon size={22} />
+              <CloseIcon size={20} />
             </button>
           </div>
 
