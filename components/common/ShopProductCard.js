@@ -121,10 +121,10 @@ export default function ShopProductCard({
     if (!product) return 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
 
     // Priority order for different image types
-    const imageUrl = product.main_image_url || 
-                    product.image_url || 
-                    product.cloudinary_url ||
-                    product.thumbnail_url;
+    const imageUrl = product.main_image_url ||
+      product.image_url ||
+      product.cloudinary_url ||
+      product.thumbnail_url;
 
     if (!imageUrl) return 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
 
@@ -276,14 +276,11 @@ export default function ShopProductCard({
 
   return (
     <div
-      className={`shop-product-card ${getStockStatus()} ${compact ? 'compact' : ''}`}
-      style={{
-        ...styles.shopProductCard,
-        ...(compact ? styles.compactCard : {})
-      }}
+      className={`shop-product-card ${getStockStatus()}`}
+      style={styles.shopProductCard}
       data-product-id={product.id}
     >
-      {/* ✅ ENHANCED: Image section with loading states */}
+      {/* ✅ FIXED: Image section without Link wrapper for wishlist button */}
       <div className="product-image-wrapper" style={styles.productImageWrapper}>
         {/* ✅ Link only wraps the image itself */}
         <Link
@@ -292,30 +289,18 @@ export default function ShopProductCard({
           style={styles.productImageLink}
           aria-label={`View ${product.name || 'product'} in ${store?.name || 'store'}`}
         >
-          {!imageLoaded && (
-            <div style={styles.imageLoader}>
-              <div style={styles.spinner}></div>
-            </div>
-          )}
-          
           <img
             src={imageError ? 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image' : getImageUrl(product)}
             alt={product.name || 'Product image'}
             className="product-image"
-            style={{
-              ...styles.productImage,
-              opacity: imageLoaded ? 1 : 0
-            }}
+            style={styles.productImage}
             loading="lazy"
-            onLoad={() => setImageLoaded(true)}
-            onError={() => {
-              setImageError(true);
-              setImageLoaded(true);
-            }}
+            onError={() => setImageError(true)}
           />
         </Link>
 
-        {/* ✅ Enhanced Rating overlay with better mobile display */}
+        {/* ✅ Rating overlay (existing) - shows on image hover */}
+        {/* {product.average_rating > 0 && ( */}
         <div style={styles.ratingOverlay}>
           <div style={styles.ratingLeft}>
             <Star
@@ -324,18 +309,19 @@ export default function ShopProductCard({
               color="#fbbf24"
             />
             <span style={styles.ratingLeftText}>
-              {product.average_rating > 0 ? `${product.average_rating.toFixed(1)}` : "New"}
+              {product.average_rating > 0 ? `(${product.average_rating.toFixed(1)})` : ""}
             </span>
           </div>
 
           {product.review_count > 0 ? (
             <span style={styles.ratingRight}>
-              {product.review_count} review{product.review_count !== 1 ? 's' : ''}
+              {product.review_count} reviews
             </span>
           ) : (
             <span style={styles.ratingRight}>No reviews</span>
           )}
         </div>
+        {/* )} */}
 
         {/* Product badges */}
         <div className="product-badges" style={styles.productBadges}>
@@ -354,28 +340,10 @@ export default function ShopProductCard({
               Out of Stock
             </span>
           )}
-          {/* ✅ NEW: Fast loading badge for optimized images */}
-          {product.image_metadata?.optimized && (
-            <span className="badge fast-loading" style={styles.badgeFastLoading}>
-              <Zap size={8} /> Fast
-            </span>
-          )}
         </div>
 
-        {/* ✅ ENHANCED: Quick actions with better mobile experience */}
+        {/* ✅ FIXED: Wishlist button outside Link - this is the key fix */}
         <div className="quick-actions" style={styles.quickActions}>
-          {showQuickView && (
-            <button
-              className="quick-action-btn quick-view"
-              style={styles.quickActionBtn}
-              onClick={handleQuickView}
-              aria-label="Quick view product"
-              type="button"
-            >
-              <Eye size={14} />
-            </button>
-          )}
-          
           <button
             className={`quick-action-btn wishlist-heart ${localWishlistState ? 'active' : ''} ${isWishlistLoading ? 'loading' : ''}`}
             style={{
@@ -401,17 +369,14 @@ export default function ShopProductCard({
         </div>
       </div>
 
-      {/* ✅ ENHANCED: Product info section with better mobile layout */}
+      {/* ✅ Product info section wrapped in Link */}
       <Link
         href={getProductUrl()}
         className="shop-product-link"
         style={styles.productLink}
         aria-label={`View ${product.name || 'product'} details`}
       >
-        <div className="product-info" style={{
-          ...styles.productInfo,
-          ...(compact ? styles.compactInfo : {})
-        }}>
+        <div className="product-info" style={styles.productInfo}>
           {/* Store name (optional) */}
           {showStoreName && store?.name && (
             <div className="store-name" style={styles.storeName}>
@@ -423,13 +388,15 @@ export default function ShopProductCard({
           <div className="product-header" style={styles.productHeader}>
             <h3 className="product-name" style={styles.productName}>
               {product.name || 'Unnamed Product'}
-              {product.model_name && !compact && (
+              {product.model_name && (
                 <span className='product-model' style={styles.productModel}> ({product.model_name})</span>
               )}
             </h3>
           </div>
 
-          {/* ✅ ENHANCED: Pricing with better mobile display */}
+
+
+          {/* Pricing */}
           <div className="product-pricing" style={styles.productPricing}>
             <div className="price-section" style={styles.priceSection}>
               <span className="current-price" style={styles.currentPrice}>
@@ -441,15 +408,8 @@ export default function ShopProductCard({
                 </span>
               )}
             </div>
-            {/* ✅ Show savings amount on mobile */}
-            {getDiscountPercentage() > 0 && !compact && (
-              <div className="savings-text" style={styles.savingsText}>
-                Save {formatPrice(product.mrp - product.price)}
-              </div>
-            )}
           </div>
 
-          {/* ✅ ENHANCED: Add to cart button with better states */}
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -459,12 +419,7 @@ export default function ShopProductCard({
               }
             }}
             className={`add-to-cart-btn ${(product.online_stock || 0) === 0 ? 'disabled' : ''} ${isLoading ? 'loading' : ''} ${isInCart ? 'in-cart' : ''}`}
-            style={{
-              ...styles.addToCartBtn,
-              ...(compact ? styles.compactButton : {}),
-              ...((product.online_stock || 0) === 0 ? styles.disabledButton : {}),
-              ...(isInCart ? styles.inCartButton : {})
-            }}
+            style={styles.addToCartBtn}
             disabled={(product.online_stock || 0) === 0 || isLoading}
             aria-label={(product.online_stock || 0) > 0 ?
               (isInCart ? `Add more ${product.name || 'product'} to cart (${getCartQuantity()} in cart)` : `Add ${product.name || 'product'} to cart`) :
@@ -473,28 +428,32 @@ export default function ShopProductCard({
           >
             {isLoading ? (
               <>
-                <RefreshCw size={compact ? 14 : 16} className="spinning" />
-                <span>{compact ? 'Adding...' : 'Adding...'}</span>
+                <RefreshCw size={16} className="spinning" />
+                <span>Adding...</span>
               </>
             ) : (product.online_stock || 0) === 0 ? (
               <>
-                <X size={compact ? 14 : 16} />
-                <span>{compact ? 'Stock' : 'Out of Stock'}</span>
+                <X size={16} />
+                <span>Out of Stock</span>
               </>
             ) : isInCart ? (
               <>
-                <ShoppingCart size={compact ? 14 : 16} fill="currentColor" />
-                <span>{compact ? `+ (${getCartQuantity()})` : `Add More (${getCartQuantity()})`}</span>
+                <ShoppingCart size={16} fill="currentColor" />
+                <span>Add More ({getCartQuantity()})</span>
               </>
             ) : (
               <>
-                <ShoppingCart size={compact ? 14 : 16} />
-                <span>{compact ? 'Add' : 'Add to Cart'}</span>
+                <ShoppingCart size={16} />
+                <span>Add to Cart</span>
               </>
             )}
           </button>
+
+
         </div>
       </Link>
+
+
 
       {/* ✅ CSS for animations */}
       <style jsx>{`
@@ -505,49 +464,6 @@ export default function ShopProductCard({
         
         .spinning {
           animation: spin 1s linear infinite;
-        }
-
-        /* ✅ Mobile optimizations */
-        @media (max-width: 768px) {
-          .shop-product-card.compact {
-            max-width: 180px !important;
-          }
-          
-          .shop-product-card.compact .product-image {
-            height: 140px !important;
-          }
-          
-          .shop-product-card.compact .product-info {
-            padding: 8px !important;
-          }
-          
-          .shop-product-card.compact .add-to-cart-btn {
-            padding: 6px 8px !important;
-            font-size: 11px !important;
-          }
-          
-          .quick-actions {
-            flex-direction: column !important;
-            gap: 4px !important;
-          }
-        }
-        
-        @media (max-width: 480px) {
-          .shop-product-card {
-            max-width: 165px !important;
-          }
-          
-          .product-image {
-            height: 130px !important;
-          }
-          
-          .product-name {
-            font-size: 13px !important;
-          }
-          
-          .current-price {
-            font-size: 14px !important;
-          }
         }
       `}</style>
     </div>
