@@ -4,24 +4,34 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { 
-  Shield, Upload, Check, AlertCircle, Star, Settings, Building, FileText, CreditCard, Phone, Globe, Truck, Search, Eye, EyeOff, X, RefreshCw, Save, Cloud
+  Shield, Upload, Check, AlertCircle, Star, Settings, Building, FileText, 
+  CreditCard, Phone, Globe, Truck, Search, Eye, EyeOff, X, RefreshCw, Save, Cloud
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const API_URL = `${API_BASE_URL}/user/store/profile/`;
-
-// ✅ WORKING: Cloudinary Configuration with fallback
-const CLOUDINARY_CONFIG = {
-  cloud_name: 'dnmbfeckd',
-  upload_preset: 'kerala_sellers_preset', // Create this in your dashboard
-  fallback_preset: 'ml_default', // This works immediately
-  folder: 'kerala-sellers/store-assets'
+// ✅ FIXED: Enhanced API configuration
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl !== 'undefined') {
+    return envUrl;
+  }
+  return process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:8000' 
+    : 'https://keralaseller-backend.onrender.com';
 };
 
-// ✅ FIXED: Cloudinary Upload Helper for Unsigned Uploads Only
+const API_BASE_URL = getApiBaseUrl();
+const API_URL = `${API_BASE_URL}/user/store/profile/`;
+
+// ✅ WORKING: Cloudinary Configuration
+const CLOUDINARY_CONFIG = {
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dnmbfeckd',
+  upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'kerala_sellers_preset',
+  fallback_preset: 'ml_default',
+  folder: 'kerala-sellers/store-profiles'
+};
+
+// ✅ ENHANCED: Cloudinary Upload Function
 const uploadToCloudinary = async (file, options = {}) => {
-  // Try with your custom preset first, then fallback
   const presetsToTry = [
     { preset: CLOUDINARY_CONFIG.upload_preset, name: 'custom' },
     { preset: CLOUDINARY_CONFIG.fallback_preset, name: 'fallback' }
@@ -36,33 +46,22 @@ const uploadToCloudinary = async (file, options = {}) => {
       formData.append('upload_preset', preset);
       formData.append('folder', options.folder || CLOUDINARY_CONFIG.folder);
       
-      // ✅ FIXED: Only parameters allowed for UNSIGNED uploads
-      if (options.width) {
-        formData.append('width', options.width.toString());
-      }
-      if (options.height) {
-        formData.append('height', options.height.toString());
-      }
-      if (options.crop) {
-        formData.append('crop', options.crop);
-      }
+      // Basic optimizations allowed for unsigned uploads
+      if (options.width) formData.append('width', options.width.toString());
+      if (options.height) formData.append('height', options.height.toString());
+      if (options.crop) formData.append('crop', options.crop);
       
-      // Basic optimizations (allowed for unsigned)
       formData.append('quality', 'auto:good');
       formData.append('fetch_format', 'auto');
       
-      // ✅ FIXED: Generate unique public_id WITHOUT overwrite
+      // Generate unique public_id
       if (options.public_id) {
-        // Make it unique to avoid conflicts without overwrite parameter
         const uniqueId = `${options.public_id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         formData.append('public_id', uniqueId);
       }
       
-      // Tags for organization (allowed for unsigned)
       formData.append('tags', `kerala-sellers,store-${options.type || 'asset'}`);
 
-      console.log(`☁️ Uploading ${options.type || 'file'} to Cloudinary with ${name} preset`);
-      
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloud_name}/image/upload`,
         {
@@ -74,8 +73,6 @@ const uploadToCloudinary = async (file, options = {}) => {
       if (!response.ok) {
         const errorData = await response.json();
         console.error(`❌ ${name} preset failed:`, errorData);
-        
-        // Continue to next preset if this one fails
         if (name === 'fallback') {
           throw new Error(`All presets failed. Last error: ${errorData.error?.message || response.statusText}`);
         }
@@ -83,7 +80,6 @@ const uploadToCloudinary = async (file, options = {}) => {
       }
 
       const result = await response.json();
-      
       console.log(`✅ Upload successful with ${name} preset:`, result.secure_url);
       
       return {
@@ -115,29 +111,37 @@ const uploadToCloudinary = async (file, options = {}) => {
   };
 };
 
-export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('mandatory');
+export default function ShopProfileForm() {
+  const [activeTab, setActiveTab] = useState('basic');
+  
+  // ✅ Store state matching your Django StoreProfile model
   const [store, setStore] = useState({
-    // Mandatory fields
+    // Basic Information (matches your model fields)
     name: '',
     description: '',
-    whatsapp_number: '',
     tagline: '',
+    whatsapp_number: '',
     
-    // Optional fields
+    // Social Media
     instagram_link: '',
     facebook_link: '',
+    
+    // Delivery Information
     delivery_time_local: '',
     delivery_time_national: '',
+    
+    // SEO
     meta_title: '',
     meta_description: '',
+    
+    // Payment Methods
     payment_method: 'NONE',
     razorpay_key_id: '',
     razorpay_key_secret: '',
     upi_id: '',
     accepts_cod: false,
     
-    // Verification fields
+    // Business Verification
     gst_number: '',
     business_license: '',
     owner_name: '',
@@ -145,7 +149,7 @@ export default function SettingsPage() {
     verification_status: 'pending'
   });
   
-  // File states
+  // File handling states
   const [logoFile, setLogoFile] = useState(null);
   const [currentLogoUrl, setCurrentLogoUrl] = useState('');
   const [bannerImageFile, setBannerImageFile] = useState(null);
@@ -153,25 +157,27 @@ export default function SettingsPage() {
   const [verificationDocFile, setVerificationDocFile] = useState(null);
   const [currentDocUrl, setCurrentDocUrl] = useState('');
   
-  // Cloudinary tracking states
+  // Cloudinary tracking
   const [cloudinaryData, setCloudinaryData] = useState({
     logo: null,
     banner: null,
     document: null
   });
-  const [uploadProgress, setUploadProgress] = useState({});
-  const [isCloudinaryUploading, setIsCloudinaryUploading] = useState(false);
   
   // UI states
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [uploadProgress, setUploadProgress] = useState({});
   const [verificationProgress, setVerificationProgress] = useState(0);
   const [showSecrets, setShowSecrets] = useState({});
+  const [isProfileComplete, setIsProfileComplete] = useState(false);
+  
   const router = useRouter();
 
-  // Use Bearer authentication
+  // ✅ FIXED: Authentication helper
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
@@ -181,55 +187,75 @@ export default function SettingsPage() {
     return { Authorization: `Bearer ${token}` };
   }, [router]);
 
+  // ✅ FIXED: Fetch store profile with proper error handling
   const fetchStoreProfile = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
 
     try {
+      setIsLoading(true); // ✅ FIXED: setLoading -> setIsLoading
+      console.log('🔍 Fetching store profile from:', API_URL);
+      
       const response = await axios.get(API_URL, { headers });
+      console.log('✅ Store profile response:', response.data);
       
-      setStore(prev => ({ ...prev, ...response.data.store_profile }));
-      setCurrentBannerUrl(response.data.store_profile?.banner_image_url || '');
-      setCurrentLogoUrl(response.data.store_profile?.logo_url || '');
-      setCurrentDocUrl(response.data.store_profile?.verification_doc_url || '');
-      
-      // Handle existing Cloudinary data
-      if (response.data.store_profile?.cloudinary_logo) {
-        setCloudinaryData(prev => ({
-          ...prev,
-          logo: response.data.store_profile.cloudinary_logo
+      if (response.data.store_profile) {
+        // Update store state with existing data
+        setStore(prev => ({ 
+          ...prev, 
+          ...response.data.store_profile 
         }));
+        
+        // Update image URLs
+        setCurrentLogoUrl(response.data.store_profile.logo_url || '');
+        setCurrentBannerUrl(response.data.store_profile.banner_image_url || '');
+        setCurrentDocUrl(response.data.store_profile.verification_doc_url || '');
+        
+        // Update Cloudinary data if exists
+        if (response.data.store_profile.cloudinary_logo) {
+          setCloudinaryData(prev => ({
+            ...prev,
+            logo: response.data.store_profile.cloudinary_logo
+          }));
+        }
+        if (response.data.store_profile.cloudinary_banner) {
+          setCloudinaryData(prev => ({
+            ...prev,
+            banner: response.data.store_profile.cloudinary_banner
+          }));
+        }
+        if (response.data.store_profile.cloudinary_document) {
+          setCloudinaryData(prev => ({
+            ...prev,
+            document: response.data.store_profile.cloudinary_document
+          }));
+        }
+        
+        setIsProfileComplete(response.data.is_profile_complete || false);
+        calculateProgress(response.data.store_profile);
+      } else {
+        setIsProfileComplete(false);
+        calculateProgress({});
       }
-      if (response.data.store_profile?.cloudinary_banner) {
-        setCloudinaryData(prev => ({
-          ...prev,
-          banner: response.data.store_profile.cloudinary_banner
-        }));
-      }
-      if (response.data.store_profile?.cloudinary_document) {
-        setCloudinaryData(prev => ({
-          ...prev,
-          document: response.data.store_profile.cloudinary_document
-        }));
-      }
-      
-      calculateProgress(response.data.store_profile || {});
       
     } catch (error) {
+      console.error('❌ Error fetching store profile:', error);
       if (error.response?.status === 401) {
         router.push('/login/seller');
       } else {
-        setErrorMessage('Failed to load store settings. Please refresh the page.');
+        setErrorMessage('Failed to load store profile. Please refresh the page.');
       }
     } finally {
       setIsLoading(false);
     }
   }, [getAuthHeaders, router]);
 
+  // Load profile on component mount
   useEffect(() => {
     fetchStoreProfile();
   }, [fetchStoreProfile]);
 
+  // ✅ Calculate verification progress
   const calculateProgress = (storeData) => {
     const mandatoryFields = ['name', 'description', 'whatsapp_number'];
     const optionalFields = ['gst_number', 'business_license', 'owner_name', 'business_address'];
@@ -250,6 +276,7 @@ export default function SettingsPage() {
     setVerificationProgress(Math.round((completed / total) * 100));
   };
 
+  // ✅ Handle form input changes
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
@@ -260,6 +287,7 @@ export default function SettingsPage() {
     if (successMessage) setSuccessMessage('');
   };
 
+  // ✅ Form validation
   const validateForm = () => {
     const errors = [];
     
@@ -283,7 +311,7 @@ export default function SettingsPage() {
     return errors;
   };
 
-  // ✅ FIXED: Handle file changes with corrected Cloudinary upload
+  // ✅ Handle file changes with Cloudinary upload
   const handleFileChange = async (fileType, file) => {
     const maxSize = 5 * 1024 * 1024; // 5MB
     
@@ -294,7 +322,7 @@ export default function SettingsPage() {
 
     if (!file) return;
     
-    // Set local file immediately for preview
+    // Set local file for preview
     switch (fileType) {
       case 'logo':
         setLogoFile(file);
@@ -308,32 +336,30 @@ export default function SettingsPage() {
     }
     
     setErrorMessage('');
-
-    // Start Cloudinary upload in background
-    setIsCloudinaryUploading(true);
+    setIsUploading(true);
+    
+    // Update progress
     setUploadProgress(prev => ({
       ...prev,
       [fileType]: { status: 'uploading', progress: 0, fileName: file.name }
     }));
 
     try {
-      // Generate unique identifiers
       const timestamp = Date.now();
       const randomId = Math.random().toString(36).substr(2, 9);
       
-      // ✅ FIXED: Upload options without overwrite parameter
       const uploadOptions = {
         folder: `${CLOUDINARY_CONFIG.folder}/${fileType}`,
-        public_id: `${fileType}_${timestamp}_${randomId}`, // This will be made more unique in the upload function
+        public_id: `${fileType}_${timestamp}_${randomId}`,
         type: fileType,
         width: fileType === 'logo' ? 400 : fileType === 'banner' ? 1200 : 800,
         height: fileType === 'logo' ? 400 : fileType === 'banner' ? 400 : 600,
         crop: fileType === 'doc' ? 'fit' : 'fill'
       };
 
-      console.log(`🔧 Starting ${fileType} upload with FIXED options:`, uploadOptions);
+      console.log(`🔧 Starting ${fileType} upload:`, uploadOptions);
 
-      // Simulate progress for better UX
+      // Simulate progress
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => ({
           ...prev,
@@ -366,10 +392,9 @@ export default function SettingsPage() {
         
         console.log(`✅ ${fileType} uploaded successfully:`, result.url);
         setSuccessMessage(
-          `✅ ${fileType.charAt(0).toUpperCase() + fileType.slice(1)} uploaded to Cloudinary successfully! (${result.preset_used})`
+          `✅ ${fileType.charAt(0).toUpperCase() + fileType.slice(1)} uploaded successfully!`
         );
         
-        // Clear success message after 5 seconds
         setTimeout(() => setSuccessMessage(''), 5000);
         
       } else {
@@ -382,8 +407,7 @@ export default function SettingsPage() {
             fileName: file.name
           }
         }));
-        setErrorMessage(`❌ Failed to upload ${fileType} to Cloudinary: ${result.error}`);
-        console.error(`❌ ${fileType} upload failed:`, result.error);
+        setErrorMessage(`❌ Failed to upload ${fileType}: ${result.error}`);
       }
       
     } catch (error) {
@@ -397,9 +421,8 @@ export default function SettingsPage() {
         }
       }));
       setErrorMessage(`❌ Error uploading ${fileType}: ${error.message}`);
-      console.error(`❌ ${fileType} upload error:`, error);
     } finally {
-      setIsCloudinaryUploading(false);
+      setIsUploading(false);
       
       // Clear progress after 8 seconds
       setTimeout(() => {
@@ -411,7 +434,7 @@ export default function SettingsPage() {
     }
   };
 
-  // ✅ Keep your existing submit function exactly as-is
+  // ✅ FIXED: Handle form submission with proper data preparation
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -431,17 +454,13 @@ export default function SettingsPage() {
       return;
     }
     
-    // Prepare data with Cloudinary URLs if available
-    const hasCloudinaryData = cloudinaryData.logo || cloudinaryData.banner || cloudinaryData.document;
-    
-    let requestData;
-    let requestHeaders = { ...headers };
-
-    if (hasCloudinaryData) {
-      // JSON submission with Cloudinary URLs
-      requestData = {
+    try {
+      console.log('🚀 Submitting store profile...');
+      
+      // ✅ FIXED: Always use JSON submission for cleaner data handling
+      const requestData = {
         ...store,
-        // Include Cloudinary data
+        // Include Cloudinary data if available
         cloudinary_logo: cloudinaryData.logo ? {
           public_id: cloudinaryData.logo.public_id,
           url: cloudinaryData.logo.url
@@ -455,42 +474,33 @@ export default function SettingsPage() {
           url: cloudinaryData.document.url
         } : null
       };
-      requestHeaders['Content-Type'] = 'application/json';
-    } else {
-      // Traditional FormData submission
-      requestData = new FormData();
       
-      // Append store data
-      Object.keys(store).forEach(key => {
-        if (store[key] !== null && store[key] !== undefined) {
-          requestData.append(key, store[key]);
-        }
+      console.log('📤 Sending JSON data:', requestData);
+
+      // Choose method based on whether profile exists
+      const method = isProfileComplete ? 'patch' : 'post';
+      const response = await axios[method](API_URL, requestData, { 
+        headers: { 
+          ...headers,
+          'Content-Type': 'application/json'
+        } 
       });
       
-      // Append files if they exist
-      if (bannerImageFile) requestData.append('banner_image', bannerImageFile);
-      if (logoFile) requestData.append('logo', logoFile);
-      if (verificationDocFile) requestData.append('verification_doc', verificationDocFile);
-
-      requestHeaders['Content-Type'] = 'multipart/form-data';
-    }
-
-    try {
-      console.log('📤 Submitting store profile with FIXED Cloudinary data:', {
-        logo: !!cloudinaryData.logo,
-        banner: !!cloudinaryData.banner,
-        document: !!cloudinaryData.document
-      });
-
-      const response = await axios.patch(API_URL, requestData, { headers: requestHeaders });
+      console.log('✅ Store profile saved:', response.data);
       
-      setCurrentBannerUrl(response.data.store_profile?.banner_image_url || '');
-      setCurrentLogoUrl(response.data.store_profile?.logo_url || '');
-      setCurrentDocUrl(response.data.store_profile?.verification_doc_url || '');
+      // Update state with response data
+      if (response.data.store_profile) {
+        setStore(prev => ({ ...prev, ...response.data.store_profile }));
+        setCurrentLogoUrl(response.data.store_profile.logo_url || '');
+        setCurrentBannerUrl(response.data.store_profile.banner_image_url || '');
+        setCurrentDocUrl(response.data.store_profile.verification_doc_url || '');
+        setIsProfileComplete(true);
+        calculateProgress(response.data.store_profile);
+      }
       
       const cloudinaryCount = Object.values(cloudinaryData).filter(Boolean).length;
       setSuccessMessage(
-        `✅ Store settings updated successfully!${cloudinaryCount > 0 ? ` ☁️ ${cloudinaryCount} images stored on Cloudinary` : ''}`
+        `✅ Store profile ${isProfileComplete ? 'updated' : 'created'} successfully!${cloudinaryCount > 0 ? ` ☁️ ${cloudinaryCount} images stored on Cloudinary` : ''}`
       );
       
       // Reset file inputs
@@ -502,30 +512,51 @@ export default function SettingsPage() {
       const fileInputs = document.querySelectorAll('input[type="file"]');
       fileInputs.forEach(input => input.value = '');
       
-      calculateProgress(response.data.store_profile || {});
-      
-      // Clear success message after 5 seconds
       setTimeout(() => setSuccessMessage(''), 5000);
       
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.message ||
-                          'Failed to update store settings. Please try again.';
+      console.error('❌ Store profile save error:', error);
+      
+      let errorMessage = 'Failed to save store profile. Please try again.';
+      
+      if (error.response?.status === 401) {
+        errorMessage = 'Authentication failed. Please log in again.';
+        setTimeout(() => {
+          localStorage.removeItem('accessToken');
+          router.push('/login/seller');
+        }, 2000);
+      } else if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        } else if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else {
+          // Handle field-specific errors
+          const fieldErrors = [];
+          Object.keys(error.response.data).forEach(field => {
+            const fieldError = error.response.data[field];
+            if (Array.isArray(fieldError)) {
+              fieldErrors.push(`${field}: ${fieldError.join(', ')}`);
+            } else if (typeof fieldError === 'string') {
+              fieldErrors.push(`${field}: ${fieldError}`);
+            }
+          });
+          
+          if (fieldErrors.length > 0) {
+            errorMessage = fieldErrors.join('; ');
+          }
+        }
+      }
+      
       setErrorMessage(errorMessage);
-      console.error('❌ Store update error:', error);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const toggleSecretVisibility = (field) => {
-    setShowSecrets(prev => ({
-      ...prev,
-      [field]: !prev[field]
-    }));
-  };
-
-  // Upload progress display with preset info
+  // ✅ Upload progress renderer
   const renderUploadProgress = (fileType) => {
     const progress = uploadProgress[fileType];
     if (!progress) return null;
@@ -547,7 +578,7 @@ export default function SettingsPage() {
           />
         </div>
         <div style={styles.progressText}>
-          {progress.status === 'completed' && `✅ Successfully uploaded to Cloudinary${progress.preset ? ` (${progress.preset})` : ''}`}
+          {progress.status === 'completed' && `✅ Successfully uploaded${progress.preset ? ` (${progress.preset})` : ''}`}
           {progress.status === 'failed' && `❌ Upload failed: ${progress.error || 'Unknown error'}`}
           {progress.status === 'uploading' && '☁️ Uploading to Cloudinary...'}
         </div>
@@ -555,7 +586,7 @@ export default function SettingsPage() {
     );
   };
 
-  // Keep all your existing render methods unchanged...
+  // ✅ Verification status renderer
   const renderVerificationStatus = () => {
     const statusConfig = {
       pending: { 
@@ -577,8 +608,10 @@ export default function SettingsPage() {
         text: 'Verification Rejected' 
       }
     };
+    
     const config = statusConfig[store.verification_status] || statusConfig.pending;
     const Icon = config.icon;
+    
     return (
       <div style={{
         ...styles.verificationStatus, 
@@ -605,26 +638,26 @@ export default function SettingsPage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p>Loading store settings...</p>
+        <p>Loading store profile...</p>
       </div>
     );
   }
 
   return (
     <div style={styles.container}>
-      {/* Header with FIXED Cloudinary Status */}
+      {/* Header */}
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>
-            <Settings size={28} />
-            Store Settings
+            <Building size={28} />
+            {isProfileComplete ? 'Edit Store Profile' : 'Create Store Profile'}
           </h1>
           <p style={styles.subtitle}>
-            Manage your store information and verification status
+            Set up your store information to start selling on Kerala Sellers
             <br />
             <span style={styles.cloudinaryNote}>
               <Cloud size={14} />
-              ☁️ Images powered by Cloudinary ({CLOUDINARY_CONFIG.cloud_name}) - FIXED for unsigned uploads
+              ☁️ Images powered by Cloudinary ({CLOUDINARY_CONFIG.cloud_name})
             </span>
           </p>
         </div>
@@ -652,22 +685,22 @@ export default function SettingsPage() {
       {/* Tab Navigation */}
       <div style={styles.tabContainer}>
         <button
-          onClick={() => setActiveTab('mandatory')}
+          onClick={() => setActiveTab('basic')}
           style={{
             ...styles.tab,
-            ...(activeTab === 'mandatory' ? styles.activeTab : {})
+            ...(activeTab === 'basic' ? styles.activeTab : {})
           }}
         >
           <Building size={18} />
-          <span>Essential Information</span>
+          <span>Basic Information</span>
           <span style={styles.tabBadge}>Required</span>
         </button>
         
         <button
-          onClick={() => setActiveTab('optional')}
+          onClick={() => setActiveTab('verification')}
           style={{
             ...styles.tab,
-            ...(activeTab === 'optional' ? styles.activeTab : {})
+            ...(activeTab === 'verification' ? styles.activeTab : {})
           }}
         >
           <Shield size={18} />
@@ -676,21 +709,23 @@ export default function SettingsPage() {
         </button>
       </div>
 
+      {/* Form */}
       <form onSubmit={handleSubmit} style={styles.form}>
-        {activeTab === 'mandatory' && (
+        {activeTab === 'basic' && (
           <div style={styles.section}>
-            {/* Store Branding with FIXED Cloudinary */}
+            {/* Store Branding */}
             <div style={styles.sectionCard}>
               <h3 style={styles.sectionTitle}>
                 <Star size={20} />
                 Store Branding
                 <span style={styles.cloudinaryBadge}>
                   <Cloud size={16} />
-                  Cloudinary - FIXED for Unsigned Uploads
+                  Cloudinary
                 </span>
               </h3>
               
               <div style={styles.brandingContainer}>
+                {/* Logo Upload */}
                 <div style={styles.logoSection}>
                   <label style={styles.label}>Store Logo *</label>
                   <div style={styles.imageUploadContainer}>
@@ -709,13 +744,13 @@ export default function SettingsPage() {
                         onChange={(e) => handleFileChange('logo', e.target.files[0])} 
                         style={styles.hiddenFileInput} 
                         id="logo-upload"
-                        disabled={isCloudinaryUploading}
+                        disabled={isUploading}
                       />
                       <label htmlFor="logo-upload" style={{
                         ...styles.uploadButton,
-                        ...(isCloudinaryUploading ? styles.disabledButton : {})
+                        ...(isUploading ? styles.disabledButton : {})
                       }}>
-                        {isCloudinaryUploading ? (
+                        {isUploading ? (
                           <>
                             <div style={styles.buttonSpinner}></div>
                             Uploading...
@@ -731,7 +766,7 @@ export default function SettingsPage() {
                     {cloudinaryData.logo && (
                       <div style={styles.cloudinaryIndicator}>
                         <Cloud size={14} />
-                        Stored on Cloudinary
+                        Cloudinary
                       </div>
                     )}
                   </div>
@@ -741,6 +776,7 @@ export default function SettingsPage() {
                   {renderUploadProgress('logo')}
                 </div>
                 
+                {/* Banner Upload */}
                 <div style={styles.bannerSection}>
                   <label style={styles.label}>Store Banner</label>
                   <div style={styles.imageUploadContainer}>
@@ -759,13 +795,13 @@ export default function SettingsPage() {
                         onChange={(e) => handleFileChange('banner', e.target.files[0])} 
                         style={styles.hiddenFileInput} 
                         id="banner-upload"
-                        disabled={isCloudinaryUploading}
+                        disabled={isUploading}
                       />
                       <label htmlFor="banner-upload" style={{
                         ...styles.uploadButton,
-                        ...(isCloudinaryUploading ? styles.disabledButton : {})
+                        ...(isUploading ? styles.disabledButton : {})
                       }}>
-                        {isCloudinaryUploading ? (
+                        {isUploading ? (
                           <>
                             <div style={styles.buttonSpinner}></div>
                             Uploading...
@@ -781,7 +817,7 @@ export default function SettingsPage() {
                     {cloudinaryData.banner && (
                       <div style={styles.cloudinaryIndicator}>
                         <Cloud size={14} />
-                        Stored on Cloudinary
+                        Cloudinary
                       </div>
                     )}
                   </div>
@@ -793,7 +829,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Keep your existing Basic Information section exactly as-is */}
+            {/* Basic Information */}
             <div style={styles.sectionCard}>
               <h3 style={styles.sectionTitle}>
                 <Building size={20} />
@@ -867,7 +903,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Keep your existing Social Media section */}
+            {/* Social Media */}
             <div style={styles.sectionCard}>
               <h3 style={styles.sectionTitle}>
                 <Globe size={20} />
@@ -900,6 +936,288 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+
+            {/* Delivery Information */}
+            <div style={styles.sectionCard}>
+              <h3 style={styles.sectionTitle}>
+                <Truck size={20} />
+                Delivery Information
+              </h3>
+              
+              <div style={styles.formGrid}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Local Delivery Time</label>
+                  <input 
+                    type="text" 
+                    name="delivery_time_local" 
+                    value={store.delivery_time_local || ''} 
+                    onChange={handleInputChange} 
+                    style={styles.input}
+                    placeholder="1-2 days"
+                  />
+                </div>
+                
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>National Delivery Time</label>
+                  <input 
+                    type="text" 
+                    name="delivery_time_national" 
+                    value={store.delivery_time_national || ''} 
+                    onChange={handleInputChange} 
+                    style={styles.input}
+                    placeholder="3-7 days"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'verification' && (
+          <div style={styles.section}>
+            {/* Business Verification */}
+            <div style={styles.sectionCard}>
+              <h3 style={styles.sectionTitle}>
+                <Shield size={20} />
+                Business Verification
+              </h3>
+              
+              <div style={styles.formGrid}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Business Owner Name</label>
+                  <input 
+                    type="text" 
+                    name="owner_name" 
+                    value={store.owner_name || ''} 
+                    onChange={handleInputChange} 
+                    style={styles.input}
+                    placeholder="Full name of business owner"
+                  />
+                </div>
+                
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>GST Number (Optional)</label>
+                  <input 
+                    type="text" 
+                    name="gst_number" 
+                    value={store.gst_number || ''} 
+                    onChange={handleInputChange} 
+                    style={styles.input}
+                    placeholder="22AAAAA0000A1Z5"
+                  />
+                </div>
+              </div>
+              
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Business Address</label>
+                <textarea 
+                  name="business_address" 
+                  value={store.business_address || ''} 
+                  onChange={handleInputChange} 
+                  rows="3" 
+                  style={styles.textarea}
+                  placeholder="Complete business address..."
+                />
+              </div>
+              
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Business License Number (Optional)</label>
+                <input 
+                  type="text" 
+                  name="business_license" 
+                  value={store.business_license || ''} 
+                  onChange={handleInputChange} 
+                  style={styles.input}
+                  placeholder="Business license or registration number"
+                />
+              </div>
+
+              {/* Verification Document Upload */}
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Verification Document (Optional)</label>
+                <div style={styles.imageUploadContainer}>
+                  {currentDocUrl ? (
+                    <img src={currentDocUrl} alt="Verification document" style={styles.docPreview} />
+                  ) : (
+                    <div style={styles.docPlaceholder}>
+                      <FileText size={24} />
+                      <span>No Document</span>
+                    </div>
+                  )}
+                  <div style={styles.imageOverlay}>
+                    <input 
+                      type="file" 
+                      accept="image/*,application/pdf"
+                      onChange={(e) => handleFileChange('doc', e.target.files[0])} 
+                      style={styles.hiddenFileInput} 
+                      id="doc-upload"
+                      disabled={isUploading}
+                    />
+                    <label htmlFor="doc-upload" style={{
+                      ...styles.uploadButton,
+                      ...(isUploading ? styles.disabledButton : {})
+                    }}>
+                      {isUploading ? (
+                        <>
+                          <div style={styles.buttonSpinner}></div>
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={16} />
+                          {verificationDocFile ? 'Change Document' : 'Upload Document'}
+                        </>
+                      )}
+                    </label>
+                  </div>
+                  {cloudinaryData.document && (
+                    <div style={styles.cloudinaryIndicator}>
+                      <Cloud size={14} />
+                      Cloudinary
+                    </div>
+                  )}
+                </div>
+                {verificationDocFile && (
+                  <p style={styles.fileName}>Selected: {verificationDocFile.name}</p>
+                )}
+                {renderUploadProgress('doc')}
+                <p style={styles.helpText}>
+                  Upload GST certificate, business license, or other verification documents
+                </p>
+              </div>
+            </div>
+
+            {/* Payment Methods */}
+            <div style={styles.sectionCard}>
+              <h3 style={styles.sectionTitle}>
+                <CreditCard size={20} />
+                Payment Methods
+              </h3>
+              
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Primary Payment Method</label>
+                <select 
+                  name="payment_method" 
+                  value={store.payment_method || 'NONE'} 
+                  onChange={handleInputChange} 
+                  style={styles.select}
+                >
+                  <option value="NONE">No Online Payment</option>
+                  <option value="UPI">UPI Only</option>
+                  <option value="RAZORPAY">Razorpay Gateway</option>
+                </select>
+              </div>
+
+              {store.payment_method === 'UPI' && (
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>UPI ID *</label>
+                  <input 
+                    type="text" 
+                    name="upi_id" 
+                    value={store.upi_id || ''} 
+                    onChange={handleInputChange} 
+                    required
+                    style={styles.input}
+                    placeholder="yourname@paytm"
+                  />
+                </div>
+              )}
+
+              {store.payment_method === 'RAZORPAY' && (
+                <div style={styles.formGrid}>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Razorpay Key ID *</label>
+                    <input 
+                      type="text" 
+                      name="razorpay_key_id" 
+                      value={store.razorpay_key_id || ''} 
+                      onChange={handleInputChange} 
+                      required
+                      style={styles.input}
+                      placeholder="rzp_test_..."
+                    />
+                  </div>
+                  
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Razorpay Key Secret *</label>
+                    <div style={styles.passwordContainer}>
+                      <input 
+                        type={showSecrets.razorpay ? "text" : "password"}
+                        name="razorpay_key_secret" 
+                        value={store.razorpay_key_secret || ''} 
+                        onChange={handleInputChange} 
+                        required
+                        style={styles.input}
+                        placeholder="Your secret key"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSecrets(prev => ({
+                          ...prev,
+                          razorpay: !prev.razorpay
+                        }))}
+                        style={styles.eyeButton}
+                      >
+                        {showSecrets.razorpay ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div style={styles.formGroup}>
+                <label style={styles.checkboxLabel}>
+                  <input 
+                    type="checkbox" 
+                    name="accepts_cod" 
+                    checked={store.accepts_cod || false} 
+                    onChange={handleInputChange} 
+                    style={styles.checkbox}
+                  />
+                  <span style={styles.checkboxText}>Accept Cash on Delivery (COD)</span>
+                </label>
+              </div>
+            </div>
+
+            {/* SEO Settings */}
+            <div style={styles.sectionCard}>
+              <h3 style={styles.sectionTitle}>
+                <Search size={20} />
+                SEO & Marketing
+              </h3>
+              
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Meta Title (Optional)</label>
+                <input 
+                  type="text" 
+                  name="meta_title" 
+                  value={store.meta_title || ''} 
+                  onChange={handleInputChange} 
+                  style={styles.input}
+                  placeholder="Best Electronics Store in Kerala | Your Store"
+                  maxLength={60}
+                />
+                <span style={styles.charCount}>
+                  {(store.meta_title || '').length}/60
+                </span>
+              </div>
+              
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Meta Description (Optional)</label>
+                <textarea 
+                  name="meta_description" 
+                  value={store.meta_description || ''} 
+                  onChange={handleInputChange} 
+                  rows="3" 
+                  style={styles.textarea}
+                  placeholder="Describe your store for search engines..."
+                  maxLength={160}
+                />
+                <span style={styles.charCount}>
+                  {(store.meta_description || '').length}/160
+                </span>
+              </div>
+            </div>
           </div>
         )}
 
@@ -907,18 +1225,18 @@ export default function SettingsPage() {
         <div style={styles.submitSection}>
           <button 
             type="submit" 
-            disabled={isSaving || isCloudinaryUploading} 
+            disabled={isSaving || isUploading} 
             style={{
               ...styles.submitButton,
-              ...(isSaving || isCloudinaryUploading ? styles.disabledButton : {})
+              ...(isSaving || isUploading ? styles.disabledButton : {})
             }}
           >
             {isSaving ? (
               <>
                 <div style={styles.buttonSpinner}></div>
-                Saving Changes...
+                {isProfileComplete ? 'Updating Profile...' : 'Creating Profile...'}
               </>
-            ) : isCloudinaryUploading ? (
+            ) : isUploading ? (
               <>
                 <div style={styles.buttonSpinner}></div>
                 Uploading to Cloudinary...
@@ -926,7 +1244,7 @@ export default function SettingsPage() {
             ) : (
               <>
                 <Save size={18} />
-                Save Changes
+                {isProfileComplete ? 'Update Profile' : 'Create Profile'}
               </>
             )}
           </button>
@@ -935,7 +1253,7 @@ export default function SettingsPage() {
             type="button" 
             onClick={fetchStoreProfile}
             style={styles.refreshButton}
-            disabled={isSaving || isCloudinaryUploading}
+            disabled={isSaving || isUploading}
           >
             <RefreshCw size={18} />
             Refresh
@@ -958,12 +1276,16 @@ export default function SettingsPage() {
           from { opacity: 0; transform: translateX(-10px); }
           to { opacity: 1; transform: translateX(0); }
         }
+        
+        .imageUploadContainer:hover .imageOverlay {
+          opacity: 1;
+        }
       `}</style>
     </div>
   );
 }
 
-// ✅ Keep your existing styles (add them all here - I'm showing key ones)
+// ✅ COMPLETE STYLES
 const styles = {
   container: {
     maxWidth: '1000px',
@@ -1000,99 +1322,6 @@ const styles = {
     marginRight: '8px'
   },
 
-  // Enhanced Cloudinary styles
-  cloudinaryNote: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    fontSize: '12px',
-    color: '#10b981',
-    marginTop: '4px'
-  },
-  
-  cloudinaryBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    marginLeft: 'auto',
-    padding: '4px 12px',
-    backgroundColor: '#10b981',
-    color: 'white',
-    borderRadius: '16px',
-    fontSize: '12px',
-    fontWeight: '600'
-  },
-  
-  cloudinaryIndicator: {
-    position: 'absolute',
-    top: '8px',
-    right: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '4px 8px',
-    backgroundColor: '#10b981',
-    color: 'white',
-    borderRadius: '12px',
-    fontSize: '11px',
-    fontWeight: '600'
-  },
-  
-  // Enhanced upload progress styles
-  uploadProgress: {
-    marginTop: '12px',
-    padding: '12px',
-    backgroundColor: '#f8fafc',
-    borderRadius: '8px',
-    border: '2px solid #e2e8f0'
-  },
-  
-  progressInfo: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '8px'
-  },
-  
-  progressFileName: {
-    fontSize: '13px',
-    fontWeight: '500',
-    color: '#374151',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    maxWidth: '200px'
-  },
-  
-  progressPercentage: {
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#6b7280'
-  },
-  
-  progressBar: {
-    width: '100%',
-    height: '8px',
-    backgroundColor: '#e5e7eb',
-    borderRadius: '4px',
-    overflow: 'hidden',
-    marginBottom: '6px'
-  },
-  
-  progressFill: {
-    height: '100%',
-    transition: 'width 0.3s ease',
-    borderRadius: '4px'
-  },
-  
-  progressText: {
-    fontSize: '12px',
-    color: '#6b7280',
-    fontWeight: '500',
-    textAlign: 'center'
-  },
-
-  // Other important styles
   header: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -1121,6 +1350,15 @@ const styles = {
     color: '#6b7280',
     margin: 0,
     fontSize: '1rem'
+  },
+
+  cloudinaryNote: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '12px',
+    color: '#10b981',
+    marginTop: '4px'
   },
 
   successAlert: {
@@ -1174,190 +1412,24 @@ const styles = {
     gap: '8px',
     marginLeft: 'auto'
   },
-  
-  form: {
-    animation: 'fadeIn 0.6s ease-out'
-  },
-  
-  section: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '32px'
-  },
-  
-  sectionCard: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: '32px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb'
-  },
-  
-  sectionTitle: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    fontSize: '20px',
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: '8px',
-    paddingBottom: '16px',
-    borderBottom: '2px solid #f3f4f6'
-  },
-  
-  brandingContainer: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '32px'
+
+  progressBar: {
+    width: '100px',
+    height: '8px',
+    backgroundColor: '#e5e7eb',
+    borderRadius: '4px',
+    overflow: 'hidden'
   },
 
-  logoSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
+  progressFill: {
+    height: '100%',
+    transition: 'width 0.3s ease',
+    borderRadius: '4px'
   },
 
-  bannerSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  },
-
-  imageUploadContainer: {
-    position: 'relative',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    border: '2px dashed #d1d5db',
-    backgroundColor: '#f9fafb'
-  },
-
-  logoPreview: {
-    width: '100%',
-    height: '200px',
-    objectFit: 'contain',
-    backgroundColor: 'white'
-  },
-
-  bannerPreview: {
-    width: '100%',
-    height: '200px',
-    objectFit: 'cover'
-  },
-
-  logoPlaceholder: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '200px',
-    color: '#6b7280',
-    gap: '8px'
-  },
-
-  bannerPlaceholder: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '200px',
-    color: '#6b7280',
-    gap: '8px'
-  },
-
-  imageOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    opacity: 0,
-    transition: 'opacity 0.2s'
-  },
-
-  hiddenFileInput: {
-    display: 'none'
-  },
-
-  uploadButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 20px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '500',
-    textDecoration: 'none',
-    transition: 'all 0.2s'
-  },
-
-  disabledButton: {
-    backgroundColor: '#9ca3af',
-    cursor: 'not-allowed',
-    opacity: 0.7
-  },
-
-  formGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '24px'
-  },
-  
-  formGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
-  },
-  
-  label: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#374151'
-  },
-  
-  input: {
-    padding: '12px 16px',
-    border: '2px solid #e5e7eb',
-    borderRadius: '8px',
-    fontSize: '14px',
-    outline: 'none',
-    transition: 'all 0.2s',
-    backgroundColor: 'white'
-  },
-  
-  textarea: {
-    padding: '12px 16px',
-    border: '2px solid #e5e7eb',
-    borderRadius: '8px',
-    fontSize: '14px',
-    outline: 'none',
-    transition: 'all 0.2s',
-    resize: 'vertical',
-    fontFamily: 'inherit',
-    backgroundColor: 'white'
-  },
-  
-  charCount: {
-    fontSize: '12px',
-    color: '#9ca3af',
-    alignSelf: 'flex-end'
-  },
-  
-  helpText: {
+  progressText: {
     fontSize: '12px',
     color: '#6b7280',
-    lineHeight: '1.4'
-  },
-  
-  fileName: {
-    fontSize: '12px',
-    color: '#059669',
     fontWeight: '500'
   },
 
@@ -1410,6 +1482,313 @@ const styles = {
     fontSize: '11px',
     fontWeight: '600',
     marginLeft: 'auto'
+  },
+  
+  form: {
+    animation: 'fadeIn 0.6s ease-out'
+  },
+  
+  section: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '32px'
+  },
+  
+  sectionCard: {
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    padding: '32px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    border: '1px solid #e5e7eb'
+  },
+  
+  sectionTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: '8px',
+    paddingBottom: '16px',
+    borderBottom: '2px solid #f3f4f6'
+  },
+
+  cloudinaryBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    marginLeft: 'auto',
+    padding: '4px 12px',
+    backgroundColor: '#10b981',
+    color: 'white',
+    borderRadius: '16px',
+    fontSize: '12px',
+    fontWeight: '600'
+  },
+  
+  brandingContainer: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '32px'
+  },
+
+  logoSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+
+  bannerSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+
+  imageUploadContainer: {
+    position: 'relative',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    border: '2px dashed #d1d5db',
+    backgroundColor: '#f9fafb'
+  },
+
+  logoPreview: {
+    width: '100%',
+    height: '200px',
+    objectFit: 'contain',
+    backgroundColor: 'white'
+  },
+
+  bannerPreview: {
+    width: '100%',
+    height: '200px',
+    objectFit: 'cover'
+  },
+
+  docPreview: {
+    width: '100%',
+    height: '200px',
+    objectFit: 'contain',
+    backgroundColor: 'white'
+  },
+
+  logoPlaceholder: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '200px',
+    color: '#6b7280',
+    gap: '8px'
+  },
+
+  bannerPlaceholder: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '200px',
+    color: '#6b7280',
+    gap: '8px'
+  },
+
+  docPlaceholder: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '200px',
+    color: '#6b7280',
+    gap: '8px'
+  },
+
+  imageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0,
+    transition: 'opacity 0.2s'
+  },
+
+  hiddenFileInput: {
+    display: 'none'
+  },
+
+  uploadButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 20px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    textDecoration: 'none',
+    transition: 'all 0.2s'
+  },
+
+  disabledButton: {
+    backgroundColor: '#9ca3af',
+    cursor: 'not-allowed',
+    opacity: 0.7
+  },
+
+  cloudinaryIndicator: {
+    position: 'absolute',
+    top: '8px',
+    right: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '4px 8px',
+    backgroundColor: '#10b981',
+    color: 'white',
+    borderRadius: '12px',
+    fontSize: '11px',
+    fontWeight: '600'
+  },
+
+  uploadProgress: {
+    marginTop: '12px',
+    padding: '12px',
+    backgroundColor: '#f8fafc',
+    borderRadius: '8px',
+    border: '2px solid #e2e8f0'
+  },
+  
+  progressInfo: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '8px'
+  },
+  
+  progressFileName: {
+    fontSize: '13px',
+    fontWeight: '500',
+    color: '#374151',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    maxWidth: '200px'
+  },
+  
+  progressPercentage: {
+    fontSize: '12px',
+    fontWeight: '600',
+    color: '#6b7280'
+  },
+
+  formGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '24px'
+  },
+  
+  formGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+  
+  label: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#374151'
+  },
+  
+  input: {
+    padding: '12px 16px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '8px',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'all 0.2s',
+    backgroundColor: 'white'
+  },
+
+  select: {
+    padding: '12px 16px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '8px',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'all 0.2s',
+    backgroundColor: 'white',
+    cursor: 'pointer'
+  },
+  
+  textarea: {
+    padding: '12px 16px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '8px',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'all 0.2s',
+    resize: 'vertical',
+    fontFamily: 'inherit',
+    backgroundColor: 'white'
+  },
+  
+  charCount: {
+    fontSize: '12px',
+    color: '#9ca3af',
+    alignSelf: 'flex-end'
+  },
+  
+  helpText: {
+    fontSize: '12px',
+    color: '#6b7280',
+    lineHeight: '1.4'
+  },
+  
+  fileName: {
+    fontSize: '12px',
+    color: '#059669',
+    fontWeight: '500'
+  },
+
+  passwordContainer: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center'
+  },
+
+  eyeButton: {
+    position: 'absolute',
+    right: '12px',
+    background: 'none',
+    border: 'none',
+    color: '#6b7280',
+    cursor: 'pointer',
+    padding: '4px'
+  },
+
+  checkboxLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    cursor: 'pointer'
+  },
+
+  checkbox: {
+    width: '16px',
+    height: '16px',
+    cursor: 'pointer'
+  },
+
+  checkboxText: {
+    fontSize: '14px',
+    color: '#374151'
   },
 
   submitSection: {

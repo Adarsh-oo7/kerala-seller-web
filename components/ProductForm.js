@@ -20,6 +20,102 @@ const API_BASE_URL = getApiBaseUrl();
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 
+// ✅ CLOUDINARY CONFIGURATION
+const CLOUDINARY_CONFIG = {
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dnmbfeckd',
+  upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'kerala_sellers_preset',
+  upload_url: `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dnmbfeckd'}/image/upload`
+};
+
+// ✅ VALIDATION FUNCTIONS - Prevent negative numbers and validate properly
+const validatePositiveNumber = (value, fieldName = 'Value') => {
+  if (value === '' || value === null || value === undefined) {
+    return { isValid: true, error: null }; // Allow empty for optional fields
+  }
+  
+  const numValue = parseFloat(value);
+  if (isNaN(numValue)) {
+    return { isValid: false, error: `${fieldName} must be a valid number` };
+  }
+  if (numValue < 0) {
+    return { isValid: false, error: `${fieldName} cannot be negative` };
+  }
+  if (numValue > 9999999) {
+    return { isValid: false, error: `${fieldName} is too large` };
+  }
+  return { isValid: true, error: null };
+};
+
+const validatePositiveInteger = (value, fieldName = 'Value') => {
+  if (value === '' || value === null || value === undefined) {
+    return { isValid: true, error: null };
+  }
+  
+  const numValue = parseInt(value);
+  if (isNaN(numValue)) {
+    return { isValid: false, error: `${fieldName} must be a valid number` };
+  }
+  if (numValue < 0) {
+    return { isValid: false, error: `${fieldName} cannot be negative` };
+  }
+  if (!Number.isInteger(parseFloat(value))) {
+    return { isValid: false, error: `${fieldName} must be a whole number` };
+  }
+  if (numValue > 999999) {
+    return { isValid: false, error: `${fieldName} is too large` };
+  }
+  return { isValid: true, error: null };
+};
+
+// ✅ FIXED: Enhanced Cloudinary Upload Function (no transformation parameter)
+const uploadToCloudinary = async (file, options = {}) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_CONFIG.upload_preset);
+  formData.append('folder', 'kerala-sellers/products');
+  
+  if (options.type === 'main') {
+    formData.append('tags', 'main_image,kerala_sellers');
+  } else {
+    formData.append('tags', 'sub_image,kerala_sellers');
+  }
+  
+  formData.append('timestamp', Date.now());
+  
+  try {
+    const response = await axios.post(CLOUDINARY_CONFIG.upload_url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 30000,
+      onUploadProgress: (progressEvent) => {
+        if (options.onProgress) {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          options.onProgress(percentCompleted);
+        }
+      },
+    });
+    
+    return {
+      success: true,
+      url: response.data.secure_url,
+      public_id: response.data.public_id,
+      width: response.data.width,
+      height: response.data.height,
+      bytes: response.data.bytes,
+      format: response.data.format
+    };
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error?.message || error.message || 'Upload failed'
+    };
+  }
+};
+
 // ✅ Create Axios instance with proper configuration for hosted backend
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -54,7 +150,305 @@ apiClient.interceptors.response.use(
   }
 );
 
-// ✅ ENHANCED: User-Friendly Category Selector with Step-by-Step Guide
+// ✅ FIXED: Enhanced Cloudinary Image Upload Component
+const CloudinaryImageUpload = ({ 
+  label, 
+  required = false, 
+  multiple = false, 
+  onUploadComplete, 
+  onUploadStart,
+  onUploadProgress,
+  maxFiles = 5,
+  currentImages = [],
+  type = 'main',
+  helpText = ''
+}) => {
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [previews, setPreviews] = useState([]);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (currentImages.length > 0) {
+      setPreviews(currentImages.map((img, index) => ({
+        id: index,
+        url: typeof img === 'string' ? img : img.url || img.image_url,
+        isUploaded: true
+      })));
+    }
+  }, [currentImages]);
+
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    // Validate file count
+    if (multiple && files.length > maxFiles) {
+      setError(`Maximum ${maxFiles} images allowed`);
+      return;
+    }
+
+    // Validate file types and sizes
+    const validFiles = [];
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        setError('Only image files are allowed');
+        continue;
+      }
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        setError('Image size should be less than 10MB');
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (!validFiles.length) return;
+
+    setError('');
+    setUploading(true);
+    onUploadStart && onUploadStart();
+
+    // Create preview URLs immediately
+    const newPreviews = validFiles.map((file, index) => ({
+      id: Date.now() + index,
+      url: URL.createObjectURL(file),
+      file: file,
+      uploading: true,
+      progress: 0
+    }));
+
+    setPreviews(multiple ? [...previews, ...newPreviews] : newPreviews);
+
+    // Upload files to Cloudinary
+    try {
+      const uploadPromises = validFiles.map(async (file, index) => {
+        const previewId = Date.now() + index;
+        
+        const result = await uploadToCloudinary(file, {
+          type: type,
+          onProgress: (progress) => {
+            setUploadProgress(prev => ({
+              ...prev,
+              [previewId]: progress
+            }));
+            onUploadProgress && onUploadProgress(progress);
+          }
+        });
+
+        return {
+          ...result,
+          previewId,
+          originalFile: file
+        };
+      });
+
+      const uploadResults = await Promise.all(uploadPromises);
+      
+      // Check for any failed uploads
+      const failedUploads = uploadResults.filter(result => !result.success);
+      if (failedUploads.length > 0) {
+        setError(`${failedUploads.length} image(s) failed to upload: ${failedUploads[0].error}`);
+      }
+
+      // Get successful uploads
+      const successfulUploads = uploadResults.filter(result => result.success);
+      
+      if (successfulUploads.length > 0) {
+        // Update previews with uploaded URLs
+        setPreviews(prev => prev.map(preview => {
+          const uploadResult = successfulUploads.find(result => result.previewId === preview.id);
+          if (uploadResult) {
+            return {
+              ...preview,
+              url: uploadResult.url,
+              public_id: uploadResult.public_id,
+              uploading: false,
+              isUploaded: true
+            };
+          }
+          return preview;
+        }));
+
+        // Call completion callback
+        onUploadComplete && onUploadComplete(successfulUploads.map(result => ({
+          url: result.url,
+          public_id: result.public_id,
+          width: result.width,
+          height: result.height,
+          bytes: result.bytes,
+          format: result.format
+        })));
+      }
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      setError('Upload failed. Please try again.');
+      
+      // Remove failed uploads from previews
+      setPreviews(prev => prev.filter(preview => preview.isUploaded));
+    } finally {
+      setUploading(false);
+      setUploadProgress({});
+    }
+
+    // Clear the file input
+    e.target.value = '';
+  };
+
+  const removeImage = (previewId) => {
+    setPreviews(prev => prev.filter(preview => preview.id !== previewId));
+    
+    // If it's a single image upload, notify parent
+    if (!multiple) {
+      onUploadComplete && onUploadComplete([]);
+    } else {
+      // For multiple uploads, send remaining uploaded images
+      const remainingUploaded = previews
+        .filter(p => p.id !== previewId && p.isUploaded)
+        .map(p => ({
+          url: p.url,
+          public_id: p.public_id
+        }));
+      onUploadComplete && onUploadComplete(remainingUploaded);
+    }
+  };
+
+  return (
+    <div style={styles.imageUploadContainer}>
+      <label style={styles.label}>
+        {label} {required && '*'}
+      </label>
+      
+      {error && (
+        <div style={styles.uploadError}>
+          ⚠️ {error}
+        </div>
+      )}
+
+      {/* Upload Area */}
+      <div style={styles.uploadArea}>
+        <input
+          type="file"
+          accept="image/*"
+          multiple={multiple}
+          onChange={handleFileChange}
+          disabled={uploading}
+          style={styles.fileInput}
+          required={required && previews.filter(p => p.isUploaded).length === 0}
+        />
+        
+        <div style={styles.uploadPrompt}>
+          {uploading ? (
+            <div>
+              <div style={styles.uploadingIcon}>☁️⏳</div>
+              <div>Uploading to Cloudinary...</div>
+              <div style={{fontSize: '12px', color: '#666', marginTop: '4px'}}>
+                Optimizing and storing securely
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div style={styles.uploadIcon}>☁️📷</div>
+              <div>Click to upload {multiple ? 'images' : 'image'}</div>
+              <div style={styles.uploadHint}>
+                Supports: JPG, PNG, GIF, WEBP (Max 10MB each)
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Image Previews */}
+      {previews.length > 0 && (
+        <div style={styles.previewContainer}>
+          {multiple ? (
+            <div style={styles.previewGrid}>
+              {previews.map((preview) => (
+                <div key={preview.id} style={styles.previewItem}>
+                  <img
+                    src={preview.url}
+                    alt="Preview"
+                    style={styles.previewImage}
+                  />
+                  
+                  {preview.uploading && (
+                    <div style={styles.uploadOverlay}>
+                      <div style={styles.uploadProgress}>
+                        {uploadProgress[preview.id] || 0}%
+                      </div>
+                    </div>
+                  )}
+                  
+                  {preview.isUploaded && (
+                    <div style={styles.imageActions}>
+                      <button
+                        type="button"
+                        onClick={() => removeImage(preview.id)}
+                        style={styles.removeButton}
+                        disabled={uploading}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  )}
+                  
+                  {preview.isUploaded && (
+                    <div style={styles.cloudinaryBadge}>
+                      ☁️ Cloudinary
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            previews.map((preview) => (
+              <div key={preview.id} style={styles.singlePreview}>
+                <img
+                  src={preview.url}
+                  alt="Main product image"
+                  style={styles.mainPreviewImage}
+                />
+                
+                {preview.uploading && (
+                  <div style={styles.uploadOverlay}>
+                    <div style={styles.uploadProgress}>
+                      Uploading: {uploadProgress[preview.id] || 0}%
+                    </div>
+                  </div>
+                )}
+                
+                {preview.isUploaded && (
+                  <div style={styles.imageActions}>
+                    <button
+                      type="button"
+                      onClick={() => removeImage(preview.id)}
+                      style={styles.removeButton}
+                      disabled={uploading}
+                    >
+                      🗑️ Remove
+                    </button>
+                  </div>
+                )}
+                
+                {preview.isUploaded && (
+                  <div style={styles.cloudinaryBadge}>
+                    ☁️ Optimized by Cloudinary
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      <small style={styles.helpText}>
+        {helpText || `📸 Images are automatically optimized and stored securely on Cloudinary${multiple ? ` (${previews.filter(p => p.isUploaded).length}/${maxFiles} images)` : ''}`}
+      </small>
+    </div>
+  );
+};
+
+// ✅ FIXED: CategorySelector - COMPLETELY PREVENT MAIN FORM FROM CLOSING
 const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesChange }) => {
   const [allCategories, setAllCategories] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
@@ -67,6 +461,8 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [createCategoryError, setCreateCategoryError] = useState('');
+  const [createCategorySuccess, setCreateCategorySuccess] = useState('');
 
   // Load all categories on mount
   useEffect(() => {
@@ -78,14 +474,17 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       setLoading(true);
       setError('');
       
+      console.log('🔍 Fetching categories from:', CATEGORIES_API_URL);
       const response = await apiClient.get('/api/categories/');
-      const categories = response.data.results || response.data;
+      const categories = response.data.results || response.data || [];
       
+      console.log('✅ Fetched categories:', categories.length);
       setAllCategories(categories);
       
       const rootCategories = categories.filter(cat => !cat.parent);
       setCurrentCategories(rootCategories);
     } catch (err) {
+      console.error('❌ Error fetching categories:', err);
       if (err.response?.status === 401) {
         setError('Session expired. Please log in again.');
       } else {
@@ -165,40 +564,72 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     setSelectedCategory(null);
   };
 
+  // ✅ COMPLETELY FIXED: This will not close the main form
   const handleCustomCategorySubmit = async (e) => {
     e.preventDefault();
-    if (!customCategoryName.trim()) return;
+    e.stopPropagation();
+    
+    if (!customCategoryName.trim()) {
+      setCreateCategoryError('Category name is required');
+      return;
+    }
 
     setIsSubmittingCustom(true);
+    setCreateCategoryError('');
+    setCreateCategorySuccess('');
     
     const parentId = currentPath.length > 0 ? currentPath[currentPath.length - 1].id : null;
     
-    try {
-      const response = await apiClient.post('/api/categories/', {
-        name: customCategoryName.trim(),
-        description: customCategoryDesc.trim(),
-        parent: parentId
-      });
+    const categoryData = {
+      name: customCategoryName.trim(),
+      description: customCategoryDesc.trim() || '',
+      parent: parentId
+    };
 
+    console.log('🚀 Creating category:', categoryData);
+    
+    try {
+      const response = await apiClient.post('/api/categories/', categoryData);
       const newCategory = response.data;
       
+      console.log('✅ Category created successfully:', newCategory);
+      
+      // Show success message
+      setCreateCategorySuccess(`Category "${newCategory.name}" created successfully! 🎉`);
+      
+      // Refresh categories list
       await fetchCategories();
       
+      // Auto-select the new category if it's a leaf node
       setSelectedCategory(newCategory);
       onCategorySelect(newCategory.id);
       onAttributesChange({});
       
-      setCustomCategoryName('');
-      setCustomCategoryDesc('');
-      setShowCustomForm(false);
+      // Clear form and close modal after 1.5 second
+      setTimeout(() => {
+        setCustomCategoryName('');
+        setCustomCategoryDesc('');
+        setCreateCategorySuccess('');
+        setShowCustomForm(false);
+      }, 1500);
       
-      alert('New category created successfully! 🎉');
     } catch (err) {
+      console.error('❌ Error creating category:', err);
       if (err.response?.status === 401) {
-        alert('Session expired. Please log in again.');
+        setCreateCategoryError('Session expired. Please log in again.');
+      } else if (err.response?.data) {
+        const errorData = err.response.data;
+        if (typeof errorData === 'string') {
+          setCreateCategoryError(errorData);
+        } else if (errorData.detail) {
+          setCreateCategoryError(errorData.detail);
+        } else if (errorData.name) {
+          setCreateCategoryError(`Category name error: ${errorData.name[0]}`);
+        } else {
+          setCreateCategoryError('Failed to create category. Please try again.');
+        }
       } else {
-        const errorMessage = err.response?.data?.detail || err.response?.data?.error || 'Failed to create category. Please try again.';
-        alert(`Error: ${errorMessage}`);
+        setCreateCategoryError('Network error. Please check your connection and try again.');
       }
     } finally {
       setIsSubmittingCustom(false);
@@ -432,17 +863,19 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       fontSize: '13px',
       marginTop: '10px'
     },
+    // ✅ COMPLETELY ISOLATED MODAL - NO EVENT BUBBLING
     modalOverlay: {
       position: 'fixed',
       top: 0,
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.6)',
+      backgroundColor: 'rgba(0,0,0,0.7)',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      zIndex: 2500
+      zIndex: 9999, // Very high z-index
+      cursor: 'pointer'
     },
     modalContent: {
       background: 'white',
@@ -450,7 +883,9 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       borderRadius: '12px',
       width: '450px',
       maxWidth: '95%',
-      boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+      boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+      cursor: 'default',
+      position: 'relative'
     },
     modalInput: {
       width: '100%',
@@ -497,6 +932,24 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       borderRadius: '6px',
       border: '1px solid #e9ecef',
       marginTop: '12px'
+    },
+    errorMessage: {
+      backgroundColor: '#f8d7da',
+      color: '#721c24',
+      padding: '12px',
+      borderRadius: '8px',
+      marginBottom: '16px',
+      border: '1px solid #f5c6cb',
+      fontSize: '14px'
+    },
+    successMessage: {
+      backgroundColor: '#d4edda',
+      color: '#155724',
+      padding: '12px',
+      borderRadius: '8px',
+      marginBottom: '16px',
+      border: '1px solid #c3e6cb',
+      fontSize: '14px'
     }
   };
 
@@ -657,7 +1110,11 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
         {/* Add Custom Category Card */}
         <button
           type="button"
-          onClick={() => setShowCustomForm(true)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowCustomForm(true);
+          }}
           style={categoryStyles.addCustomButton}
         >
           <div style={categoryStyles.addCustomContent}>
@@ -687,10 +1144,32 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
         </div>
       )}
 
-      {/* Custom Category Modal */}
+      {/* ✅ COMPLETELY FIXED: Custom Category Modal - ISOLATED FROM MAIN FORM */}
       {showCustomForm && (
-        <div style={categoryStyles.modalOverlay}>
-          <div style={categoryStyles.modalContent}>
+        <div 
+          style={categoryStyles.modalOverlay}
+          onClick={(e) => {
+            // ✅ ONLY close if clicking directly on overlay, not on modal content
+            if (e.target === e.currentTarget) {
+              setShowCustomForm(false);
+              setCustomCategoryName('');
+              setCustomCategoryDesc('');
+              setCreateCategoryError('');
+              setCreateCategorySuccess('');
+            }
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <div 
+            style={categoryStyles.modalContent}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
             <h3>🆕 Create New Category</h3>
             <p style={{fontSize: '14px', color: '#666', marginBottom: '16px'}}>
               {currentPath.length > 0 
@@ -698,8 +1177,26 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
                 : "✨ This will be created as a main category"
               }
             </p>
+
+            {/* ✅ Error Message */}
+            {createCategoryError && (
+              <div style={categoryStyles.errorMessage}>
+                ⚠️ {createCategoryError}
+              </div>
+            )}
+
+            {/* ✅ Success Message */}
+            {createCategorySuccess && (
+              <div style={categoryStyles.successMessage}>
+                {createCategorySuccess}
+              </div>
+            )}
             
-            <form onSubmit={handleCustomCategorySubmit}>
+            <form 
+              onSubmit={handleCustomCategorySubmit}
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
               <div style={{marginBottom: '16px'}}>
                 <label style={{fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '4px'}}>
                   📝 Category Name *
@@ -712,6 +1209,9 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
                   required
                   style={categoryStyles.modalInput}
                   autoFocus
+                  disabled={isSubmittingCustom}
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
                 />
               </div>
               
@@ -725,19 +1225,27 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
                   placeholder="Brief description of what products go in this category..."
                   style={{...categoryStyles.modalInput, minHeight: '60px', resize: 'vertical'}}
                   rows="2"
+                  disabled={isSubmittingCustom}
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
                 />
               </div>
               
               <div style={categoryStyles.modalButtons}>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     setShowCustomForm(false);
                     setCustomCategoryName('');
                     setCustomCategoryDesc('');
+                    setCreateCategoryError('');
+                    setCreateCategorySuccess('');
                   }}
                   style={categoryStyles.cancelButton}
                   disabled={isSubmittingCustom}
+                  onMouseDown={(e) => e.stopPropagation()}
                 >
                   ❌ Cancel
                 </button>
@@ -745,6 +1253,8 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
                   type="submit"
                   style={categoryStyles.submitButton}
                   disabled={isSubmittingCustom || !customCategoryName.trim()}
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
                 >
                   {isSubmittingCustom ? '⏳ Creating...' : '✅ Create Category'}
                 </button>
@@ -762,16 +1272,65 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
   );
 };
 
-// ✅ ENHANCED: Super User-Friendly Stock Input Component
+// ✅ ENHANCED SmartStockInput with proper validation
 const SmartStockInput = ({ formData, setFormData }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [stockError, setStockError] = useState('');
   
+  // ✅ ENHANCED: Validate and handle total stock change
+  const handleTotalStockChange = (e) => {
+    let value = e.target.value;
+    
+    // Remove negative signs and validate
+    value = value.replace('-', '');
+    
+    const validation = validatePositiveInteger(value, 'Total Stock');
+    if (validation.isValid) {
+      const newTotal = parseInt(value) || 0;
+      setFormData(prev => ({
+        ...prev,
+        total_stock: newTotal,
+        online_stock: prev.online_stock > newTotal ? newTotal : prev.online_stock
+      }));
+      setStockError('');
+    } else {
+      setStockError(validation.error);
+    }
+  };
+
+  // ✅ ENHANCED: Validate and handle online stock change
+  const handleOnlineStockChange = (e) => {
+    let value = e.target.value;
+    
+    // Remove negative signs and validate
+    value = value.replace('-', '');
+    
+    const validation = validatePositiveInteger(value, 'Online Stock');
+    if (validation.isValid) {
+      const newOnline = parseInt(value) || 0;
+      const maxOnline = formData.total_stock;
+      
+      if (newOnline > maxOnline) {
+        setStockError('Online stock cannot be more than total stock');
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          online_stock: newOnline
+        }));
+        setStockError('');
+      }
+    } else {
+      setStockError(validation.error);
+    }
+  };
+
   // Quick stock allocation functions
   const setAllOnline = () => {
     setFormData(prev => ({
       ...prev,
       online_stock: prev.total_stock
     }));
+    setStockError('');
   };
 
   const setHalfOnline = () => {
@@ -780,6 +1339,7 @@ const SmartStockInput = ({ formData, setFormData }) => {
       ...prev,
       online_stock: half
     }));
+    setStockError('');
   };
 
   const setNoneOnline = () => {
@@ -787,25 +1347,7 @@ const SmartStockInput = ({ formData, setFormData }) => {
       ...prev,
       online_stock: 0
     }));
-  };
-
-  const handleTotalStockChange = (e) => {
-    const newTotal = parseInt(e.target.value) || 0;
-    setFormData(prev => ({
-      ...prev,
-      total_stock: newTotal,
-      online_stock: prev.online_stock > newTotal ? newTotal : prev.online_stock
-    }));
-  };
-
-  const handleOnlineStockChange = (e) => {
-    const newOnline = parseInt(e.target.value) || 0;
-    const maxOnline = formData.total_stock;
-    
-    setFormData(prev => ({
-      ...prev,
-      online_stock: newOnline > maxOnline ? maxOnline : newOnline
-    }));
+    setStockError('');
   };
 
   const stockPercentage = formData.total_stock > 0 
@@ -828,11 +1370,18 @@ const SmartStockInput = ({ formData, setFormData }) => {
         </button>
       </div>
 
+      {/* ✅ Stock Error Display */}
+      {stockError && (
+        <div style={styles.stockError}>
+          ⚠️ {stockError}
+        </div>
+      )}
+
       {/* Clear Explanation */}
       <div style={styles.stockExplanation}>
         <strong>🤔 What does this mean?</strong>
         <br />
-        • <strong>Total Stock:</strong> How many items you have in total
+        • <strong>Total Stock:</strong> How many items you have in total (cannot be negative)
         <br />
         • <strong>Online Stock:</strong> How many you want to sell online (rest stays for in-store sales)
       </div>
@@ -879,7 +1428,7 @@ const SmartStockInput = ({ formData, setFormData }) => {
       </div>
 
       {!showAdvanced ? (
-        /* ✅ SUPER SIMPLE MODE: Step by Step */
+        /* ✅ SUPER SIMPLE MODE: Step by Step with validation */
         <div style={styles.simpleMode}>
           {/* Step 1: Total Stock */}
           <div style={styles.stepContainer}>
@@ -895,10 +1444,17 @@ const SmartStockInput = ({ formData, setFormData }) => {
               required 
               style={styles.bigInput}
               min="0"
+              step="1"
               placeholder="Enter total quantity (e.g., 50)"
+              onKeyPress={(e) => {
+                // Prevent negative sign and decimal point
+                if (e.key === '-' || e.key === '.' || e.key === 'e' || e.key === '+') {
+                  e.preventDefault();
+                }
+              }}
             />
             <div style={styles.stepHelp}>
-              💡 Count all items you have - both for online and in-store sales
+              💡 Count all items you have - both for online and in-store sales (whole numbers only, no negatives)
             </div>
           </div>
 
@@ -964,8 +1520,15 @@ const SmartStockInput = ({ formData, setFormData }) => {
                       onChange={handleOnlineStockChange}
                       min="0"
                       max={formData.total_stock}
+                      step="1"
                       style={styles.input}
                       placeholder={`0 to ${formData.total_stock}`}
+                      onKeyPress={(e) => {
+                        // Prevent negative sign and decimal point
+                        if (e.key === '-' || e.key === '.' || e.key === 'e' || e.key === '+') {
+                          e.preventDefault();
+                        }
+                      }}
                     />
                     <span style={styles.maxIndicator}>out of {formData.total_stock}</span>
                   </div>
@@ -996,7 +1559,7 @@ const SmartStockInput = ({ formData, setFormData }) => {
           )}
         </div>
       ) : (
-        /* ✅ ADVANCED MODE: For experienced users */
+        /* ✅ ADVANCED MODE: For experienced users with validation */
         <div style={styles.advancedMode}>
           <div style={styles.advancedHeader}>
             <span>🎛️ Advanced Stock Settings</span>
@@ -1013,8 +1576,14 @@ const SmartStockInput = ({ formData, setFormData }) => {
                 required 
                 style={styles.input}
                 min="0"
+                step="1"
+                onKeyPress={(e) => {
+                  if (e.key === '-' || e.key === '.' || e.key === 'e' || e.key === '+') {
+                    e.preventDefault();
+                  }
+                }}
               />
-              <small style={styles.helpText}>Total items you have</small>
+              <small style={styles.helpText}>Total items you have (whole numbers only, no negatives)</small>
             </div>
             
             <div style={styles.formGroup}>
@@ -1028,8 +1597,14 @@ const SmartStockInput = ({ formData, setFormData }) => {
                 style={styles.input}
                 min="0"
                 max={formData.total_stock}
+                step="1"
+                onKeyPress={(e) => {
+                  if (e.key === '-' || e.key === '.' || e.key === 'e' || e.key === '+') {
+                    e.preventDefault();
+                  }
+                }}
               />
-              <small style={styles.helpText}>Items for online sales</small>
+              <small style={styles.helpText}>Items for online sales (cannot exceed total stock)</small>
             </div>
           </div>
 
@@ -1051,6 +1626,7 @@ const SmartStockInput = ({ formData, setFormData }) => {
   );
 };
 
+// ✅ MAIN PRODUCT FORM WITH ENHANCED VALIDATION
 export default function ProductForm({ product, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -1063,15 +1639,14 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     sale_type: 'BOTH',
   });
 
-  const [mainImageFile, setMainImageFile] = useState(null);
-  const [subImageFiles, setSubImageFiles] = useState([]);
-  const [mainImagePreview, setMainImagePreview] = useState('');
-  const [subImagePreviews, setSubImagePreviews] = useState([]);
-  
+  const [mainImageUrl, setMainImageUrl] = useState('');
+  const [subImageUrls, setSubImageUrls] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [dynamicAttributes, setDynamicAttributes] = useState({});
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [priceError, setPriceError] = useState('');
 
   useEffect(() => {
     if (product) {
@@ -1087,74 +1662,146 @@ export default function ProductForm({ product, onClose, onSuccess }) {
       });
       setSelectedCategoryId(product.category);
       setDynamicAttributes(product.attributes || {});
-      setMainImagePreview(product.main_image_url || '');
-      setSubImagePreviews(product.sub_images?.map(img => img.image_url) || []);
+      setMainImageUrl(product.main_image_url || '');
+      setSubImageUrls(product.sub_images?.map(img => ({
+        url: img.image_url || img.url,
+        public_id: img.public_id
+      })) || []);
     }
   }, [product]);
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  
-  const handleMainImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setMainImageFile(file);
-      setMainImagePreview(URL.createObjectURL(file));
+  // ✅ ENHANCED: Handle form changes with validation
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Handle price and MRP with validation
+    if (name === 'price' || name === 'mrp') {
+      // Remove negative signs
+      let cleanValue = value.replace('-', '');
+      
+      const validation = validatePositiveNumber(cleanValue, name === 'price' ? 'Selling Price' : 'MRP');
+      if (validation.isValid) {
+        setFormData(prev => ({ ...prev, [name]: cleanValue }));
+        setPriceError('');
+        
+        // Additional validation for price vs MRP
+        if (name === 'price' && formData.mrp && parseFloat(cleanValue) > parseFloat(formData.mrp)) {
+          setPriceError('Selling price cannot be higher than MRP');
+        } else if (name === 'mrp' && formData.price && parseFloat(formData.price) > parseFloat(cleanValue)) {
+          setPriceError('MRP cannot be lower than selling price');
+        }
+      } else if (cleanValue !== '') {
+        setPriceError(validation.error);
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
     }
   };
 
-  const handleSubImageChange = (e) => {
-    if (e.target.files.length > 5) {
-      alert("You can only upload a maximum of 5 additional images. 📸");
-      e.target.value = null;
-      return;
+  const handleMainImageUpload = (uploadedImages) => {
+    if (uploadedImages.length > 0) {
+      setMainImageUrl(uploadedImages[0].url);
+    } else {
+      setMainImageUrl('');
     }
-    const files = Array.from(e.target.files);
-    setSubImageFiles(files);
-    setSubImagePreviews(files.map(file => URL.createObjectURL(file)));
+    setUploadingImages(false);
   };
-  
+
+  const handleSubImagesUpload = (uploadedImages) => {
+    setSubImageUrls(uploadedImages);
+    setUploadingImages(false);
+  };
+
   const handleAttributeChange = (attributeName, value) => {
     setDynamicAttributes(prev => ({ ...prev, [attributeName]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // ✅ ENHANCED: Comprehensive validation before submit
+    if (!mainImageUrl && !product) {
+      setError('Please upload a main product image');
+      return;
+    }
+    
+    if (uploadingImages) {
+      setError('Please wait for image uploads to complete');
+      return;
+    }
+
+    // Validate pricing
+    const priceValidation = validatePositiveNumber(formData.price, 'Selling Price');
+    if (!priceValidation.isValid) {
+      setError(priceValidation.error);
+      return;
+    }
+
+    if (formData.mrp) {
+      const mrpValidation = validatePositiveNumber(formData.mrp, 'MRP');
+      if (!mrpValidation.isValid) {
+        setError(mrpValidation.error);
+        return;
+      }
+
+      if (parseFloat(formData.price) > parseFloat(formData.mrp)) {
+        setError('Selling price cannot be higher than MRP');
+        return;
+      }
+    }
+
+    // Validate stock
+    const totalStockValidation = validatePositiveInteger(formData.total_stock, 'Total Stock');
+    if (!totalStockValidation.isValid) {
+      setError(totalStockValidation.error);
+      return;
+    }
+
+    const onlineStockValidation = validatePositiveInteger(formData.online_stock, 'Online Stock');
+    if (!onlineStockValidation.isValid) {
+      setError(onlineStockValidation.error);
+      return;
+    }
+
+    if (formData.online_stock > formData.total_stock) {
+      setError('Online stock cannot be more than total stock');
+      return;
+    }
+
     setIsSubmitting(true);
     setError('');
     
-    const submissionData = new FormData();
-    
-    Object.keys(formData).forEach(key => submissionData.append(key, formData[key]));
-    
-    if (selectedCategoryId) {
-      submissionData.append('category', parseInt(selectedCategoryId));
-    }
-    
-    submissionData.append('attributes', JSON.stringify(dynamicAttributes));
-    
-    if (mainImageFile) {
-      submissionData.append('main_image', mainImageFile);
-    }
-    
-    subImageFiles.forEach((file, index) => {
-      submissionData.append('sub_images', file);
-    });
-    
-    const url = product ? `${PRODUCTS_API_URL}${product.id}/` : PRODUCTS_API_URL;
-    const method = product ? 'patch' : 'post';
+    // Prepare submission data (JSON format since images are already on Cloudinary)
+    const submissionData = {
+      ...formData,
+      category: selectedCategoryId ? parseInt(selectedCategoryId) : null,
+      attributes: dynamicAttributes,
+      main_image_url: mainImageUrl,
+      sub_image_urls: subImageUrls.map(img => ({
+        url: img.url,
+        public_id: img.public_id
+      }))
+    };
+
+    const url = product 
+      ? `${PRODUCTS_API_URL}${product.id}/` 
+      : PRODUCTS_API_URL;
+    const method = product ? 'PATCH' : 'POST';
 
     try {
-      const response = await axios({ 
-        method, 
-        url, 
-        data: submissionData, 
+      const token = localStorage.getItem('accessToken');
+      const response = await axios({
+        method,
+        url,
+        data: submissionData,
         headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
         timeout: 30000
       });
       
+      console.log('✅ Product saved successfully:', response.data);
       onSuccess();
     } catch (err) {
       let errorMessage = 'Something went wrong. Please check your details and try again.';
@@ -1170,15 +1817,13 @@ export default function ProductForm({ product, onClose, onSuccess }) {
           errorMessage = err.response.data;
         } else if (err.response.data.detail) {
           errorMessage = err.response.data.detail;
-        } else if (err.response.data.main_image) {
-          errorMessage = `Image issue: ${err.response.data.main_image[0]}`;
         } else if (err.response.data.category) {
-          errorMessage = `Please select a valid category`;
+          errorMessage = 'Please select a valid category';
+        } else if (err.response.data.main_image_url) {
+          errorMessage = 'Main image is required';
         }
       } else if (err.code === 'ECONNABORTED') {
-        errorMessage = 'Upload is taking too long. Please check your internet connection and try again.';
-      } else if (err.request) {
-        errorMessage = 'Cannot connect to server. Please check your internet connection.';
+        errorMessage = 'Request is taking too long. Please check your internet connection and try again.';
       }
       
       setError(errorMessage);
@@ -1195,7 +1840,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
             {product ? '✏️ Edit Product' : '🆕 Add New Product'}
           </h2>
           <div style={styles.connectionStatus}>
-            🌐 Connected to: {API_BASE_URL.replace('https://', '').replace('http://', '')}
+            ☁️ Images powered by Cloudinary | 🌐 API: {API_BASE_URL.replace('https://', '').replace('http://', '')}
           </div>
         </div>
         
@@ -1245,9 +1890,16 @@ export default function ProductForm({ product, onClose, onSuccess }) {
             </div>
           </div>
 
-          {/* === PRICING === */}
+          {/* === ENHANCED PRICING WITH VALIDATION === */}
           <div style={styles.sectionContainer}>
             <h3 style={styles.sectionTitle}>💰 Pricing Information</h3>
+
+            {/* ✅ Price Error Display */}
+            {priceError && (
+              <div style={styles.priceError}>
+                ⚠️ {priceError}
+              </div>
+            )}
             
             <div style={styles.formRow}>
               <div style={styles.formGroup}>
@@ -1262,8 +1914,14 @@ export default function ProductForm({ product, onClose, onSuccess }) {
                   step="0.01"
                   min="0"
                   placeholder="299.99"
+                  onKeyPress={(e) => {
+                    // Prevent negative sign
+                    if (e.key === '-') {
+                      e.preventDefault();
+                    }
+                  }}
                 />
-                <small style={styles.helpText}>The price you want to charge customers</small>
+                <small style={styles.helpText}>The price you want to charge customers (cannot be negative)</small>
               </div>
               
               <div style={styles.formGroup}>
@@ -1277,8 +1935,14 @@ export default function ProductForm({ product, onClose, onSuccess }) {
                   step="0.01"
                   min="0"
                   placeholder="399.99"
+                  onKeyPress={(e) => {
+                    // Prevent negative sign
+                    if (e.key === '-') {
+                      e.preventDefault();
+                    }
+                  }}
                 />
-                <small style={styles.helpText}>Original price (shows discount if higher than selling price)</small>
+                <small style={styles.helpText}>Original price (must be higher than or equal to selling price)</small>
               </div>
             </div>
 
@@ -1342,76 +2006,32 @@ export default function ProductForm({ product, onClose, onSuccess }) {
 
           <hr style={styles.hr} />
 
-          {/* === ENHANCED IMAGE UPLOAD SECTION === */}
+          {/* === FIXED CLOUDINARY IMAGE UPLOADS === */}
           <div style={styles.sectionContainer}>
-            <h3 style={styles.sectionTitle}>📸 Product Images</h3>
+            <h3 style={styles.sectionTitle}>☁️ Product Images (Cloudinary)</h3>
             
-            {/* Main Image */}
-            <div style={styles.imageUploadContainer}>
-              <label style={styles.label}>📷 Main Product Image *</label>
-              <div style={styles.imageUploadArea}>
-                {mainImagePreview ? (
-                  <div style={styles.imagePreviewContainer}>
-                    <img src={mainImagePreview} alt="Main product" style={styles.mainImagePreview}/>
-                    <div style={styles.imageOverlay}>
-                      <span>✅ Main Image Selected</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={styles.imagePlaceholder}>
-                    <div style={styles.imagePlaceholderContent}>
-                      📷
-                      <br />
-                      Click to select main image
-                    </div>
-                  </div>
-                )}
-                <input 
-                  type="file" 
-                  name="main_image" 
-                  onChange={handleMainImageChange} 
-                  accept="image/*" 
-                  required={!product || !mainImagePreview} 
-                  style={styles.fileInput} 
-                />
-              </div>
-              <small style={styles.helpText}>
-                📸 This is the first image customers will see. Make it count!
-                {product && ' (Select a new image to replace current one)'}
-              </small>
-            </div>
-            
-            {/* Additional Images */}
-            <div style={styles.imageUploadContainer}>
-              <label style={styles.label}>🖼️ Additional Images (Optional, up to 5)</label>
-              <div style={styles.additionalImagesContainer}>
-                {subImagePreviews.length > 0 && (
-                  <div style={styles.subImageGrid}>
-                    {subImagePreviews.map((previewUrl, index) => (
-                      <div key={index} style={styles.subImagePreviewContainer}>
-                        <img 
-                          src={previewUrl} 
-                          alt={`Additional view ${index+1}`} 
-                          style={styles.subImagePreview}
-                        />
-                        <div style={styles.imageNumber}>{index + 1}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <input 
-                  type="file" 
-                  name="sub_images" 
-                  onChange={handleSubImageChange} 
-                  accept="image/*" 
-                  multiple 
-                  style={styles.input} 
-                />
-              </div>
-              <small style={styles.helpText}>
-                📷 Add more angles, close-ups, or usage photos to help customers see your product better
-              </small>
-            </div>
+            {/* Main Image Upload */}
+            <CloudinaryImageUpload
+              label="📷 Main Product Image"
+              required={!product}
+              type="main"
+              onUploadComplete={handleMainImageUpload}
+              onUploadStart={() => setUploadingImages(true)}
+              currentImages={mainImageUrl ? [mainImageUrl] : []}
+              helpText="📸 This is the first image customers will see. Make it count!"
+            />
+
+            {/* Additional Images Upload */}
+            <CloudinaryImageUpload
+              label="🖼️ Additional Images"
+              multiple={true}
+              maxFiles={5}
+              type="sub"
+              onUploadComplete={handleSubImagesUpload}
+              onUploadStart={() => setUploadingImages(true)}
+              currentImages={subImageUrls}
+              helpText="📷 Add more angles, close-ups, or usage photos to help customers see your product better"
+            />
           </div>
           
           {/* === ERROR DISPLAY === */}
@@ -1428,18 +2048,20 @@ export default function ProductForm({ product, onClose, onSuccess }) {
             <button 
               type="button" 
               onClick={onClose} 
-              disabled={isSubmitting} 
+              disabled={isSubmitting || uploadingImages} 
               style={styles.buttonSecondary}
             >
               ❌ Cancel
             </button>
             <button 
               type="submit" 
-              disabled={isSubmitting || !selectedCategoryId} 
+              disabled={isSubmitting || uploadingImages || !selectedCategoryId || priceError} 
               style={styles.buttonPrimary}
             >
               {isSubmitting ? (
                 <>⏳ {product ? 'Updating...' : 'Creating...'}</>
+              ) : uploadingImages ? (
+                <>☁️ Uploading Images...</>
               ) : (
                 <>{product ? '✅ Update Product' : '🚀 Create Product'}</>
               )}
@@ -1451,7 +2073,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
   );
 }
 
-// ✅ ENHANCED STYLES: More User-Friendly and Clear
+// ✅ ENHANCED STYLES WITH VALIDATION FEEDBACK
 const styles = {
   modalOverlay: { 
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
@@ -1460,7 +2082,7 @@ const styles = {
   },
   modalContent: { 
     background: 'white', padding: '2rem', borderRadius: '16px', 
-    width: '800px', maxWidth: '95%', maxHeight: '90vh', overflowY: 'auto',
+    width: '900px', maxWidth: '95%', maxHeight: '90vh', overflowY: 'auto',
     boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
   },
   modalHeader: {
@@ -1561,6 +2183,26 @@ const styles = {
     border: 'none', 
     borderTop: '3px solid #f8f9fa', 
     margin: '32px 0' 
+  },
+  
+  // ✅ NEW: Error message styles
+  priceError: {
+    backgroundColor: '#f8d7da',
+    color: '#721c24',
+    padding: '12px',
+    borderRadius: '8px',
+    marginBottom: '16px',
+    border: '1px solid #f5c6cb',
+    fontSize: '14px'
+  },
+  stockError: {
+    backgroundColor: '#f8d7da',
+    color: '#721c24',
+    padding: '12px',
+    borderRadius: '8px',
+    marginBottom: '16px',
+    border: '1px solid #f5c6cb',
+    fontSize: '14px'
   },
   
   // Stock Management Styles
@@ -1812,58 +2454,52 @@ const styles = {
     fontWeight: '500'
   },
   
-  // Image Upload Styles
+  // Cloudinary Image Upload Styles
   imageUploadContainer: {
     marginBottom: '24px'
   },
-  imageUploadArea: {
+  
+  uploadArea: {
     position: 'relative',
+    border: '3px dashed #0d6efd',
+    borderRadius: '12px',
+    padding: '40px 20px',
+    textAlign: 'center',
+    cursor: 'pointer',
+    backgroundColor: '#f8f9ff',
+    transition: 'all 0.2s',
+    marginBottom: '16px'
+  },
+  
+  uploadPrompt: {
+    pointerEvents: 'none'
+  },
+  
+  uploadIcon: {
+    fontSize: '48px',
+    marginBottom: '12px'
+  },
+  
+  uploadingIcon: {
+    fontSize: '32px',
     marginBottom: '8px'
   },
-  imagePreviewContainer: {
-    position: 'relative',
-    display: 'inline-block'
-  },
-  mainImagePreview: { 
-    width: '200px', 
-    height: '200px', 
-    objectFit: 'cover', 
-    borderRadius: '12px', 
-    border: '3px solid #28a745',
-    boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-  },
-  imageOverlay: {
-    position: 'absolute',
-    bottom: '8px',
-    left: '8px',
-    right: '8px',
-    backgroundColor: 'rgba(40, 167, 69, 0.9)',
-    color: 'white',
-    padding: '4px 8px',
-    borderRadius: '4px',
+  
+  uploadHint: {
     fontSize: '12px',
-    textAlign: 'center',
-    fontWeight: '600'
-  },
-  imagePlaceholder: {
-    width: '200px',
-    height: '200px',
-    border: '3px dashed #ccc',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f8f9fa',
     color: '#6c757d',
-    fontSize: '48px',
-    cursor: 'pointer',
-    transition: 'all 0.2s'
+    marginTop: '8px'
   },
-  imagePlaceholderContent: {
-    textAlign: 'center',
-    fontSize: '14px',
-    lineHeight: '1.4'
+  
+  uploadError: {
+    backgroundColor: '#f8d7da',
+    color: '#721c24',
+    padding: '12px',
+    borderRadius: '8px',
+    marginBottom: '12px',
+    border: '1px solid #f5c6cb'
   },
+  
   fileInput: {
     position: 'absolute',
     top: 0,
@@ -1873,40 +2509,91 @@ const styles = {
     opacity: 0,
     cursor: 'pointer'
   },
-  additionalImagesContainer: {
-    marginTop: '12px'
+  
+  previewContainer: {
+    marginTop: '16px'
   },
-  subImageGrid: { 
-    display: 'flex', 
-    flexWrap: 'wrap', 
-    gap: '12px', 
-    marginBottom: '12px' 
+  
+  previewGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+    gap: '12px'
   },
-  subImagePreviewContainer: {
-    position: 'relative'
-  },
-  subImagePreview: {
-    width: '120px',
-    height: '120px',
-    objectFit: 'cover',
+  
+  previewItem: {
+    position: 'relative',
     borderRadius: '8px',
-    border: '2px solid #0d6efd',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    overflow: 'hidden',
+    border: '2px solid #e9ecef'
   },
-  imageNumber: {
+  
+  previewImage: {
+    width: '100%',
+    height: '120px',
+    objectFit: 'cover'
+  },
+  
+  singlePreview: {
+    position: 'relative',
+    display: 'inline-block',
+    marginRight: '12px'
+  },
+  
+  mainPreviewImage: {
+    width: '200px',
+    height: '200px',
+    objectFit: 'cover',
+    borderRadius: '12px',
+    border: '3px solid #28a745'
+  },
+  
+  uploadOverlay: {
     position: 'absolute',
-    top: '4px',
-    right: '4px',
-    backgroundColor: '#0d6efd',
-    color: 'white',
-    width: '24px',
-    height: '24px',
-    borderRadius: '50%',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.8)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '12px',
+    color: 'white',
+    fontSize: '14px',
     fontWeight: '600'
+  },
+  
+  uploadProgress: {
+    textAlign: 'center'
+  },
+  
+  imageActions: {
+    position: 'absolute',
+    top: '8px',
+    right: '8px'
+  },
+  
+  removeButton: {
+    backgroundColor: '#dc3545',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    padding: '4px 8px',
+    cursor: 'pointer',
+    fontSize: '12px'
+  },
+  
+  cloudinaryBadge: {
+    position: 'absolute',
+    bottom: '4px',
+    left: '4px',
+    right: '4px',
+    backgroundColor: 'rgba(74, 144, 226, 0.9)',
+    color: 'white',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    fontSize: '10px',
+    textAlign: 'center',
+    fontWeight: '500'
   },
   
   // Other Styles
