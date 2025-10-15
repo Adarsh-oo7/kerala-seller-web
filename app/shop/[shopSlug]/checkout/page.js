@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, CreditCard, User, Phone, MapPin, Store, AlertTriangle, CheckCircle, Shield } from 'lucide-react';
-
+import { ArrowLeft, CreditCard, User, Phone, MapPin, Package, Store, AlertTriangle, CheckCircle, Shield } from 'lucide-react';
+import "../../../../styles/Shopslugcheckout.css";
+import SHeader from '../../../../components/common/SHeader';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
 // ✅ ENHANCED: Razorpay script loader with retry mechanism
@@ -44,6 +45,22 @@ export default function ShopCheckoutPage() {
   const [urlError, setUrlError] = useState(null);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ ADD: Login state for SHeader
+
+
+
+  // ✅ ADD: Check login status for SHeader
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('buyerAccessToken') ||
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('accessToken');
+      setIsLoggedIn(!!token);
+    } catch (error) {
+      console.warn('localStorage access error:', error);
+      setIsLoggedIn(false);
+    }
+  }, []);
 
   // ✅ ENHANCED: Store ID detection with validation
   const getActualStoreId = () => {
@@ -62,17 +79,17 @@ export default function ShopCheckoutPage() {
     if (queryId && queryId !== 'undefined' && queryId.trim() !== '') {
       return queryId.trim();
     }
-    
+
     if (shopSlug && shopSlug !== 'new' && shopSlug !== 'undefined') {
       return shopSlug;
     }
-    
+
     setUrlError('No valid store ID found');
     return null;
   };
 
   const actualStoreId = getActualStoreId();
-  
+
   console.log('🛒 Checkout store ID:', actualStoreId);
 
   // ✅ ENHANCED: Load Razorpay script with retry
@@ -108,7 +125,7 @@ export default function ShopCheckoutPage() {
       console.error('❌ Cannot generate URL - no store ID available');
       return '/';
     }
-    
+
     if (searchParams.get('id') && shopSlug === 'new') {
       // Pattern: /shop/new/path?id=123
       const basePath = `/shop/new${path}`;
@@ -136,13 +153,13 @@ export default function ShopCheckoutPage() {
   useEffect(() => {
     if (urlError || !actualStoreId) {
       console.log('🔍 Invalid checkout URL, redirecting to cart...');
-      
+
       try {
         const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
-        const availableStores = Object.keys(multiCarts).filter(storeId => 
+        const availableStores = Object.keys(multiCarts).filter(storeId =>
           multiCarts[storeId] && multiCarts[storeId].length > 0
         );
-        
+
         if (availableStores.length === 1) {
           router.replace(`/shop/${availableStores[0]}/cart`);
           return;
@@ -167,15 +184,15 @@ export default function ShopCheckoutPage() {
       // ✅ FIXED: Load cart using actual store ID
       const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
       const storeCart = multiCarts[actualStoreId] || [];
-      
+
       console.log('📦 Cart items for checkout:', storeCart);
-      
+
       if (storeCart.length === 0) {
         console.warn('⚠️ No items in cart, redirecting to cart page');
         router.push(getShopUrl('/cart'));
         return;
       }
-      
+
       setCartItems(storeCart);
 
       try {
@@ -224,7 +241,7 @@ export default function ShopCheckoutPage() {
   // ✅ ENHANCED: Form validation
   const validateForm = () => {
     const errors = {};
-    
+
     if (!shippingInfo.name.trim()) errors.name = 'Name is required';
     if (!shippingInfo.phone.trim()) errors.phone = 'Phone number is required';
     else if (!/^\d{10}$/.test(shippingInfo.phone.trim())) errors.phone = 'Phone number must be 10 digits';
@@ -232,7 +249,7 @@ export default function ShopCheckoutPage() {
     if (!shippingInfo.city.trim()) errors.city = 'City is required';
     if (!shippingInfo.pincode.trim()) errors.pincode = 'Pincode is required';
     else if (!/^\d{6}$/.test(shippingInfo.pincode.trim())) errors.pincode = 'Pincode must be 6 digits';
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -249,7 +266,7 @@ export default function ShopCheckoutPage() {
 
     try {
       console.log('💳 Starting online payment flow...');
-      
+
       const headers = checkAuth();
       if (!headers) return false;
 
@@ -284,7 +301,7 @@ export default function ShopCheckoutPage() {
         order_id: razorpay_order_id,
         handler: async function (response) {
           console.log('💳 Payment completed, verifying...');
-          
+
           try {
             // Step 3: Verify payment and create order
             const verifyResponse = await fetch(`${API_BASE_URL}/user/orders/verify-payment-and-create-order/`, {
@@ -302,16 +319,16 @@ export default function ShopCheckoutPage() {
             });
 
             const verifyData = await verifyResponse.json();
-            
+
             if (verifyResponse.ok && verifyData.success) {
               // Clear cart
               const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
               delete multiCarts[actualStoreId];
               localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
-              
+
               console.log('✅ Payment verified and order created');
               alert(`Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`);
-              
+
               // ✅ FIXED: Navigate to store-specific profile orders page
               const profileUrl = getShopUrl('/profile/orders');
               router.push(profileUrl);
@@ -322,11 +339,11 @@ export default function ShopCheckoutPage() {
             console.error('❌ Payment verification failed:', verifyError);
             alert(`Payment completed but order creation failed: ${verifyError.message}. Please contact support with payment ID: ${response.razorpay_payment_id}`);
           }
-          
+
           setSubmitting(false);
         },
         modal: {
-          ondismiss: function() {
+          ondismiss: function () {
             console.log('💳 Payment modal closed');
             setSubmitting(false);
           }
@@ -342,13 +359,13 @@ export default function ShopCheckoutPage() {
       };
 
       const rzp = new window.Razorpay(options);
-      
+
       rzp.on('payment.failed', function (response) {
         console.error('💳 Payment failed:', response.error);
         alert(`Payment failed: ${response.error.description}`);
         setSubmitting(false);
       });
-      
+
       rzp.open();
       return true;
     } catch (error) {
@@ -436,10 +453,10 @@ export default function ShopCheckoutPage() {
           const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
           delete multiCarts[actualStoreId];
           localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
-          
+
           console.log('✅ COD Order placed successfully:', responseData);
           alert(`Order placed successfully! Order #${responseData.order_id} 🎉`);
-          
+
           // ✅ FIXED: Navigate to store-specific profile orders page
           const profileUrl = getShopUrl('/profile/orders');
           router.push(profileUrl);
@@ -448,7 +465,7 @@ export default function ShopCheckoutPage() {
           console.error('❌ COD Order failed:', responseData);
           alert('Order failed: ' + errorMessage);
         }
-        
+
         setSubmitting(false);
       }
     } catch (error) {
@@ -466,10 +483,10 @@ export default function ShopCheckoutPage() {
 
   // ✅ ENHANCED: Input change handler with error clearing
   const handleInputChange = (field, value) => {
-    setShippingInfo({...shippingInfo, [field]: value});
+    setShippingInfo({ ...shippingInfo, [field]: value });
     // Clear error when user starts typing
     if (formErrors[field]) {
-      setFormErrors({...formErrors, [field]: ''});
+      setFormErrors({ ...formErrors, [field]: '' });
     }
   };
 
@@ -488,7 +505,7 @@ export default function ShopCheckoutPage() {
           <>
             <div style={styles.spinner}></div>
             <p>Loading checkout...</p>
-            <p style={{fontSize: '12px', color: '#666'}}>
+            <p style={{ fontSize: '12px', color: '#666' }}>
               Store ID: {actualStoreId || 'Not found'}
             </p>
           </>
@@ -512,396 +529,422 @@ export default function ShopCheckoutPage() {
   }
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <button onClick={handleBackClick} style={styles.backButton}>
-          <ArrowLeft size={20} />
-        </button>
-        <h1 style={styles.title}>
-          Checkout - {storeData?.name || `Store ${actualStoreId}`}
-        </h1>
-      </div>
+    <div style={styles.pageContainer}>
+      {/* ✅ ADD: SHeader - Navigation Bar */}
+      <SHeader
+        store={storeData}
+        isLoggedIn={isLoggedIn}
+      />
+      <div className='shopslugcheckoutcontainer' style={styles.container}>
 
-      {/* Store Context */}
-      <div style={styles.storeIndicator}>
-        <Store size={16} />
-        <span>Placing order at {storeData?.name || `Store ${actualStoreId}`} • {cartItems.length} item{cartItems.length !== 1 ? 's' : ''}</span>
-      </div>
 
-      {/* Security Indicator */}
-      <div style={styles.securityIndicator}>
-        <Shield size={16} />
-        <span>Secure checkout • Your data is encrypted and protected</span>
-      </div>
-
-      <div style={styles.checkoutLayout}>
-        {/* Left: Forms */}
-        <div style={styles.formSection}>
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>
-              <User size={20} />
-              Shipping Information
-            </h2>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Full Name *</label>
-              <input
-                type="text"
-                value={shippingInfo.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                style={{
-                  ...styles.input,
-                  borderColor: formErrors.name ? '#ef4444' : '#e5e7eb'
-                }}
-                placeholder="Enter your full name"
-                required
-              />
-              {formErrors.name && (
-                <div style={styles.errorText}>{formErrors.name}</div>
-              )}
-            </div>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Phone Number *</label>
-              <input
-                type="tel"
-                value={shippingInfo.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                style={{
-                  ...styles.input,
-                  borderColor: formErrors.phone ? '#ef4444' : '#e5e7eb'
-                }}
-                placeholder="Enter 10-digit phone number"
-                required
-              />
-              {formErrors.phone && (
-                <div style={styles.errorText}>{formErrors.phone}</div>
-              )}
-            </div>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Address *</label>
-              <textarea
-                value={shippingInfo.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                rows={3}
-                style={{
-                  ...styles.textarea,
-                  borderColor: formErrors.address ? '#ef4444' : '#e5e7eb'
-                }}
-                placeholder="Enter your complete address"
-                required
-              />
-              {formErrors.address && (
-                <div style={styles.errorText}>{formErrors.address}</div>
-              )}
-            </div>
-
-            <div style={styles.inputRow}>
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>City *</label>
-                <input
-                  type="text"
-                  value={shippingInfo.city}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  style={{
-                    ...styles.input,
-                    borderColor: formErrors.city ? '#ef4444' : '#e5e7eb'
-                  }}
-                  placeholder="City"
-                  required
-                />
-                {formErrors.city && (
-                  <div style={styles.errorText}>{formErrors.city}</div>
-                )}
-              </div>
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Pincode *</label>
-                <input
-                  type="text"
-                  value={shippingInfo.pincode}
-                  onChange={(e) => handleInputChange('pincode', e.target.value)}
-                  style={{
-                    ...styles.input,
-                    borderColor: formErrors.pincode ? '#ef4444' : '#e5e7eb'
-                  }}
-                  placeholder="6-digit pincode"
-                  required
-                />
-                {formErrors.pincode && (
-                  <div style={styles.errorText}>{formErrors.pincode}</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>
-              <CreditCard size={20} />
-              Payment Method
-            </h2>
-
-            <div style={styles.paymentOptions}>
-              <label style={{
-                ...styles.paymentOption,
-                backgroundColor: paymentMethod === 'COD' ? '#f0f8ff' : 'white',
-                borderColor: paymentMethod === 'COD' ? '#3b82f6' : '#e5e7eb'
-              }}>
-                <input
-                  type="radio"
-                  name="payment"
-                  value="COD"
-                  checked={paymentMethod === 'COD'}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  style={styles.radio}
-                />
-                <div>
-                  <div style={{fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px'}}>
-                    Cash on Delivery
-                    <CheckCircle size={16} color="#10b981" />
-                  </div>
-                  <div style={{fontSize: '12px', color: '#6b7280'}}>Pay when you receive the order</div>
-                </div>
-              </label>
-
-              <label style={{
-                ...styles.paymentOption,
-                backgroundColor: paymentMethod === 'ONLINE' ? '#f0f8ff' : 'white',
-                borderColor: paymentMethod === 'ONLINE' ? '#3b82f6' : '#e5e7eb',
-                opacity: razorpayLoaded ? 1 : 0.5
-              }}>
-                <input
-                  type="radio"
-                  name="payment"
-                  value="ONLINE"
-                  checked={paymentMethod === 'ONLINE'}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  style={styles.radio}
-                  disabled={!razorpayLoaded}
-                />
-                <div>
-                  <div style={{fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px'}}>
-                    Pay Online 
-                    {razorpayLoaded ? <CheckCircle size={16} color="#10b981" /> : <div style={styles.miniSpinner}></div>}
-                  </div>
-                  <div style={{fontSize: '12px', color: '#6b7280'}}>
-                    {razorpayLoaded ? 'UPI, Card, Net Banking via Razorpay' : 'Loading payment system...'}
-                  </div>
-                </div>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Order Summary */}
-        <div style={styles.summarySection}>
-          <h2 style={styles.sectionTitle}>Order Summary</h2>
-          <div style={styles.storeInfo}>
-            <strong>{storeData?.name || `Store ${actualStoreId}`}</strong>
-            <div style={{fontSize: '12px', color: '#6b7280', marginTop: '4px'}}>
-              Store ID: {actualStoreId}
-            </div>
-          </div>
-
-          <div style={styles.itemsList}>
-            {cartItems.map(item => (
-              <div key={item.id} style={styles.summaryItem}>
-                <div style={styles.itemLeft}>
-                  <div style={styles.itemName}>{item.name}</div>
-                  <div style={styles.itemDetails}>
-                    {formatPrice(item.price)} × {item.quantity}
-                  </div>
-                </div>
-                <div style={styles.itemTotal}>
-                  {formatPrice(item.price * item.quantity)}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={styles.totalSection}>
-            <div style={styles.subtotalRow}>
-              <span>Subtotal ({cartItems.length} item{cartItems.length !== 1 ? 's' : ''})</span>
-              <span>{formatPrice(calculateTotal())}</span>
-            </div>
-            <div style={styles.subtotalRow}>
-              <span>Delivery</span>
-              <span style={{color: '#10b981', fontWeight: '600'}}>Free</span>
-            </div>
-            <div style={styles.totalRow}>
-              <span>Total:</span>
-              <span style={styles.totalAmount}>{formatPrice(calculateTotal())}</span>
-            </div>
-          </div>
-
-          <button
-            onClick={handlePlaceOrder}
-            disabled={submitting || cartItems.length === 0}
-            style={{
-              ...styles.placeOrderButton,
-              backgroundColor: (submitting || cartItems.length === 0) ? '#ccc' : '#10b981',
-              cursor: (submitting || cartItems.length === 0) ? 'not-allowed' : 'pointer'
-            }}
-          >
-            <CreditCard size={18} />
-            {submitting ? (
-              paymentMethod === 'ONLINE' ? 'Processing Payment...' : 'Placing Order...'
-            ) : (
-              `Place Order (${formatPrice(calculateTotal())})`
-            )}
+        {/* Store Context */}
+        <div className='shopslugcheckoutstoreindicator' style={styles.storeIndicator}>
+          <button onClick={handleBackClick} style={styles.backButton}>
+            <ArrowLeft size={20} />
           </button>
 
-          {/* Payment Security Notice */}
-          {paymentMethod === 'ONLINE' && (
-            <div style={styles.securityNotice}>
-              <Shield size={14} />
-              <span>Payments are secured by Razorpay</span>
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Package size={16} />
+            <span>
+              Placing order {cartItems.length} item{cartItems.length !== 1 ? 's' : ''}
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* ✅ ENHANCED: Debug info for development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div style={styles.debugPanel}>
-          <div style={styles.debugTitle}>🔧 Debug Info</div>
-          <div>Store ID: {actualStoreId}</div>
-          <div>Cart Items: {cartItems.length}</div>
-          <div>Payment Method: {paymentMethod}</div>
-          <div>Razorpay: {razorpayLoaded ? '✅' : '❌'}</div>
-          <div>Form Errors: {Object.keys(formErrors).length}</div>
-          <div>Submitting: {submitting ? 'Yes' : 'No'}</div>
+
+        <div className='shopslugcheckoutlayout' style={styles.checkoutLayout}>
+          {/* Left: Forms */}
+          <div style={styles.formSection}>
+            <div style={styles.section}>
+              <h2 className='shopslugcheckouttitle' style={styles.sectionTitle}>
+                <User size={20} />
+                SHIPPING INFORMATION
+              </h2>
+
+              <div style={styles.inputGroup}>
+                {/* <label style={styles.label}>Full Name *</label> */}
+                <input
+                  className='shopslugckeckoutinputsize'
+                  type="text"
+                  value={shippingInfo.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  style={{
+                    ...styles.input,
+                    borderColor: formErrors.name ? '#ef4444' : '#e5e7eb'
+                  }}
+                  placeholder="Enter your full name"
+                  required
+                />
+                {formErrors.name && (
+                  <div style={styles.errorText}>{formErrors.name}</div>
+                )}
+              </div>
+
+              <div style={styles.inputGroup}>
+                {/* <label style={styles.label}>Phone Number *</label> */}
+                <input
+                  type="tel"
+                  className='shopslugckeckoutinputsize'
+                  value={shippingInfo.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  style={{
+                    ...styles.input,
+                    borderColor: formErrors.phone ? '#ef4444' : '#e5e7eb'
+                  }}
+                  placeholder="Enter 10-digit phone number"
+                  required
+                />
+                {formErrors.phone && (
+                  <div style={styles.errorText}>{formErrors.phone}</div>
+                )}
+              </div>
+
+              <div style={styles.inputGroup}>
+                {/* <label style={styles.label}>Address *</label> */}
+                <textarea
+                  value={shippingInfo.address}
+                  className='shopslugckeckoutinputsize'
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  rows={3}
+                  style={{
+                    ...styles.textarea,
+                    borderColor: formErrors.address ? '#ef4444' : '#e5e7eb'
+                  }}
+                  placeholder="Enter your complete address"
+                  required
+                />
+                {formErrors.address && (
+                  <div style={styles.errorText}>{formErrors.address}</div>
+                )}
+              </div>
+
+              <div style={styles.inputRow}>
+                <div style={styles.inputGroup}>
+                  {/* <label style={styles.label}>City *</label> */}
+                  <input
+                    type="text"
+                    className='shopslugckeckoutinputsize'
+                    value={shippingInfo.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    style={{
+                      ...styles.input,
+                      borderColor: formErrors.city ? '#ef4444' : '#e5e7eb'
+                    }}
+                    placeholder="City"
+                    required
+                  />
+                  {formErrors.city && (
+                    <div style={styles.errorText}>{formErrors.city}</div>
+                  )}
+                </div>
+                <div style={styles.inputGroup}>
+                  {/* <label style={styles.label}>Pincode *</label> */}
+                  <input
+                    type="text"
+                    className='shopslugckeckoutinputsize'
+                    value={shippingInfo.pincode}
+                    onChange={(e) => handleInputChange('pincode', e.target.value)}
+                    style={{
+                      ...styles.input,
+                      borderColor: formErrors.pincode ? '#ef4444' : '#e5e7eb'
+                    }}
+                    placeholder="6-digit pincode"
+                    required
+                  />
+                  {formErrors.pincode && (
+                    <div style={styles.errorText}>{formErrors.pincode}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={styles.section}>
+              <h2 className='shopslugcheckouttitle' style={styles.sectionTitle}>
+                <CreditCard size={20} />
+                PAYMENT METHOD
+              </h2>
+
+              <div style={styles.paymentOptions}>
+                <label
+                  className='shopslugcheckoutpayment'
+                  style={{
+                    ...styles.paymentOption,
+                    backgroundColor: paymentMethod === 'COD' ? '#0e451e25' : 'transparent',
+                    borderColor: paymentMethod === 'COD' ? '#1a484571' : '#e5e7eb'
+                  }}>
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="COD"
+                    checked={paymentMethod === 'COD'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    style={styles.radio}
+                  />
+                  <div>
+                    <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      Cash on Delivery
+                      <CheckCircle size={16} color="#10b981" />
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#6b7280' }}>Pay when you receive the order</div>
+                  </div>
+                </label>
+
+                <label
+                  className='shopslugcheckoutpayment'
+                  style={{
+                    ...styles.paymentOption,
+                    backgroundColor: paymentMethod === 'ONLINE' ? '#0e451e25' : 'transparent',
+                    borderColor: paymentMethod === 'ONLINE' ? '#1a4845' : '#e5e7eb',
+                    opacity: razorpayLoaded ? 1 : 0.5
+                  }}>
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="ONLINE"
+                    checked={paymentMethod === 'ONLINE'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    style={styles.radio}
+                    disabled={!razorpayLoaded}
+                  />
+                  <div>
+                    <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      Pay Online
+                      {razorpayLoaded ? <CheckCircle size={16} color="#10b981" /> : <div style={styles.miniSpinner}></div>}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                      {razorpayLoaded ? 'UPI, Card, Net Banking via Razorpay' : 'Loading payment system...'}
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Order Summary */}
+          <div style={styles.summarySection}>
+            <h2 className='shopslugcheckouttitle' style={styles.sectionTitle}>ORDER SUMMARY</h2>
+            <div style={styles.storeInfo}>
+              <strong>{storeData?.name || `Store ${actualStoreId}`}</strong>
+              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                Store ID: {actualStoreId}
+              </div>
+            </div>
+
+            <div style={styles.itemsList}>
+              {cartItems.map(item => (
+                <div key={item.id} style={styles.summaryItem}>
+                  <div style={styles.itemLeft}>
+                    <div className='shopslugcheckoutitemname' style={styles.itemName}>{item.name}</div>
+                    <div style={styles.itemDetails}>
+                      {formatPrice(item.price)} × {item.quantity}
+                    </div>
+                  </div>
+                  <div style={styles.itemTotal}>
+                    {formatPrice(item.price * item.quantity)}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={styles.totalSection}>
+              <div style={styles.subtotalRow}>
+                <span>Subtotal ({cartItems.length} item{cartItems.length !== 1 ? 's' : ''})</span>
+                <span>{formatPrice(calculateTotal())}</span>
+              </div>
+              <div style={styles.subtotalRow}>
+                <span>Delivery</span>
+                <span style={{ color: '#10b981', fontWeight: '600' }}>Free</span>
+              </div>
+              <div style={styles.totalRow}>
+                <span>Total:</span>
+                <span className='shopslugcheckoutitemname' style={styles.totalAmount}>{formatPrice(calculateTotal())}</span>
+              </div>
+            </div>
+
+            <button
+            className='shopslugcheckoutbtn'
+              onClick={handlePlaceOrder}
+              disabled={submitting || cartItems.length === 0}
+              style={{
+                ...styles.placeOrderButton,
+                backgroundColor: (submitting || cartItems.length === 0) ? '#ccc' : '#10b981',
+                cursor: (submitting || cartItems.length === 0) ? 'not-allowed' : 'pointer'
+              }}
+            >
+              <CreditCard size={18} />
+              {submitting ? (
+                paymentMethod === 'ONLINE' ? 'Processing Payment...' : 'Placing Order...'
+              ) : (
+                `Place Order (${formatPrice(calculateTotal())})`
+              )}
+            </button>
+
+            {/* Payment Security Notice */}
+            {paymentMethod === 'ONLINE' && (
+              <div style={styles.securityNotice}>
+                <Shield size={14} />
+                <span>Payments are secured by Razorpay</span>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+
+        {/* ✅ ENHANCED: Debug info for development */}
+        {/* {process.env.NODE_ENV === 'development' && (
+          <div style={styles.debugPanel}>
+            <div style={styles.debugTitle}>🔧 Debug Info</div>
+            <div>Store ID: {actualStoreId}</div>
+            <div>Cart Items: {cartItems.length}</div>
+            <div>Payment Method: {paymentMethod}</div>
+            <div>Razorpay: {razorpayLoaded ? '✅' : '❌'}</div>
+            <div>Form Errors: {Object.keys(formErrors).length}</div>
+            <div>Submitting: {submitting ? 'Yes' : 'No'}</div>
+          </div>
+        )} */}
+      </div>
     </div>
   );
 }
 
 const styles = {
-  container: { minHeight: '100vh', backgroundColor: '#f8fafc', padding: '20px', maxWidth: '1400px', margin: '0 auto' },
-  loadingContainer: { 
-    display: 'flex', flexDirection: 'column', alignItems: 'center', 
-    justifyContent: 'center', minHeight: '100vh', gap: '20px', textAlign: 'center' 
+  pageContainer: { backgroundColor: '#FDFFF0' },
+  container: {
+    minHeight: '100vh',
+    backgroundColor: '#FDFFF0',
+    padding: '100px 20px 20px', // 👈 added top padding to push content below SHeader
+    maxWidth: '1400px',
+    margin: '0 auto'
   },
-  spinner: { 
-    width: '32px', height: '32px', border: '3px solid #f3f3f3', 
-    borderTop: '3px solid #3b82f6', borderRadius: '50%', 
-    animation: 'spin 1s linear infinite' 
+  loadingContainer: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    justifyContent: 'center', minHeight: '100vh', gap: '20px', textAlign: 'center'
+  },
+  spinner: {
+    width: '32px', height: '32px', border: '3px solid #f3f3f3',
+    borderTop: '3px solid #3b82f6', borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
   },
   miniSpinner: {
     width: '12px', height: '12px', border: '2px solid #f3f3f3',
     borderTop: '2px solid #3b82f6', borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  errorContainer: { 
-    display: 'flex', flexDirection: 'column', alignItems: 'center', 
+  errorContainer: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
     justifyContent: 'center', minHeight: '100vh', gap: '20px',
-    textAlign: 'center', padding: '40px' 
+    textAlign: 'center', padding: '40px'
   },
-  homeButton: { 
-    padding: '12px 24px', backgroundColor: '#6b7280', color: 'white', 
-    border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' 
+  homeButton: {
+    padding: '12px 24px', backgroundColor: '#6b7280', color: 'white',
+    border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600'
   },
-  header: { 
+  header: {
     display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px',
     backgroundColor: 'white', borderRadius: '12px', padding: '16px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
   },
-  backButton: { 
-    background: 'none', border: 'none', cursor: 'pointer', 
-    color: '#3b82f6', padding: '8px', borderRadius: '6px' 
+  backButton: {
+    background: 'none', border: 'none', cursor: 'pointer',
+    color: '#1a4845', padding: '8px', borderRadius: '6px'
   },
-  title: { 
-    fontSize: '24px', fontWeight: '700', color: '#1f2937', flex: 1 
+  title: {
+    fontSize: '24px', fontWeight: '700', color: '#1f2937', flex: 1
   },
   storeIndicator: {
-    display: 'flex', alignItems: 'center', gap: '8px',
-    backgroundColor: '#f0f8ff', border: '1px solid #3b82f6',
-    borderRadius: '8px', padding: '12px 16px', marginBottom: '8px',
-    fontSize: '14px', color: '#1e40af', fontWeight: '500'
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between', // 👈 pushes arrow left, text+icon right
+    backgroundColor: '#0e451e25',
+    border: '1px solid #0e451e25',
+    borderRadius: '8px',
+    padding: '12px 16px',
+    marginTop: '50px',
+    marginBottom: '30px',
+    fontSize: '14px',
+    color: '#1a4845',
+    fontWeight: '500'
   },
+
+
   securityIndicator: {
     display: 'flex', alignItems: 'center', gap: '8px',
     backgroundColor: '#f0fdf4', border: '1px solid #10b981',
     borderRadius: '8px', padding: '10px 16px', marginBottom: '20px',
     fontSize: '13px', color: '#047857', fontWeight: '500'
   },
-  checkoutLayout: { 
-    display: 'grid', gridTemplateColumns: '1fr 400px', gap: '30px',
-    '@media (max-width: 968px)': {
-      gridTemplateColumns: '1fr',
-      gap: '20px'
-    }
+  checkoutLayout: {
+    display: 'grid', gridTemplateColumns: '1fr 350px', gap: '30px', backgroundColor: "#FDFFF0",
   },
   formSection: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  section: { 
-    backgroundColor: 'white', borderRadius: '12px', padding: '24px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb'
+  section: {
+    backgroundColor: '#FDFFF0', borderRadius: '12px', padding: '24px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.3)', border: '1px solid #bbbbbbff'
   },
-  sectionTitle: { 
-    display: 'flex', alignItems: 'center', gap: '8px', 
-    fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '20px' 
+  sectionTitle: {
+    display: 'flex', alignItems: 'center', gap: '8px',
+    fontSize: '18px', fontWeight: '600', color: '#1a4845', marginBottom: '20px'
   },
-  inputGroup: { marginBottom: '16px' },
-  inputRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' },
-  label: { 
-    display: 'block', fontSize: '14px', fontWeight: '600', 
-    color: '#374151', marginBottom: '6px' 
+  inputGroup: { marginBottom: '16px', },
+  inputRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', },
+  label: {
+    display: 'block', fontSize: '14px', fontWeight: '600',
+    color: '#374151', marginBottom: '6px'
   },
-  input: { 
-    width: '100%', padding: '12px 16px', border: '2px solid', 
+  input: {
+    width: '100%', padding: '12px 16px', border: '1px solid',
     borderRadius: '8px', fontSize: '16px', transition: 'border-color 0.2s',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box', backgroundColor: '#FDFFF0'
   },
-  textarea: { 
-    width: '100%', padding: '12px 16px', border: '2px solid', 
+  textarea: {
+    width: '100%', padding: '12px 16px', border: '1px solid',
     borderRadius: '8px', fontSize: '16px', resize: 'vertical', minHeight: '80px',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box', backgroundColor: '#FDFFF0'
   },
   errorText: {
     fontSize: '12px', color: '#ef4444', marginTop: '4px', fontWeight: '500'
   },
   paymentOptions: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  paymentOption: { 
-    display: 'flex', alignItems: 'flex-start', gap: '12px', 
-    padding: '16px', border: '2px solid', borderRadius: '8px', 
+  paymentOption: {
+    display: 'flex', alignItems: 'flex-start', gap: '12px',
+    padding: '16px', border: '1px solid', borderRadius: '8px',
     cursor: 'pointer', transition: 'all 0.2s'
   },
-  radio: { marginTop: '2px' },
-  summarySection: { 
-    backgroundColor: 'white', borderRadius: '12px', padding: '24px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb',
+  radio: { marginTop: '2px', accentColor: '#1a4845', },
+  summarySection: {
+    backgroundColor: '#FDFFF0', borderRadius: '12px', padding: '24px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.3)', border: '1px solid #bbbbbbff',
     height: 'fit-content'
   },
-  storeInfo: { 
-    padding: '16px', backgroundColor: '#f8fafc', borderRadius: '8px', 
+  storeInfo: {
+    padding: '16px', backgroundColor: '#0e451e25',
+    border: '1px solid #0e451e25', borderRadius: '8px',
     marginBottom: '20px', textAlign: 'center'
   },
   itemsList: { marginBottom: '20px' },
-  summaryItem: { 
-    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', 
-    padding: '12px 0', borderBottom: '1px solid #f3f4f6' 
+  summaryItem: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+    padding: '12px 0', borderBottom: '1px solid #f3f4f6'
   },
   itemLeft: { flex: 1 },
-  itemName: { fontSize: '14px', fontWeight: '600', color: '#1f2937', marginBottom: '4px' },
+  itemName: { fontSize: '18px', fontWeight: '500', color: '#1f2937', marginBottom: '4px' },
   itemDetails: { fontSize: '12px', color: '#6b7280' },
   itemTotal: { fontSize: '14px', fontWeight: '600', color: '#1f2937' },
-  totalSection: { 
-    marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e5e7eb' 
+  totalSection: {
+    marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e5e7eb'
   },
   subtotalRow: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     marginBottom: '8px', fontSize: '14px', color: '#6b7280'
   },
-  totalRow: { 
+  totalRow: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6'
   },
   totalAmount: { fontSize: '20px', fontWeight: '700', color: '#059669' },
-  placeOrderButton: { 
+  placeOrderButton: {
     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    gap: '8px', color: 'white', border: 'none', borderRadius: '10px', 
+    gap: '8px', color: 'white', border: 'none', borderRadius: '10px',
     padding: '16px', fontSize: '16px', fontWeight: '600', marginTop: '20px',
     transition: 'all 0.2s'
   },

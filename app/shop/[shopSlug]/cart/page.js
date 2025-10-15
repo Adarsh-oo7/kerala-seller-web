@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ShoppingCart, Plus, Minus, Trash2, CreditCard, Store, AlertTriangle, Loader } from 'lucide-react';
 import "../../../../styles/Shopslugcart.css";
-// ✅ ADD: Import the SHeader component
 import SHeader from '../../../../components/common/SHeader';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
@@ -341,7 +340,7 @@ export default function ShopCartPage() {
   // ✅ ENHANCED: Better loading state with progress indication
   if (loading || urlError) {
     return (
-      <div style={styles.pageContainer}>
+      <div className='shopslugcartpagecontainer'  style={styles.pageContainer}>
         {/* ✅ ADD: SHeader during loading */}
         <SHeader
           store={storeData}
@@ -377,7 +376,7 @@ export default function ShopCartPage() {
   // Show error if no store ID found (shouldn't reach here due to redirect)
   if (!actualStoreId) {
     return (
-      <div style={styles.pageContainer}>
+      <div className='shopslugcartpagecontainer'  style={styles.pageContainer}>
         {/* ✅ ADD: SHeader for error state */}
         <SHeader
           store={null}
@@ -401,7 +400,7 @@ export default function ShopCartPage() {
   }
 
   return (
-    <div style={styles.pageContainer}>
+    <div className='shopslugcartpagecontainer' style={styles.pageContainer}>
       {/* ✅ ADD: SHeader - Navigation Bar */}
       <SHeader
         store={storeData}
@@ -447,10 +446,10 @@ export default function ShopCartPage() {
         {/* Cart Items */}
         {cartItems.length === 0 ? (
           <div style={styles.emptyState}>
-            <ShoppingCart size={48} color="#ccc" />
-            <h2>Your cart is empty</h2>
-            <p>Add some items from {storeData?.name || `Store ${actualStoreId}`} to get started.</p>
-            <button onClick={handleContinueShopping} style={styles.shopButton}>
+            <ShoppingCart className='shopslugcartemptyicon' size={48} color="#ccc" />
+            <h2 className='shopslugcartemptytitle'>Your cart is empty</h2>
+            <p className='shopslugcartemptytext'>Add some items from {storeData?.name || `Store ${actualStoreId}`} to get started.</p>
+            <button className='shopslugcartemptybtn' onClick={handleContinueShopping} style={styles.shopButton}>
               Continue Shopping
             </button>
           </div>
@@ -587,7 +586,7 @@ const styles = {
   pageContainer: { 
     minHeight: '100vh', 
     backgroundColor: '#FDFFF0',
-    paddingTop: '90px', // ✅ ADD: Space for SHeader navigation bar
+    paddingTop: '130px', // ✅ ADD: Space for SHeader navigation bar
   },
   container: {
     backgroundColor: "#FDFFF0",
@@ -621,7 +620,7 @@ const styles = {
   header: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     marginBottom: '20px', backgroundColor: '#FDFFF0', borderRadius: '12px',
-    padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    padding: '16px', boxShadow: '0px  2px 3px rgba(0,0,0,0.3)'
   },
   backButton: {
     background: 'none', border: 'none', cursor: 'pointer',
@@ -655,10 +654,10 @@ const styles = {
   emptyState: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
     justifyContent: 'center', textAlign: 'center', padding: '60px',
-    backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    backgroundColor: '#FDFFF0', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
   shopButton: {
-    padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white',
+    padding: '12px 24px', backgroundColor: '#1a4845', color: 'white',
     border: 'none', borderRadius: '8px', cursor: 'pointer', marginTop: '20px',
     fontSize: '16px', fontWeight: '600', transition: 'all 0.2s'
   },
@@ -685,6 +684,8 @@ const styles = {
     flexWrap: 'wrap',      // wrap content on small screens
     width: '100%',          // fills the grid cell
     boxSizing: 'border-box',
+    maxWidth: '420px',
+    justifyContent: 'center'
   },
 
   itemInfo: {

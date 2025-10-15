@@ -7,19 +7,23 @@ import { useCart } from '../../context/CartContext';
 import WhatsAppButton from '../../../components/common/WhatsAppButton';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
-import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw } from 'lucide-react';
+import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw, ChevronLeft, ChevronRight, Zap, CreditCard } from 'lucide-react';
 
-// ✅ Enhanced API configuration with wishlist endpoints
+// ✅ API configuration - matches your existing backend
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 const API_URL = `${API_BASE_URL}/api/products/`;
 const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;
 
-// ✅ NEW: Wishlist API URLs
+// ✅ Your existing Razorpay endpoints
+const CREATE_RAZORPAY_ORDER_URL = `${API_BASE_URL}/api/orders/create-razorpay-order/`;
+const VERIFY_PAYMENT_URL = `${API_BASE_URL}/api/orders/verify-payment-and-create-order/`;
+
+// ✅ Wishlist API URLs
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 
-// ✅ NEW: Enhanced auth headers function
+// ✅ Enhanced auth headers function
 const getAuthHeaders = () => {
   const token = localStorage.getItem('access_token') ||
     localStorage.getItem('buyerAccessToken') ||
@@ -28,6 +32,188 @@ const getAuthHeaders = () => {
 
   return token ? { 'Authorization': `Bearer ${token}` } : null;
 };
+
+// ✅ SMART: Get best image URL with Cloudinary support
+const getBestImageUrl = (product, imageType = 'main', size = 'default') => {
+  if (!product) return 'https://placehold.co/400x400?text=No+Image';
+
+  // Priority order for different image types
+  const imageUrls = {
+    thumbnail: product.thumbnail_url || product.main_image_url || product.cloudinary_url,
+    large: product.large_image_url || product.main_image_url || product.cloudinary_url,
+    main: product.main_image_url || product.cloudinary_url
+  };
+
+  let imageUrl = imageUrls[imageType] || product.main_image_url;
+
+  if (!imageUrl) return 'https://placehold.co/400x400?text=No+Image';
+
+  // If it's already a Cloudinary URL, return as is
+  if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
+    return imageUrl;
+  }
+
+  // Handle local URLs
+  if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
+    return `${API_BASE_URL}${imageUrl}`;
+  }
+
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+
+  return imageUrl.startsWith('/') ? `${API_BASE_URL}${imageUrl}` : imageUrl;
+};
+
+// ✅ Enhanced Image Gallery Component with Mobile Square Support
+function ProductImageGallery({ product }) {
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  // Combine main image and sub-images
+  const allImages = [
+    {
+      url: getBestImageUrl(product, 'main'),
+      thumbnail: getBestImageUrl(product, 'thumbnail'),
+      large: getBestImageUrl(product, 'large'),
+      alt: product.name
+    },
+    ...(product.sub_images || []).map((subImage, index) => ({
+      url: subImage.image_url || subImage.thumbnail_url || getBestImageUrl({ main_image_url: subImage.image }),
+      thumbnail: subImage.thumbnail_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
+      large: subImage.large_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
+      alt: `${product.name} - Image ${index + 2}`
+    }))
+  ];
+
+  const handlePrevious = () => {
+    setSelectedImageIndex((prev) => 
+      prev === 0 ? allImages.length - 1 : prev - 1
+    );
+    setImageLoaded(false);
+  };
+
+  const handleNext = () => {
+    setSelectedImageIndex((prev) => 
+      prev === allImages.length - 1 ? 0 : prev + 1
+    );
+    setImageLoaded(false);
+  };
+
+  const handleThumbnailClick = (index) => {
+    setSelectedImageIndex(index);
+    setImageLoaded(false);
+  };
+
+  const currentImage = allImages[selectedImageIndex];
+
+  return (
+    <div style={styles.imageGallery} className="image-gallery">
+      {/* Main Image Display */}
+      <div style={styles.mainImageContainer}>
+        <div 
+          style={styles.mainImageWrapper}
+          className="main-image-wrapper"
+          onMouseEnter={() => setIsZoomed(true)}
+          onMouseLeave={() => setIsZoomed(false)}
+        >
+          {!imageLoaded && (
+            <div style={styles.imageLoader}>
+              <div style={styles.spinner}></div>
+              <p style={styles.loadingText}>Loading image...</p>
+            </div>
+          )}
+          
+          <img 
+            src={isZoomed ? currentImage.large : currentImage.url}
+            alt={currentImage.alt}
+            className="main-image"
+            style={{
+              ...styles.mainImage,
+              opacity: imageLoaded ? 1 : 0,
+              transform: isZoomed ? 'scale(1.1)' : 'scale(1)'
+            }}
+            onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              e.target.src = 'https://placehold.co/600x400?text=No+Image';
+              setImageLoaded(true);
+            }}
+          />
+          
+          {/* Navigation Arrows - Hidden on mobile */}
+          {allImages.length > 1 && (
+            <>
+              <button 
+                style={{...styles.navButton, ...styles.prevButton}} 
+                className="nav-button"
+                onClick={handlePrevious}
+                aria-label="Previous image"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button 
+                style={{...styles.navButton, ...styles.nextButton}} 
+                className="nav-button"
+                onClick={handleNext}
+                aria-label="Next image"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+
+          {/* Image Counter */}
+          {allImages.length > 1 && (
+            <div style={styles.imageCounter} className="image-counter">
+              {selectedImageIndex + 1} / {allImages.length}
+            </div>
+          )}
+
+          {/* Optimized Badge */}
+          {product.image_metadata?.optimized && (
+            <div style={styles.optimizedBadge} className="optimized-badge" title="Fast loading optimized image">
+              <Zap size={12} />
+            </div>
+          )}
+
+          {/* Zoom hint */}
+          <div style={styles.zoomHint} className="zoom-hint">
+            🖱️ Hover to zoom • 📱 Tap to select
+          </div>
+        </div>
+      </div>
+
+      {/* Thumbnail Selector */}
+      {allImages.length > 1 && (
+        <div style={styles.thumbnailContainer}>
+          <div style={styles.thumbnailScroller} className="thumbnail-scroller">
+            {allImages.map((image, index) => (
+              <div
+                key={index}
+                style={{
+                  ...styles.thumbnailWrapper,
+                  ...(index === selectedImageIndex ? styles.activeThumbnail : {})
+                }}
+                className="thumbnail-wrapper"
+                onClick={() => handleThumbnailClick(index)}
+              >
+                <img
+                  src={image.thumbnail}
+                  alt={image.alt}
+                  style={styles.thumbnailImage}
+                  onError={(e) => {
+                    e.target.src = 'https://placehold.co/80x80?text=No+Image';
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Enhanced Review Form Component
 function ReviewForm({ productId, onReviewSubmitted }) {
@@ -195,7 +381,7 @@ function ReviewItem({ review }) {
     );
 }
 
-// ✅ NEW: Enhanced Wishlist Component
+// ✅ Enhanced Wishlist Component
 function WishlistButton({ productId, isLoggedIn, router }) {
     const [isWishlisted, setIsWishlisted] = useState(false);
     const [isWishlistLoading, setIsWishlistLoading] = useState(false);
@@ -319,7 +505,22 @@ function WishlistButton({ productId, isLoggedIn, router }) {
     );
 }
 
-// ✅ ENHANCED: Main Product Detail Component with Wishlist
+// ✅ Razorpay Script Loader
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => {
+      resolve(true);
+    };
+    script.onerror = () => {
+      resolve(false);
+    };
+    document.body.appendChild(script);
+  });
+};
+
+// ✅ ENHANCED: Main Product Detail Component with Working Buy Now
 export default function ProductDetailPage() {
     const [product, setProduct] = useState(null);
     const [reviews, setReviews] = useState([]);
@@ -329,6 +530,7 @@ export default function ProductDetailPage() {
     const [canReview, setCanReview] = useState(false);
     const [reviewsLoading, setReviewsLoading] = useState(false);
     const [addingToCart, setAddingToCart] = useState(false);
+    const [buyingNow, setBuyingNow] = useState(false);
     
     const { productId } = useParams();
     const router = useRouter();
@@ -407,7 +609,13 @@ export default function ProductDetailPage() {
             const headers = { 'Authorization': `Bearer ${token}` };
             axios.get(BUYER_PROFILE_URL, { headers })
                 .then(res => {
-                    setBuyerStatus({ isLoggedIn: true, isVerified: res.data.phone_verified });
+                    setBuyerStatus({ 
+                        isLoggedIn: true, 
+                        isVerified: res.data.phone_verified,
+                        name: res.data.full_name,
+                        email: res.data.email,
+                        phone: res.data.phone_number
+                    });
                 })
                 .catch(err => {
                     console.error("Could not verify buyer status", err);
@@ -462,6 +670,172 @@ export default function ProductDetailPage() {
             }
         } finally {
             setAddingToCart(false);
+        }
+    };
+
+    // ✅ WORKING: Buy Now with Your Existing Backend
+    const handleBuyNow = async () => {
+        if (!product) return;
+
+        if (!buyerStatus.isLoggedIn) {
+            router.push('/login/buyer');
+            return;
+        }
+        if (!buyerStatus.isVerified) {
+            alert('Please verify your phone number on your profile page before purchasing.');
+            router.push('/profile');
+            return;
+        }
+        
+        setBuyingNow(true);
+        
+        try {
+            // ✅ Load Razorpay script
+            const isRazorpayLoaded = await loadRazorpayScript();
+            if (!isRazorpayLoaded) {
+                alert('Payment gateway failed to load. Please try again.');
+                setBuyingNow(false);
+                return;
+            }
+
+            const headers = getAuthHeaders();
+            if (!headers) {
+                router.push('/login/buyer');
+                return;
+            }
+
+            // ✅ STEP 1: Create order data for single product
+            const orderData = {
+                seller_phone: product.store?.seller_phone,
+                items: [{
+                    id: product.id,
+                    quantity: 1,
+                    name: product.name,
+                    price: product.price
+                }],
+                customer_name: buyerStatus.name || 'Customer',
+                customer_phone: buyerStatus.phone || '',
+                shipping_address: "Default Address" // You can enhance this with address selection
+            };
+
+            const totalAmount = product.price;
+
+            console.log('🛒 Creating Razorpay order for Buy Now:', orderData);
+
+            // ✅ STEP 2: Create Razorpay order using your existing endpoint
+            const createOrderResponse = await axios.post(
+                CREATE_RAZORPAY_ORDER_URL, 
+                {
+                    amount: totalAmount,
+                    order_data: orderData
+                },
+                {
+                    headers,
+                    timeout: 15000
+                }
+            );
+
+            const { razorpay_order_id, amount, currency, key } = createOrderResponse.data;
+
+            console.log('✅ Razorpay order created:', createOrderResponse.data);
+
+            // ✅ STEP 3: Configure Razorpay payment options
+            const options = {
+                key: key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                amount: amount, // Amount in paise
+                currency: currency,
+                name: 'Kerala Sellers',
+                description: `Buy Now: ${product.name}`,
+                order_id: razorpay_order_id,
+                
+                // ✅ STEP 4: Payment success handler
+                handler: async function (response) {
+                    console.log('💳 Payment successful:', response);
+                    
+                    try {
+                        // ✅ Use your existing payment verification endpoint
+                        const verifyResponse = await axios.post(
+                            VERIFY_PAYMENT_URL,
+                            {
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                order_data: orderData
+                            },
+                            { headers }
+                        );
+
+                        console.log('✅ Payment verified and order created:', verifyResponse.data);
+
+                        // ✅ Show success message
+                        alert(`🎉 Payment successful! Your order #${verifyResponse.data.order_id} has been placed.`);
+                        
+                        // ✅ Redirect to orders page
+                        router.push('/profile/orders');
+
+                        
+                    } catch (verifyError) {
+                        console.error('❌ Payment verification failed:', verifyError);
+                        alert('Payment completed but order creation failed. Please contact support.');
+                    }
+                },
+                
+                // ✅ Prefill user information
+                prefill: {
+                    name: buyerStatus.name || 'Customer',
+                    email: buyerStatus.email || '',
+                    contact: buyerStatus.phone || ''
+                },
+                
+                // ✅ Order notes
+                notes: {
+                    product_id: product.id,
+                    product_name: product.name,
+                    seller_phone: product.store?.seller_phone,
+                    order_type: 'buy_now'
+                },
+                
+                // ✅ Theme
+                theme: {
+                    color: '#3b82f6'
+                },
+                
+                // ✅ Modal close handler
+                modal: {
+                    ondismiss: function() {
+                        console.log('💳 Payment cancelled by user');
+                        setBuyingNow(false);
+                    }
+                }
+            };
+
+            // ✅ STEP 5: Open Razorpay payment modal
+            const razorpayInstance = new window.Razorpay(options);
+            
+            // ✅ Handle payment failure
+            razorpayInstance.on('payment.failed', function (response) {
+                console.error('❌ Payment failed:', response.error);
+                alert(`Payment failed: ${response.error.description}`);
+                setBuyingNow(false);
+            });
+
+            // ✅ Open the payment modal
+            razorpayInstance.open();
+
+        } catch (error) {
+            console.error('❌ Buy now error:', error);
+            
+            if (error.response?.status === 401) {
+                localStorage.removeItem('buyerAccessToken');
+                alert('Session expired. Please login again.');
+                router.push('/login/buyer');
+            } else if (error.response?.data?.error) {
+                alert(`Error: ${error.response.data.error}`);
+            } else {
+                alert('Failed to process payment. Please try again.');
+            }
+            
+            setBuyingNow(false);
         }
     };
 
@@ -539,21 +913,15 @@ export default function ProductDetailPage() {
             <Header />
             
             {/* Product Details Section */}
-            <div style={styles.container}>
-                <div style={styles.productLayout}>
-                    <div style={styles.imageContainer}>
-                        <img 
-                            src={product.main_image_url || 'https://placehold.co/400x400?text=No+Image'} 
-                            alt={product.name} 
-                            style={styles.image}
-                            onError={(e) => {
-                                e.target.src = 'https://placehold.co/400x400?text=No+Image';
-                            }}
-                        />
+            <div style={styles.container} className="container">
+                <div style={styles.productLayout} className="product-layout">
+                    {/* ✅ ENHANCED: Image Gallery Component */}
+                    <div className="image-gallery">
+                        <ProductImageGallery product={product} />
                     </div>
                     
-                    <div style={styles.detailsContainer}>
-                        <h1 style={styles.name}>{product.name}</h1>
+                    <div style={styles.detailsContainer} className="details-container">
+                        <h1 style={styles.name} className="product-name">{product.name}</h1>
                         {product.model_name && <p style={styles.model}>Model: {product.model_name}</p>}
                         
                         <StarRating 
@@ -563,15 +931,23 @@ export default function ProductDetailPage() {
 
                         {product.description && <p style={styles.description}>{product.description}</p>}
                         
-                        <div style={styles.priceContainer}>
-                            <span style={styles.price}>₹{product.price}</span>
+                        <div style={styles.priceContainer} className="price-container">
+                            <span style={styles.price} className="product-price">₹{product.price}</span>
                             {product.mrp && product.mrp > product.price && (
-                                <span style={styles.mrp}>MRP: ₹{product.mrp}</span>
+                                <>
+                                    <span style={styles.mrp} className="product-mrp">MRP: ₹{product.mrp}</span>
+                                    <span style={styles.discount}>
+                                        {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% off
+                                    </span>
+                                </>
                             )}
                         </div>
                         
-                        <div style={styles.stockContainer}>
-                            <p style={styles.stock}>
+                        <div style={styles.stockContainer} className="stock-container">
+                            <p style={{
+                                ...styles.stock,
+                                color: product.online_stock > 0 ? '#059669' : '#dc2626'
+                            }}>
                                 {product.online_stock > 0 
                                     ? `✓ ${product.online_stock} available` 
                                     : '✗ Out of Stock'
@@ -580,7 +956,7 @@ export default function ProductDetailPage() {
                         </div>
 
                         {/* Features */}
-                        <div style={styles.features}>
+                        <div style={styles.features} className="features">
                             <div style={styles.feature}>
                                 <Truck size={16} />
                                 <span>Free Delivery</span>
@@ -589,9 +965,16 @@ export default function ProductDetailPage() {
                                 <Shield size={16} />
                                 <span>Secure Payment</span>
                             </div>
+                            {product.image_metadata?.optimized && (
+                                <div style={styles.feature}>
+                                    <Zap size={16} />
+                                    <span>Fast Loading</span>
+                                </div>
+                            )}
                         </div>
                         
-                        <div style={styles.actionButtons}>
+                        {/* ✅ ENHANCED: Action Buttons with Working Buy Now */}
+                        <div style={styles.actionButtons} className="action-buttons">
                             <button 
                                 style={{
                                     ...styles.addToCartButton,
@@ -617,8 +1000,34 @@ export default function ProductDetailPage() {
                                 </span>
                             </button>
 
-                            <div style={styles.secondaryActions}>
-                                {/* ✅ FIXED: Working Wishlist Button */}
+                            {/* ✅ WORKING: Buy Now Button with Your Backend */}
+                            <button 
+                                style={{
+                                    ...styles.buyNowButton,
+                                    backgroundColor: product.online_stock === 0 ? '#6c757d' : (buyingNow ? '#28a745' : '#ff6b35'),
+                                    cursor: product.online_stock === 0 ? 'not-allowed' : 'pointer'
+                                }} 
+                                disabled={product.online_stock === 0 || buyingNow}
+                                onClick={handleBuyNow}
+                                data-buy-now
+                            >
+                                <span style={styles.buttonContent}>
+                                    {buyingNow ? (
+                                        <>
+                                            <div style={styles.spinner}></div>
+                                            Processing Payment...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CreditCard size={18} />
+                                            {product.online_stock > 0 ? 'Buy Now' : 'Out of Stock'}
+                                        </>
+                                    )}
+                                </span>
+                            </button>
+
+                            <div style={styles.secondaryActions} className="secondary-actions">
+                                {/* ✅ Working Wishlist Button */}
                                 <WishlistButton 
                                     productId={productId}
                                     isLoggedIn={buyerStatus.isLoggedIn}
@@ -639,7 +1048,7 @@ export default function ProductDetailPage() {
                 </div>
             </div>
 
-            {/* Reviews Section - Keeping your existing implementation */}
+            {/* Reviews Section */}
             <div style={styles.reviewsSection}>
                 <div style={styles.reviewsHeader}>
                     <h2>Customer Reviews</h2>
@@ -698,37 +1107,321 @@ export default function ProductDetailPage() {
 
             <Footer />
 
-            {/* ✅ Enhanced CSS Animations */}
-            <style jsx>{`
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-                
-                .spinning {
-                    animation: spin 1s linear infinite;
-                }
-                
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                
-                @keyframes pulse {
-                    0%, 100% { opacity: 1; }
-                    50% { opacity: 0.7; }
-                }
-                
-                @keyframes heartPulse {
-                    0%, 100% { transform: scale(1); }
-                    50% { transform: scale(1.1); }
-                }
-            `}</style>
+            {/* ✅ Enhanced CSS with Mobile Square Images */}
+{/* ✅ Enhanced CSS with Smaller Mobile Images for Better UI */}
+<style jsx>{`
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .spinning {
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ✅ MOBILE: Smaller Square Images + Better Proportions */
+    @media (max-width: 768px) {
+        .container {
+            padding: 15px !important;
+        }
+        
+        .product-layout {
+            grid-template-columns: 1fr !important;
+            gap: 25px !important;
+            margin-bottom: 20px !important;
+        }
+        
+        /* ✅ MOBILE: Image Gallery - Full width at top */
+        .image-gallery {
+            order: 1;
+            width: 100% !important;
+            margin-bottom: 15px !important;
+        }
+        
+        /* ✅ MOBILE: Smaller Square Image Container - Better proportions */
+        .main-image-wrapper {
+            width: 100% !important;
+            height: 65vw !important; /* Smaller than before (was 80vw) */
+            max-height: 320px !important; /* Smaller max height (was 400px) */
+            min-height: 250px !important; /* Smaller min height (was 300px) */
+            aspect-ratio: 1 / 1 !important;
+            margin: 0 auto !important;
+        }
+        
+        /* ✅ MOBILE: Square Image - Cover to fill square */
+        .main-image {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            max-height: none !important;
+        }
+        
+        /* ✅ MOBILE: Details section below image - Better spacing */
+        .details-container {
+            order: 2;
+            padding: 20px 15px !important;
+            gap: 16px !important;
+            background: white;
+            border-radius: 12px;
+            margin-top: 5px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        }
+        
+        /* ✅ MOBILE: Hide navigation arrows */
+        .nav-button {
+            display: none !important;
+        }
+        
+        /* ✅ MOBILE: Smaller thumbnails */
+        .thumbnail-wrapper {
+            min-width: 55px !important;
+            width: 55px !important;
+            height: 55px !important;
+        }
+        
+        /* ✅ MOBILE: Better thumbnail scrolling */
+        .thumbnail-scroller {
+            gap: 6px !important;
+            padding: 8px 5px !important;
+            justify-content: center !important;
+        }
+        
+        /* ✅ MOBILE: Responsive text sizes */
+        .product-name {
+            font-size: 1.3rem !important;
+            line-height: 1.3 !important;
+            margin-bottom: 8px !important;
+        }
+        
+        .product-price {
+            font-size: 1.5rem !important;
+        }
+        
+        .product-mrp {
+            font-size: 1rem !important;
+        }
+        
+        /* ✅ MOBILE: Action buttons with better spacing */
+        .action-buttons {
+            gap: 12px !important;
+            margin-top: 18px !important;
+        }
+        
+        .action-buttons button {
+            padding: 16px 24px !important;
+            font-size: 0.95rem !important;
+            font-weight: 600 !important;
+        }
+        
+        /* ✅ MOBILE: Secondary actions spacing */
+        .secondary-actions {
+            justify-content: center !important;
+            gap: 10px !important;
+            margin-top: 8px !important;
+        }
+        
+        /* ✅ MOBILE: Features section */
+        .features {
+            flex-wrap: wrap !important;
+            gap: 12px !important;
+            justify-content: center !important;
+        }
+        
+        /* ✅ MOBILE: Stock container */
+        .stock-container {
+            text-align: center !important;
+            padding: 8px !important;
+            background: rgba(5, 150, 105, 0.1) !important;
+            border-radius: 8px !important;
+        }
+        
+        /* ✅ MOBILE: Price container */
+        .price-container {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 6px !important;
+            padding: 12px 0 !important;
+        }
+        
+        /* ✅ MOBILE: Image counter positioning */
+        .image-counter {
+            font-size: 0.7rem !important;
+            padding: 3px 6px !important;
+            bottom: 8px !important;
+            right: 8px !important;
+        }
+        
+        /* ✅ MOBILE: Zoom hint */
+        .zoom-hint {
+            font-size: 0.6rem !important;
+            padding: 2px 6px !important;
+            bottom: 8px !important;
+            left: 8px !important;
+        }
+        
+        /* ✅ MOBILE: Optimized badge */
+        .optimized-badge {
+            width: 18px !important;
+            height: 18px !important;
+            top: 8px !important;
+            right: 8px !important;
+        }
+    }
+
+    /* ✅ MOBILE: Small screens - Even more compact and proportional */
+    @media (max-width: 480px) {
+        .container {
+            padding: 10px !important;
+        }
+        
+        /* ✅ SMALL MOBILE: Smaller square image - More proportional */
+        .main-image-wrapper {
+            height: 60vw !important; /* Even smaller (was 85vw) */
+            max-height: 280px !important; /* Smaller max (was 350px) */
+            min-height: 220px !important; /* Smaller min (was 280px) */
+            margin: 0 auto !important;
+        }
+        
+        .details-container {
+            padding: 15px 12px !important;
+            gap: 14px !important;
+            margin-top: 8px !important;
+        }
+        
+        .product-name {
+            font-size: 1.2rem !important;
+        }
+        
+        .product-price {
+            font-size: 1.4rem !important;
+        }
+        
+        .action-buttons button {
+            padding: 15px 20px !important;
+            font-size: 0.9rem !important;
+        }
+        
+        .thumbnail-wrapper {
+            min-width: 45px !important;
+            width: 45px !important;
+            height: 45px !important;
+        }
+        
+        .thumbnail-scroller {
+            gap: 4px !important;
+            padding: 5px 3px !important;
+        }
+    }
+
+    /* ✅ MOBILE: Very small screens - Ultra compact */
+    @media (max-width: 360px) {
+        .main-image-wrapper {
+            height: 55vw !important;
+            max-height: 250px !important;
+            min-height: 200px !important;
+        }
+        
+        .details-container {
+            padding: 12px 10px !important;
+            gap: 12px !important;
+        }
+        
+        .product-name {
+            font-size: 1.1rem !important;
+        }
+        
+        .product-price {
+            font-size: 1.3rem !important;
+        }
+        
+        .action-buttons button {
+            padding: 14px 18px !important;
+            font-size: 0.85rem !important;
+        }
+    }
+
+    /* ✅ DESKTOP: Keep large screen styles unchanged */
+    @media (min-width: 769px) {
+        .product-layout {
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+        
+        .main-image-wrapper {
+            min-height: 300px;
+            max-height: 600px;
+            height: auto;
+            aspect-ratio: unset;
+        }
+        
+        .main-image {
+            width: 100%;
+            height: auto;
+            max-height: 600px;
+            object-fit: contain;
+        }
+        
+        .details-container {
+            order: unset;
+            padding: 0;
+            margin-top: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+        
+        .nav-button {
+            display: flex !important;
+        }
+    }
+
+    /* ✅ MOBILE: Touch interactions */
+    @media (max-width: 768px) {
+        .main-image {
+            cursor: default !important;
+        }
+        
+        .thumbnail-wrapper {
+            cursor: pointer;
+            -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .thumbnail-wrapper:active {
+            transform: scale(0.95);
+        }
+    }
+
+    /* ✅ MOBILE: Smooth scrolling for thumbnails */
+    .thumbnail-scroller {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+
+    /* ✅ SCROLLBAR STYLING */
+    .thumbnail-scroller::-webkit-scrollbar {
+        height: 4px;
+    }
+    
+    .thumbnail-scroller::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 2px;
+    }
+    
+    .thumbnail-scroller::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 2px;
+    }
+`}</style>
+
         </div>
     );
 }
 
-// ✅ Enhanced Styles with wishlist support
+// ✅ Enhanced Styles with Mobile Square Images + Responsive Layout
 const styles = {
     pageContainer: {
         minHeight: '100vh',
@@ -789,20 +1482,170 @@ const styles = {
         gap: '40px',
         marginBottom: '40px'
     },
-    
-    imageContainer: { 
+
+    // ✅ Image Gallery Styles
+    imageGallery: {
         display: 'flex',
+        flexDirection: 'column',
+        gap: '15px',
+        width: '100%'
+    },
+
+    mainImageContainer: {
+        position: 'relative',
+        width: '100%',
+        margin: '0 auto'
+    },
+
+    mainImageWrapper: {
+        position: 'relative',
+        width: '100%',
+        minHeight: '300px',
+        maxHeight: '600px',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        backgroundColor: '#f9fafb',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center'
     },
-    
-    image: { 
-        width: '100%', 
-        maxWidth: '500px',
-        height: '500px',
-        objectFit: 'cover',
+
+    mainImage: {
+        width: '100%',
+        height: 'auto',
+        maxHeight: '600px',
+        objectFit: 'contain',
+        transition: 'all 0.3s ease',
+        cursor: 'zoom-in',
+        touchAction: 'manipulation'
+    },
+
+    imageLoader: {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1,
+        gap: '10px'
+    },
+
+    loadingText: {
+        color: '#6b7280',
+        fontSize: '0.9rem'
+    },
+
+    navButton: {
+        position: 'absolute',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        background: 'rgba(0, 0, 0, 0.7)',
+        color: 'white',
+        border: 'none',
+        borderRadius: '50%',
+        width: '36px',
+        height: '36px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        opacity: 0.8,
+        transition: 'all 0.3s ease',
+        zIndex: 3
+    },
+
+    prevButton: {
+        left: '10px'
+    },
+
+    nextButton: {
+        right: '10px'
+    },
+
+    imageCounter: {
+        position: 'absolute',
+        bottom: '10px',
+        right: '10px',
+        background: 'rgba(0, 0, 0, 0.7)',
+        color: 'white',
+        padding: '4px 8px',
         borderRadius: '12px',
-        border: '1px solid #e5e7eb',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+        fontSize: '0.8rem',
+        fontWeight: '500',
+        zIndex: 2
+    },
+
+    optimizedBadge: {
+        position: 'absolute',
+        top: '10px',
+        right: '10px',
+        background: 'rgba(34, 197, 94, 0.9)',
+        color: 'white',
+        borderRadius: '50%',
+        width: '24px',
+        height: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '10px',
+        zIndex: 2
+    },
+
+    zoomHint: {
+        position: 'absolute',
+        bottom: '10px',
+        left: '10px',
+        background: 'rgba(0, 0, 0, 0.7)',
+        color: 'white',
+        padding: '4px 8px',
+        borderRadius: '12px',
+        fontSize: '0.7rem',
+        opacity: 0.6
+    },
+
+    thumbnailContainer: {
+        width: '100%',
+        margin: '0 auto'
+    },
+
+    thumbnailScroller: {
+        display: 'flex',
+        gap: '8px',
+        overflowX: 'auto',
+        padding: '5px',
+        scrollbarWidth: 'thin',
+        WebkitOverflowScrolling: 'touch',
+        justifyContent: 'flex-start'
+    },
+
+    thumbnailWrapper: {
+        minWidth: '70px',
+        width: '70px',
+        height: '70px',
+        borderRadius: '8px',
+        border: '2px solid transparent',
+        overflow: 'hidden',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        backgroundColor: '#f9fafb',
+        flexShrink: 0
+    },
+
+    activeThumbnail: {
+        borderColor: '#3b82f6',
+        boxShadow: '0 0 0 1px #3b82f6',
+        transform: 'scale(1.05)'
+    },
+
+    thumbnailImage: {
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover'
     },
     
     detailsContainer: { 
@@ -873,6 +1716,15 @@ const styles = {
         color: '#9ca3af',
         fontSize: '1.2rem'
     },
+
+    discount: {
+        backgroundColor: '#dc2626',
+        color: 'white',
+        padding: '4px 8px',
+        borderRadius: '4px',
+        fontSize: '0.8rem',
+        fontWeight: '600'
+    },
     
     stockContainer: {
         margin: '10px 0'
@@ -881,8 +1733,7 @@ const styles = {
     stock: { 
         fontWeight: '600',
         margin: 0,
-        fontSize: '1rem',
-        color: '#374151'
+        fontSize: '1rem'
     },
     
     features: {
@@ -902,14 +1753,30 @@ const styles = {
     
     actionButtons: {
         display: 'flex',
-        gap: '12px',
-        alignItems: 'center'
+        flexDirection: 'column',
+        gap: '12px'
     },
     
     addToCartButton: { 
-        flex: 1,
+        width: '100%',
         padding: '16px 24px', 
         backgroundColor: '#3b82f6', 
+        color: 'white', 
+        border: 'none', 
+        borderRadius: '8px', 
+        fontSize: '1.1rem', 
+        fontWeight: '600',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+
+    buyNowButton: { 
+        width: '100%',
+        padding: '16px 24px', 
+        backgroundColor: '#ff6b35', 
         color: 'white', 
         border: 'none', 
         borderRadius: '8px', 
@@ -930,7 +1797,8 @@ const styles = {
     
     secondaryActions: {
         display: 'flex',
-        gap: '8px'
+        gap: '8px',
+        justifyContent: 'center'
     },
     
     secondaryButton: {
@@ -947,7 +1815,6 @@ const styles = {
         transition: 'all 0.2s ease'
     },
 
-    // ✅ NEW: Wishlist button states
     wishlistActive: {
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         borderColor: 'rgba(239, 68, 68, 0.3)',
@@ -959,7 +1826,7 @@ const styles = {
         opacity: 0.7
     },
     
-    // Reviews Section Styles - Keeping all your existing review styles
+    // Reviews Section Styles (keeping existing styles)
     reviewsSection: { 
         maxWidth: '1200px', 
         margin: '0 auto', 

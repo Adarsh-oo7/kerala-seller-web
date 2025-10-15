@@ -47,6 +47,18 @@
         top: auto !important;
         margin-top: 20px !important;
     }
+
+    .shopslugcartemptytitle {
+        font-size: 20px !important;
+    }
+
+    .shopslugcartemptytext {
+        font-size: 15px !important;
+    }
+
+    .shopslugcartemptybtn {
+        font-size: 14px !important;
+    }
 }
 
 /* Small 576px–767px — 2 cards */
@@ -79,6 +91,19 @@
         position: relative !important;
         top: auto !important;
         margin-top: 20px !important;
+    }
+
+    .shopslugcartemptytitle {
+        font-size: 19px !important;
+    }
+
+    .shopslugcartemptytext {
+        font-size: 14px !important;
+    }
+
+    .shopslugcartemptybtn {
+        font-size: 13px !important;
+        padding: 9px 16px !important;
     }
 }
 
@@ -216,6 +241,27 @@
     .totallabel {
         font-size: 18px !important;
     }
+
+    .shopslugcartemptytitle {
+        font-size: 19px !important;
+    }
+
+    .shopslugcartemptytext {
+        font-size: 14px !important;
+    }
+
+    .shopslugcartemptybtn {
+        font-size: 13px !important;
+        padding: 9px 16px !important;
+    }
+
+    .shopslugcartemptyicon {
+        width: 35px !important;
+        height: 35px !important;
+    }
+    .cart-summary-section{
+        top: 0px !important;
+    }
 }
 
 
@@ -251,5 +297,26 @@
 
     .item-name {
         font-size: 14px !important;
+    }
+
+    .shopslugcartemptytitle {
+        font-size: 17px !important;
+    }
+
+    .shopslugcartemptytext {
+        font-size: 13px !important;
+    }
+
+    .shopslugcartemptybtn {
+        font-size: 12px !important;
+        padding: 8px 16px !important;
+    }
+
+    .shopslugcartemptyicon {
+        width: 35px !important;
+        height: 35px !important;
+    }
+    .shopslugcartpagecontainer{
+        padding-top: 70px !important;
     }
 }

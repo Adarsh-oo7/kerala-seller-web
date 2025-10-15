@@ -35,8 +35,9 @@ const getApiBaseUrl = () => {
 };
 
 const API_BASE_URL = getApiBaseUrl();
-const SEND_RESET_OTP_API = `${API_BASE_URL}/user/password-reset/send-otp/`;
-const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/password-reset/verify/`;
+// ✅ UPDATED: Use the new seller-specific phone-based endpoints
+const SEND_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/send-otp/`;
+const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/verify/`;
 
 // ✅ Only log in development and after component mounts
 const logApiUrls = () => {
@@ -195,12 +196,16 @@ function SellerForgotPasswordContent() {
     try {
       if (process.env.NODE_ENV === 'development') {
         console.log('📱 Sending OTP to seller phone:', phone);
+        console.log('🔗 Using endpoint:', SEND_RESET_OTP_API);
       }
       
       const response = await axios.post(SEND_RESET_OTP_API, { 
         phone: phone.trim() 
       }, {
-        timeout: 15000
+        timeout: 15000,
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       
       if (process.env.NODE_ENV === 'development') {
@@ -209,18 +214,22 @@ function SellerForgotPasswordContent() {
       
       setOtpSentTime(new Date());
       setResendCooldown(60);
-      showMessage(`An OTP has been sent to +91 ${phone}. Please check your messages and WhatsApp.`, 'success');
+      showMessage(`An OTP has been sent to +91 ${phone}. Please check your messages.`, 'success');
       setStep(2);
       
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
         console.error('❌ OTP send error:', err);
+        console.error('❌ Error response:', err.response?.data);
+        console.error('❌ Error status:', err.response?.status);
       }
       
       let errorMessage = 'Could not send OTP. Please try again.';
       
       if (err.response?.status === 404) {
-        errorMessage = 'No seller account found with this phone number. Please check your number or contact support.';
+        errorMessage = 'No seller account found with this phone number. Please check your number and try registering first.';
+      } else if (err.response?.status === 400) {
+        errorMessage = err.response.data?.error || 'Invalid phone number format. Please enter a valid 10-digit number.';
       } else if (err.response?.status === 429) {
         errorMessage = 'Too many requests. Please wait a few minutes before trying again.';
       } else if (err.code === 'ECONNABORTED') {
@@ -273,6 +282,7 @@ function SellerForgotPasswordContent() {
     try {
       if (process.env.NODE_ENV === 'development') {
         console.log('🔐 Resetting password for seller:', phone);
+        console.log('🔗 Using endpoint:', VERIFY_RESET_OTP_API);
       }
       
       const response = await axios.post(VERIFY_RESET_OTP_API, { 
@@ -280,7 +290,10 @@ function SellerForgotPasswordContent() {
         otp: otp.trim(), 
         password: password
       }, {
-        timeout: 15000
+        timeout: 15000,
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       
       if (process.env.NODE_ENV === 'development') {
@@ -302,12 +315,15 @@ function SellerForgotPasswordContent() {
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
         console.error('❌ Password reset error:', err);
+        console.error('❌ Error response:', err.response?.data);
       }
       
       let errorMessage = 'Failed to reset password. Please try again.';
       
       if (err.response?.status === 400) {
-        errorMessage = 'Invalid or expired OTP. Please request a new OTP.';
+        errorMessage = err.response.data?.error || 'Invalid or expired OTP. Please request a new OTP.';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'Seller account not found. Please check your phone number.';
       } else if (err.response?.status === 429) {
         errorMessage = 'Too many attempts. Please wait before trying again.';
       } else if (err.code === 'ECONNABORTED') {
@@ -339,7 +355,10 @@ function SellerForgotPasswordContent() {
       await axios.post(SEND_RESET_OTP_API, { 
         phone: phone.trim() 
       }, {
-        timeout: 15000
+        timeout: 15000,
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       
       setOtpSentTime(new Date());
@@ -1183,6 +1202,7 @@ const styles = {
     justifyContent: 'center',
     flexWrap: 'wrap'
   },
+  
   supportLink: {
     color: '#3b82f6',
     textDecoration: 'none',

@@ -13,37 +13,101 @@ import {
   Receipt,
   Package,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  MapPin,
+  Clock,
+  Settings,
+  RefreshCw,
+  Banknote
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
-const CREATE_ORDER_URL = `${API_BASE_URL}/user/orders/create-order/`;
+const CREATE_BILL_URL = `${API_BASE_URL}/user/orders/create-local-bill/`; // ✅ CHANGED
+const GENERATE_BILL_URL = `${API_BASE_URL}/user/orders/generate-local-bill/`; // ✅ NEW
 
-export default function BillingPage() {
+export default function LocalBillingPage() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [billItems, setBillItems] = useState([]);
   const [customer, setCustomer] = useState({ name: '', phone: '' });
+  const [sellerPhone, setSellerPhone] = useState('');
+  const [isAutoDetecting, setIsAutoDetecting] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // ✅ FIXED: Changed Token to Bearer authentication
+  // ✅ Better token handling
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('accessToken') ||
+                  localStorage.getItem('access_token') ||
+                  localStorage.getItem('sellerAccessToken') ||
+                  localStorage.getItem('authToken');
+    
     if (!token) {
       console.error("Seller is not authenticated.");
       setError("Please log in to access billing features.");
       return null;
     }
+    
     return { 'Authorization': `Bearer ${token}` };
   }, []);
 
-  // Fetch products on component mount
+  // ✅ AUTO-DETECT SELLER PHONE from /api/store/profile/
+  const autoDetectSellerPhone = useCallback(async () => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
+    setIsAutoDetecting(true);
+    
+    try {
+      console.log('🔍 Auto-detecting seller phone...');
+      
+      // Try store profile API (this worked in your logs)
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/store/profile/`, { headers });
+        console.log('Store profile response:', response.data);
+        
+        const phone = response.data.seller_phone || 
+                     response.data.phone ||
+                     response.data.seller?.phone;
+                     
+        if (phone) {
+          setSellerPhone(phone);
+          localStorage.setItem('sellerPhone', phone);
+          console.log('✅ Phone detected from store profile:', phone);
+          setIsAutoDetecting(false);
+          return;
+        }
+      } catch (error) {
+        console.log('Store profile API failed');
+      }
+
+      // Fallback to localStorage
+      const storedPhone = localStorage.getItem('sellerPhone') ||
+                         localStorage.getItem('seller_phone') ||
+                         localStorage.getItem('userPhone');
+      
+      if (storedPhone) {
+        setSellerPhone(storedPhone);
+        console.log('✅ Phone found in localStorage:', storedPhone);
+        setIsAutoDetecting(false);
+        return;
+      }
+
+      console.log('⚠️ Could not auto-detect seller phone. Manual input required.');
+      
+    } catch (error) {
+      console.error('Auto-detection failed:', error);
+    } finally {
+      setIsAutoDetecting(false);
+    }
+  }, [getAuthHeaders]);
+
+  // ✅ Fetch products with local stock only
   const fetchProducts = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -56,15 +120,19 @@ export default function BillingPage() {
       const response = await axios.get(PRODUCTS_API_URL, { headers });
       const productData = response.data.results || response.data || [];
       
-      console.log('Products fetched:', productData.length);
-      setProducts(productData);
-      setFilteredProducts(productData);
+      // Filter to show only products with local stock
+      const locallyAvailableProducts = productData.filter(product => {
+        const localStock = product.total_stock || 0;
+        return localStock > 0;
+      });
+      
+      console.log(`Fetched ${productData.length} products, ${locallyAvailableProducts.length} locally available`);
+      setProducts(locallyAvailableProducts);
+      setFilteredProducts(locallyAvailableProducts);
     } catch (error) {
       console.error('Failed to fetch products:', error);
       if (error.response?.status === 401) {
         setError('Session expired. Please log in again.');
-        // Optionally redirect to login
-        // window.location.href = '/login/seller';
       } else {
         setError('Failed to load products. Please refresh the page.');
       }
@@ -87,12 +155,13 @@ export default function BillingPage() {
     }
   }, [searchTerm, products]);
 
+  // ✅ Auto-detect seller phone and fetch products on mount
   useEffect(() => {
+    autoDetectSellerPhone();
     fetchProducts();
-  }, [fetchProducts]);
+  }, [autoDetectSellerPhone, fetchProducts]);
 
   const addToBill = (product) => {
-    // ✅ FIXED: Check total_stock instead of online_stock for local billing
     if (product.total_stock <= 0) {
       setError(`${product.name} is out of stock`);
       setTimeout(() => setError(''), 3000);
@@ -103,7 +172,6 @@ export default function BillingPage() {
       const existingItem = prev.find(item => item.id === product.id);
       if (existingItem) {
         const newQuantity = existingItem.quantity + 1;
-        // ✅ FIXED: Check against total_stock for local billing
         if (newQuantity > product.total_stock) {
           setError(`Only ${product.total_stock} units available for ${product.name}`);
           setTimeout(() => setError(''), 3000);
@@ -116,7 +184,6 @@ export default function BillingPage() {
       return [...prev, { ...product, quantity: 1 }];
     });
 
-    // Show success feedback
     setSuccess(`Added ${product.name} to bill`);
     setTimeout(() => setSuccess(''), 2000);
   };
@@ -125,7 +192,6 @@ export default function BillingPage() {
     const newQty = Math.max(1, parseInt(quantity, 10) || 1);
     const product = products.find(p => p.id === productId);
     
-    // ✅ FIXED: Check against total_stock for local billing
     if (product && newQty > product.total_stock) {
       setError(`Only ${product.total_stock} units available for ${product.name}`);
       setTimeout(() => setError(''), 3000);
@@ -145,21 +211,33 @@ export default function BillingPage() {
     return billItems.reduce((total, item) => total + (parseFloat(item.price) * item.quantity), 0);
   };
 
-  const validateCustomerInfo = () => {
-    if (customer.phone && customer.phone.length !== 10) {
+  const validateForm = () => {
+    if (!sellerPhone) {
+      setError('Please enter your phone number to generate bills');
+      return false;
+    }
+
+    if (sellerPhone.length !== 10 || !/^\d+$/.test(sellerPhone)) {
       setError('Please enter a valid 10-digit phone number');
       return false;
     }
+
+    if (customer.phone && (customer.phone.length !== 10 || !/^\d+$/.test(customer.phone))) {
+      setError('Please enter a valid 10-digit customer phone number');
+      return false;
+    }
+    
     return true;
   };
 
+  // ✅ NEW: Direct local billing (no order creation)
   const handleGenerateBill = async () => {
     if (billItems.length === 0) {
       setError("Please add items to the bill.");
       return;
     }
 
-    if (!validateCustomerInfo()) {
+    if (!validateForm()) {
       return;
     }
 
@@ -174,54 +252,95 @@ export default function BillingPage() {
     }
     
     try {
-      // ✅ FIXED: Correct order data for local billing
-      const orderData = {
-        customer_name: customer.name || 'Local Customer',
-        customer_phone: customer.phone || 'N/A',
-        items: billItems.map(item => ({ 
-          id: item.id, 
+      // ✅ Step 1: Create local bill and reduce stock
+      const billData = {
+        customer_name: customer.name || 'Walk-in Customer',
+        customer_phone: customer.phone || '',
+        seller_phone: sellerPhone,
+        items: billItems.map(item => ({
+          id: item.id,
           quantity: item.quantity,
-          price: item.price 
-        })),
-        payment_method: 'COD', // ✅ FIXED: Use 'COD' instead of 'CASH'
-        // ✅ REMOVED: order_type - let backend set it automatically based on user type
+          price: parseFloat(item.price)
+        }))
       };
 
-      console.log('Creating local bill order:', orderData);
-      const orderResponse = await axios.post(CREATE_ORDER_URL, orderData, { headers });
-      const orderId = orderResponse.data.order_id;
+      console.log('🔍 Creating local bill:', billData);
+      
+      const requestConfig = {
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        }
+      };
 
-      console.log('✅ Local bill created with ID:', orderId);
-      console.log('Order type should be LOCAL for seller-created orders');
+      const billResponse = await axios.post(CREATE_BILL_URL, billData, requestConfig);
+      console.log('✅ Local bill created:', billResponse.data);
+      
+      // ✅ Step 2: Generate and display bill HTML
+      const billId = billResponse.data.bill_id;
+      const billHtmlData = {
+        bill_id: billId,
+        store_phone: sellerPhone,
+        customer_name: customer.name || 'Walk-in Customer',
+        customer_phone: customer.phone || '',
+        total_amount: calculateTotal(),
+        items: billItems.map(item => ({
+          name: item.name,
+          model_name: item.model_name || '',
+          quantity: item.quantity,
+          price: parseFloat(item.price),
+          total: parseFloat(item.price) * item.quantity
+        }))
+      };
 
-      // Generate and open bill
-      const billUrl = `${API_BASE_URL}/user/orders/${orderId}/generate-bill/`;
-      const billResponse = await axios.get(billUrl, {
-        headers: headers,
-        responseType: 'blob',
+      console.log('🔍 Generating bill HTML...');
+      const htmlResponse = await axios.post(GENERATE_BILL_URL, billHtmlData, {
+        headers: requestConfig.headers,
+        responseType: 'blob'
       });
 
       // Create and open bill in new tab
-      const file = new Blob([billResponse.data], { type: 'text/html' });
+      const file = new Blob([htmlResponse.data], { type: 'text/html' });
       const fileURL = URL.createObjectURL(file);
       window.open(fileURL, '_blank');
+      
+      // Save seller phone for future use
+      localStorage.setItem('sellerPhone', sellerPhone);
       
       // Reset form
       setBillItems([]);
       setCustomer({ name: '', phone: '' });
-      setSuccess('Bill generated successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      setSuccess(`✅ Bill ${billId} generated! Stock updated automatically.`);
+      setTimeout(() => setSuccess(''), 5000);
       
-      // ✅ Refresh products to get updated stock
+      // Refresh products to show updated stock
       fetchProducts();
       
     } catch (error) {
-      console.error('Billing error:', error);
+      console.error('❌ Billing error:', error);
+      console.error('❌ Error response:', error.response?.data);
+      
       if (error.response?.status === 401) {
         setError('Session expired. Please log in again.');
+      } else if (error.response?.status === 400) {
+        const errorData = error.response.data;
+        let errorMessage = 'Invalid request. Please check your input.';
+        
+        if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        } else if (errorData?.error) {
+          errorMessage = errorData.error;
+        } else if (errorData?.message) {
+          errorMessage = errorData.message;
+        } else if (errorData?.detail) {
+          errorMessage = errorData.detail;
+        }
+        
+        setError(errorMessage);
       } else {
         const errorMessage = error.response?.data?.error || 
                             error.response?.data?.message ||
+                            error.message ||
                             'Could not create bill. Please try again.';
         setError(errorMessage);
       }
@@ -242,10 +361,59 @@ export default function BillingPage() {
     <div style={styles.pageContainer}>
       <div style={styles.header}>
         <h1 style={styles.pageTitle}>
-          <Receipt size={28} />
-          Local Billing
+          <Banknote size={28} />
+          Direct Local Billing
         </h1>
-        <p style={styles.pageSubtitle}>Create bills for walk-in customers</p>
+        <p style={styles.pageSubtitle}>
+          <MapPin size={16} style={{marginRight: '4px'}} />
+          Instant cash billing for walk-in customers • No order tracking
+        </p>
+      </div>
+
+      {/* ✅ SELLER PHONE INPUT SECTION */}
+      <div style={styles.sellerSection}>
+        <div style={styles.sellerInputGroup}>
+          <Settings size={16} style={styles.inputIcon} />
+          <input 
+            type="tel" 
+            placeholder={isAutoDetecting ? "Auto-detecting phone..." : "Your Phone Number (Required for billing)"} 
+            value={sellerPhone} 
+            onChange={e => setSellerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} 
+            disabled={isAutoDetecting}
+            style={{
+              ...styles.sellerInput,
+              ...(sellerPhone && sellerPhone.length === 10 ? styles.sellerInputValid : styles.sellerInputInvalid),
+              ...(isAutoDetecting ? styles.sellerInputDisabled : {})
+            }}
+            maxLength={10}
+          />
+          <button 
+            onClick={autoDetectSellerPhone}
+            style={styles.autoDetectButton}
+            title="Auto-detect phone number"
+            disabled={isAutoDetecting}
+          >
+            <RefreshCw size={16} style={isAutoDetecting ? {animation: 'spin 1s linear infinite'} : {}} />
+          </button>
+          {sellerPhone && sellerPhone.length === 10 && (
+            <div style={styles.validationIcon}>✅</div>
+          )}
+        </div>
+        {sellerPhone && sellerPhone.length !== 10 && (
+          <small style={styles.validationError}>Please enter a valid 10-digit phone number</small>
+        )}
+        {isAutoDetecting && (
+          <small style={styles.autoDetectStatus}>🔍 Trying to detect your phone number automatically...</small>
+        )}
+      </div>
+
+      {/* LOCAL STOCK INFO BANNER */}
+      <div style={styles.infoBanner}>
+        <Package size={16} />
+        <span>Showing only products with local inventory ({filteredProducts.length} available)</span>
+        <div style={styles.directBillingBadge}>
+          💰 Direct Billing - No Order Creation
+        </div>
       </div>
 
       {/* Status Messages */}
@@ -253,6 +421,9 @@ export default function BillingPage() {
         <div style={styles.errorMessage}>
           <AlertCircle size={16} />
           <span>{error}</span>
+          <button onClick={() => setError('')} style={styles.closeButton}>
+            <X size={14} />
+          </button>
         </div>
       )}
       
@@ -260,6 +431,9 @@ export default function BillingPage() {
         <div style={styles.successMessage}>
           <CheckCircle size={16} />
           <span>{success}</span>
+          <button onClick={() => setSuccess('')} style={styles.closeButton}>
+            <X size={14} />
+          </button>
         </div>
       )}
 
@@ -269,15 +443,18 @@ export default function BillingPage() {
           <div style={styles.sectionHeader}>
             <h3 style={styles.sectionTitle}>
               <Package size={20} />
-              Add Products
+              Local Products
             </h3>
+            <div style={styles.stockCounter}>
+              {filteredProducts.length} items in stock
+            </div>
           </div>
           
           <div style={styles.searchContainer}>
             <Search size={18} style={styles.searchIcon} />
             <input 
               type="text" 
-              placeholder="Search products by name or model..." 
+              placeholder="Search local inventory..." 
               value={searchTerm} 
               onChange={e => setSearchTerm(e.target.value)} 
               style={styles.searchInput}
@@ -288,18 +465,14 @@ export default function BillingPage() {
             {isLoading ? (
               <div style={styles.loadingProducts}>
                 <div style={styles.spinner}></div>
-                <p>Loading products...</p>
+                <p>Loading local inventory...</p>
               </div>
             ) : filteredProducts.length > 0 ? (
               filteredProducts.map(product => (
                 <div 
                   key={product.id} 
                   onClick={() => addToBill(product)} 
-                  style={{
-                    ...styles.productItem,
-                    // ✅ FIXED: Check total_stock for local billing
-                    ...(product.total_stock <= 0 ? styles.outOfStock : {})
-                  }}
+                  style={styles.productItem}
                 >
                   <div style={styles.productInfo}>
                     <div style={styles.productName}>
@@ -310,11 +483,9 @@ export default function BillingPage() {
                     </div>
                     <div style={styles.productPrice}>₹{parseFloat(product.price).toFixed(2)}</div>
                     <div style={styles.productStock}>
-                      {/* ✅ FIXED: Show total_stock for local billing */}
-                      Total Stock: {product.total_stock || 0}
-                      {product.online_stock !== undefined && (
-                        <span style={styles.onlineStock}> | Online: {product.online_stock}</span>
-                      )}
+                      <span style={styles.localStockBadge}>
+                        📦 {product.total_stock} in store
+                      </span>
                     </div>
                   </div>
                   <div style={styles.addButton}>
@@ -325,7 +496,10 @@ export default function BillingPage() {
             ) : (
               <div style={styles.noProducts}>
                 <Package size={32} />
-                <p>No products found</p>
+                <p>No local inventory found</p>
+                <small style={styles.noProductsHint}>
+                  Products need local stock to appear in billing
+                </small>
               </div>
             )}
           </div>
@@ -335,8 +509,8 @@ export default function BillingPage() {
         <div style={styles.currentBill}>
           <div style={styles.sectionHeader}>
             <h3 style={styles.sectionTitle}>
-              <ShoppingCart size={20} />
-              Current Bill
+              <Banknote size={20} />
+              Cash Bill
             </h3>
             {billItems.length > 0 && (
               <button onClick={clearBill} style={styles.clearButton}>
@@ -360,7 +534,7 @@ export default function BillingPage() {
               <Phone size={16} style={styles.inputIcon} />
               <input 
                 type="tel" 
-                placeholder="Phone Number (Optional)" 
+                placeholder="Customer Phone (Optional)" 
                 value={customer.phone} 
                 onChange={e => setCustomer({...customer, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} 
                 style={styles.customerInput}
@@ -389,6 +563,9 @@ export default function BillingPage() {
                         {item.model_name && (
                           <div style={styles.billItemModel}>{item.model_name}</div>
                         )}
+                        <div style={styles.stockIndicator}>
+                          Stock: {item.total_stock} available
+                        </div>
                       </td>
                       <td style={styles.billTableCell}>
                         <div style={styles.quantityContainer}>
@@ -405,12 +582,12 @@ export default function BillingPage() {
                             onChange={e => updateQuantity(item.id, e.target.value)} 
                             style={styles.quantityInput}
                             min={1}
-                            max={item.total_stock} // ✅ FIXED: Use total_stock
+                            max={item.total_stock}
                           />
                           <button 
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             style={styles.quantityButton}
-                            disabled={item.quantity >= item.total_stock} // ✅ FIXED: Use total_stock
+                            disabled={item.quantity >= item.total_stock}
                           >
                             <Plus size={12} />
                           </button>
@@ -435,9 +612,9 @@ export default function BillingPage() {
               </table>
             ) : (
               <div style={styles.emptyBill}>
-                <ShoppingCart size={32} />
+                <Banknote size={32} />
                 <p>No items in bill</p>
-                <p style={styles.emptyBillHint}>Click on products to add them to the bill</p>
+                <p style={styles.emptyBillHint}>Click on products to add them</p>
               </div>
             )}
           </div>
@@ -446,31 +623,45 @@ export default function BillingPage() {
             <>
               <div style={styles.billSummary}>
                 <div style={styles.billTotal}>
-                  <span>Total: </span>
+                  <span>Total Cash Amount: </span>
                   <strong>₹{calculateTotal().toFixed(2)}</strong>
                 </div>
                 <div style={styles.billItems}>
                   {billItems.length} item{billItems.length !== 1 ? 's' : ''}
                 </div>
                 <div style={styles.billType}>
-                  <small>📋 Local Bill (In-store purchase)</small>
+                  <Banknote size={12} style={{marginRight: '4px'}} />
+                  <small>Direct Cash Payment • No Order Tracking</small>
                 </div>
               </div>
               
               <button 
                 onClick={handleGenerateBill} 
-                disabled={isProcessing} 
-                style={styles.generateButton}
+                disabled={isProcessing || !sellerPhone || sellerPhone.length !== 10 || isAutoDetecting} 
+                style={{
+                  ...styles.generateButton,
+                  ...(isProcessing || !sellerPhone || sellerPhone.length !== 10 || isAutoDetecting ? styles.generateButtonDisabled : {})
+                }}
               >
                 {isProcessing ? (
                   <span style={styles.buttonContent}>
                     <div style={styles.spinner}></div>
-                    Processing...
+                    Processing Bill...
+                  </span>
+                ) : isAutoDetecting ? (
+                  <span style={styles.buttonContent}>
+                    <RefreshCw size={18} />
+                    Detecting Phone...
+                  </span>
+                ) : !sellerPhone || sellerPhone.length !== 10 ? (
+                  <span style={styles.buttonContent}>
+                    <AlertCircle size={18} />
+                    Enter Valid Phone Number
                   </span>
                 ) : (
                   <span style={styles.buttonContent}>
-                    <Receipt size={18} />
-                    Generate Local Bill
+                    <Banknote size={18} />
+                    Generate Cash Bill
                   </span>
                 )}
               </button>
@@ -479,23 +670,17 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
   );
 }
 
-// ✅ Updated styles with new additions
+// ✅ Enhanced styles for direct billing
 const styles = {
   pageContainer: {
     padding: '24px',
@@ -505,7 +690,7 @@ const styles = {
   },
   
   header: {
-    marginBottom: '24px'
+    marginBottom: '20px'
   },
   
   pageTitle: {
@@ -521,12 +706,117 @@ const styles = {
   pageSubtitle: {
     fontSize: '1rem',
     color: '#6b7280',
-    margin: 0
+    margin: 0,
+    display: 'flex',
+    alignItems: 'center'
+  },
+
+  sellerSection: {
+    backgroundColor: 'white',
+    padding: '16px',
+    borderRadius: '8px',
+    border: '1px solid #e5e7eb',
+    marginBottom: '20px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+  },
+
+  sellerInputGroup: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    width: '350px'
+  },
+
+  sellerInput: {
+    width: '100%',
+    padding: '12px 12px 12px 40px',
+    border: '2px solid #d1d5db',
+    borderRadius: '8px',
+    fontSize: '14px',
+    outline: 'none',
+    boxSizing: 'border-box',
+    fontWeight: '500'
+  },
+
+  sellerInputValid: {
+    borderColor: '#10b981',
+    backgroundColor: '#ecfdf5'
+  },
+
+  sellerInputInvalid: {
+    borderColor: '#ef4444',
+    backgroundColor: '#fef2f2'
+  },
+
+  sellerInputDisabled: {
+    backgroundColor: '#f9fafb',
+    color: '#6b7280',
+    cursor: 'not-allowed'
+  },
+
+  autoDetectButton: {
+    position: 'absolute',
+    right: '40px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    padding: '6px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+
+  validationIcon: {
+    position: 'absolute',
+    right: '12px',
+    fontSize: '16px'
+  },
+
+  validationError: {
+    color: '#ef4444',
+    fontSize: '12px',
+    marginTop: '4px',
+    marginLeft: '40px'
+  },
+
+  autoDetectStatus: {
+    color: '#3b82f6',
+    fontSize: '12px',
+    marginTop: '4px',
+    marginLeft: '40px'
+  },
+
+  infoBanner: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '8px',
+    padding: '12px 16px',
+    backgroundColor: '#dbeafe',
+    border: '1px solid #3b82f6',
+    borderRadius: '8px',
+    color: '#1e40af',
+    marginBottom: '20px',
+    fontSize: '14px',
+    fontWeight: '500'
+  },
+
+  directBillingBadge: {
+    fontSize: '12px',
+    color: '#dc2626',
+    backgroundColor: '#fef2f2',
+    padding: '4px 8px',
+    borderRadius: '4px',
+    fontWeight: '600',
+    border: '1px solid #fecaca'
   },
   
   errorMessage: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: '8px',
     padding: '12px 16px',
     backgroundColor: '#fef2f2',
@@ -539,6 +829,7 @@ const styles = {
   successMessage: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: '8px',
     padding: '12px 16px',
     backgroundColor: '#ecfdf5',
@@ -546,6 +837,15 @@ const styles = {
     borderRadius: '8px',
     color: '#065f46',
     marginBottom: '20px'
+  },
+
+  closeButton: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: 'inherit',
+    opacity: 0.7,
+    padding: '2px'
   },
   
   billingLayout: { 
@@ -588,6 +888,16 @@ const styles = {
     color: '#1f2937',
     margin: 0
   },
+
+  stockCounter: {
+    fontSize: '12px',
+    color: '#059669',
+    fontWeight: '500',
+    backgroundColor: '#ecfdf5',
+    padding: '4px 8px',
+    borderRadius: '4px',
+    border: '1px solid #10b981'
+  },
   
   clearButton: {
     padding: '6px 12px',
@@ -621,7 +931,7 @@ const styles = {
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
-    transition: 'border-color 0.2s'
+    boxSizing: 'border-box'
   },
   
   productList: { 
@@ -661,11 +971,6 @@ const styles = {
     backgroundColor: 'white'
   },
   
-  outOfStock: {
-    opacity: 0.5,
-    cursor: 'not-allowed'
-  },
-  
   productInfo: {
     flex: 1
   },
@@ -687,18 +992,24 @@ const styles = {
     fontSize: '14px',
     fontWeight: '600',
     color: '#059669',
-    marginBottom: '2px'
+    marginBottom: '4px'
   },
   
   productStock: {
     fontSize: '12px',
-    color: '#6b7280'
+    color: '#6b7280',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px'
   },
-  
-  // ✅ NEW: Online stock indicator
-  onlineStock: {
+
+  localStockBadge: {
     fontSize: '11px',
-    color: '#8b5cf6'
+    color: '#059669',
+    backgroundColor: '#ecfdf5',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    fontWeight: '500'
   },
   
   addButton: {
@@ -718,8 +1029,15 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '200px',
-    gap: '12px',
-    color: '#6b7280'
+    gap: '8px',
+    color: '#6b7280',
+    textAlign: 'center'
+  },
+
+  noProductsHint: {
+    fontSize: '12px',
+    color: '#9ca3af',
+    fontStyle: 'italic'
   },
   
   customerDetails: { 
@@ -748,7 +1066,8 @@ const styles = {
     border: '1px solid #d1d5db',
     borderRadius: '8px',
     fontSize: '14px',
-    outline: 'none'
+    outline: 'none',
+    boxSizing: 'border-box'
   },
   
   billItemsContainer: {
@@ -791,7 +1110,18 @@ const styles = {
   
   billItemModel: {
     fontSize: '12px',
-    color: '#6b7280'
+    color: '#6b7280',
+    marginTop: '2px'
+  },
+
+  stockIndicator: {
+    fontSize: '10px',
+    color: '#059669',
+    backgroundColor: '#ecfdf5',
+    padding: '2px 4px',
+    borderRadius: '2px',
+    marginTop: '4px',
+    display: 'inline-block'
   },
   
   quantityContainer: {
@@ -851,37 +1181,38 @@ const styles = {
   },
   
   billSummary: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#fef2f2',
     padding: '16px',
     borderRadius: '8px',
     marginBottom: '16px',
-    border: '1px solid #e2e8f0'
+    border: '1px solid #fecaca'
   },
   
   billTotal: { 
     fontSize: '20px',
     fontWeight: '700',
-    color: '#1f2937',
+    color: '#dc2626',
     marginBottom: '4px'
   },
   
   billItems: {
     fontSize: '14px',
     color: '#6b7280',
-    marginBottom: '4px'
+    marginBottom: '8px'
   },
   
-  // ✅ NEW: Bill type indicator
   billType: {
     fontSize: '12px',
-    color: '#8b5cf6',
-    fontStyle: 'italic'
+    color: '#dc2626',
+    fontStyle: 'italic',
+    display: 'flex',
+    alignItems: 'center'
   },
   
   generateButton: { 
     width: '100%', 
     padding: '16px 24px', 
-    backgroundColor: '#059669', 
+    backgroundColor: '#dc2626', 
     color: 'white', 
     border: 'none', 
     borderRadius: '8px', 
@@ -892,6 +1223,11 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     transition: 'background-color 0.2s'
+  },
+
+  generateButtonDisabled: {
+    backgroundColor: '#9ca3af',
+    cursor: 'not-allowed'
   },
   
   buttonContent: {

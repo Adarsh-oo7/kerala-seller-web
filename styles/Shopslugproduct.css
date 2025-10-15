@@ -1,0 +1,393 @@
+/* Save this in your CSS file */
+.thumbnail-scroller {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    /* Firefox */
+    -ms-overflow-style: auto;
+    /* IE 10+ */
+}
+
+.shopslugproducticon {
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.product-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+    /* matches your original style */
+}
+
+
+
+.thumbnail-scroller::-webkit-scrollbar {
+    height: 6px !important;
+    /* scrollbar thickness */
+}
+
+.thumbnail-scroller::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    border-radius: 3px !important;
+}
+
+.thumbnail-scroller::-webkit-scrollbar-track {
+    background-color: transparent !important;
+}
+
+.shopslugproductrelatedhearticon{
+    width: 12px !important;
+    height: 12px !important;
+    margin-top: 3px !important;
+}
+
+@media (max-width:991px) {
+    .shopslugproducttitle {
+        font-size: 22px !important;
+    }
+
+    .shopslugproductmodel {
+        font-size: 15px !important;
+    }
+
+    .shopslugproductproductinfo {
+        gap: 15px !important;
+    }
+
+    .shopslugproductqntybtn {
+        padding: 6px 12px !important;
+    }
+
+    .shopslugproductqntyvalue {
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+        min-width: 20px !important;
+    }
+
+    .shopslugproductaddcartbtn {
+        padding: 12px 22px !important;
+        font-size: 14px !important;
+        min-height: 35px !important;
+    }
+
+    .shopslugproductprice {
+        font-size: 20px !important;
+    }
+
+    .shopslugproducticon {
+        width: 17px !important;
+        height: 17px !important;
+    }
+
+    .shopslugproductsharebtn {
+        font-size: 13px !important;
+        padding: 2px 2px !important;
+    }
+
+    .shopslugproductpagedescriptiontitle {
+        font-size: 20px !important;
+    }
+
+    .shopslugproductpagedescription {
+        font-size: 15px !important;
+    }
+
+    .shopslugproductrelatedprod {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .thumbnail-wrapper-container {
+        max-width: 280px !important;
+    }
+
+    .thumbnail-item {
+        height: 60px !important;
+        flex: 0 0 22% !important;
+    }
+
+    .shopslugproductpageproductcontainer {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+        padding: 16px !important;
+    }
+
+    .product-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        margin-top: 20px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .right-column {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        /* ✅ right-align everything inside */
+        text-align: right !important;
+        /* ✅ make text also right-aligned */
+        gap: 8px !important;
+    }
+
+    .left-column {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .action-buttons {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .action-buttons button,
+    .secondary-actions button {
+        width: 100% !important;
+    }
+
+    .features {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        margin-top: 10px !important;
+    }
+
+    .shopslugproductpagedescriptiontitle {
+        font-size: 18px !important;
+    }
+
+    .shopslugproductpagedescription {
+        font-size: 14px !important;
+    }
+
+    .shopslugproductrelatedprod {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .thumbnail-wrapper-container {
+        max-width: 220px;
+    }
+
+    .thumbnail-item {
+        height: 50px;
+        flex: 0 0 22%;
+    }
+
+    .shopslugproducttitle {
+        font-size: 18px !important;
+    }
+
+    .shopslugproductmodel {
+        font-size: 14px !important;
+    }
+
+    .shopslugproductproductinfo {
+        gap: 15px !important;
+    }
+
+    .shopslugproductqntybtn {
+        padding: 6px 12px !important;
+    }
+
+    .shopslugproductqntyvalue {
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+        min-width: 20px !important;
+    }
+
+    .shopslugproductaddcartbtn {
+        padding: 8px 22px !important;
+        font-size: 13px !important;
+        min-height: 30px !important;
+    }
+
+    .shopslugproductprice {
+        font-size: 18px !important;
+    }
+
+    .shopslugproducticon {
+        width: 17px !important;
+        height: 17px !important;
+    }
+
+    .shopslugproductsharebtn {
+        font-size: 13px !important;
+        padding: 2px 2px !important;
+        min-height: 30px !important;
+    }
+
+    .right-column {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        /* ✅ right-align everything inside */
+        text-align: right !important;
+        /* ✅ make text also right-aligned */
+        gap: 15px !important;
+    }
+
+    .left-column {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+
+    .shopslugproductactnbtngap {
+        gap: 15px !important;
+    }
+
+    .shopslugproductpagedescriptiontitle {
+        font-size: 18px !important;
+    }
+
+    .shopslugproductpagedescription {
+        font-size: 14px !important;
+    }
+
+    .shopslugproductpagestarsicon {
+        scale: 0.8 !important;
+    }
+
+    .shopslugproductrelatedprod {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+    .shopslugrelatedproductname{
+        font-size: 14px !important;
+    }
+     .shopslugrelatedproductprice{
+        font-size: 14px !important;
+    }
+
+}
+
+
+
+@media (max-width: 480px) {
+    .thumbnail-wrapper-container {
+        max-width: 220px;
+    }
+
+    .thumbnail-item {
+        height: 50px;
+        flex: 0 0 22%;
+    }
+
+    .shopslugproducttitle {
+        font-size: 17px !important;
+    }
+
+    .shopslugproductmodel {
+        font-size: 14px !important;
+    }
+
+    .shopslugproductproductinfo {
+        gap: 15px !important;
+    }
+
+    .shopslugproductqntybtn {
+        padding: 6px 12px !important;
+    }
+
+    .shopslugproductqntyvalue {
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+        min-width: 20px !important;
+    }
+
+    .shopslugproductaddcartbtn {
+        padding: 8px 22px !important;
+        font-size: 13px !important;
+        min-height: 30px !important;
+    }
+
+    .shopslugproductprice {
+        font-size: 17px !important;
+    }
+
+    .shopslugproducticon {
+        width: 17px !important;
+        height: 17px !important;
+    }
+
+    .shopslugproductsharebtn {
+        font-size: 13px !important;
+        padding: 8px 4px !important;
+        min-height: 33px !important;
+    }
+
+    .product-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+
+    .left-column,
+    .right-column {
+        align-items: flex-start !important;
+        text-align: left !important;
+        gap: 8px !important;
+    }
+
+    .shopslugproductpagecontainer {
+        padding: 80px 20px 20px !important;
+    }
+
+    .shopslugproductactnbtngap {
+        gap: 15px !important;
+    }
+
+    .shopslugproductpagedescriptiontitle {
+        font-size: 17px !important;
+    }
+
+    .shopslugproductpagedescription {
+        font-size: 13px !important;
+    }
+
+    .shopslugproductpagestarsicongap {
+        gap: 0px !important;
+    }
+
+    .shopslugproductpagestarsicon {
+        scale: 0.7 !important;
+    }
+
+    .shopslugproductreview-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+    }
+
+    .shopslugproductreview-date {
+        display: block !important;
+        margin-left: 52px !important;
+        /* aligns under name, matching avatar width */
+        margin-top: -2px !important;
+        font-size: 12px !important;
+        opacity: 0.8;
+    }
+
+    .shopslugproductreviewtext {
+        font-size: 12px !important;
+    }
+
+    .shopslugproductrelatedprod {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    .shopslugrelatedproductname{
+        font-size: 13px !important;
+    }
+     .shopslugrelatedproductprice{
+        font-size: 13px !important;
+    }
+
+}

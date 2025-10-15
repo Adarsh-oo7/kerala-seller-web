@@ -7,12 +7,6 @@ import axios from 'axios';
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
   
-  console.log('Environment check:', {
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    NODE_ENV: process.env.NODE_ENV
-  });
-  
   if (envUrl && envUrl !== 'undefined') {
     return envUrl;
   }
@@ -26,13 +20,6 @@ const API_BASE_URL = getApiBaseUrl();
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 
-console.log('🌐 API URLs configured:', { 
-  API_BASE_URL, 
-  CATEGORIES_API_URL, 
-  PRODUCTS_API_URL,
-  ENVIRONMENT: process.env.NODE_ENV 
-});
-
 // ✅ Create Axios instance with proper configuration for hosted backend
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -43,14 +30,13 @@ const apiClient = axios.create({
   }
 });
 
-// ✅ FIXED: Request interceptor with Bearer authentication
+// ✅ Request interceptor with Bearer authentication
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('🔄 Making API request to:', `${config.baseURL}${config.url}`);
     return config;
   },
   (error) => Promise.reject(error)
@@ -58,32 +44,17 @@ apiClient.interceptors.request.use(
 
 // Response interceptor
 apiClient.interceptors.response.use(
-  (response) => {
-    console.log('✅ API response received:', {
-      status: response.status,
-      url: response.config.url
-    });
-    return response;
-  },
+  (response) => response,
   (error) => {
-    console.error('❌ API error:', {
-      status: error.response?.status,
-      url: error.config?.url,
-      message: error.message,
-      data: error.response?.data
-    });
-    
     if (error.response?.status === 401) {
-      console.log('🔓 Authentication failed, redirecting to login...');
       localStorage.removeItem('accessToken');
       window.location.href = '/login/seller';
     }
-    
     return Promise.reject(error);
   }
 );
 
-// CategorySelector Component (keeping your existing implementation)
+// ✅ ENHANCED: User-Friendly Category Selector with Step-by-Step Guide
 const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesChange }) => {
   const [allCategories, setAllCategories] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
@@ -107,23 +78,18 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       setLoading(true);
       setError('');
       
-      console.log('🔄 Fetching categories from:', CATEGORIES_API_URL);
-      
       const response = await apiClient.get('/api/categories/');
       const categories = response.data.results || response.data;
-      
-      console.log('📊 Categories loaded:', categories.length);
       
       setAllCategories(categories);
       
       const rootCategories = categories.filter(cat => !cat.parent);
       setCurrentCategories(rootCategories);
     } catch (err) {
-      console.error('❌ Failed to load categories:', err);
       if (err.response?.status === 401) {
         setError('Session expired. Please log in again.');
       } else {
-        setError('Failed to load categories from server');
+        setError('Failed to load categories. Please check your internet connection.');
       }
     } finally {
       setLoading(false);
@@ -208,11 +174,6 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     const parentId = currentPath.length > 0 ? currentPath[currentPath.length - 1].id : null;
     
     try {
-      console.log('🔄 Creating custom category:', {
-        name: customCategoryName.trim(),
-        parent: parentId
-      });
-      
       const response = await apiClient.post('/api/categories/', {
         name: customCategoryName.trim(),
         description: customCategoryDesc.trim(),
@@ -220,8 +181,6 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       });
 
       const newCategory = response.data;
-      
-      console.log('✅ Custom category created:', newCategory);
       
       await fetchCategories();
       
@@ -233,14 +192,13 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       setCustomCategoryDesc('');
       setShowCustomForm(false);
       
-      alert('Custom category created successfully!');
+      alert('New category created successfully! 🎉');
     } catch (err) {
-      console.error('❌ Failed to create custom category:', err);
       if (err.response?.status === 401) {
         alert('Session expired. Please log in again.');
       } else {
         const errorMessage = err.response?.data?.detail || err.response?.data?.error || 'Failed to create category. Please try again.';
-        alert(errorMessage);
+        alert(`Error: ${errorMessage}`);
       }
     } finally {
       setIsSubmittingCustom(false);
@@ -255,34 +213,48 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
 
   const categoryStyles = {
     container: {
-      marginBottom: '1rem',
-      border: '1px solid #e9ecef',
-      borderRadius: '8px',
-      padding: '16px',
-      backgroundColor: '#fafafa'
+      marginBottom: '1.5rem',
+      border: '2px solid #e9ecef',
+      borderRadius: '12px',
+      padding: '20px',
+      backgroundColor: '#f8f9fa'
     },
     header: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '12px'
+      marginBottom: '16px'
     },
-    label: {
-      fontWeight: '600',
-      fontSize: '14px',
-      color: '#333'
+    title: {
+      fontWeight: '700',
+      fontSize: '16px',
+      color: '#333',
+      margin: 0,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px'
     },
     selectedCategory: {
       color: '#28a745',
-      fontSize: '12px',
-      fontWeight: '500',
+      fontSize: '14px',
+      fontWeight: '600',
       backgroundColor: '#d4edda',
-      padding: '4px 8px',
-      borderRadius: '4px'
+      padding: '6px 12px',
+      borderRadius: '20px',
+      border: '2px solid #c3e6cb'
+    },
+    stepGuide: {
+      backgroundColor: '#fff3cd',
+      border: '1px solid #ffeaa7',
+      borderRadius: '8px',
+      padding: '12px',
+      marginBottom: '16px',
+      fontSize: '13px',
+      color: '#856404'
     },
     loadingContainer: {
       textAlign: 'center',
-      padding: '20px',
+      padding: '30px',
       color: '#666'
     },
     errorContainer: {
@@ -290,29 +262,29 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       padding: '20px',
       color: '#dc3545',
       backgroundColor: '#f8d7da',
-      border: '1px solid #f5c6cb',
-      borderRadius: '4px'
+      border: '2px solid #f5c6cb',
+      borderRadius: '8px'
     },
     breadcrumb: {
       display: 'flex',
       alignItems: 'center',
       flexWrap: 'wrap',
-      gap: '4px',
-      marginBottom: '12px',
-      padding: '8px 12px',
-      backgroundColor: '#fff',
-      borderRadius: '6px',
-      border: '1px solid #e9ecef'
+      gap: '6px',
+      marginBottom: '16px',
+      padding: '12px 16px',
+      backgroundColor: 'white',
+      borderRadius: '8px',
+      border: '2px solid #e9ecef'
     },
     breadcrumbItem: {
       background: 'none',
       border: 'none',
       color: '#0d6efd',
       cursor: 'pointer',
-      padding: '4px 8px',
-      borderRadius: '4px',
-      fontSize: '12px',
-      fontWeight: '500',
+      padding: '6px 12px',
+      borderRadius: '6px',
+      fontSize: '13px',
+      fontWeight: '600',
       transition: 'all 0.2s'
     },
     breadcrumbActive: {
@@ -321,39 +293,45 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     },
     breadcrumbSeparator: {
       color: '#6c757d',
-      margin: '0 4px',
-      fontSize: '12px'
+      margin: '0 6px',
+      fontSize: '14px'
     },
     searchContainer: {
-      marginBottom: '12px'
+      marginBottom: '16px'
     },
     searchInput: {
       width: '100%',
-      padding: '8px 12px',
-      border: '1px solid #ccc',
-      borderRadius: '6px',
-      fontSize: '14px'
+      padding: '12px 16px',
+      border: '2px solid #ccc',
+      borderRadius: '8px',
+      fontSize: '14px',
+      backgroundColor: 'white'
     },
     categoriesGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-      gap: '8px',
-      marginBottom: '12px'
+      gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+      gap: '12px',
+      marginBottom: '16px'
     },
     categoryCard: {
       background: 'white',
       border: '2px solid #e9ecef',
-      borderRadius: '6px',
-      padding: '10px',
+      borderRadius: '8px',
+      padding: '16px',
       cursor: 'pointer',
-      transition: 'all 0.2s',
+      transition: 'all 0.3s',
       textAlign: 'left',
-      minHeight: '70px',
-      position: 'relative'
+      minHeight: '90px',
+      position: 'relative',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    },
+    categoryCardHover: {
+      transform: 'translateY(-2px)',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
     },
     categoryCardParent: {
       borderColor: '#0d6efd',
-      backgroundColor: '#f8f9ff'
+      backgroundColor: '#f0f8ff'
     },
     categoryCardLeaf: {
       borderColor: '#28a745',
@@ -362,12 +340,12 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     categoryCardSelected: {
       borderColor: '#ffc107',
       backgroundColor: '#fffdf0',
-      boxShadow: '0 2px 8px rgba(255, 193, 7, 0.3)'
+      boxShadow: '0 4px 12px rgba(255, 193, 7, 0.4)'
     },
     categoryCardContent: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '4px',
+      gap: '6px',
       height: '100%'
     },
     categoryHeader: {
@@ -377,52 +355,47 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     },
     categoryName: {
       fontWeight: '600',
-      fontSize: '12px',
+      fontSize: '14px',
       color: '#212529',
-      lineHeight: '1.2'
+      lineHeight: '1.3'
     },
     categoryIcon: {
-      fontSize: '14px'
+      fontSize: '18px'
     },
     categoryDescription: {
-      fontSize: '10px',
+      fontSize: '11px',
       color: '#6c757d',
-      lineHeight: '1.2',
+      lineHeight: '1.3',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       display: '-webkit-box',
-      WebkitLineClamp: 1,
+      WebkitLineClamp: 2,
       WebkitBoxOrient: 'vertical'
     },
     categoryMeta: {
       marginTop: 'auto',
       display: 'flex',
       flexDirection: 'column',
-      gap: '2px'
+      gap: '3px'
     },
     childrenCount: {
-      fontSize: '9px',
+      fontSize: '11px',
       color: '#0d6efd',
-      fontWeight: '500'
+      fontWeight: '600'
     },
     selectableText: {
-      fontSize: '9px',
+      fontSize: '11px',
       color: '#28a745',
-      fontWeight: '500'
-    },
-    attributesCount: {
-      fontSize: '9px',
-      color: '#6c757d',
-      marginLeft: '6px'
+      fontWeight: '600'
     },
     addCustomButton: {
       background: 'linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)',
       border: '2px dashed #ffc107',
-      borderRadius: '6px',
-      padding: '10px',
+      borderRadius: '8px',
+      padding: '16px',
       cursor: 'pointer',
       transition: 'all 0.2s',
-      minHeight: '70px',
+      minHeight: '90px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center'
@@ -431,33 +404,33 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       textAlign: 'center'
     },
     addCustomIcon: {
-      fontSize: '16px',
-      marginBottom: '2px'
+      fontSize: '20px',
+      marginBottom: '4px'
     },
     addCustomText: {
-      fontSize: '10px',
+      fontSize: '12px',
       fontWeight: '600',
       color: '#856404',
-      marginBottom: '1px'
+      marginBottom: '2px'
     },
     addCustomSubtext: {
-      fontSize: '9px',
+      fontSize: '10px',
       color: '#6c757d'
     },
     emptyState: {
       textAlign: 'center',
-      padding: '20px',
+      padding: '30px',
       color: '#6c757d'
     },
     clearSearchButton: {
-      padding: '6px 12px',
+      padding: '8px 16px',
       background: '#6c757d',
       color: 'white',
       border: 'none',
-      borderRadius: '4px',
+      borderRadius: '6px',
       cursor: 'pointer',
-      fontSize: '12px',
-      marginTop: '8px'
+      fontSize: '13px',
+      marginTop: '10px'
     },
     modalOverlay: {
       position: 'fixed',
@@ -465,7 +438,7 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
+      backgroundColor: 'rgba(0,0,0,0.6)',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
@@ -473,53 +446,57 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     },
     modalContent: {
       background: 'white',
-      padding: '20px',
-      borderRadius: '8px',
-      width: '400px',
-      maxWidth: '90%'
+      padding: '24px',
+      borderRadius: '12px',
+      width: '450px',
+      maxWidth: '95%',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
     },
     modalInput: {
       width: '100%',
-      padding: '8px 10px',
-      border: '1px solid #ccc',
-      borderRadius: '4px',
+      padding: '10px 12px',
+      border: '2px solid #ccc',
+      borderRadius: '6px',
       fontSize: '14px',
-      marginTop: '4px',
+      marginTop: '6px',
       boxSizing: 'border-box'
     },
     modalButtons: {
       display: 'flex',
-      gap: '10px',
+      gap: '12px',
       justifyContent: 'flex-end',
-      marginTop: '16px'
+      marginTop: '20px'
     },
     cancelButton: {
-      padding: '8px 14px',
+      padding: '10px 20px',
       background: '#6c757d',
       color: 'white',
       border: 'none',
-      borderRadius: '4px',
+      borderRadius: '6px',
       cursor: 'pointer',
-      fontSize: '12px'
+      fontSize: '14px',
+      fontWeight: '500'
     },
     submitButton: {
-      padding: '8px 14px',
+      padding: '10px 20px',
       background: '#0d6efd',
       color: 'white',
       border: 'none',
-      borderRadius: '4px',
+      borderRadius: '6px',
       cursor: 'pointer',
-      fontSize: '12px'
+      fontSize: '14px',
+      fontWeight: '500'
     },
     helpText: {
-      fontSize: '10px',
+      fontSize: '12px',
       color: '#6c757d',
       fontStyle: 'italic',
       textAlign: 'center',
-      padding: '6px',
+      padding: '10px',
       backgroundColor: '#f8f9fa',
-      borderRadius: '4px',
-      border: '1px solid #e9ecef'
+      borderRadius: '6px',
+      border: '1px solid #e9ecef',
+      marginTop: '12px'
     }
   };
 
@@ -527,10 +504,11 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     return (
       <div style={categoryStyles.container}>
         <div style={categoryStyles.header}>
-          <label style={categoryStyles.label}>Product Category*</label>
+          <h3 style={categoryStyles.title}>🏷️ Select Product Category</h3>
         </div>
         <div style={categoryStyles.loadingContainer}>
-          <p>Loading categories from server...</p>
+          <div>🔄 Loading categories...</div>
+          <div style={{fontSize: '12px', color: '#999', marginTop: '8px'}}>Please wait while we fetch available categories</div>
         </div>
       </div>
     );
@@ -540,12 +518,12 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     return (
       <div style={categoryStyles.container}>
         <div style={categoryStyles.header}>
-          <label style={categoryStyles.label}>Product Category*</label>
+          <h3 style={categoryStyles.title}>🏷️ Select Product Category</h3>
         </div>
         <div style={categoryStyles.errorContainer}>
-          <p>⚠️ {error}</p>
+          <div>⚠️ {error}</div>
           <button onClick={fetchCategories} style={categoryStyles.clearSearchButton}>
-            Retry
+            🔄 Try Again
           </button>
         </div>
       </div>
@@ -556,12 +534,23 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     <div style={categoryStyles.container}>
       {/* Header */}
       <div style={categoryStyles.header}>
-        <label style={categoryStyles.label}>Product Category*</label>
+        <h3 style={categoryStyles.title}>🏷️ Select Product Category</h3>
         {selectedCategory && (
           <div style={categoryStyles.selectedCategory}>
             ✅ {selectedCategory.name}
           </div>
         )}
+      </div>
+
+      {/* Step-by-Step Guide */}
+      <div style={categoryStyles.stepGuide}>
+        <strong>📋 How to select a category:</strong>
+        <br />
+        1️⃣ Click folder icons (📁) to explore subcategories
+        <br />
+        2️⃣ Click document icons (📄) to select final category
+        <br />
+        3️⃣ Can't find your category? Click "➕ Create New" to add it
       </div>
 
       {/* Breadcrumb Navigation */}
@@ -574,7 +563,7 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
             ...(currentPath.length === 0 ? categoryStyles.breadcrumbActive : {})
           }}
         >
-          🏠 Categories
+          🏠 All Categories
         </button>
         
         {currentPath.map((category, index) => (
@@ -595,11 +584,11 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       </div>
 
       {/* Search Box */}
-      {currentCategories.length > 6 && (
+      {currentCategories.length > 8 && (
         <div style={categoryStyles.searchContainer}>
           <input
             type="text"
-            placeholder="🔍 Search categories..."
+            placeholder="🔍 Search categories by name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={categoryStyles.searchInput}
@@ -618,6 +607,17 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
               key={category.id}
               type="button"
               onClick={() => handleCategoryClick(category)}
+              onMouseEnter={(e) => {
+                if (!isSelected) {
+                  Object.assign(e.target.style, categoryStyles.categoryCardHover);
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected) {
+                  e.target.style.transform = 'translateY(0px)';
+                  e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                }
+              }}
               style={{
                 ...categoryStyles.categoryCard,
                 ...(isSelected ? categoryStyles.categoryCardSelected : {}),
@@ -641,16 +641,11 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
                 <div style={categoryStyles.categoryMeta}>
                   {hasChildren ? (
                     <span style={categoryStyles.childrenCount}>
-                      {allCategories.filter(cat => cat.parent === category.id).length} subcategories
+                      👆 Click to explore {allCategories.filter(cat => cat.parent === category.id).length} subcategories
                     </span>
                   ) : (
                     <div>
-                      <span style={categoryStyles.selectableText}>✓ Selectable</span>
-                      {category.default_attributes?.length > 0 && (
-                        <span style={categoryStyles.attributesCount}>
-                          {category.default_attributes.length} attributes
-                        </span>
-                      )}
+                      <span style={categoryStyles.selectableText}>✅ Click to select this category</span>
                     </div>
                   )}
                 </div>
@@ -667,11 +662,11 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
         >
           <div style={categoryStyles.addCustomContent}>
             <div style={categoryStyles.addCustomIcon}>➕</div>
-            <div style={categoryStyles.addCustomText}>Add New</div>
+            <div style={categoryStyles.addCustomText}>Create New Category</div>
             <div style={categoryStyles.addCustomSubtext}>
               {currentPath.length > 0 
                 ? `Under "${currentPath[currentPath.length - 1].name}"` 
-                : "Main category"
+                : "As main category"
               }
             </div>
           </div>
@@ -681,13 +676,13 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       {/* Empty State */}
       {filteredCategories.length === 0 && searchTerm && (
         <div style={categoryStyles.emptyState}>
-          <p>No categories found for "{searchTerm}"</p>
+          <div>🔍 No categories found for "{searchTerm}"</div>
           <button 
             type="button"
             onClick={() => setSearchTerm('')}
             style={categoryStyles.clearSearchButton}
           >
-            Clear Search
+            ❌ Clear Search
           </button>
         </div>
       )}
@@ -696,35 +691,39 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       {showCustomForm && (
         <div style={categoryStyles.modalOverlay}>
           <div style={categoryStyles.modalContent}>
-            <h3>Create New Category</h3>
-            <p style={{fontSize: '12px', color: '#666', marginBottom: '12px'}}>
+            <h3>🆕 Create New Category</h3>
+            <p style={{fontSize: '14px', color: '#666', marginBottom: '16px'}}>
               {currentPath.length > 0 
-                ? `Will be created under "${currentPath[currentPath.length - 1].name}"` 
-                : "Will be created as a main category"
+                ? `✨ This will be created under "${currentPath[currentPath.length - 1].name}"` 
+                : "✨ This will be created as a main category"
               }
             </p>
             
             <form onSubmit={handleCustomCategorySubmit}>
-              <div style={{marginBottom: '12px'}}>
-                <label style={{fontSize: '12px', fontWeight: '500'}}>Category Name*</label>
+              <div style={{marginBottom: '16px'}}>
+                <label style={{fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '4px'}}>
+                  📝 Category Name *
+                </label>
                 <input
                   type="text"
                   value={customCategoryName}
                   onChange={(e) => setCustomCategoryName(e.target.value)}
-                  placeholder="Enter category name"
+                  placeholder="e.g., Electronics, Clothing, Books..."
                   required
                   style={categoryStyles.modalInput}
                   autoFocus
                 />
               </div>
               
-              <div style={{marginBottom: '12px'}}>
-                <label style={{fontSize: '12px', fontWeight: '500'}}>Description</label>
+              <div style={{marginBottom: '16px'}}>
+                <label style={{fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '4px'}}>
+                  📄 Description (optional)
+                </label>
                 <textarea
                   value={customCategoryDesc}
                   onChange={(e) => setCustomCategoryDesc(e.target.value)}
-                  placeholder="Brief description (optional)"
-                  style={{...categoryStyles.modalInput, minHeight: '50px'}}
+                  placeholder="Brief description of what products go in this category..."
+                  style={{...categoryStyles.modalInput, minHeight: '60px', resize: 'vertical'}}
                   rows="2"
                 />
               </div>
@@ -740,14 +739,14 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
                   style={categoryStyles.cancelButton}
                   disabled={isSubmittingCustom}
                 >
-                  Cancel
+                  ❌ Cancel
                 </button>
                 <button
                   type="submit"
                   style={categoryStyles.submitButton}
                   disabled={isSubmittingCustom || !customCategoryName.trim()}
                 >
-                  {isSubmittingCustom ? 'Creating...' : 'Create'}
+                  {isSubmittingCustom ? '⏳ Creating...' : '✅ Create Category'}
                 </button>
               </div>
             </form>
@@ -757,17 +756,17 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
 
       {/* Help Text */}
       <div style={categoryStyles.helpText}>
-        💡 Click folders (📁) to explore, or select files (📄) to choose a category
+        💡 <strong>Tip:</strong> Choose the most specific category that matches your product for better visibility to customers
       </div>
     </div>
   );
 };
 
-// ✅ ENHANCED: Smart Stock Input Component with Quick Actions
+// ✅ ENHANCED: Super User-Friendly Stock Input Component
 const SmartStockInput = ({ formData, setFormData }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   
-  // ✅ Quick stock allocation functions
+  // Quick stock allocation functions
   const setAllOnline = () => {
     setFormData(prev => ({
       ...prev,
@@ -795,7 +794,6 @@ const SmartStockInput = ({ formData, setFormData }) => {
     setFormData(prev => ({
       ...prev,
       total_stock: newTotal,
-      // ✅ Smart adjustment: if online stock exceeds new total, adjust it
       online_stock: prev.online_stock > newTotal ? newTotal : prev.online_stock
     }));
   };
@@ -818,34 +816,43 @@ const SmartStockInput = ({ formData, setFormData }) => {
 
   return (
     <div style={styles.stockContainer}>
-      {/* Stock Header */}
+      {/* Stock Header with Clear Explanation */}
       <div style={styles.stockHeader}>
-        <h3 style={styles.stockTitle}>📦 Stock Management</h3>
+        <h3 style={styles.stockTitle}>📦 How Many Items Do You Have?</h3>
         <button
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
           style={styles.toggleButton}
         >
-          {showAdvanced ? '📋 Simple' : '⚙️ Advanced'}
+          {showAdvanced ? '📋 Simple View' : '⚙️ Advanced Settings'}
         </button>
       </div>
 
-      {/* Stock Summary Card */}
+      {/* Clear Explanation */}
+      <div style={styles.stockExplanation}>
+        <strong>🤔 What does this mean?</strong>
+        <br />
+        • <strong>Total Stock:</strong> How many items you have in total
+        <br />
+        • <strong>Online Stock:</strong> How many you want to sell online (rest stays for in-store sales)
+      </div>
+
+      {/* Visual Stock Summary */}
       <div style={styles.stockSummary}>
         <div style={styles.stockSummaryItem}>
-          <span style={styles.stockLabel}>Total Stock</span>
+          <span style={styles.stockLabel}>📦 Total Items</span>
           <span style={styles.stockValue}>{formData.total_stock}</span>
         </div>
         <div style={styles.stockSummaryItem}>
-          <span style={styles.stockLabel}>Online</span>
+          <span style={styles.stockLabel}>🌐 Online Sale</span>
           <span style={styles.stockValue}>{formData.online_stock}</span>
         </div>
         <div style={styles.stockSummaryItem}>
-          <span style={styles.stockLabel}>Available</span>
+          <span style={styles.stockLabel}>🏪 Store Only</span>
           <span style={styles.stockValue}>{availableForOnline}</span>
         </div>
         <div style={styles.stockSummaryItem}>
-          <span style={styles.stockLabel}>Online %</span>
+          <span style={styles.stockLabel}>📊 Online %</span>
           <span style={{
             ...styles.stockValue,
             color: stockPercentage === 100 ? '#28a745' : stockPercentage > 50 ? '#ffc107' : '#6c757d'
@@ -855,10 +862,10 @@ const SmartStockInput = ({ formData, setFormData }) => {
         </div>
       </div>
 
-      {/* Stock Progress Bar */}
+      {/* Progress Bar with Clear Labels */}
       <div style={styles.progressContainer}>
         <div style={styles.progressLabel}>
-          Online Stock Allocation: {formData.online_stock}/{formData.total_stock}
+          📊 Stock Allocation: {formData.online_stock} online + {availableForOnline} in-store = {formData.total_stock} total
         </div>
         <div style={styles.progressBar}>
           <div 
@@ -872,113 +879,132 @@ const SmartStockInput = ({ formData, setFormData }) => {
       </div>
 
       {!showAdvanced ? (
-        /* ✅ SIMPLE MODE: Quick Actions */
+        /* ✅ SUPER SIMPLE MODE: Step by Step */
         <div style={styles.simpleMode}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Total Stock*</label>
+          {/* Step 1: Total Stock */}
+          <div style={styles.stepContainer}>
+            <div style={styles.stepHeader}>
+              <span style={styles.stepNumber}>1️⃣</span>
+              <span style={styles.stepTitle}>First, tell us how many items you have in total</span>
+            </div>
             <input 
               type="number" 
               name="total_stock" 
               value={formData.total_stock} 
               onChange={handleTotalStockChange}
               required 
-              style={styles.input}
+              style={styles.bigInput}
               min="0"
-              placeholder="How many items do you have?"
+              placeholder="Enter total quantity (e.g., 50)"
             />
+            <div style={styles.stepHelp}>
+              💡 Count all items you have - both for online and in-store sales
+            </div>
           </div>
 
-          <div style={styles.quickActionsContainer}>
-            <div style={styles.quickActionsHeader}>
-              <label style={styles.label}>Online Stock Allocation</label>
-              <span style={styles.helpText}>Choose how many to sell online:</span>
-            </div>
-            
-            <div style={styles.quickActions}>
-              <button
-                type="button"
-                onClick={setAllOnline}
-                disabled={formData.total_stock === 0}
-                style={{
-                  ...styles.quickActionButton,
-                  ...(formData.online_stock === formData.total_stock ? styles.quickActionActive : {})
-                }}
-              >
-                🌐 All Online<br/>
-                <small>({formData.total_stock})</small>
-              </button>
+          {/* Step 2: Online Allocation (only show if total > 0) */}
+          {formData.total_stock > 0 && (
+            <div style={styles.stepContainer}>
+              <div style={styles.stepHeader}>
+                <span style={styles.stepNumber}>2️⃣</span>
+                <span style={styles.stepTitle}>How many do you want to sell online?</span>
+              </div>
               
-              <button
-                type="button"
-                onClick={setHalfOnline}
-                disabled={formData.total_stock === 0}
-                style={{
-                  ...styles.quickActionButton,
-                  ...(formData.online_stock === Math.floor(formData.total_stock / 2) ? styles.quickActionActive : {})
-                }}
-              >
-                ⚖️ Half Online<br/>
-                <small>({Math.floor(formData.total_stock / 2)})</small>
-              </button>
-              
-              <button
-                type="button"
-                onClick={setNoneOnline}
-                style={{
-                  ...styles.quickActionButton,
-                  ...(formData.online_stock === 0 ? styles.quickActionActive : {})
-                }}
-              >
-                🏪 Store Only<br/>
-                <small>(0 online)</small>
-              </button>
-            </div>
+              <div style={styles.quickActionsContainer}>
+                <div style={styles.quickActions}>
+                  <button
+                    type="button"
+                    onClick={setAllOnline}
+                    style={{
+                      ...styles.quickActionButton,
+                      ...(formData.online_stock === formData.total_stock ? styles.quickActionActive : {})
+                    }}
+                  >
+                    🌐 All Online<br/>
+                    <small>All {formData.total_stock} items</small>
+                    <div style={styles.quickActionDesc}>Best for online-only business</div>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={setHalfOnline}
+                    style={{
+                      ...styles.quickActionButton,
+                      ...(formData.online_stock === Math.floor(formData.total_stock / 2) ? styles.quickActionActive : {})
+                    }}
+                  >
+                    ⚖️ Split Equally<br/>
+                    <small>{Math.floor(formData.total_stock / 2)} online</small>
+                    <div style={styles.quickActionDesc}>Good for both online & store</div>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={setNoneOnline}
+                    style={{
+                      ...styles.quickActionButton,
+                      ...(formData.online_stock === 0 ? styles.quickActionActive : {})
+                    }}
+                  >
+                    🏪 Store Only<br/>
+                    <small>0 online</small>
+                    <div style={styles.quickActionDesc}>Only in-store sales</div>
+                  </button>
+                </div>
 
-            {/* Custom Online Amount */}
-            <div style={styles.customAmountContainer}>
-              <label style={styles.customAmountLabel}>Or set custom amount:</label>
-              <div style={styles.customAmountInput}>
-                <input
-                  type="number"
-                  value={formData.online_stock}
-                  onChange={handleOnlineStockChange}
-                  min="0"
-                  max={formData.total_stock}
-                  style={styles.input}
-                  placeholder="Custom amount"
-                />
-                <span style={styles.maxIndicator}>max: {formData.total_stock}</span>
+                {/* Custom Amount Option */}
+                <div style={styles.customAmountContainer}>
+                  <label style={styles.customAmountLabel}>
+                    🎯 Or choose your own amount:
+                  </label>
+                  <div style={styles.customAmountInput}>
+                    <input
+                      type="number"
+                      value={formData.online_stock}
+                      onChange={handleOnlineStockChange}
+                      min="0"
+                      max={formData.total_stock}
+                      style={styles.input}
+                      placeholder={`0 to ${formData.total_stock}`}
+                    />
+                    <span style={styles.maxIndicator}>out of {formData.total_stock}</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Smart Suggestions */}
           {formData.total_stock > 0 && (
             <div style={styles.suggestions}>
               {formData.online_stock === 0 && (
-                <div style={styles.suggestion}>
-                  💡 <strong>Tip:</strong> Setting some items online can increase sales reach!
+                <div style={styles.suggestionGood}>
+                  💡 <strong>Suggestion:</strong> Try putting some items online to reach more customers!
                 </div>
               )}
-              {formData.online_stock === formData.total_stock && formData.total_stock > 10 && (
-                <div style={styles.suggestion}>
-                  💡 <strong>Suggestion:</strong> Consider keeping some stock for in-store customers.
+              {formData.online_stock === formData.total_stock && formData.total_stock > 5 && (
+                <div style={styles.suggestionWarning}>
+                  ⚠️ <strong>Consider:</strong> Keeping some stock for walk-in customers might be good too.
                 </div>
               )}
               {availableForOnline > 0 && formData.online_stock > 0 && (
-                <div style={styles.suggestion}>
-                  📈 <strong>Opportunity:</strong> You can still add {availableForOnline} more items online!
+                <div style={styles.suggestionGood}>
+                  ✨ <strong>Perfect!</strong> You have {formData.online_stock} for online and {availableForOnline} for store.
                 </div>
               )}
             </div>
           )}
         </div>
       ) : (
-        /* ✅ ADVANCED MODE: Manual Inputs */
+        /* ✅ ADVANCED MODE: For experienced users */
         <div style={styles.advancedMode}>
+          <div style={styles.advancedHeader}>
+            <span>🎛️ Advanced Stock Settings</span>
+          </div>
+          
           <div style={styles.formRow}>
             <div style={styles.formGroup}>
-              <label style={styles.label}>Total Stock*</label>
+              <label style={styles.label}>📦 Total Stock *</label>
               <input 
                 type="number" 
                 name="total_stock" 
@@ -992,7 +1018,7 @@ const SmartStockInput = ({ formData, setFormData }) => {
             </div>
             
             <div style={styles.formGroup}>
-              <label style={styles.label}>Online Stock*</label>
+              <label style={styles.label}>🌐 Online Stock *</label>
               <input 
                 type="number" 
                 name="online_stock" 
@@ -1010,13 +1036,13 @@ const SmartStockInput = ({ formData, setFormData }) => {
           {/* Quick Action Buttons in Advanced Mode */}
           <div style={styles.advancedQuickActions}>
             <button type="button" onClick={setAllOnline} style={styles.miniButton}>
-              All Online
+              🌐 All Online
             </button>
             <button type="button" onClick={setHalfOnline} style={styles.miniButton}>
-              Half
+              ⚖️ Half & Half
             </button>
             <button type="button" onClick={setNoneOnline} style={styles.miniButton}>
-              None
+              🏪 Store Only
             </button>
           </div>
         </div>
@@ -1078,7 +1104,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
 
   const handleSubImageChange = (e) => {
     if (e.target.files.length > 5) {
-      alert("You can only upload a maximum of 5 sub-images.");
+      alert("You can only upload a maximum of 5 additional images. 📸");
       e.target.value = null;
       return;
     }
@@ -1108,28 +1134,14 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     
     if (mainImageFile) {
       submissionData.append('main_image', mainImageFile);
-      console.log('📸 Main image file being sent:', mainImageFile.name);
-    } else if (product && !mainImagePreview) {
-      console.log('⚠️ No new main image selected for update');
     }
     
     subImageFiles.forEach((file, index) => {
       submissionData.append('sub_images', file);
-      console.log(`📸 Sub image ${index + 1}:`, file.name);
     });
     
     const url = product ? `${PRODUCTS_API_URL}${product.id}/` : PRODUCTS_API_URL;
     const method = product ? 'patch' : 'post';
-
-    console.log('=== DEBUG: Form submission ===');
-    console.log('API URL:', url);
-    console.log('Method:', method);
-    console.log('Selected category ID:', selectedCategoryId);
-    console.log('Main image file:', mainImageFile);
-    console.log('Sub image files:', subImageFiles);
-    console.log('Form data keys:', Array.from(submissionData.keys()));
-    console.log('Environment:', process.env.NODE_ENV);
-    console.log('===============================');
 
     try {
       const response = await axios({ 
@@ -1143,15 +1155,12 @@ export default function ProductForm({ product, onClose, onSuccess }) {
         timeout: 30000
       });
       
-      console.log('✅ Product saved successfully:', response.data);
       onSuccess();
     } catch (err) {
-      console.error('❌ Error saving product:', err.response?.data || err);
-      
-      let errorMessage = 'Failed to save product to server. Please check your input.';
+      let errorMessage = 'Something went wrong. Please check your details and try again.';
       
       if (err.response?.status === 401) {
-        errorMessage = 'Session expired. Please log in again.';
+        errorMessage = 'Your session has expired. Please log in again.';
         setTimeout(() => {
           localStorage.removeItem('accessToken');
           window.location.href = '/login/seller';
@@ -1161,19 +1170,15 @@ export default function ProductForm({ product, onClose, onSuccess }) {
           errorMessage = err.response.data;
         } else if (err.response.data.detail) {
           errorMessage = err.response.data.detail;
-        } else if (err.response.data.error) {
-          errorMessage = err.response.data.error;
         } else if (err.response.data.main_image) {
-          errorMessage = `Main image error: ${err.response.data.main_image[0]}`;
-        } else if (err.response.data.sub_images) {
-          errorMessage = `Sub images error: ${err.response.data.sub_images[0]}`;
+          errorMessage = `Image issue: ${err.response.data.main_image[0]}`;
         } else if (err.response.data.category) {
-          errorMessage = `Category error: ${err.response.data.category[0]}`;
+          errorMessage = `Please select a valid category`;
         }
       } else if (err.code === 'ECONNABORTED') {
-        errorMessage = 'Request timeout - the server took too long to respond. Please try again.';
+        errorMessage = 'Upload is taking too long. Please check your internet connection and try again.';
       } else if (err.request) {
-        errorMessage = 'Unable to connect to server. Please check your internet connection.';
+        errorMessage = 'Cannot connect to server. Please check your internet connection.';
       }
       
       setError(errorMessage);
@@ -1185,97 +1190,129 @@ export default function ProductForm({ product, onClose, onSuccess }) {
   return (
     <div style={styles.modalOverlay}>
       <div style={styles.modalContent}>
-        <h2>{product ? 'Edit Product' : 'Add New Product'}</h2>
-        <p style={{fontSize: '12px', color: '#666', marginBottom: '16px'}}>
-          🌐 Connected to: {API_BASE_URL}
-        </p>
+        <div style={styles.modalHeader}>
+          <h2 style={styles.modalTitle}>
+            {product ? '✏️ Edit Product' : '🆕 Add New Product'}
+          </h2>
+          <div style={styles.connectionStatus}>
+            🌐 Connected to: {API_BASE_URL.replace('https://', '').replace('http://', '')}
+          </div>
+        </div>
         
         <form onSubmit={handleSubmit}>
-          {/* --- Standard Fields --- */}
-          <div style={styles.formGroup}>
-            <label>Product Name*</label>
-            <input 
-              type="text" 
-              name="name" 
-              value={formData.name} 
-              onChange={handleChange} 
-              required 
-              style={styles.input}
-              placeholder="e.g., Premium Cotton T-Shirt"
-            />
-          </div>
-          
-          <div style={styles.formGroup}>
-            <label>Model/Variation</label>
-            <input 
-              type="text" 
-              name="model_name" 
-              value={formData.model_name} 
-              onChange={handleChange} 
-              style={styles.input} 
-              placeholder="e.g., Red XL, Size 42"
-            />
-          </div>
-          
-          <div style={styles.formGroup}>
-            <label>Description</label>
-            <textarea 
-              name="description" 
-              value={formData.description} 
-              onChange={handleChange} 
-              style={styles.textArea}
-              placeholder="Describe your product features, benefits, and specifications..."
-              rows="3"
-            />
-          </div>
-          
-          <div style={styles.formRow}>
+          {/* === BASIC PRODUCT INFORMATION === */}
+          <div style={styles.sectionContainer}>
+            <h3 style={styles.sectionTitle}>📝 Basic Product Information</h3>
+            
             <div style={styles.formGroup}>
-              <label>Selling Price (₹)*</label>
+              <label style={styles.label}>🏷️ Product Name *</label>
               <input 
-                type="number" 
-                name="price" 
-                value={formData.price} 
+                type="text" 
+                name="name" 
+                value={formData.name} 
                 onChange={handleChange} 
                 required 
-                style={styles.input} 
-                step="0.01"
-                min="0"
-                placeholder="299.99"
+                style={styles.input}
+                placeholder="e.g., Premium Cotton T-Shirt, iPhone 13, Running Shoes..."
               />
+              <small style={styles.helpText}>Give your product a clear, descriptive name that customers will search for</small>
             </div>
             
             <div style={styles.formGroup}>
-              <label>MRP (₹)</label>
+              <label style={styles.label}>🔧 Model/Variation (Optional)</label>
               <input 
-                type="number" 
-                name="mrp" 
-                value={formData.mrp} 
+                type="text" 
+                name="model_name" 
+                value={formData.model_name} 
                 onChange={handleChange} 
                 style={styles.input} 
-                step="0.01"
-                min="0"
-                placeholder="399.99"
+                placeholder="e.g., Red XL, 128GB Black, Size 42, Model 2023..."
               />
-              <small style={styles.helpText}>Maximum Retail Price (for discount calculation)</small>
+              <small style={styles.helpText}>Specify color, size, model year, or any variations</small>
+            </div>
+            
+            <div style={styles.formGroup}>
+              <label style={styles.label}>📄 Product Description (Optional)</label>
+              <textarea 
+                name="description" 
+                value={formData.description} 
+                onChange={handleChange} 
+                style={styles.textArea}
+                placeholder="Describe your product: features, benefits, materials, care instructions, warranty details..."
+                rows="4"
+              />
+              <small style={styles.helpText}>Help customers understand why they should buy your product</small>
             </div>
           </div>
-          
-          {/* ✅ ENHANCED: Smart Stock Management */}
+
+          {/* === PRICING === */}
+          <div style={styles.sectionContainer}>
+            <h3 style={styles.sectionTitle}>💰 Pricing Information</h3>
+            
+            <div style={styles.formRow}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>💵 Your Selling Price (₹) *</label>
+                <input 
+                  type="number" 
+                  name="price" 
+                  value={formData.price} 
+                  onChange={handleChange} 
+                  required 
+                  style={styles.input} 
+                  step="0.01"
+                  min="0"
+                  placeholder="299.99"
+                />
+                <small style={styles.helpText}>The price you want to charge customers</small>
+              </div>
+              
+              <div style={styles.formGroup}>
+                <label style={styles.label}>🏷️ MRP - Maximum Retail Price (₹)</label>
+                <input 
+                  type="number" 
+                  name="mrp" 
+                  value={formData.mrp} 
+                  onChange={handleChange} 
+                  style={styles.input} 
+                  step="0.01"
+                  min="0"
+                  placeholder="399.99"
+                />
+                <small style={styles.helpText}>Original price (shows discount if higher than selling price)</small>
+              </div>
+            </div>
+
+            {/* Show discount calculation */}
+            {formData.price && formData.mrp && parseFloat(formData.mrp) > parseFloat(formData.price) && (
+              <div style={styles.discountDisplay}>
+                🎉 Great! You're offering a discount of ₹{(parseFloat(formData.mrp) - parseFloat(formData.price)).toFixed(2)} 
+                ({Math.round(((parseFloat(formData.mrp) - parseFloat(formData.price)) / parseFloat(formData.mrp)) * 100)}% off)
+              </div>
+            )}
+          </div>
+
+          {/* === ENHANCED STOCK MANAGEMENT === */}
           <SmartStockInput formData={formData} setFormData={setFormData} />
           
-          <div style={styles.formGroup}>
-            <label>Where to sell?*</label>
-            <select name="sale_type" value={formData.sale_type} onChange={handleChange} style={styles.input}>
-              <option value="BOTH">🌐 Online & 🏪 In-Store</option>
-              <option value="OFFLINE">🏪 In-Store Only</option>
-              <option value="ONLINE">🌐 Online Only</option>
+          {/* === SALES CHANNELS === */}
+          <div style={styles.sectionContainer}>
+            <h3 style={styles.sectionTitle}>🛍️ Where Do You Want to Sell?</h3>
+            <select 
+              name="sale_type" 
+              value={formData.sale_type} 
+              onChange={handleChange} 
+              style={styles.selectInput}
+            >
+              <option value="BOTH">🌐 Both Online & In-Store (Recommended)</option>
+              <option value="OFFLINE">🏪 Only In My Physical Store</option>
+              <option value="ONLINE">🌐 Only Online Sales</option>
             </select>
+            <small style={styles.helpText}>Choose where customers can buy this product</small>
           </div>
 
           <hr style={styles.hr} />
 
-          {/* --- Enhanced Category Section --- */}
+          {/* === ENHANCED CATEGORY SECTION === */}
           <CategorySelector
             selectedCategoryId={selectedCategoryId}
             onCategorySelect={setSelectedCategoryId}
@@ -1284,74 +1321,109 @@ export default function ProductForm({ product, onClose, onSuccess }) {
           
           {/* Dynamic Attributes Section */}
           {Object.keys(dynamicAttributes).length > 0 && (
-            <div style={styles.dynamicSection}>
-              <h4>Category Specifics</h4>
-              {Object.keys(dynamicAttributes).map(name => (
-                <div key={name} style={styles.formGroup}>
-                  <label>{name}</label>
-                  <input 
-                    type="text" 
-                    value={dynamicAttributes[name] || ''} 
-                    onChange={e => handleAttributeChange(name, e.target.value)} 
-                    style={styles.input}
-                  />
-                </div>
-              ))}
+            <div style={styles.attributesSection}>
+              <h3 style={styles.sectionTitle}>🔧 Category-Specific Details</h3>
+              <div style={styles.attributesGrid}>
+                {Object.keys(dynamicAttributes).map(name => (
+                  <div key={name} style={styles.formGroup}>
+                    <label style={styles.label}>📝 {name}</label>
+                    <input 
+                      type="text" 
+                      value={dynamicAttributes[name] || ''} 
+                      onChange={e => handleAttributeChange(name, e.target.value)} 
+                      style={styles.input}
+                      placeholder={`Enter ${name.toLowerCase()}...`}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           <hr style={styles.hr} />
 
-          {/* --- Image Upload Section --- */}
-          <div style={styles.formGroup}>
-            <label>Main Image*</label>
-            {mainImagePreview && (
-              <img src={mainImagePreview} alt="Main preview" style={styles.imagePreview}/>
-            )}
-            <input 
-              type="file" 
-              name="main_image" 
-              onChange={handleMainImageChange} 
-              accept="image/*" 
-              required={!product || !mainImagePreview} 
-              style={styles.input} 
-            />
-            <small style={styles.helpText}>
-              {product ? 'Select a new image to replace the current one' : 'Please select a main image'}
-            </small>
-          </div>
-          
-          <div style={styles.formGroup}>
-            <label>Sub Images (Up to 5)</label>
-            <div style={styles.subImageGrid}>
-              {subImagePreviews.map((previewUrl, index) => (
-                <img 
-                  key={index} 
-                  src={previewUrl} 
-                  alt={`Sub preview ${index+1}`} 
-                  style={styles.imagePreview}
+          {/* === ENHANCED IMAGE UPLOAD SECTION === */}
+          <div style={styles.sectionContainer}>
+            <h3 style={styles.sectionTitle}>📸 Product Images</h3>
+            
+            {/* Main Image */}
+            <div style={styles.imageUploadContainer}>
+              <label style={styles.label}>📷 Main Product Image *</label>
+              <div style={styles.imageUploadArea}>
+                {mainImagePreview ? (
+                  <div style={styles.imagePreviewContainer}>
+                    <img src={mainImagePreview} alt="Main product" style={styles.mainImagePreview}/>
+                    <div style={styles.imageOverlay}>
+                      <span>✅ Main Image Selected</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={styles.imagePlaceholder}>
+                    <div style={styles.imagePlaceholderContent}>
+                      📷
+                      <br />
+                      Click to select main image
+                    </div>
+                  </div>
+                )}
+                <input 
+                  type="file" 
+                  name="main_image" 
+                  onChange={handleMainImageChange} 
+                  accept="image/*" 
+                  required={!product || !mainImagePreview} 
+                  style={styles.fileInput} 
                 />
-              ))}
+              </div>
+              <small style={styles.helpText}>
+                📸 This is the first image customers will see. Make it count!
+                {product && ' (Select a new image to replace current one)'}
+              </small>
             </div>
-            <input 
-              type="file" 
-              name="sub_images" 
-              onChange={handleSubImageChange} 
-              accept="image/*" 
-              multiple 
-              style={styles.input} 
-            />
-            <small style={styles.helpText}>
-              Select new images to replace all sub-images
-            </small>
+            
+            {/* Additional Images */}
+            <div style={styles.imageUploadContainer}>
+              <label style={styles.label}>🖼️ Additional Images (Optional, up to 5)</label>
+              <div style={styles.additionalImagesContainer}>
+                {subImagePreviews.length > 0 && (
+                  <div style={styles.subImageGrid}>
+                    {subImagePreviews.map((previewUrl, index) => (
+                      <div key={index} style={styles.subImagePreviewContainer}>
+                        <img 
+                          src={previewUrl} 
+                          alt={`Additional view ${index+1}`} 
+                          style={styles.subImagePreview}
+                        />
+                        <div style={styles.imageNumber}>{index + 1}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <input 
+                  type="file" 
+                  name="sub_images" 
+                  onChange={handleSubImageChange} 
+                  accept="image/*" 
+                  multiple 
+                  style={styles.input} 
+                />
+              </div>
+              <small style={styles.helpText}>
+                📷 Add more angles, close-ups, or usage photos to help customers see your product better
+              </small>
+            </div>
           </div>
           
+          {/* === ERROR DISPLAY === */}
           {error && (
             <div style={styles.errorAlert}>
-              ⚠️ {error}
+              <strong>⚠️ Oops! Something went wrong:</strong>
+              <br />
+              {error}
             </div>
           )}
           
+          {/* === ACTION BUTTONS === */}
           <div style={styles.buttonContainer}>
             <button 
               type="button" 
@@ -1359,14 +1431,18 @@ export default function ProductForm({ product, onClose, onSuccess }) {
               disabled={isSubmitting} 
               style={styles.buttonSecondary}
             >
-              Cancel
+              ❌ Cancel
             </button>
             <button 
               type="submit" 
               disabled={isSubmitting || !selectedCategoryId} 
               style={styles.buttonPrimary}
             >
-              {isSubmitting ? 'Saving to server...' : 'Save Product'}
+              {isSubmitting ? (
+                <>⏳ {product ? 'Updating...' : 'Creating...'}</>
+              ) : (
+                <>{product ? '✅ Update Product' : '🚀 Create Product'}</>
+              )}
             </button>
           </div>
         </form>
@@ -1375,179 +1451,526 @@ export default function ProductForm({ product, onClose, onSuccess }) {
   );
 }
 
+// ✅ ENHANCED STYLES: More User-Friendly and Clear
 const styles = {
   modalOverlay: { 
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', 
+    backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', 
     justifyContent: 'center', alignItems: 'center', zIndex: 1000 
   },
   modalContent: { 
-    background: 'white', padding: '2rem', borderRadius: '12px', 
-    width: '700px', maxWidth: '95%', maxHeight: '90vh', overflowY: 'auto',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+    background: 'white', padding: '2rem', borderRadius: '16px', 
+    width: '800px', maxWidth: '95%', maxHeight: '90vh', overflowY: 'auto',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
   },
-  formGroup: { marginBottom: '1rem' },
+  modalHeader: {
+    marginBottom: '24px',
+    paddingBottom: '16px',
+    borderBottom: '2px solid #f8f9fa'
+  },
+  modalTitle: {
+    margin: '0 0 8px 0',
+    fontSize: '24px',
+    fontWeight: '700',
+    color: '#333'
+  },
+  connectionStatus: {
+    fontSize: '12px',
+    color: '#666',
+    backgroundColor: '#f8f9fa',
+    padding: '6px 12px',
+    borderRadius: '16px',
+    display: 'inline-block'
+  },
+  sectionContainer: {
+    marginBottom: '2rem',
+    padding: '20px',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '12px',
+    border: '2px solid #e9ecef'
+  },
+  sectionTitle: {
+    margin: '0 0 16px 0',
+    fontSize: '18px',
+    fontWeight: '700',
+    color: '#333',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
+  formGroup: { 
+    marginBottom: '1.5rem' 
+  },
   formRow: { 
-    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', 
+    display: 'grid', 
+    gridTemplateColumns: '1fr 1fr', 
+    gap: '1.5rem', 
     marginBottom: '1rem' 
   },
   input: { 
-    width: '100%', padding: '10px 12px', boxSizing: 'border-box', 
-    border: '2px solid #e9ecef', borderRadius: '6px', fontSize: '14px',
-    transition: 'border-color 0.2s'
+    width: '100%', 
+    padding: '12px 16px', 
+    boxSizing: 'border-box', 
+    border: '2px solid #e9ecef', 
+    borderRadius: '8px', 
+    fontSize: '16px',
+    transition: 'all 0.2s',
+    backgroundColor: 'white'
+  },
+  selectInput: {
+    width: '100%', 
+    padding: '12px 16px', 
+    boxSizing: 'border-box', 
+    border: '2px solid #e9ecef', 
+    borderRadius: '8px', 
+    fontSize: '16px',
+    transition: 'all 0.2s',
+    backgroundColor: 'white',
+    appearance: 'none',
+    backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><polyline points=\'6,9 12,15 18,9\'></polyline></svg>")',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 12px center',
+    backgroundSize: '20px'
   },
   textArea: {
-    width: '100%', padding: '10px 12px', boxSizing: 'border-box', 
-    border: '2px solid #e9ecef', borderRadius: '6px', fontSize: '14px',
-    resize: 'vertical', minHeight: '80px'
+    width: '100%', 
+    padding: '12px 16px', 
+    boxSizing: 'border-box', 
+    border: '2px solid #e9ecef', 
+    borderRadius: '8px', 
+    fontSize: '16px',
+    resize: 'vertical', 
+    minHeight: '100px',
+    backgroundColor: 'white'
   },
   label: {
-    display: 'block', marginBottom: '4px', fontWeight: '600', 
-    fontSize: '14px', color: '#333'
+    display: 'block', 
+    marginBottom: '6px', 
+    fontWeight: '600', 
+    fontSize: '16px', 
+    color: '#333'
   },
   helpText: {
-    fontSize: '12px', color: '#6c757d', marginTop: '2px', display: 'block'
+    fontSize: '13px', 
+    color: '#6c757d', 
+    marginTop: '4px', 
+    display: 'block',
+    lineHeight: '1.4'
   },
   hr: { 
-    border: 'none', borderTop: '2px solid #f8f9fa', margin: '24px 0' 
+    border: 'none', 
+    borderTop: '3px solid #f8f9fa', 
+    margin: '32px 0' 
   },
   
-  // ✅ ENHANCED: Stock Management Styles
+  // Stock Management Styles
   stockContainer: {
-    border: '2px solid #e9ecef', borderRadius: '12px', 
-    padding: '20px', marginBottom: '1rem', backgroundColor: '#f8f9fa'
+    border: '2px solid #0d6efd', 
+    borderRadius: '16px', 
+    padding: '24px', 
+    marginBottom: '2rem', 
+    backgroundColor: '#f0f8ff'
   },
   stockHeader: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    marginBottom: '16px'
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    marginBottom: '20px'
   },
   stockTitle: {
-    margin: 0, fontSize: '16px', fontWeight: '700', color: '#333'
+    margin: 0, 
+    fontSize: '20px', 
+    fontWeight: '700', 
+    color: '#333'
   },
   toggleButton: {
-    padding: '6px 12px', background: '#6c757d', color: 'white',
-    border: 'none', borderRadius: '6px', fontSize: '12px',
-    cursor: 'pointer', transition: 'all 0.2s'
+    padding: '8px 16px', 
+    background: '#6c757d', 
+    color: 'white',
+    border: 'none', 
+    borderRadius: '8px', 
+    fontSize: '13px',
+    cursor: 'pointer', 
+    transition: 'all 0.2s',
+    fontWeight: '500'
+  },
+  stockExplanation: {
+    backgroundColor: '#fff3cd',
+    border: '2px solid #ffeaa7',
+    borderRadius: '8px',
+    padding: '16px',
+    marginBottom: '20px',
+    fontSize: '14px',
+    color: '#856404',
+    lineHeight: '1.5'
   },
   stockSummary: {
-    display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px',
-    marginBottom: '16px', padding: '12px', backgroundColor: 'white',
-    borderRadius: '8px', border: '1px solid #e9ecef'
+    display: 'grid', 
+    gridTemplateColumns: 'repeat(4, 1fr)', 
+    gap: '16px',
+    marginBottom: '20px', 
+    padding: '16px', 
+    backgroundColor: 'white',
+    borderRadius: '12px', 
+    border: '2px solid #e9ecef'
   },
   stockSummaryItem: {
     textAlign: 'center'
   },
   stockLabel: {
-    display: 'block', fontSize: '11px', color: '#6c757d',
-    fontWeight: '500', marginBottom: '2px'
+    display: 'block', 
+    fontSize: '12px', 
+    color: '#6c757d',
+    fontWeight: '600', 
+    marginBottom: '4px'
   },
   stockValue: {
-    display: 'block', fontSize: '16px', fontWeight: '700', color: '#333'
+    display: 'block', 
+    fontSize: '20px', 
+    fontWeight: '700', 
+    color: '#333'
   },
   progressContainer: {
-    marginBottom: '20px'
+    marginBottom: '24px'
   },
   progressLabel: {
-    fontSize: '12px', color: '#6c757d', marginBottom: '4px', fontWeight: '500'
+    fontSize: '14px', 
+    color: '#6c757d', 
+    marginBottom: '6px', 
+    fontWeight: '500'
   },
   progressBar: {
-    width: '100%', height: '8px', backgroundColor: '#e9ecef',
-    borderRadius: '4px', overflow: 'hidden'
+    width: '100%', 
+    height: '12px', 
+    backgroundColor: '#e9ecef',
+    borderRadius: '6px', 
+    overflow: 'hidden'
   },
   progressFill: {
-    height: '100%', transition: 'width 0.3s ease, background-color 0.3s ease'
+    height: '100%', 
+    transition: 'width 0.3s ease, background-color 0.3s ease'
   },
   
   // Simple Mode Styles
   simpleMode: {
-    backgroundColor: 'white', padding: '16px', borderRadius: '8px',
-    border: '1px solid #e9ecef'
+    backgroundColor: 'white', 
+    padding: '20px', 
+    borderRadius: '12px',
+    border: '2px solid #e9ecef'
   },
-  quickActionsContainer: {
-    marginTop: '16px'
+  stepContainer: {
+    marginBottom: '32px',
+    padding: '20px',
+    border: '2px solid #e9ecef',
+    borderRadius: '12px',
+    backgroundColor: '#fefefe'
   },
-  quickActionsHeader: {
-    marginBottom: '12px'
-  },
-  quickActions: {
-    display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px',
+  stepHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
     marginBottom: '16px'
   },
+  stepNumber: {
+    fontSize: '24px',
+    fontWeight: '700'
+  },
+  stepTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#333'
+  },
+  bigInput: {
+    width: '100%', 
+    padding: '16px 20px', 
+    boxSizing: 'border-box', 
+    border: '3px solid #0d6efd', 
+    borderRadius: '12px', 
+    fontSize: '18px',
+    fontWeight: '600',
+    textAlign: 'center',
+    backgroundColor: 'white'
+  },
+  stepHelp: {
+    fontSize: '14px',
+    color: '#6c757d',
+    marginTop: '8px',
+    textAlign: 'center',
+    fontStyle: 'italic'
+  },
+  quickActionsContainer: {
+    marginTop: '20px'
+  },
+  quickActions: {
+    display: 'grid', 
+    gridTemplateColumns: 'repeat(3, 1fr)', 
+    gap: '12px',
+    marginBottom: '20px'
+  },
   quickActionButton: {
-    padding: '12px 8px', border: '2px solid #e9ecef', borderRadius: '8px',
-    backgroundColor: 'white', cursor: 'pointer', transition: 'all 0.2s',
-    fontSize: '12px', fontWeight: '600', textAlign: 'center',
-    minHeight: '60px', display: 'flex', flexDirection: 'column',
-    justifyContent: 'center', alignItems: 'center'
+    padding: '16px 12px', 
+    border: '2px solid #e9ecef', 
+    borderRadius: '12px',
+    backgroundColor: 'white', 
+    cursor: 'pointer', 
+    transition: 'all 0.2s',
+    fontSize: '14px', 
+    fontWeight: '600', 
+    textAlign: 'center',
+    minHeight: '100px', 
+    display: 'flex', 
+    flexDirection: 'column',
+    justifyContent: 'center', 
+    alignItems: 'center',
+    gap: '4px'
   },
   quickActionActive: {
-    borderColor: '#0d6efd', backgroundColor: '#f0f8ff', color: '#0d6efd'
+    borderColor: '#0d6efd', 
+    backgroundColor: '#f0f8ff', 
+    color: '#0d6efd',
+    boxShadow: '0 4px 8px rgba(13, 110, 253, 0.2)'
+  },
+  quickActionDesc: {
+    fontSize: '11px',
+    color: '#6c757d',
+    fontWeight: '400',
+    marginTop: '4px'
   },
   customAmountContainer: {
-    border: '1px dashed #ccc', borderRadius: '6px', padding: '12px',
+    border: '2px dashed #ccc', 
+    borderRadius: '8px', 
+    padding: '16px',
     backgroundColor: '#fefefe'
   },
   customAmountLabel: {
-    fontSize: '12px', fontWeight: '500', color: '#666', marginBottom: '6px',
+    fontSize: '14px', 
+    fontWeight: '600', 
+    color: '#666', 
+    marginBottom: '8px',
     display: 'block'
   },
   customAmountInput: {
-    display: 'flex', alignItems: 'center', gap: '8px'
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '12px'
   },
   maxIndicator: {
-    fontSize: '11px', color: '#6c757d', fontStyle: 'italic'
+    fontSize: '12px', 
+    color: '#6c757d', 
+    fontStyle: 'italic'
   },
   suggestions: {
-    marginTop: '12px', padding: '10px', backgroundColor: '#fff3cd',
-    border: '1px solid #ffeaa7', borderRadius: '6px'
+    marginTop: '16px', 
+    padding: '12px', 
+    borderRadius: '8px'
   },
-  suggestion: {
-    fontSize: '12px', color: '#856404', lineHeight: '1.4'
+  suggestionGood: {
+    fontSize: '14px', 
+    color: '#155724',
+    backgroundColor: '#d4edda',
+    border: '2px solid #c3e6cb',
+    borderRadius: '6px',
+    padding: '12px',
+    lineHeight: '1.4'
+  },
+  suggestionWarning: {
+    fontSize: '14px', 
+    color: '#856404',
+    backgroundColor: '#fff3cd',
+    border: '2px solid #ffeaa7',
+    borderRadius: '6px',
+    padding: '12px',
+    lineHeight: '1.4'
   },
   
   // Advanced Mode Styles
   advancedMode: {
-    backgroundColor: 'white', padding: '16px', borderRadius: '8px',
-    border: '1px solid #e9ecef'
+    backgroundColor: 'white', 
+    padding: '20px', 
+    borderRadius: '12px',
+    border: '2px solid #e9ecef'
+  },
+  advancedHeader: {
+    marginBottom: '16px',
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#333'
   },
   advancedQuickActions: {
-    display: 'flex', gap: '6px', marginTop: '8px'
+    display: 'flex', 
+    gap: '8px', 
+    marginTop: '12px'
   },
   miniButton: {
-    padding: '4px 8px', background: '#f8f9fa', border: '1px solid #dee2e6',
-    borderRadius: '4px', fontSize: '11px', cursor: 'pointer',
+    padding: '6px 12px', 
+    background: '#f8f9fa', 
+    border: '2px solid #dee2e6',
+    borderRadius: '6px', 
+    fontSize: '12px', 
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    fontWeight: '500'
+  },
+  
+  // Image Upload Styles
+  imageUploadContainer: {
+    marginBottom: '24px'
+  },
+  imageUploadArea: {
+    position: 'relative',
+    marginBottom: '8px'
+  },
+  imagePreviewContainer: {
+    position: 'relative',
+    display: 'inline-block'
+  },
+  mainImagePreview: { 
+    width: '200px', 
+    height: '200px', 
+    objectFit: 'cover', 
+    borderRadius: '12px', 
+    border: '3px solid #28a745',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+  },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: '8px',
+    left: '8px',
+    right: '8px',
+    backgroundColor: 'rgba(40, 167, 69, 0.9)',
+    color: 'white',
+    padding: '4px 8px',
+    borderRadius: '4px',
+    fontSize: '12px',
+    textAlign: 'center',
+    fontWeight: '600'
+  },
+  imagePlaceholder: {
+    width: '200px',
+    height: '200px',
+    border: '3px dashed #ccc',
+    borderRadius: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f8f9fa',
+    color: '#6c757d',
+    fontSize: '48px',
+    cursor: 'pointer',
     transition: 'all 0.2s'
+  },
+  imagePlaceholderContent: {
+    textAlign: 'center',
+    fontSize: '14px',
+    lineHeight: '1.4'
+  },
+  fileInput: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    opacity: 0,
+    cursor: 'pointer'
+  },
+  additionalImagesContainer: {
+    marginTop: '12px'
+  },
+  subImageGrid: { 
+    display: 'flex', 
+    flexWrap: 'wrap', 
+    gap: '12px', 
+    marginBottom: '12px' 
+  },
+  subImagePreviewContainer: {
+    position: 'relative'
+  },
+  subImagePreview: {
+    width: '120px',
+    height: '120px',
+    objectFit: 'cover',
+    borderRadius: '8px',
+    border: '2px solid #0d6efd',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+  },
+  imageNumber: {
+    position: 'absolute',
+    top: '4px',
+    right: '4px',
+    backgroundColor: '#0d6efd',
+    color: 'white',
+    width: '24px',
+    height: '24px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    fontWeight: '600'
   },
   
   // Other Styles
-  dynamicSection: { 
-    border: '2px solid #0d6efd', borderRadius: '12px', padding: '16px', 
-    marginTop: '16px', backgroundColor: '#f0f8ff' 
+  attributesSection: { 
+    border: '2px solid #0d6efd', 
+    borderRadius: '16px', 
+    padding: '20px', 
+    marginTop: '20px', 
+    backgroundColor: '#f0f8ff' 
   },
-  imagePreview: { 
-    width: '100px', height: '100px', objectFit: 'cover', 
-    borderRadius: '6px', border: '2px solid #e9ecef', marginBottom: '10px' 
+  attributesGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '16px'
   },
-  subImageGrid: { 
-    display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '10px' 
+  discountDisplay: {
+    backgroundColor: '#d4edda',
+    border: '2px solid #c3e6cb',
+    borderRadius: '8px',
+    padding: '12px',
+    marginTop: '12px',
+    color: '#155724',
+    fontSize: '14px',
+    fontWeight: '600',
+    textAlign: 'center'
   },
   errorAlert: {
-    color: '#dc3545', fontSize: '14px', marginTop: '12px',
-    padding: '12px', backgroundColor: '#f8d7da', border: '1px solid #f5c6cb',
-    borderRadius: '6px'
+    color: '#721c24',
+    fontSize: '16px',
+    marginTop: '16px',
+    padding: '16px',
+    backgroundColor: '#f8d7da',
+    border: '2px solid #f5c6cb',
+    borderRadius: '8px',
+    lineHeight: '1.5'
   },
   buttonContainer: { 
-    display: 'flex', justifyContent: 'flex-end', gap: '12px', 
-    marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #e9ecef'
+    display: 'flex', 
+    justifyContent: 'flex-end', 
+    gap: '16px', 
+    marginTop: '32px', 
+    paddingTop: '20px', 
+    borderTop: '2px solid #e9ecef'
   },
   buttonPrimary: { 
-    padding: '12px 24px', backgroundColor: '#0d6efd', color: 'white', 
-    border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px',
-    fontWeight: '600', transition: 'all 0.2s'
+    padding: '14px 28px', 
+    backgroundColor: '#0d6efd', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '8px', 
+    cursor: 'pointer', 
+    fontSize: '16px',
+    fontWeight: '600', 
+    transition: 'all 0.2s'
   },
   buttonSecondary: { 
-    padding: '12px 24px', backgroundColor: '#6c757d', color: 'white', 
-    border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px',
-    fontWeight: '600', transition: 'all 0.2s'
+    padding: '14px 28px', 
+    backgroundColor: '#6c757d', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '8px', 
+    cursor: 'pointer', 
+    fontSize: '16px',
+    fontWeight: '600', 
+    transition: 'all 0.2s'
   }
 };

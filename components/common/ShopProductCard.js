@@ -10,7 +10,9 @@ import {
   Heart,
   Star,
   RefreshCw,
-  X
+  X,
+  Zap,
+  Eye
 } from 'lucide-react';
 
 // ✅ Helper function to get API base URL
@@ -59,11 +61,15 @@ export default function ShopProductCard({
   showStoreName = false,
   // ✅ Wishlist props
   isWishlisted = false,
-  onWishlistUpdate = null // Callback to update parent state
+  onWishlistUpdate = null, // Callback to update parent state
+  // ✅ NEW: Enhanced props
+  showQuickView = false,
+  compact = false // For mobile grid view
 }) {
   const [imageError, setImageError] = useState(false);
   const [localWishlistState, setLocalWishlistState] = useState(isWishlisted);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   // ✅ Sync with parent wishlist state + debug logging
   useEffect(() => {
@@ -110,17 +116,33 @@ export default function ShopProductCard({
     return `/shop/${sellerPhone}/product/${product.id}`;
   };
 
-  // ✅ Enhanced image URL function
+  // ✅ Enhanced image URL function with Cloudinary support
   const getImageUrl = (product) => {
     if (!product) return 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
 
-    const imageUrl = product.main_image_url || product.image_url;
+    // Priority order for different image types
+    const imageUrl = product.main_image_url ||
+      product.image_url ||
+      product.cloudinary_url ||
+      product.thumbnail_url;
 
-    if (imageUrl && imageUrl.startsWith('/media/')) {
+    if (!imageUrl) return 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
+
+    // If it's already a Cloudinary URL, return as is
+    if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
+      return imageUrl;
+    }
+
+    // Handle local URLs
+    if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
       return `${API_BASE_URL}${imageUrl}`;
     }
 
-    return imageUrl || 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+
+    return imageUrl.startsWith('/') ? `${API_BASE_URL}${imageUrl}` : imageUrl;
   };
 
   // ✅ FIXED: Proper wishlist toggle with better event handling
@@ -242,6 +264,14 @@ export default function ShopProductCard({
     if (stock === 0) return 'out-of-stock';
     if (stock <= 5) return 'low-stock';
     return 'in-stock';
+  };
+
+  // ✅ NEW: Quick actions handler
+  const handleQuickView = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // You can implement a modal or redirect to product page
+    window.open(getProductUrl(), '_blank');
   };
 
   return (
@@ -440,7 +470,7 @@ export default function ShopProductCard({
   );
 }
 
-// ✅ Enhanced styles with rating in product info
+// ✅ Enhanced styles with better mobile support and loading states
 const styles = {
   shopProductCard: {
     width: "100%",
@@ -455,6 +485,10 @@ const styles = {
     position: "relative"
   },
 
+  compactCard: {
+    maxWidth: "180px"
+  },
+
   productLink: {
     textDecoration: 'none',
     color: 'inherit',
@@ -463,7 +497,8 @@ const styles = {
 
   productImageLink: {
     display: 'block',
-    textDecoration: 'none'
+    textDecoration: 'none',
+    position: 'relative'
   },
 
   productImageWrapper: {
@@ -477,10 +512,25 @@ const styles = {
     width: '100%',
     height: '180px',
     objectFit: 'cover',
-    transition: 'transform 0.3s ease'
+    transition: 'all 0.3s ease'
   },
 
+  imageLoader: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    zIndex: 1
+  },
 
+  spinner: {
+    width: '20px',
+    height: '20px',
+    border: '2px solid #f3f3f3',
+    borderTop: '2px solid #059669',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  },
 
   productBadges: {
     position: 'absolute',
@@ -491,9 +541,6 @@ const styles = {
     gap: '4px',
     zIndex: 2
   },
-
-
-
 
   badgeDiscount: {
     padding: '4px 8px',
@@ -523,11 +570,26 @@ const styles = {
     fontWeight: '600'
   },
 
+  badgeFastLoading: {
+    padding: '3px 6px',
+    backgroundColor: 'rgba(34, 197, 94, 0.9)',
+    color: 'white',
+    fontSize: '9px',
+    borderRadius: '4px',
+    fontWeight: '600',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '2px'
+  },
+
   quickActions: {
     position: 'absolute',
     top: '8px',
     right: '8px',
     zIndex: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px'
   },
 
   quickActionBtn: {
@@ -568,6 +630,9 @@ const styles = {
     justifyContent: 'space-between',
   },
 
+  compactInfo: {
+    padding: '8px'
+  },
 
   storeName: {
     fontSize: '0.8rem',
@@ -593,42 +658,17 @@ const styles = {
     overflow: 'hidden'
   },
 
-
   productModel: {
     fontSize: '0.85rem',
     fontWeight: '400',
     color: '#6b7280',
     marginLeft: '4px',
-    whiteSpace: "nowrap",       // force one line
-    overflow: "hidden",         // cut extra text
-    textOverflow: "ellipsis",   // add "..."
-    maxWidth: "120px",          // width decides how much text is visible
-    display: "inline-block",    // required for ellipsis
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: "120px",
+    display: "inline-block",
     verticalAlign: "middle"
-  },
-
-  productRating: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    marginBottom: '8px'
-  },
-
-  ratingStars: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1px'
-  },
-
-  ratingNumber: {
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    color: '#1f2937'
-  },
-
-  reviewCountText: {
-    fontSize: '0.8rem',
-    color: '#6b7280'
   },
 
   productPricing: {
@@ -654,23 +694,11 @@ const styles = {
     textDecoration: 'line-through'
   },
 
-  wishlistIndicator: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    fontSize: '0.8rem',
-    color: '#ef4444',
+  savingsText: {
+    fontSize: '0.75rem',
+    color: '#059669',
     fontWeight: '500',
-    marginBottom: '8px',
-    padding: '4px 6px',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: '12px',
-    width: 'fit-content'
-  },
-
-  productActions: {
-    padding: '16px',
-    borderTop: '1px solid #f3f4f6'
+    marginTop: '2px'
   },
 
   addToCartBtn: {
@@ -690,7 +718,19 @@ const styles = {
     transition: 'all 0.2s'
   },
 
+  compactButton: {
+    padding: '6px 8px',
+    fontSize: '11px'
+  },
 
+  disabledButton: {
+    backgroundColor: '#9ca3af',
+    cursor: 'not-allowed'
+  },
+
+  inCartButton: {
+    backgroundColor: '#3b82f6'
+  },
 
   // ✅ Rating overlay (existing) - on image
   ratingOverlay: {
@@ -702,7 +742,7 @@ const styles = {
     color: "white",
     display: "flex",
     alignItems: "center",
-    padding: "13px 12px",
+    padding: "8px 12px",
     boxSizing: "border-box",
     zIndex: 2,
   },
@@ -710,7 +750,7 @@ const styles = {
   ratingLeft: {
     display: "flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "4px",
   },
 
   ratingLeftText: {
@@ -720,7 +760,7 @@ const styles = {
   },
 
   ratingRight: {
-    fontSize: "0.8rem",
+    fontSize: "0.75rem",
     fontWeight: 500,
     color: "white",
     marginLeft: "auto",

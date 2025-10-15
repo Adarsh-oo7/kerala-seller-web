@@ -42,25 +42,22 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
 
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      if (currentScrollY > 100 && currentScrollY > lastScrollY) {
+      if (window.scrollY > 100) {
         setShow(true);
-      } else if (currentScrollY < lastScrollY || currentScrollY < 50) {
+      } else {
         setShow(false);
       }
-
-      setLastScrollY(currentScrollY);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
 
-    if (window.scrollY > 100) {
-      setShow(true);
-    }
+    // No need to call setShow here — it will update on scroll
+    // setShow(window.scrollY > 100); <-- remove this line
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, []);
+
+
 
   // ✅ UPDATED: Active index tracking with query parameters
   useEffect(() => {
@@ -109,26 +106,26 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
       href: getNavUrl(''),
       icon: Home,
       label: "Home",
-      color: "#D2691E"
+      color: "#64ff45ff"
     },
     {
       href: getNavUrl('/cart'),
       icon: ShoppingCart,
       label: "Cart",
-      color: "#CD853F",
+      color: "#64ff45ff",
       badge: storeCartCount
     },
     {
       href: getNavUrl('/about'),
       icon: Info,
       label: "About",
-      color: "#DEB887"
+      color: "#64ff45ff"
     },
     {
       href: getNavUrl('/profile'),
       icon: User,
       label: "Profile",
-      color: "#F4A460"
+      color: "#64ff45ff"
     }
   ];
 
@@ -141,7 +138,7 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
       <div className={styles.navBackground}></div>
       <div className={styles.activeIndicator} style={{
         transform: `translateX(${activeIndex * 100}%)`,
-        background: `linear-gradient(135deg, ${navItems[activeIndex]?.color || '#D2691E'}, ${navItems[activeIndex]?.color || '#D2691E'}90)`
+        // background: `linear-gradient(135deg, ${navItems[activeIndex]?.color || '#a5d691ff'}, ${navItems[activeIndex]?.color || '#a5d691ff'}90)`
       }}></div>
 
       {navItems.map((item, index) => {
@@ -156,9 +153,11 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
             aria-label={`${item.label}${item.badge ? ` with ${item.badge} items` : ""}`}
           >
             <div className={styles.navIcon} style={{
-              color: isActive ? item.color : '#8B4513'
+              color: isActive ? item.color : '#ffffffff'
             }}>
-              <IconComponent size={isActive ? 24 : 20} />
+              <IconComponent
+                className={`${styles.BottomNavIconSize} ${isActive ? styles.activeIcon : ''}`}
+              />
               {item.badge && item.badge > 0 && (
                 <span className={styles.cartBadge}>{item.badge}</span>
               )}
@@ -166,7 +165,7 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
             <span
               className={styles.navLabel}
               style={{
-                color: isActive ? item.color : '#8B4513',
+                color: isActive ? item.color : '#ffffffff',
                 transform: isActive ? 'scale(1.05)' : 'scale(1)'
               }}
             >
@@ -465,11 +464,11 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
               )}
               <div>
                 <span className={styles.menuBrandName}>{storeData.name}</span>
-                <span className={styles.menuBrandTagline}>Premium Store</span>
+                <span className={styles.menuBrandTagline}>{storeData.tagline}</span>
               </div>
             </div>
             <button onClick={() => setIsMobileMenuOpen(false)} aria-label="Close menu">
-              <CloseIcon size={22} />
+              <CloseIcon size={20} />
             </button>
           </div>
 

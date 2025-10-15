@@ -4,8 +4,6 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Header from '../../../components/common/Header';
-import Footer from '../../../components/common/Footer';
 import { 
   Store, 
   User, 
@@ -20,10 +18,23 @@ import {
   AlertCircle 
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// ✅ Enhanced API configuration
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
+  }
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  return 'https://keralaseller-backend.onrender.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const SEND_OTP_API = `${API_BASE_URL}/user/send-otp/`;
 const REGISTER_API = `${API_BASE_URL}/user/register/`;
+
+console.log('🌐 Registration API URLs:', { API_BASE_URL, SEND_OTP_API, REGISTER_API });
 
 export default function RegisterSellerPage() {
     const [step, setStep] = useState(1);
@@ -81,7 +92,7 @@ export default function RegisterSellerPage() {
         if (!formData.phone.trim()) {
             errors.phone = 'Phone number is required';
         } else if (!validatePhone(formData.phone)) {
-            errors.phone = 'Please enter a valid 10-digit phone number';
+            errors.phone = 'Please enter a valid 10-digit phone number (6-9xxxxxxxxx)';
         }
         
         if (!formData.password) {
@@ -135,26 +146,45 @@ export default function RegisterSellerPage() {
         setIsLoading(true);
         
         try {
-            await axios.post(SEND_OTP_API, { 
-                phone: formData.phone.trim(),
-                name: formData.name.trim(),
-                shop_name: formData.shop_name.trim(),
-                email: formData.email.trim()
+            console.log('🔍 Sending OTP for phone:', formData.phone);
+            
+            const response = await axios.post(SEND_OTP_API, { 
+                phone: formData.phone.trim()
+            }, {
+                timeout: 15000,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
+            
+            console.log('✅ OTP sent successfully');
             setStep(2);
+            
         } catch (err) {
-            console.error('OTP send error:', err);
-            const errorMessage = err.response?.data?.error || 
-                               err.response?.data?.message ||
-                               err.response?.data?.phone?.[0] ||
-                               'Failed to send OTP. Please try again.';
+            console.error('❌ OTP send error:', err);
+            console.error('❌ Error response:', err.response?.data);
+            
+            let errorMessage = 'Failed to send OTP. Please try again.';
+            
+            if (err.response?.data?.error) {
+                errorMessage = err.response.data.error;
+            } else if (err.response?.data?.phone) {
+                errorMessage = Array.isArray(err.response.data.phone) 
+                    ? err.response.data.phone[0] 
+                    : err.response.data.phone;
+            } else if (err.response?.status === 400) {
+                errorMessage = 'Invalid phone number format. Please check and try again.';
+            } else if (err.code === 'ECONNABORTED') {
+                errorMessage = 'Request timed out. Please check your connection and try again.';
+            }
+            
             setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // ✅ FIXED: Added confirmPassword to the registration request
+    // ✅ FINAL FIX: Send exact fields that backend serializer expects
     const handleCompleteRegistration = async (e) => {
         e.preventDefault();
         setError('');
@@ -167,51 +197,74 @@ export default function RegisterSellerPage() {
         setIsLoading(true);
         
         try {
-            console.log('🔍 Sending registration data:', {
-                name: formData.name.trim(),
-                shop_name: formData.shop_name.trim(),
+            // ✅ FIXED: Send exact fields that backend serializer expects
+            const registrationData = {
                 phone: formData.phone.trim(),
-                email: formData.email.trim(),
                 password: formData.password,
-                confirmPassword: formData.confirmPassword, // ✅ ADDED THIS
+                name: formData.name.trim(),  // ✅ 'name' not 'full_name'
+                shop_name: formData.shop_name.trim(),
+                email: formData.email.trim(),
+                confirmPassword: formData.confirmPassword, // ✅ Include this field
                 otp: formData.otp.trim(),
+            };
+            
+            console.log('🔍 Sending registration data:', {
+                ...registrationData,
+                password: '***hidden***',
+                confirmPassword: '***hidden***'
             });
 
-            await axios.post(REGISTER_API, {
-                name: formData.name.trim(),
-                shop_name: formData.shop_name.trim(),
-                phone: formData.phone.trim(),
-                email: formData.email.trim(),
-                password: formData.password,
-                confirmPassword: formData.confirmPassword, // ✅ FIXED: Added this field
-                otp: formData.otp.trim(),
+            const response = await axios.post(REGISTER_API, registrationData, {
+                timeout: 15000,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
             
+            console.log('✅ Registration successful:', response.data);
+            
             // Show success message and redirect
+            setError(''); // Clear any errors
             setTimeout(() => {
-                router.push('/login/seller?message=Registration successful! Please log in.');
-            }, 1000);
+                router.push('/login/seller?message=Registration successful! Please log in with your credentials.');
+            }, 1500);
             
         } catch (err) {
-            console.error('Registration error:', err);
-            console.error('Error response:', err.response?.data);
+            console.error('❌ Registration error:', err);
+            console.error('❌ Error response:', err.response?.data);
             
-            // ✅ Enhanced error handling
+            // ✅ Enhanced error handling for backend constraint errors
             const errorData = err.response?.data;
             let errorMessage = 'Registration failed. Please try again.';
             
-            if (errorData?.phone?.[0]) {
+            if (errorData?.error) {
+                if (errorData.error.includes('seller account already exists')) {
+                    errorMessage = 'A seller account with this phone number already exists. Please try logging in instead.';
+                } else if (errorData.error.includes('UNIQUE constraint')) {
+                    errorMessage = 'An account with this information already exists. Please check your details or try logging in.';
+                } else {
+                    errorMessage = errorData.error;
+                }
+            } else if (errorData?.phone?.[0]) {
                 errorMessage = errorData.phone[0];
-            } else if (errorData?.confirmPassword?.[0]) {
-                errorMessage = errorData.confirmPassword[0];
-            } else if (errorData?.otp?.[0]) {
-                errorMessage = errorData.otp[0];
             } else if (errorData?.email?.[0]) {
                 errorMessage = errorData.email[0];
-            } else if (errorData?.error) {
-                errorMessage = errorData.error;
-            } else if (errorData?.message) {
-                errorMessage = errorData.message;
+            } else if (errorData?.otp?.[0]) {
+                errorMessage = errorData.otp[0];
+            } else if (errorData?.name?.[0]) {  // ✅ Handle 'name' field errors
+                errorMessage = errorData.name[0];
+            } else if (errorData?.shop_name?.[0]) {
+                errorMessage = errorData.shop_name[0];
+            } else if (errorData?.password?.[0]) {
+                errorMessage = errorData.password[0];
+            } else if (errorData?.confirmPassword?.[0]) {  // ✅ Handle confirmPassword errors
+                errorMessage = errorData.confirmPassword[0];
+            } else if (err.response?.status === 400) {
+                errorMessage = 'Invalid registration data. Please check all fields and try again.';
+            } else if (err.response?.status === 409) {
+                errorMessage = 'An account with this phone number or email already exists.';
+            } else if (err.code === 'ECONNABORTED') {
+                errorMessage = 'Request timed out. Please check your connection and try again.';
             }
             
             setError(errorMessage);
@@ -226,13 +279,21 @@ export default function RegisterSellerPage() {
         
         try {
             await axios.post(SEND_OTP_API, { 
-                phone: formData.phone.trim(),
-                name: formData.name.trim(),
-                shop_name: formData.shop_name.trim(),
-                email: formData.email.trim()
+                phone: formData.phone.trim()
+            }, {
+                timeout: 10000,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
-            setError('OTP has been resent to your phone');
+            
+            setError(''); // Clear error first, then show success
+            setTimeout(() => {
+                setError('OTP has been resent to your phone');
+            }, 100);
+            
         } catch (err) {
+            console.error('❌ Resend OTP error:', err);
             setError('Failed to resend OTP. Please try again.');
         } finally {
             setIsLoading(false);
@@ -354,20 +415,23 @@ export default function RegisterSellerPage() {
                                     <Phone size={16} />
                                     Phone Number
                                 </label>
-                                <input 
-                                    type="tel" 
-                                    name="phone" 
-                                    value={formData.phone}
-                                    onChange={handleChange} 
-                                    placeholder="Enter 10-digit phone number" 
-                                    required 
-                                    style={{
-                                        ...styles.input,
-                                        ...(validationErrors.phone ? styles.inputError : {})
-                                    }}
-                                    maxLength={10}
-                                    disabled={isLoading}
-                                />
+                                <div style={styles.phoneInputContainer}>
+                                    <span style={styles.countryCode}>+91</span>
+                                    <input 
+                                        type="tel" 
+                                        name="phone" 
+                                        value={formData.phone}
+                                        onChange={handleChange} 
+                                        placeholder="Enter 10-digit phone number" 
+                                        required 
+                                        style={{
+                                            ...styles.phoneInput,
+                                            ...(validationErrors.phone ? styles.inputError : {})
+                                        }}
+                                        maxLength={10}
+                                        disabled={isLoading}
+                                    />
+                                </div>
                                 {validationErrors.phone && (
                                     <span style={styles.errorText}>{validationErrors.phone}</span>
                                 )}
@@ -684,6 +748,34 @@ const styles = {
         backgroundColor: '#ffffff',
         transition: 'all 0.2s ease',
         boxSizing: 'border-box',
+        outline: 'none'
+    },
+    
+    // ✅ Enhanced phone input styling
+    phoneInputContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
+        backgroundColor: '#ffffff',
+        overflow: 'hidden'
+    },
+
+    countryCode: {
+        padding: '14px 12px',
+        backgroundColor: '#f9fafb',
+        borderRight: '1px solid #d1d5db',
+        fontSize: '1rem',
+        color: '#374151',
+        fontWeight: '500'
+    },
+
+    phoneInput: {
+        width: '100%',
+        padding: '14px 16px',
+        border: 'none',
+        fontSize: '1rem',
+        backgroundColor: 'transparent',
         outline: 'none'
     },
     

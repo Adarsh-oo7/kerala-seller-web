@@ -55,7 +55,7 @@ function LoginForm() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [rememberMe, setRememberMe] = useState(false);
   const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true); // ✅ NEW: Auth check state
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   // ✅ Get current store info from URL
   useEffect(() => {
@@ -87,7 +87,7 @@ function LoginForm() {
         console.log('🔍 Checking existing seller token...');
         
         // Verify token is still valid by making a quick API call
-        const response = await axios.get(`${API_BASE_URL}/user/store/profile/`, {
+        const response = await axios.get(`${API_BASE_URL}/user/dashboard/`, {
           headers: { Authorization: `Bearer ${token}` },
           timeout: 5000
         });
@@ -170,16 +170,19 @@ function LoginForm() {
     try {
       console.log('🔍 Attempting seller login with phone:', phone);
       
+      // ✅ FIXED: Send clean phone number and proper headers
       const response = await axios.post(LOGIN_API_URL, { 
         phone: phone.trim(), 
         password: password,
-        user_type: 'seller',
-        store_context: currentStoreInfo.isInStore ? currentStoreInfo.storeId : null
+        user_type: 'seller'
       }, {
-        timeout: 15000
+        timeout: 15000,
+        headers: {
+          'Content-Type': 'application/json'  // ✅ Ensure proper content type
+        }
       });
       
-      console.log('✅ Login response received');
+      console.log('✅ Login response received:', response.data);
       
       // ✅ FIXED: Better token handling
       const token = response.data.access_token || 
@@ -192,7 +195,7 @@ function LoginForm() {
       
       const { seller, debug_info } = response.data;
       
-      console.log('✅ Login successful for:', debug_info?.admin_user_email || phone);
+      console.log('✅ Login successful for:', debug_info?.admin_user_email || seller?.email || phone);
       
       // ✅ CRITICAL: Clear any existing invalid tokens first
       localStorage.removeItem('accessToken');
@@ -232,7 +235,22 @@ function LoginForm() {
       
       let errorMessage = 'Login failed. Please check your credentials.';
       
-      if (err.response?.status === 401) {
+      if (err.response?.status === 400) {
+        // ✅ FIXED: Handle specific 400 error messages from backend
+        if (err.response.data?.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.response.data?.phone) {
+          errorMessage = Array.isArray(err.response.data.phone) 
+            ? err.response.data.phone[0] 
+            : err.response.data.phone;
+        } else if (err.response.data?.password) {
+          errorMessage = Array.isArray(err.response.data.password) 
+            ? err.response.data.password[0] 
+            : err.response.data.password;
+        } else {
+          errorMessage = 'Invalid request. Please check your phone number and password format.';
+        }
+      } else if (err.response?.status === 401) {
         errorMessage = 'Invalid phone number or password. Please check your credentials.';
       } else if (err.response?.status === 404) {
         errorMessage = 'No seller account found with this phone number. Please create an account first.';

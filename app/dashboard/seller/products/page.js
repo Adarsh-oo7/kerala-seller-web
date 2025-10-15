@@ -15,7 +15,15 @@ import {
   TrendingUp,
   TrendingDown,
   Eye,
-  ExternalLink
+  ExternalLink,
+  Grid,
+  List,
+  Download,
+  Upload,
+  BarChart3,
+  ShoppingCart,
+  DollarSign,
+  Layers
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
@@ -32,6 +40,9 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all'); // all, low_stock, out_of_stock
   const [isDeleting, setIsDeleting] = useState(null);
+  const [viewMode, setViewMode] = useState('table'); // table, grid
+  const [sortBy, setSortBy] = useState('name'); // name, price, stock, created_at
+  const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
 
   const fetchProducts = useCallback(async () => {
     const token = localStorage.getItem('accessToken');
@@ -90,7 +101,7 @@ export default function ProductsPage() {
     }
   }, []);
 
-  // Apply filters and search
+  // ✅ Enhanced filtering and sorting
   useEffect(() => {
     let filtered = [...products];
 
@@ -99,7 +110,8 @@ export default function ProductsPage() {
       filtered = filtered.filter(product =>
         product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.model_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+        product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -120,13 +132,46 @@ export default function ProductsPage() {
           product.online_stock > 5
         );
         break;
+      case 'high_value':
+        filtered = filtered.filter(product => 
+          parseFloat(product.price || 0) > 1000
+        );
+        break;
       default:
         // 'all' - no additional filtering
         break;
     }
 
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortBy) {
+        case 'price':
+          aValue = parseFloat(a.price || 0);
+          bValue = parseFloat(b.price || 0);
+          break;
+        case 'stock':
+          aValue = parseInt(a.online_stock || 0);
+          bValue = parseInt(b.online_stock || 0);
+          break;
+        case 'created_at':
+          aValue = new Date(a.created_at || 0);
+          bValue = new Date(b.created_at || 0);
+          break;
+        default: // name
+          aValue = (a.name || '').toLowerCase();
+          bValue = (b.name || '').toLowerCase();
+          break;
+      }
+
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
     setFilteredProducts(filtered);
-  }, [products, searchTerm, filterType]);
+  }, [products, searchTerm, filterType, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchProducts();
@@ -139,7 +184,6 @@ export default function ProductsPage() {
     setIsDeleting(productId);
     
     try {
-      // ✅ FIXED: Use Bearer instead of Token
       await axios.delete(`${API_URL}${productId}/`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -174,6 +218,16 @@ export default function ProductsPage() {
     handleCloseModal();
     fetchProducts();
   };
+
+  // ✅ Enhanced sort handler
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
   
   // Helper to display the sale type nicely
   const formatSaleType = (type) => {
@@ -199,7 +253,23 @@ export default function ProductsPage() {
       all: products.length,
       low_stock: products.filter(p => p.online_stock > 0 && p.online_stock <= 5).length,
       out_of_stock: products.filter(p => p.online_stock <= 0).length,
-      in_stock: products.filter(p => p.online_stock > 5).length
+      in_stock: products.filter(p => p.online_stock > 5).length,
+      high_value: products.filter(p => parseFloat(p.price || 0) > 1000).length
+    };
+  };
+
+  // ✅ Analytics calculations
+  const getAnalytics = () => {
+    const totalProducts = products.length;
+    const totalValue = products.reduce((sum, p) => sum + (parseFloat(p.price || 0) * parseInt(p.online_stock || 0)), 0);
+    const averagePrice = totalProducts > 0 ? products.reduce((sum, p) => sum + parseFloat(p.price || 0), 0) / totalProducts : 0;
+    const lowStockCount = products.filter(p => p.online_stock > 0 && p.online_stock <= 5).length;
+
+    return {
+      totalProducts,
+      totalValue,
+      averagePrice,
+      lowStockCount
     };
   };
 
@@ -229,9 +299,85 @@ export default function ProductsPage() {
   }
 
   const filterCounts = getFilterCounts();
+  const analytics = getAnalytics();
+
+  // ✅ Enhanced Grid View Component
+  const GridView = () => (
+    <div style={styles.gridContainer}>
+      {filteredProducts.map(product => {
+        const stockStatus = getStockStatus(product.online_stock);
+        
+        return (
+          <div key={product.id} style={styles.gridCard}>
+            <div style={styles.cardImageContainer}>
+              <img 
+                src={product.image_url || product.main_image_url || 'https://via.placeholder.com/200x200/e9ecef/6c757d?text=No+Image'} 
+                alt={product.name} 
+                style={styles.cardImage}
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/200x200/e9ecef/6c757d?text=No+Image';
+                }}
+              />
+              <div style={styles.cardImageOverlay}>
+                <span style={{
+                  ...styles.statusBadge,
+                  backgroundColor: stockStatus.bgColor,
+                  color: stockStatus.color
+                }}>
+                  {stockStatus.label}
+                </span>
+              </div>
+            </div>
+            
+            <div style={styles.cardContent}>
+              <h3 style={styles.cardTitle}>{product.name || 'Unnamed Product'}</h3>
+              {product.model_name && (
+                <p style={styles.cardModel}>Model: {product.model_name}</p>
+              )}
+              
+              <div style={styles.cardPriceContainer}>
+                <span style={styles.cardPrice}>₹{parseFloat(product.price || 0).toLocaleString('en-IN')}</span>
+                {product.mrp && parseFloat(product.mrp) > parseFloat(product.price) && (
+                  <span style={styles.cardMrp}>₹{parseFloat(product.mrp).toLocaleString('en-IN')}</span>
+                )}
+              </div>
+              
+              <div style={styles.cardStock}>
+                <span>Stock: {product.online_stock || 0}</span>
+                <span style={styles.cardSaleType}>{formatSaleType(product.sale_type)}</span>
+              </div>
+            </div>
+            
+            <div style={styles.cardActions}>
+              <button 
+                onClick={() => handleOpenModal(product)} 
+                style={styles.cardButton}
+                title="Edit product"
+              >
+                <Edit size={16} />
+              </button>
+              <button 
+                onClick={() => handleDelete(product.id)} 
+                style={{...styles.cardButton, ...styles.cardButtonDanger}}
+                disabled={isDeleting === product.id}
+                title="Delete product"
+              >
+                {isDeleting === product.id ? (
+                  <div style={styles.smallSpinner}></div>
+                ) : (
+                  <Trash2 size={16} />
+                )}
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div style={styles.container}>
+      {/* ✅ Enhanced Header with Analytics */}
       <div style={styles.header}>
         <div>
           <h1 style={styles.h1}>
@@ -240,23 +386,113 @@ export default function ProductsPage() {
           </h1>
           <p style={styles.subtitle}>Manage your product inventory and listings</p>
         </div>
-        <button onClick={() => handleOpenModal()} style={styles.buttonPrimary}>
-          <Plus size={18} />
-          Add Product
-        </button>
+        <div style={styles.headerActions}>
+          <button onClick={() => handleOpenModal()} style={styles.buttonPrimary}>
+            <Plus size={18} />
+            Add Product
+          </button>
+        </div>
       </div>
 
-      {/* Search and Filters */}
+      {/* ✅ Analytics Cards */}
+      <div style={styles.analyticsContainer}>
+        <div style={styles.analyticsCard}>
+          <div style={styles.analyticsIcon}>
+            <Package size={20} />
+          </div>
+          <div>
+            <p style={styles.analyticsLabel}>Total Products</p>
+            <p style={styles.analyticsValue}>{analytics.totalProducts}</p>
+          </div>
+        </div>
+        
+        <div style={styles.analyticsCard}>
+          <div style={styles.analyticsIcon}>
+            <DollarSign size={20} />
+          </div>
+          <div>
+            <p style={styles.analyticsLabel}>Inventory Value</p>
+            <p style={styles.analyticsValue}>₹{analytics.totalValue.toLocaleString('en-IN')}</p>
+          </div>
+        </div>
+        
+        <div style={styles.analyticsCard}>
+          <div style={styles.analyticsIcon}>
+            <BarChart3 size={20} />
+          </div>
+          <div>
+            <p style={styles.analyticsLabel}>Average Price</p>
+            <p style={styles.analyticsValue}>₹{Math.round(analytics.averagePrice).toLocaleString('en-IN')}</p>
+          </div>
+        </div>
+        
+        <div style={styles.analyticsCard}>
+          <div style={styles.analyticsIcon}>
+            <AlertCircle size={20} />
+          </div>
+          <div>
+            <p style={styles.analyticsLabel}>Low Stock Items</p>
+            <p style={styles.analyticsValue}>{analytics.lowStockCount}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ✅ Enhanced Search and Filters */}
       <div style={styles.filtersContainer}>
-        <div style={styles.searchContainer}>
-          <Search size={18} style={styles.searchIcon} />
-          <input
-            type="text"
-            placeholder="Search products by name, model, or SKU..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={styles.searchInput}
-          />
+        <div style={styles.searchAndSort}>
+          <div style={styles.searchContainer}>
+            <Search size={18} style={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Search products by name, model, SKU, or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={styles.searchInput}
+            />
+          </div>
+          
+          <div style={styles.sortContainer}>
+            <label style={styles.sortLabel}>Sort by:</label>
+            <select 
+              value={`${sortBy}-${sortOrder}`} 
+              onChange={(e) => {
+                const [field, order] = e.target.value.split('-');
+                setSortBy(field);
+                setSortOrder(order);
+              }}
+              style={styles.sortSelect}
+            >
+              <option value="name-asc">Name A-Z</option>
+              <option value="name-desc">Name Z-A</option>
+              <option value="price-asc">Price Low to High</option>
+              <option value="price-desc">Price High to Low</option>
+              <option value="stock-asc">Stock Low to High</option>
+              <option value="stock-desc">Stock High to Low</option>
+              <option value="created_at-desc">Newest First</option>
+              <option value="created_at-asc">Oldest First</option>
+            </select>
+          </div>
+          
+          <div style={styles.viewToggle}>
+            <button
+              onClick={() => setViewMode('table')}
+              style={{
+                ...styles.viewButton,
+                ...(viewMode === 'table' ? styles.activeViewButton : {})
+              }}
+            >
+              <List size={16} />
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              style={{
+                ...styles.viewButton,
+                ...(viewMode === 'grid' ? styles.activeViewButton : {})
+              }}
+            >
+              <Grid size={16} />
+            </button>
+          </div>
         </div>
         
         <div style={styles.filterTabs}>
@@ -296,6 +532,15 @@ export default function ProductsPage() {
           >
             Out of Stock ({filterCounts.out_of_stock})
           </button>
+          <button
+            onClick={() => setFilterType('high_value')}
+            style={{
+              ...styles.filterTab,
+              ...(filterType === 'high_value' ? styles.activeFilterTab : {})
+            }}
+          >
+            High Value ({filterCounts.high_value})
+          </button>
         </div>
       </div>
 
@@ -308,107 +553,115 @@ export default function ProductsPage() {
       )}
 
       {filteredProducts.length > 0 ? (
-        <div style={styles.tableContainer}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Product</th>
-                <th style={styles.th}>Price</th>
-                <th style={styles.th}>Stock (Online/Total)</th>
-                <th style={styles.th}>Status</th>
-                <th style={styles.th}>Sale Type</th>
-                <th style={styles.th}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map(product => {
-                const stockStatus = getStockStatus(product.online_stock);
-                
-                return (
-                  <tr key={product.id} style={styles.tr}>
-                    <td style={styles.td}>
-                      <div style={styles.productInfo}>
-                        <img 
-                          src={product.image_url || product.main_image_url || 'https://via.placeholder.com/60x60/e9ecef/6c757d?text=No+Image'} 
-                          alt={product.name} 
-                          style={styles.image}
-                          onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/60x60/e9ecef/6c757d?text=No+Image';
-                          }}
-                        />
-                        <div style={styles.productDetails}>
-                          <strong style={styles.productName}>
-                            {product.name || 'Unnamed Product'}
-                          </strong>
-                          {product.model_name && (
-                            <small style={styles.modelName}>
-                              Model: {product.model_name}
-                            </small>
-                          )}
-                          {product.sku && (
-                            <small style={styles.sku}>SKU: {product.sku}</small>
+        viewMode === 'grid' ? <GridView /> : (
+          <div style={styles.tableContainer}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th} onClick={() => handleSort('name')}>
+                    Product {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th style={styles.th} onClick={() => handleSort('price')}>
+                    Price {sortBy === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th style={styles.th} onClick={() => handleSort('stock')}>
+                    Stock (Online/Total) {sortBy === 'stock' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th style={styles.th}>Status</th>
+                  <th style={styles.th}>Sale Type</th>
+                  <th style={styles.th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProducts.map(product => {
+                  const stockStatus = getStockStatus(product.online_stock);
+                  
+                  return (
+                    <tr key={product.id} style={styles.tr}>
+                      <td style={styles.td}>
+                        <div style={styles.productInfo}>
+                          <img 
+                            src={product.image_url || product.main_image_url || 'https://via.placeholder.com/60x60/e9ecef/6c757d?text=No+Image'} 
+                            alt={product.name} 
+                            style={styles.image}
+                            onError={(e) => {
+                              e.target.src = 'https://via.placeholder.com/60x60/e9ecef/6c757d?text=No+Image';
+                            }}
+                          />
+                          <div style={styles.productDetails}>
+                            <strong style={styles.productName}>
+                              {product.name || 'Unnamed Product'}
+                            </strong>
+                            {product.model_name && (
+                              <small style={styles.modelName}>
+                                Model: {product.model_name}
+                              </small>
+                            )}
+                            {product.sku && (
+                              <small style={styles.sku}>SKU: {product.sku}</small>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={styles.priceInfo}>
+                          <strong style={styles.price}>₹{parseFloat(product.price || 0).toLocaleString('en-IN')}</strong>
+                          {product.mrp && parseFloat(product.mrp) > parseFloat(product.price) && (
+                            <small style={styles.mrp}>₹{parseFloat(product.mrp).toLocaleString('en-IN')}</small>
                           )}
                         </div>
-                      </div>
-                    </td>
-                    <td style={styles.td}>
-                      <div style={styles.priceInfo}>
-                        <strong style={styles.price}>₹{parseFloat(product.price || 0).toLocaleString('en-IN')}</strong>
-                        {product.mrp && parseFloat(product.mrp) > parseFloat(product.price) && (
-                          <small style={styles.mrp}>₹{parseFloat(product.mrp).toLocaleString('en-IN')}</small>
-                        )}
-                      </div>
-                    </td>
-                    <td style={styles.td}>
-                      <div style={styles.stockInfo}>
-                        <span style={styles.stockNumbers}>
-                          {product.online_stock || 0} / {product.total_stock || 0}
+                      </td>
+                      <td style={styles.td}>
+                        <div style={styles.stockInfo}>
+                          <span style={styles.stockNumbers}>
+                            {product.online_stock || 0} / {product.total_stock || 0}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={styles.td}>
+                        <span style={{
+                          ...styles.statusBadge,
+                          backgroundColor: stockStatus.bgColor,
+                          color: stockStatus.color
+                        }}>
+                          {stockStatus.label}
                         </span>
-                      </div>
-                    </td>
-                    <td style={styles.td}>
-                      <span style={{
-                        ...styles.statusBadge,
-                        backgroundColor: stockStatus.bgColor,
-                        color: stockStatus.color
-                      }}>
-                        {stockStatus.label}
-                      </span>
-                    </td>
-                    <td style={styles.td}>
-                      <span style={styles.saleTypeBadge}>
-                        {formatSaleType(product.sale_type)}
-                      </span>
-                    </td>
-                    <td style={styles.td}>
-                      <div style={styles.actions}>
-                        <button 
-                          onClick={() => handleOpenModal(product)} 
-                          style={styles.buttonSecondary}
-                          title="Edit product"
-                        >
-                          <Edit size={14} />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(product.id)} 
-                          style={styles.buttonDanger}
-                          disabled={isDeleting === product.id}
-                          title="Delete product"
-                        >
-                          {isDeleting === product.id ? (
-                            <div style={styles.smallSpinner}></div>
-                          ) : (
-                            <Trash2 size={14} />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td style={styles.td}>
+                        <span style={styles.saleTypeBadge}>
+                          {formatSaleType(product.sale_type)}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={styles.actions}>
+                          <button 
+                            onClick={() => handleOpenModal(product)} 
+                            style={styles.buttonSecondary}
+                            title="Edit product"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(product.id)} 
+                            style={styles.buttonDanger}
+                            disabled={isDeleting === product.id}
+                            title="Delete product"
+                          >
+                            {isDeleting === product.id ? (
+                              <div style={styles.smallSpinner}></div>
+                            ) : (
+                              <Trash2 size={14} />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )
       ) : (
         <div style={styles.emptyState}>
           <Package size={64} />
@@ -452,12 +705,59 @@ export default function ProductsPage() {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
+
+        /* ✅ Mobile Responsive */
+        @media (max-width: 768px) {
+          .search-and-sort {
+            flex-direction: column !important;
+            gap: 12px !important;
+          }
+          
+          .analytics-container {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 12px !important;
+          }
+          
+          .filter-tabs {
+            flex-wrap: wrap !important;
+            gap: 6px !important;
+          }
+          
+          .table-container {
+            overflow-x: auto !important;
+          }
+          
+          .grid-container {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 12px !important;
+          }
+          
+          .header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 16px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .analytics-container {
+            grid-template-columns: 1fr !important;
+          }
+          
+          .grid-container {
+            grid-template-columns: 1fr !important;
+          }
+          
+          .search-input {
+            font-size: 16px !important; /* Prevent zoom on iOS */
+          }
+        }
       `}</style>
     </div>
   );
 }
 
-// ... (styles remain the same)
+// ✅ Enhanced styles with better mobile support
 const styles = {
   container: {
     padding: '24px',
@@ -539,6 +839,57 @@ const styles = {
     margin: 0
   },
 
+  headerActions: {
+    display: 'flex',
+    gap: '12px',
+    alignItems: 'center'
+  },
+
+  // ✅ Analytics Cards
+  analyticsContainer: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px',
+    marginBottom: '32px'
+  },
+
+  analyticsCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '20px',
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    border: '1px solid #e5e7eb',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+  },
+
+  analyticsIcon: {
+    width: '40px',
+    height: '40px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+
+  analyticsLabel: {
+    fontSize: '12px',
+    color: '#6b7280',
+    margin: '0 0 4px 0',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  },
+
+  analyticsValue: {
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#1f2937',
+    margin: 0
+  },
+
   // Filters
   filtersContainer: {
     marginBottom: '24px',
@@ -546,10 +897,18 @@ const styles = {
     flexDirection: 'column',
     gap: '16px'
   },
+
+  searchAndSort: {
+    display: 'flex',
+    gap: '16px',
+    alignItems: 'center',
+    flexWrap: 'wrap'
+  },
   
   searchContainer: {
     position: 'relative',
-    maxWidth: '400px'
+    flex: 1,
+    minWidth: '300px'
   },
   
   searchIcon: {
@@ -569,6 +928,50 @@ const styles = {
     fontSize: '14px',
     outline: 'none',
     transition: 'border-color 0.2s'
+  },
+
+  sortContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
+
+  sortLabel: {
+    fontSize: '14px',
+    color: '#374151',
+    fontWeight: '500'
+  },
+
+  sortSelect: {
+    padding: '8px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    backgroundColor: 'white',
+    outline: 'none'
+  },
+
+  viewToggle: {
+    display: 'flex',
+    backgroundColor: '#f3f4f6',
+    borderRadius: '8px',
+    padding: '2px'
+  },
+
+  viewButton: {
+    padding: '8px 12px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    color: '#6b7280',
+    transition: 'all 0.2s'
+  },
+
+  activeViewButton: {
+    backgroundColor: 'white',
+    color: '#3b82f6',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
   },
   
   filterTabs: {
@@ -593,6 +996,119 @@ const styles = {
     backgroundColor: '#3b82f6',
     borderColor: '#3b82f6',
     color: 'white'
+  },
+
+  // ✅ Grid View Styles
+  gridContainer: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    gap: '20px'
+  },
+
+  gridCard: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    border: '1px solid #e5e7eb',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    transition: 'all 0.2s'
+  },
+
+  cardImageContainer: {
+    position: 'relative',
+    height: '200px',
+    overflow: 'hidden'
+  },
+
+  cardImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover'
+  },
+
+  cardImageOverlay: {
+    position: 'absolute',
+    top: '12px',
+    right: '12px'
+  },
+
+  cardContent: {
+    padding: '16px'
+  },
+
+  cardTitle: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1f2937',
+    margin: '0 0 8px 0',
+    lineHeight: '1.3'
+  },
+
+  cardModel: {
+    fontSize: '12px',
+    color: '#6b7280',
+    margin: '0 0 12px 0'
+  },
+
+  cardPriceContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '12px'
+  },
+
+  cardPrice: {
+    fontSize: '18px',
+    fontWeight: '700',
+    color: '#059669'
+  },
+
+  cardMrp: {
+    fontSize: '14px',
+    color: '#9ca3af',
+    textDecoration: 'line-through'
+  },
+
+  cardStock: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontSize: '12px',
+    color: '#6b7280'
+  },
+
+  cardSaleType: {
+    padding: '2px 6px',
+    backgroundColor: '#eff6ff',
+    color: '#1e40af',
+    borderRadius: '8px',
+    fontSize: '10px',
+    fontWeight: '500'
+  },
+
+  cardActions: {
+    padding: '12px 16px',
+    borderTop: '1px solid #f3f4f6',
+    display: 'flex',
+    gap: '8px'
+  },
+
+  cardButton: {
+    flex: 1,
+    padding: '8px 12px',
+    backgroundColor: '#6b7280',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s'
+  },
+
+  cardButtonDanger: {
+    backgroundColor: '#ef4444'
   },
 
   // Buttons
@@ -663,7 +1179,9 @@ const styles = {
     fontSize: '12px',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
-    borderBottom: '1px solid #e5e7eb'
+    borderBottom: '1px solid #e5e7eb',
+    cursor: 'pointer',
+    userSelect: 'none'
   },
   
   td: { 
