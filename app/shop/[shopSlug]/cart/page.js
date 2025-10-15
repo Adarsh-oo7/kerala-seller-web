@@ -684,6 +684,8 @@ const styles = {
     flexWrap: 'wrap',      // wrap content on small screens
     width: '100%',          // fills the grid cell
     boxSizing: 'border-box',
+    maxWidth: '420px',
+    justifyContent: 'center'
   },
 
   itemInfo: {
