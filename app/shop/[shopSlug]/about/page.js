@@ -28,7 +28,13 @@ import {
   Mail,
   Globe,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  Heart,
+  Shield,
+  Zap,
+  Target,
+  Copy,
+  Check
 } from 'lucide-react';
 import SHeader from '../../../../components/common/SHeader';
 
@@ -47,7 +53,7 @@ const getApiBaseUrl = () => {
   return 'https://keralaseller-backend.onrender.com';
 };
 
-// ✅ FIXED: Helper function to extract phone from slug or query params
+// ✅ Helper function to extract phone from slug or query params
 const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
   console.log('🔍 About page - Extracting phone from:', {
     shopSlug,
@@ -55,23 +61,19 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
     isDev: process.env.NODE_ENV === 'development'
   });
 
-  // ✅ Add null/undefined checks
   if (!shopSlug) {
     console.log('❌ Missing shopSlug');
     return null;
   }
 
-  // ✅ First: Check if shopSlug is already a phone number (direct phone URL)
+  // First: Check if shopSlug is already a phone number (direct phone URL)
   if (typeof shopSlug === 'string') {
-    // In development, be more flexible with phone validation
     if (process.env.NODE_ENV === 'development') {
-      // Allow any numeric string with 1+ digits for testing (very flexible for dev)
       if (/^\d+$/.test(shopSlug)) {
         console.log('✅ Direct phone URL detected (dev mode):', shopSlug);
         return shopSlug;
       }
     } else {
-      // Production: strict Indian mobile validation
       if (/^[6-9]\d{9}$/.test(shopSlug)) {
         console.log('✅ Direct phone URL detected (production):', shopSlug);
         return shopSlug;
@@ -85,13 +87,11 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
 
   if (phoneFromParams) {
     if (process.env.NODE_ENV === 'development') {
-      // Allow any numeric string with 1+ digits for testing
       if (/^\d+$/.test(phoneFromParams)) {
         console.log('✅ Valid phone found from params (dev mode):', phoneFromParams);
         return phoneFromParams;
       }
     } else {
-      // Production: strict Indian mobile validation
       if (/^[6-9]\d{9}$/.test(phoneFromParams)) {
         console.log('✅ Valid Indian mobile number from params:', phoneFromParams);
         return phoneFromParams;
@@ -102,14 +102,12 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
   // Extract phone from compound slug (e.g., "raj-electronics-kochi-9544344339")
   if (typeof shopSlug === 'string') {
     if (process.env.NODE_ENV === 'development') {
-      // Look for any sequence of digits at the end
       const phoneMatch = shopSlug.match(/\d+$/);
       if (phoneMatch) {
         console.log('✅ Phone extracted from compound slug (dev):', phoneMatch[0]);
         return phoneMatch[0];
       }
     } else {
-      // Production: look for valid Indian mobile numbers
       const phoneMatch = shopSlug.match(/[6-9]\d{9}$/);
       if (phoneMatch) {
         console.log('✅ Phone extracted from compound slug (production):', phoneMatch[0]);
@@ -122,7 +120,7 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
   return null;
 };
 
-// ✅ SEO-friendly URL generator (same as other components)
+// ✅ SEO-friendly URL generator
 const generateShopSlug = (shop) => {
   if (!shop) return 'shop';
 
@@ -144,14 +142,13 @@ const generateShopSlug = (shop) => {
   return slug.length >= 3 ? slug : `shop-${shop.seller_phone || 'store'}`;
 };
 
-
-
-
 function StoreAboutContent() {
   const [storeData, setStoreData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [shareStatus, setShareStatus] = useState(''); // For share feedback
+  const [copied, setCopied] = useState(false); // For copy link feedback
 
   const params = useParams();
   const searchParams = useSearchParams();
@@ -180,6 +177,64 @@ function StoreAboutContent() {
     }
   }, []);
 
+  // ✅ ENHANCED: Working action button handlers
+  const handleChatClick = () => {
+    const phone = storeData?.whatsapp_number || storeData?.phone || sellerPhone;
+    const message = `Hi ${storeData?.name || 'there'}! I'm interested in your products. Can you help me?`;
+    const whatsappUrl = `https://wa.me/91${phone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleCallClick = () => {
+    const phone = storeData?.whatsapp_number || storeData?.phone || sellerPhone;
+    window.open(`tel:+91${phone}`, '_self');
+  };
+
+  // ✅ ENHANCED: Advanced sharing functionality
+  const handleShareClick = async () => {
+    const shareData = {
+      title: `${storeData?.name || 'Kerala Store'} - Kerala Sellers`,
+      text: `Check out ${storeData?.name || 'this amazing store'} on Kerala Sellers! ${storeData?.tagline || 'Quality products from Kerala.'}`,
+      url: window.location.href
+    };
+
+    try {
+      // Try native Web Share API first (mobile)
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        setShareStatus('shared');
+        setTimeout(() => setShareStatus(''), 2000);
+        return;
+      }
+
+      // Fallback: Copy link to clipboard
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setShareStatus('copied');
+      setTimeout(() => {
+        setCopied(false);
+        setShareStatus('');
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error sharing:', error);
+      // Last resort: Manual copy
+      const textArea = document.createElement('textarea');
+      textArea.value = window.location.href;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      setCopied(true);
+      setShareStatus('copied');
+      setTimeout(() => {
+        setCopied(false);
+        setShareStatus('');
+      }, 2000);
+    }
+  };
+
   const fetchStoreData = async () => {
     if (!sellerPhone) {
       console.error('❌ No sellerPhone provided:', { shopSlug, sellerPhone });
@@ -192,35 +247,63 @@ function StoreAboutContent() {
     setError('');
 
     try {
-      console.log('🔍 Fetching store about data for phone:', sellerPhone);
+      console.log('🔍 Fetching store data for phone:', sellerPhone);
 
-      // Try the about endpoint first, fallback to main shop endpoint
+      // ✅ Use the working main shop endpoint first
       let response;
       try {
-        response = await axios.get(`${getApiBaseUrl()}/user/store/${sellerPhone}/about/`, {
-          timeout: 15000
-        });
-        console.log('✅ About endpoint successful:', response.data);
-      } catch (aboutError) {
-        console.log('⚠️ About endpoint failed, trying main shop endpoint');
+        console.log('🔍 Trying main shop endpoint...');
         response = await axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/`, {
           timeout: 15000
         });
-        console.log('✅ Shop endpoint successful:', response.data);
-
-        // Transform shop data to about format if needed
+        console.log('✅ Main shop endpoint successful:', response.data);
+        
+        // Handle main endpoint response
         if (response.data.store) {
-          setStoreData(response.data.store);
+          // Main endpoint returns { store: {...}, products: [...], products_count: 5 }
+          const storeWithStats = {
+            ...response.data.store,
+            products_count: response.data.products_count,
+            available_products: response.data.products_count,
+            total_orders: response.data.store.total_orders || 0,
+            completed_orders: response.data.store.completed_orders || 0,
+            average_rating: response.data.store.average_rating || 0.0,
+          };
+          setStoreData(storeWithStats);
         } else {
           setStoreData(response.data);
         }
         setIsLoading(false);
         return;
+        
+      } catch (mainError) {
+        console.log('⚠️ Main shop endpoint failed, trying about endpoint');
+        try {
+          response = await axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/about/`, {
+            timeout: 15000
+          });
+          console.log('✅ About endpoint successful:', response.data);
+          setStoreData(response.data);
+          setIsLoading(false);
+          return;
+        } catch (aboutError) {
+          console.log('⚠️ About endpoint failed, trying profile endpoint');
+          try {
+            response = await axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/profile/`, {
+              timeout: 15000
+            });
+            console.log('✅ Profile endpoint successful:', response.data);
+            setStoreData(response.data);
+            setIsLoading(false);
+            return;
+          } catch (profileError) {
+            throw new Error('All endpoints failed');
+          }
+        }
       }
 
-      setStoreData(response.data);
     } catch (error) {
-      console.error("❌ Failed to fetch store about data:", error);
+      console.error("❌ Failed to fetch store data:", error);
       if (error.response?.status === 404) {
         setError('Store not found. This store may no longer exist or the URL is incorrect.');
       } else if (error.response?.status >= 500) {
@@ -240,17 +323,15 @@ function StoreAboutContent() {
     fetchStoreData();
   }, [sellerPhone]);
 
-  // ✅ Enhanced: Generate SEO-friendly shop URL for navigation
+  // ✅ Generate SEO-friendly shop URL for navigation
   const getShopUrl = () => {
     if (!storeData || !sellerPhone) return `/shop`;
 
-    // If we have full store data, create SEO-friendly URL
     if (storeData.name) {
       const shopSlug = generateShopSlug(storeData);
       return `/shop/${shopSlug}?id=${sellerPhone}`;
     }
 
-    // Fallback: use direct phone URL
     return `/shop/${sellerPhone}`;
   };
 
@@ -298,33 +379,6 @@ function StoreAboutContent() {
           <Store size={64} style={styles.errorIcon} />
           <h2 style={styles.errorTitle}>Invalid Store URL</h2>
           <p style={styles.errorText}>The store information is missing from the URL.</p>
-
-          {/* ✅ Enhanced Debug Info */}
-          <div style={styles.errorDebug}>
-            <strong>Debug Info:</strong><br />
-            Shop Slug: <code>{shopSlug || 'undefined'}</code><br />
-            Phone: <code>{sellerPhone || 'null'}</code><br />
-            URL: <code>{typeof window !== 'undefined' ? window.location.href : 'N/A'}</code><br />
-            Environment: <code>{process.env.NODE_ENV || 'unknown'}</code>
-          </div>
-
-          {/* ✅ Helpful suggestions */}
-          <div style={styles.errorSuggestions}>
-            <h4>Try these URLs instead:</h4>
-            <ul style={styles.suggestionsList}>
-              <li>
-                <Link href={`/shop/${shopSlug}?id=${shopSlug}`} style={styles.suggestionLink}>
-                  /shop/{shopSlug}?id={shopSlug}
-                </Link>
-              </li>
-              <li>
-                <Link href={`/shop/${shopSlug}`} style={styles.suggestionLink}>
-                  /shop/{shopSlug} (direct access)
-                </Link>
-              </li>
-            </ul>
-          </div>
-
           <Link href="/shop" style={styles.backLink}>
             <ArrowLeft size={16} />
             Browse All Shops
@@ -381,37 +435,7 @@ function StoreAboutContent() {
         isLoggedIn={isLoggedIn}
       />
 
-      {/* ✅ Enhanced Navigation breadcrumb with SEO URLs */}
-      {/* <div style={styles.breadcrumbContainer}>
-        <div style={styles.container}>
-          <nav style={styles.breadcrumb}>
-            <Link href="/" style={styles.breadcrumbLink}>
-              <Home size={16} />
-              Kerala Sellers
-            </Link>
-            <span style={styles.breadcrumbSeparator}>›</span>
-            <Link href="/shop" style={styles.breadcrumbLink}>
-              Shops
-            </Link>
-            <span style={styles.breadcrumbSeparator}>›</span>
-            <Link href={getShopUrl()} style={styles.breadcrumbLink}>
-              <Store size={16} />
-              {storeData.name}
-            </Link>
-            <span style={styles.breadcrumbSeparator}>›</span>
-            <span style={styles.breadcrumbCurrent}>About</span>
-          </nav>
-        </div>
-      </div> */}
-
       <div className='shopslugAboutcontainer1' style={styles.container}>
-        {/* ✅ Enhanced Back button with correct URL */}
-        {/* <Link href={getShopUrl()} style={styles.backButton}>
-          <ArrowLeft size={16} />
-          Back to Store
-        </Link> */}
-
-
 
         <div className="enhanced-store-info-section" style={styles.storeInfoSection}>
           <div className="shopslugAboutcontainer" style={styles.container}>
@@ -467,30 +491,63 @@ function StoreAboutContent() {
 
               <div className="store-share" style={styles.storeShare}>
                 <div className="store-actions" style={styles.storeActions}>
-                  <button className="Aboutaction-button" style={styles.actionButtonPrimary}>
+                  {/* ✅ WORKING Chat Button */}
+                  <button 
+                    className="Aboutaction-button" 
+                    style={styles.actionButtonPrimary}
+                    onClick={handleChatClick}
+                    title="Chat on WhatsApp"
+                  >
                     <MessageCircle size={16} className='abouticonsize' />
                     <span className="action-text">Chat</span>
                   </button>
-                  <button className="Aboutaction-button" style={styles.actionButtonSecondary}>
+                  
+                  {/* ✅ WORKING Call Button */}
+                  <button 
+                    className="Aboutaction-button" 
+                    style={styles.actionButtonSecondary}
+                    onClick={handleCallClick}
+                    title="Call now"
+                  >
                     <Phone size={16} className='abouticonsize' />
                     <span className="action-text">Call</span>
                   </button>
-                  <button className="Aboutaction-button1" style={styles.actionButtonIcon}>
-                    <Share2 size={16} className='abouticonsize' />
+                  
+                  {/* ✅ WORKING Share Button */}
+                  <button 
+                    className="Aboutaction-button1" 
+                    style={{
+                      ...styles.actionButtonIcon,
+                      backgroundColor: shareStatus === 'copied' ? '#10b981' : shareStatus === 'shared' ? '#3b82f6' : 'white'
+                    }}
+                    onClick={handleShareClick}
+                    title={shareStatus === 'copied' ? 'Link copied!' : shareStatus === 'shared' ? 'Shared!' : 'Share store'}
+                  >
+                    {shareStatus === 'copied' ? <Check size={16} /> : <Share2 size={16} />}
                   </button>
                 </div>
+
+                {/* Share Status */}
+                {shareStatus && (
+                  <div style={styles.shareStatus}>
+                    {shareStatus === 'copied' && '🔗 Link copied!'}
+                    {shareStatus === 'shared' && '📤 Shared successfully!'}
+                  </div>
+                )}
               </div>
 
             </div>
 
+            {/* ✅ Store Performance with REAL DATA */}
             <div className="store-performance" style={styles.storePerformance}>
-
               <div className="performance-card" style={styles.performanceCard}>
                 <div className="performance-icon" style={styles.performanceIcon}>
                   <TrendingUp size={18} aria-hidden="true" />
                 </div>
                 <div className="performance-content" style={styles.performanceContent}>
-                  <span className="performance-number" style={styles.performanceNumber}>5.2k</span>
+                  <span className="performance-number" style={styles.performanceNumber}>
+                    {storeData?.total_orders ?? storeData?.stats?.total_orders ?? 0}
+                  </span>
                   <span className="performance-label" style={styles.performanceLabel}>Orders</span>
                 </div>
               </div>
@@ -499,7 +556,9 @@ function StoreAboutContent() {
                   <Truck size={18} aria-hidden="true" />
                 </div>
                 <div className="performance-content" style={styles.performanceContent}>
-                  <span className="performance-number" style={styles.performanceNumber}>24hr</span>
+                  <span className="performance-number" style={styles.performanceNumber}>
+                    {storeData?.delivery_time_local || '24hr'}
+                  </span>
                   <span className="performance-label" style={styles.performanceLabel}>Kerala Delivery</span>
                 </div>
               </div>
@@ -508,7 +567,9 @@ function StoreAboutContent() {
                   <Users size={18} aria-hidden="true" />
                 </div>
                 <div className="performance-content" style={styles.performanceContent}>
-                  <span className="performance-number" style={styles.performanceNumber}>98%</span>
+                  <span className="performance-number" style={styles.performanceNumber}>
+                    {storeData?.average_rating ? `${Number(storeData.average_rating * 20).toFixed(0)}%` : '0%'}
+                  </span>
                   <span className="performance-label" style={styles.performanceLabel}>Satisfied</span>
                 </div>
               </div>
@@ -516,168 +577,203 @@ function StoreAboutContent() {
           </div>
         </div>
 
-
-
-
-
-
-        {/* Stats Grid */}
+        {/* ✅ ENHANCED Stats Grid with MORE INFORMATION */}
         <div style={styles.statsSection}>
-          {/* <h2 style={styles.sectionTitle}>Store Performance</h2> */}
           <div className='aboutstat-grid' style={styles.statsGrid}>
             <StatCard
               icon={<Star size={24} fill="currentColor" />}
-              value={storeData.average_rating ? Number(storeData.average_rating).toFixed(1) : "New"}
+              value={storeData.average_rating ? Number(storeData.average_rating).toFixed(1) : "0.0"}
               label="Store Rating"
               color="#f59e0b"
             />
             <StatCard
               icon={<CheckCircle size={24} />}
-              value={storeData.stats?.completed_orders || storeData.orders_completed || "0"}
+              value={storeData?.completed_orders ?? storeData?.orders_completed ?? storeData?.stats?.completed_orders ?? 0}
               label="Orders Completed"
               color="#10b981"
             />
             <StatCard
               icon={<Package size={24} />}
-              value={storeData.stats?.products_count || storeData.products_count || "0"}
+              value={storeData?.products_count ?? storeData?.available_products ?? storeData?.stats?.products_count ?? storeData?.stats?.available_products ?? 0}
               label="Products Available"
               color="#3b82f6"
             />
             <StatCard
               icon={<TrendingUp size={24} />}
-              value={storeData.stats?.monthly_growth || "Growing"}
+              value={storeData?.total_orders && storeData.total_orders > 0 ? "Growing" : "New Store"}
               label="Monthly Growth"
               color="#8b5cf6"
             />
           </div>
         </div>
 
-        {/* Business Information */}
-        {/* <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>Business Information</h2>
-          <div style={styles.card}>
-            <div style={styles.businessGrid}>
-              {storeData.gst_number && (
-                <div style={styles.businessItem}>
-                  <div style={styles.businessIcon}>
-                    <Award size={20} />
-                  </div>
-                  <div>
-                    <span style={styles.businessLabel}>GST Number</span>
-                    <p style={styles.businessValue}>{storeData.gst_number}</p>
-                  </div>
-                </div>
-              )}
-              {storeData.business_license && (
-                <div style={styles.businessItem}>
-                  <div style={styles.businessIcon}>
-                    <CheckCircle size={20} />
-                  </div>
-                  <div>
-                    <span style={styles.businessLabel}>Business License</span>
-                    <p style={styles.businessValue}>{storeData.business_license}</p>
-                  </div>
-                </div>
-              )}
-              
+        {/* ✅ ENHANCED Store Features Section */}
+        <div style={styles.featuresSection}>
+          <h3 style={styles.sectionTitle}>Why Choose {storeData.name}?</h3>
+          <div style={styles.featuresGrid}>
+            <div style={styles.featureCard}>
+              <Shield size={24} style={{color: '#10b981'}} />
+              <h4>Verified Business</h4>
+              <p>Authenticated Kerala-based seller with genuine products</p>
+            </div>
+            <div style={styles.featureCard}>
+              <Truck size={24} style={{color: '#3b82f6'}} />
+              <h4>Fast Delivery</h4>
+              <p>Quick delivery across Kerala with reliable shipping</p>
+            </div>
+            <div style={styles.featureCard}>
+              <Heart size={24} style={{color: '#ef4444'}} />
+              <h4>Customer Focused</h4>
+              <p>Dedicated to customer satisfaction and quality service</p>
+            </div>
+            <div style={styles.featureCard}>
+              <Zap size={24} style={{color: '#f59e0b'}} />
+              <h4>Local Support</h4>
+              <p>Supporting Kerala's local economy and businesses</p>
             </div>
           </div>
-        </div> */}
+        </div>
 
+        {/* ✅ ENHANCED Store Details Section */}
         <div className='aboutContainer' style={styles.aboutContainer}>
           <div className='aboutCard1'
           style={{
             ...styles.aboutCard1,
-            textAlign: 'left',       // align text to start
+            textAlign: 'left',       
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'flex-start' // align all items to left
+            alignItems: 'flex-start' 
           }}>
-            {/* Left Card */}
+            {/* Left Card - About Store */}
             <img
               src={storeData.logo_url || `https://via.placeholder.com/150x150/3b82f6/ffffff?text=${encodeURIComponent(storeData.name?.charAt(0) || 'S')}`}
               alt={`${storeData.name} logo`}
               className='Aboutsluglogo'
               style={styles.logo}
             />
+            <h3 style={styles.cardTitle}>About Our Store</h3>
             <p className='aboutslugfootdesc' style={styles.description}>
               {storeData.description ||
-                `Welcome to ${storeData.name}! We are a trusted Kerala-based business committed to providing quality and customer satisfaction.`}
+                `Welcome to ${storeData.name}! We are a trusted Kerala-based business committed to providing quality products and excellent customer service. Our mission is to bring you the best products while supporting the local economy of Kerala.`}
             </p>
+            
+            {/* Store Specialties */}
+            {storeData.business_category && (
+              <div style={styles.categoryTag}>
+                <Target size={16} />
+                <span>Specializes in {storeData.business_category}</span>
+              </div>
+            )}
           </div>
-
 
           <div className='aboutCard2'
            style={{
             ...styles.aboutCard2,
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center', // center card content horizontally
-            textAlign: 'center',  // center text inside each row
+            alignItems: 'center', 
+            textAlign: 'center',  
           }}>
-            {/* Heading */}
+            {/* Center Card - Contact */}
             <h3 className='aboutslugfoottitle'
              style={{
               fontWeight: '600',
               marginBottom: '1rem',
               color: '#1F2937'
             }}>
-              CONTACT
+              CONTACT INFORMATION
             </h3>
 
-            {/* Center Card Content */}
+            {/* Enhanced Contact Information */}
             {(storeData.owner_name || storeData.seller_name) && (
               <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
                 <Users size={18} />
-                <span>{storeData.owner_name || storeData.seller_name}</span>
+                <span><strong>Owner:</strong> {storeData.owner_name || storeData.seller_name}</span>
               </div>
             )}
             <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
               <Phone size={18} />
-              <span>{formatPhoneNumber(storeData.whatsapp_number || storeData.phone || sellerPhone)}</span>
+              <span><strong>Phone:</strong> {formatPhoneNumber(storeData.whatsapp_number || storeData.phone || sellerPhone)}</span>
             </div>
+            {storeData.email && (
+              <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
+                <Mail size={18} />
+                <span><strong>Email:</strong> {storeData.email}</span>
+              </div>
+            )}
             {(storeData.business_address || storeData.address) && (
               <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
                 <MapPin size={18} />
-                <span>{storeData.business_address || storeData.address}</span>
+                <span><strong>Address:</strong> {storeData.business_address || storeData.address}</span>
               </div>
             )}
+            {storeData.pincode && (
+              <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
+                <Globe size={18} />
+                <span><strong>Pincode:</strong> {storeData.pincode}</span>
+              </div>
+            )}
+            
+            {/* Business Hours */}
+            <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
+              <Clock size={18} />
+              <span><strong>Hours:</strong> {storeData.business_hours || '9:00 AM - 8:00 PM'}</span>
+            </div>
           </div>
 
-
-
-
-          <div className='aboutCard3'
-          style={styles.aboutCard3}>
-            {/* Right Card */}
-            <h3 className='aboutslugfoottitle' style={styles.socialTitle}>FOLLOW US</h3>
+          <div className='aboutCard3' style={styles.aboutCard3}>
+            {/* Right Card - Social & More */}
+            <h3 className='aboutslugfoottitle' style={styles.socialTitle}>CONNECT WITH US</h3>
+            
             <div style={styles.socialIcons}>
               {storeData.facebook_link && (
                 <a href={storeData.facebook_link} target="_blank" rel="noopener noreferrer" style={styles.socialIcon}>
-                  <Facebook size={20} />
+                  <Facebook size={24} />
                 </a>
               )}
               {storeData.instagram_link && (
                 <a href={storeData.instagram_link} target="_blank" rel="noopener noreferrer" style={styles.socialIcon}>
-                  <Instagram size={20} />
+                  <Instagram size={24} />
                 </a>
               )}
+              {storeData.website && (
+                <a href={storeData.website} target="_blank" rel="noopener noreferrer" style={styles.socialIcon}>
+                  <Globe size={24} />
+                </a>
+              )}
+            </div>
+
+            {/* Payment Methods */}
+            {storeData.payment_methods && (
+              <div style={styles.paymentInfo}>
+                <h4 style={styles.cardSubtitle}>Payment Options</h4>
+                <p>{storeData.payment_methods}</p>
+              </div>
+            )}
+
+            {/* Additional Services */}
+            <div style={styles.servicesList}>
+              <h4 style={styles.cardSubtitle}>Services</h4>
+              <ul style={styles.serviceItems}>
+                <li>✓ Quality Guaranteed</li>
+                <li>✓ Secure Payments</li>
+                <li>✓ Kerala Delivery</li>
+                <li>✓ Customer Support</li>
+              </ul>
             </div>
           </div>
         </div>
 
-
-
-
-
-
-
-        {/* ✅ Enhanced Quick Actions with correct URL */}
+        {/* ✅ ENHANCED Quick Actions */}
         <div style={styles.quickActionsSection}>
           <Link href={getShopUrl()} style={styles.primaryButton}>
             <Package size={16} />
-            View All Products
+            View All {storeData?.products_count || 0} Products
           </Link>
+          <button onClick={handleChatClick} style={styles.secondaryButton}>
+            <MessageCircle size={16} />
+            Chat with {storeData.name}
+          </button>
         </div>
       </div>
 
@@ -692,12 +788,15 @@ function StoreAboutContent() {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
       `}</style>
     </div>
   );
 }
-
-
 
 function StatCard({ icon, value, label, color = '#3b82f6' }) {
   return (
@@ -739,7 +838,7 @@ export default function StoreAboutPage() {
   );
 }
 
-// ✅ Enhanced styles with better error display
+// ✅ Enhanced styles with new sections
 const styles = {
   pageContainer: {
     minHeight: '100vh',
@@ -747,87 +846,179 @@ const styles = {
     backgroundColor: '#FDFFF0'
   },
 
+  // Share Status
+  shareStatus: {
+    position: 'absolute',
+    top: '-40px',
+    right: '0',
+    backgroundColor: '#1f2937',
+    color: 'white',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    fontSize: '12px',
+    whiteSpace: 'nowrap',
+    animation: 'fadeIn 0.3s'
+  },
+
+  // Features Section
+  featuresSection: {
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    padding: '32px',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+    margin: '32px 0'
+  },
+
+  sectionTitle: {
+    fontSize: '1.5rem',
+    fontWeight: '700',
+    color: '#1f2937',
+    textAlign: 'center',
+    marginBottom: '24px'
+  },
+
+  featuresGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '20px'
+  },
+
+  featureCard: {
+    textAlign: 'center',
+    padding: '20px',
+    borderRadius: '12px',
+    border: '1px solid #e5e7eb',
+    backgroundColor: '#f9fafb'
+  },
+
+  // Enhanced About Container
   aboutContainer: {
     display: 'flex',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: '20px',
-    backgroundColor: '#FDFFF0',
-    borderRadius: '12px',
-    boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
     maxWidth: '1300px',
-    margin: '0 auto',
-    padding: '20px',
+    margin: '32px auto',
+    padding: '32px',
     boxSizing: 'border-box',
   },
 
   aboutCard1: {
-    flex: '1 1 30%',      // take 30% width, grow/shrink as needed
-    backgroundColor: '#FDFFF0',
-    padding: '35px 40px',
+    flex: '1 1 30%',      
+    backgroundColor: 'transparent',
+    padding: '20px',
     boxSizing: 'border-box',
-    minWidth: '250px',   // ensures cards never shrink too much
-    textAlign: 'center',
+    minWidth: '280px',   
+    textAlign: 'left',
   },
 
  aboutCard2: {
-    flex: '1 1 30%',      // take 30% width, grow/shrink as needed
-    backgroundColor: '#FDFFF0',
-    padding: '35px 0px',
+    flex: '1 1 30%',      
+    backgroundColor: 'transparent',
+    padding: '20px',
     boxSizing: 'border-box',
-    minWidth: '250px',   // ensures cards never shrink too much
+    minWidth: '280px',   
     textAlign: 'center',
   },
    aboutCard3: {
-    flex: '1 1 30%',      // take 30% width, grow/shrink as needed
-    backgroundColor: '#FDFFF0',
-    padding: '53px 0px',
+    flex: '1 1 30%',      
+    backgroundColor: 'transparent',
+    padding: '20px',
     boxSizing: 'border-box',
-    minWidth: '250px',   // ensures cards never shrink too much
+    minWidth: '280px',   
     textAlign: 'center',
   },
 
-
-  logo: {
-    width: '70px',
-    height: '70px',
-    borderRadius: '50%',
-    // marginBottom: '15px',
+  cardTitle: {
+    fontSize: '1.2rem',
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: '12px'
   },
 
+  cardSubtitle: {
+    fontSize: '1rem',
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: '8px'
+  },
 
+  categoryTag: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: '#e0f2fe',
+    color: '#0369a1',
+    padding: '8px 12px',
+    borderRadius: '20px',
+    fontSize: '14px',
+    fontWeight: '500',
+    marginTop: '16px'
+  },
+
+  paymentInfo: {
+    marginTop: '20px',
+    padding: '16px',
+    backgroundColor: '#f3f4f6',
+    borderRadius: '8px'
+  },
+
+  servicesList: {
+    marginTop: '20px'
+  },
+
+  serviceItems: {
+    listStyle: 'none',
+    padding: 0,
+    margin: 0
+  },
+
+  logo: {
+    width: '80px',
+    height: '80px',
+    borderRadius: '50%',
+    marginBottom: '16px'
+  },
 
   description: {
     fontSize: '14px',
-    color: '#333',
-    lineHeight: '1.5',
+    color: '#6b7280',
+    lineHeight: '1.6',
+    margin: '12px 0'
   },
 
   infoRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
-    marginBottom: '10px',
+    gap: '12px',
+    marginBottom: '12px',
     fontSize: '14px',
-    color: '#333',
+    color: '#374151',
   },
 
-
+  socialTitle: {
+    fontWeight: '600',
+    color: '#1f2937',
+    margin: '0 0 16px 0',
+    fontSize: '1.1rem'
+  },
 
   socialIcons: {
     display: 'flex',
-    gap: '10px',
+    gap: '16px',
     justifyContent: 'center',
+    marginBottom: '20px'
   },
 
   socialIcon: {
-    color: '#555',
-    transition: 'color 0.2s',
-  },
-
-
-  socialIconHover: {
-    transform: 'scale(1.1)',
+    color: '#6b7280',
+    transition: 'all 0.2s',
+    padding: '8px',
+    borderRadius: '8px',
+    border: '1px solid #e5e7eb'
   },
 
   // Loading & Error States
@@ -884,38 +1075,6 @@ const styles = {
     lineHeight: '1.5'
   },
 
-  errorDebug: {
-    marginTop: '20px',
-    padding: '15px',
-    backgroundColor: '#f5f5f5',
-    borderRadius: '8px',
-    fontSize: '14px',
-    maxWidth: '600px',
-    textAlign: 'left',
-    fontFamily: 'monospace'
-  },
-
-  // ✅ New: Error suggestions
-  errorSuggestions: {
-    marginTop: '20px',
-    padding: '20px',
-    backgroundColor: '#eff6ff',
-    borderRadius: '8px',
-    border: '1px solid #3b82f6'
-  },
-
-  suggestionsList: {
-    textAlign: 'left',
-    margin: '10px 0 0 20px'
-  },
-
-  suggestionLink: {
-    color: '#3b82f6',
-    textDecoration: 'none',
-    fontFamily: 'monospace',
-    fontSize: '14px'
-  },
-
   errorActions: {
     display: 'flex',
     gap: '12px',
@@ -952,53 +1111,6 @@ const styles = {
     transition: 'all 0.2s'
   },
 
-  // Breadcrumb
-  breadcrumbContainer: {
-    backgroundColor: 'white',
-    borderBottom: '1px solid #e5e7eb',
-    padding: '12px 0'
-  },
-
-  breadcrumb: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '14px',
-    flexWrap: 'wrap'
-  },
-
-  breadcrumbLink: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    color: '#3b82f6',
-    textDecoration: 'none',
-    transition: 'color 0.2s'
-  },
-
-  breadcrumbSeparator: {
-    color: '#9ca3af'
-  },
-
-  breadcrumbCurrent: {
-    color: '#6b7280',
-    fontWeight: '500'
-  },
-
-  // Back button
-  backButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    color: '#3b82f6',
-    textDecoration: 'none',
-    fontSize: '14px',
-    fontWeight: '500',
-    padding: '8px 0',
-    marginBottom: '16px',
-    transition: 'color 0.2s'
-  },
-
   // Main Container
   container: {
     maxWidth: '1300px',
@@ -1013,8 +1125,8 @@ const styles = {
   // Store Header
   storeHeader: {
     display: 'flex',
-    justifyContent: 'space-between', // Logo+info left, actions right
-    alignItems: 'center', // vertically align
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
     flexWrap: 'wrap',
     gap: '2rem',
     width: '100%',
@@ -1024,7 +1136,6 @@ const styles = {
     position: 'relative',
     flexShrink: 0,
   },
-
 
   logo1: {
     width: '140px',
@@ -1076,7 +1187,6 @@ const styles = {
     gap: '6px',
     fontSize: '0.85rem',
     color: '#374151',
-
   },
 
   storeMeta: {
@@ -1094,390 +1204,35 @@ const styles = {
 
   storeShare: {
     display: 'flex',
+    flexDirection: 'column',
     justifyContent: 'flex-end',
     alignItems: 'center',
+    position: 'relative'
   },
 
   storeActions: {
     display: 'flex',
-    flexDirection: 'column', // stack vertically
+    flexDirection: 'column', 
     alignItems: 'center',
     gap: '10px',
   },
-
-
-  // Sections
-  section: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px'
-  },
-
-  sectionTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    color: '#1f2937',
-    margin: 0
-  },
-
-  card: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: '24px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb'
-  },
-
-  // Stats Section
-  statsSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px'
-  },
-
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '20px'
-  },
-
-  statCard: {
-    backgroundColor: 'transparent',
-    padding: '24px',
-    borderRadius: '16px',
-    textAlign: 'center',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb',
-    transition: 'all 0.2s'
-  },
-
-  statIcon: {
-    marginBottom: '12px',
-    display: 'flex',
-    justifyContent: 'center'
-  },
-
-  statValue: {
-    fontSize: '1.8rem',
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: '4px'
-  },
-
-  statLabel: {
-    fontSize: '14px',
-    color: '#6b7280',
-    fontWeight: '500'
-  },
-
-  // Business Information
-  businessGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: '20px'
-  },
-
-  businessItem: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '16px'
-  },
-
-  businessIcon: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '10px',
-    backgroundColor: '#f1f5f9',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#3b82f6',
-    flexShrink: 0
-  },
-
-  businessLabel: {
-    display: 'block',
-    fontSize: '14px',
-    color: '#6b7280',
-    fontWeight: '600',
-    marginBottom: '4px'
-  },
-
-  businessValue: {
-    margin: 0,
-    fontSize: '16px',
-    color: '#1f2937',
-    fontWeight: '500'
-  },
-
-
-  // Contact Section
-  contactGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: '20px',
-    marginBottom: '24px'
-  },
-
-  contactItem: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '16px'
-  },
-
-  contactIcon: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '12px',
-    backgroundColor: '#f1f5f9',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#3b82f6',
-    flexShrink: 0
-  },
-
-  contactInfo: {
-    flex: 1
-  },
-
-  contactLabel: {
-    display: 'block',
-    fontSize: '14px',
-    color: '#6b7280',
-    fontWeight: '600',
-    marginBottom: '4px'
-  },
-
-  contactValue: {
-    margin: 0,
-    fontSize: '16px',
-    color: '#1f2937',
-    fontWeight: '500'
-  },
-
-  websiteLink: {
-    color: '#3b82f6',
-    textDecoration: 'none'
-  },
-
-  // Delivery Section
-  deliverySection: {
-    borderTop: '1px solid #e5e7eb',
-    paddingTop: '24px',
-    marginBottom: '24px'
-  },
-
-  deliveryTitle: {
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#1f2937',
-    margin: '0 0 16px 0'
-  },
-
-  deliveryGrid: {
-    display: 'flex',
-    gap: '20px',
-    flexWrap: 'wrap'
-  },
-
-  deliveryItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '14px',
-    color: '#374151'
-  },
-
-  // Social Section
-  socialSection: {
-    borderTop: '1px solid #e5e7eb',
-    paddingTop: '24px'
-  },
-
-  socialTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-    margin: '0 0 16px 0'
-  },
-
-  socialLinks: {
-    display: 'flex',
-    gap: '16px',
-    flexWrap: 'wrap'
-  },
-
-  socialLink: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    color: '#3b82f6',
-    textDecoration: 'none',
-    padding: '12px 16px',
-    backgroundColor: '#f1f5f9',
-    borderRadius: '10px',
-    fontSize: '14px',
-    fontWeight: '500',
-    transition: 'all 0.2s'
-  },
-
-  // Quick Actions
-  quickActionsSection: {
-    display: 'flex',
-    justifyContent: 'center',
-    padding: '24px 0'
-  },
-
-  primaryButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    textDecoration: 'none',
-    padding: '16px 32px',
-    borderRadius: '12px',
-    fontSize: '16px',
-    fontWeight: '600',
-    transition: 'all 0.2s',
-    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-  },
-  // Store Info Styles
-  storeInfoSection: {
-    backgroundColor: '#FDFFF0',
-    padding: '32px 0',
-  },
-
-  storeHeader: {
-    display: 'flex',
-    gap: '24px',
-    alignItems: 'flex-start',
-    marginBottom: '24px',
-    flexWrap: 'wrap'
-  },
-
-  storeIdentity: {
-    display: 'flex',
-    gap: '20px',
-    flex: 1,
-    minWidth: '300px'
-  },
-
-  storeLogoWrapper: {
-    position: 'relative',
-    flexShrink: 0
-  },
-
-  storeLogo: {
-    width: '70px',
-    height: '70px',
-    borderRadius: '50%',
-    objectFit: 'cover',
-    border: '4px solid #f1f5f9',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-  },
-
-  storeLogoPlaceholder: {
-    width: '120px',
-    height: '120px',
-    borderRadius: '50%',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '2rem',
-    fontWeight: '700',
-    border: '4px solid #f1f5f9',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-  },
-
-
-
-  storeDetails: {
-    flex: 1,
-    minWidth: '250px'
-  },
-
-  storeNameSection: {
-    marginBottom: '12px'
-  },
-
-
-
-  storeBadges: {
-    display: 'flex',
-    gap: '8px',
-    flexWrap: 'wrap'
-  },
-
-  badgeVerified: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '4px 8px',
-    backgroundColor: '#ecfdf5',
-    border: '1px solid #10b981',
-    borderRadius: '12px',
-    fontSize: '0.75rem',
-    color: '#065f46',
-    fontWeight: '500'
-  },
-
-  badgeResponsive: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '4px 8px',
-    backgroundColor: '#eff6ff',
-    border: '1px solid #3b82f6',
-    borderRadius: '12px',
-    fontSize: '0.75rem',
-    color: '#1e40af',
-    fontWeight: '500'
-  },
-
-  storeTagline: {
-    fontSize: '1.1rem',
-    color: '#3b82f6',
-    fontWeight: '500',
-    margin: '0 0 16px 0'
-  },
-
-
-
-  metaItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '0.9rem',
-    color: '#4b5563'
-  },
-
-  metaItemLocation: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '0.9rem',
-    color: '#059669',
-    fontWeight: '600'
-  },
-
 
   actionButtonPrimary: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    padding: '10px 16px',
-    backgroundColor: '#1a4845',
+    padding: '12px 20px',
+    backgroundColor: '#10b981',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
     fontSize: '0.9rem',
     fontWeight: '500',
     cursor: 'pointer',
-    whiteSpace: 'nowrap'
+    whiteSpace: 'nowrap',
+    transition: 'all 0.2s',
+    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
   },
 
   actionButtonSecondary: {
@@ -1485,28 +1240,32 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    padding: '10px 16px',
-    backgroundColor: 'white',
-    color: '#374151',
-    border: '1px solid #d1d5db',
+    padding: '12px 20px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
     borderRadius: '8px',
     fontSize: '0.9rem',
     fontWeight: '500',
     cursor: 'pointer',
-    whiteSpace: 'nowrap'
+    whiteSpace: 'nowrap',
+    transition: 'all 0.2s',
+    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
   },
 
   actionButtonIcon: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '40px',
-    height: '40px',
+    width: '48px',
+    height: '48px',
     backgroundColor: 'white',
     color: '#6b7280',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    cursor: 'pointer'
+    border: '2px solid #e5e7eb',
+    borderRadius: '50%',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
   },
 
   // Store Performance
@@ -1545,25 +1304,93 @@ const styles = {
     letterSpacing: '0.5px'
   },
 
-  storeDescriptionCard: {
-    marginTop: '24px',
-    padding: '20px',
-    backgroundColor: '#f8fafc',
-    borderRadius: '8px',
-    border: '1px solid #e5e7eb'
+  // Stats Section
+  statsSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px'
   },
 
-  descriptionExpanded: {
-    margin: '12px 0'
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '20px'
   },
 
-  descriptionCollapsed: {
-    margin: '12px 0',
-    display: '-webkit-box',
-    WebkitLineClamp: 3,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden'
+  statCard: {
+    backgroundColor: 'white',
+    padding: '28px',
+    borderRadius: '16px',
+    textAlign: 'center',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+    border: '1px solid #f3f4f6',
+    transition: 'all 0.3s'
   },
 
+  statIcon: {
+    marginBottom: '12px',
+    display: 'flex',
+    justifyContent: 'center'
+  },
 
+  statValue: {
+    fontSize: '2rem',
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: '6px'
+  },
+
+  statLabel: {
+    fontSize: '14px',
+    color: '#6b7280',
+    fontWeight: '500'
+  },
+
+  // Store Info Styles
+  storeInfoSection: {
+    backgroundColor: 'white',
+    padding: '32px 0',
+    borderRadius: '16px',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+  },
+
+  // Enhanced Quick Actions
+  quickActionsSection: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '16px',
+    padding: '32px 0',
+    flexWrap: 'wrap'
+  },
+
+  primaryButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    textDecoration: 'none',
+    padding: '16px 32px',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '600',
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 16px rgba(59, 130, 246, 0.3)'
+  },
+
+  secondaryButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    backgroundColor: '#10b981',
+    color: 'white',
+    border: 'none',
+    padding: '16px 32px',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)'
+  },
 };
