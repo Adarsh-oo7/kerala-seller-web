@@ -37,6 +37,12 @@
     background-color: transparent !important;
 }
 
+.shopslugproductrelatedhearticon{
+    width: 12px !important;
+    height: 12px !important;
+    margin-top: 3px !important;
+}
+
 @media (max-width:991px) {
     .shopslugproducttitle {
         font-size: 22px !important;
@@ -254,6 +260,12 @@
     .shopslugproductrelatedprod {
         grid-template-columns: repeat(3, 1fr) !important;
     }
+    .shopslugrelatedproductname{
+        font-size: 14px !important;
+    }
+     .shopslugrelatedproductprice{
+        font-size: 14px !important;
+    }
 
 }
 
@@ -370,6 +382,12 @@
 
     .shopslugproductrelatedprod {
         grid-template-columns: repeat(2, 1fr) !important;
+    }
+    .shopslugrelatedproductname{
+        font-size: 13px !important;
+    }
+     .shopslugrelatedproductprice{
+        font-size: 13px !important;
     }
 
 }

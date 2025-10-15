@@ -1114,25 +1114,27 @@ function RelatedProductCard({ product, shopSlug, sellerPhone }) {
             {isWishlistLoading ? (
               <RefreshCw size={12} className="spinning" />
             ) : (
-              <Heart size={12} fill={isWishlisted ? 'currentColor' : 'none'} />
+              <Heart className='shopslugproductrelatedhearticon' fill={isWishlisted ? 'currentColor' : 'none'} />
             )}
           </button>
         </div>
 
         <div style={styles.relatedProductInfo}>
-          <h3 style={styles.relatedProductName}>{product.name}</h3>
+          <h3 className='shopslugrelatedproductname' style={styles.relatedProductName}>{product.name}</h3>
 
           <div style={styles.priceRow}>
-            <p style={styles.relatedProductPrice}>
+            <p className='shopslugrelatedproductprice'  style={styles.relatedProductPrice}>
               ₹{product.price?.toLocaleString('en-IN')}
             </p>
             {product.mrp && product.mrp > product.price && (
-              <span style={styles.originalPrice}>{formatPrice(product.mrp)}</span>
+              <span className='shopslugrelatedproductprice' style={styles.originalPrice}>{formatPrice(product.mrp)}</span>
             )}
           </div>
         </div>
       </Link>
     </div>
+
+
 
 
   );
@@ -1960,10 +1962,11 @@ const styles = {
     backgroundColor: '#FDFFF0',
   },
   container: {
-    maxWidth: '1400px',
+    width: '100%',
+    maxWidth: '1200px', // reduced for better balance
     margin: '0 auto',
-    padding: '20px',
-    paddingTop: '150px', // ✅ Add this line
+    padding: 'clamp(16px, 3vw, 32px)', // dynamic padding
+    paddingTop: '150px',
     boxSizing: 'border-box',
   },
 
@@ -1991,7 +1994,7 @@ const styles = {
 
   mainImageWrapper: {
     width: '100%',          // take full container width
-    maxWidth: '550px',      // max width on desktop
+    maxWidth: '550px',  
     aspectRatio: '1 / 1',   // maintain square ratio
     backgroundColor: '#FDFFF0',
     display: 'flex',
@@ -2811,21 +2814,20 @@ const styles = {
 
   relatedGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', // ✅ smaller cards
     gap: '20px',
-    justifyContent: "center",
+    justifyContent: 'center',
   },
 
   relatedProductCard: {
     width: '100%',
-    maxWidth: '220px',
-    margin: '10px',
+    maxWidth: '180px', // ✅ reduced width
     borderRadius: '10px',
     overflow: 'hidden',
-    backgroundColor: 'var(--glassy-bg, rgba(255,255,255,0.1))',
-    backdropFilter: 'blur(10px)',
+    backgroundColor: '#fff',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    margin: '0 auto',
   },
 
   relatedProductLink: {
@@ -2838,31 +2840,32 @@ const styles = {
   relatedProductImageContainer: {
     position: 'relative',
     width: '100%',
-    height: '200px', // default image height
+    height: '180px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#f8efea',
     overflow: 'hidden',
-    backgroundColor: '#f8f9fa',
   },
 
   relatedProductImage: {
     width: '100%',
-    height: '100%',
-    objectFit: 'contain',   // ✅ ensures full image is shown
+    height: '180px',
+    objectFit: 'cover',
     objectPosition: 'center',
+    display: 'block',
     backgroundColor: '#fff',
-    borderRadius: '10px 10px 0 0',
   },
 
   relatedWishlistButton: {
     position: 'absolute',
     top: '8px',
     right: '8px',
-    background: 'rgba(255,255,255,0.8)',
+    width:'25px',
+    height:"25px",
+    background: 'rgba(255,255,255,0.85)',
     border: 'none',
     borderRadius: '50%',
-    padding: '6px',
     cursor: 'pointer',
     transition: 'transform 0.2s ease, background 0.2s ease',
   },
@@ -2874,25 +2877,23 @@ const styles = {
 
   relatedProductInfo: {
     padding: '10px',
-    textAlign: 'left', // ✅ Left-aligned text
+    textAlign: 'left',
   },
 
   relatedProductName: {
-    fontSize: '14px',
+    fontSize: '15px',
     fontWeight: '500',
     margin: '5px 0',
-    textAlign: 'left', // ✅ Left-aligned
   },
 
   priceRow: {
     display: 'flex',
-    alignItems: 'center', // ✅ Vertical alignment
-    gap: '8px',
-    marginTop: '4px',
+    alignItems: 'center',
+    gap: '6px',
   },
 
   relatedProductPrice: {
-    fontSize: '15px',
+    fontSize: '14px',
     fontWeight: '600',
     color: '#28a745',
     margin: 0,
@@ -2900,7 +2901,7 @@ const styles = {
 
   originalPrice: {
     textDecoration: 'line-through',
-    fontSize: '13px',
+    fontSize: '12px',
     color: '#888',
   },
 };
