@@ -4,11 +4,15 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  ArrowLeft, 
-  Shield, 
-  Check, 
-  Phone, 
+import Header from '../../../components/common/Header';
+import Footer from '../../../components/common/Footer';
+import "../../../styles/Kerelasellerprofileverification.css";
+
+import {
+  ArrowLeft,
+  Shield,
+  Check,
+  Phone,
   AlertCircle,
   RefreshCw,
   Clock,
@@ -35,12 +39,12 @@ const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/send-otp/`;
 const VERIFY_OTP_API = `${API_BASE_URL}/user/buyer/verify-otp/`;
 
-console.log('🌐 Verification API URLs configured:', { 
-  API_BASE_URL, 
-  PROFILE_API, 
-  SEND_OTP_API, 
+console.log('🌐 Verification API URLs configured:', {
+  API_BASE_URL,
+  PROFILE_API,
+  SEND_OTP_API,
   VERIFY_OTP_API,
-  ENVIRONMENT: process.env.NODE_ENV 
+  ENVIRONMENT: process.env.NODE_ENV
 });
 
 export default function VerificationPage() {
@@ -60,15 +64,15 @@ export default function VerificationPage() {
 
   // ✅ Enhanced token handling - supports both Google login and regular login
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('access_token') || 
-                  localStorage.getItem('buyerAccessToken');
-    
+    const token = localStorage.getItem('access_token') ||
+      localStorage.getItem('buyerAccessToken');
+
     if (!token) {
       console.error('❌ No authentication token found');
       router.push('/login/buyer');
       return null;
     }
-    
+
     console.log('🔍 Using token:', token.substring(0, 30) + '...');
     return { 'Authorization': `Bearer ${token}` };
   }, [router]);
@@ -76,7 +80,7 @@ export default function VerificationPage() {
   // ✅ Get current store info from URL
   const getCurrentStoreInfo = useCallback(() => {
     if (typeof window === 'undefined') return { storeId: null, isInStore: false };
-    
+
     const currentPath = window.location.pathname;
     const storeMatch = currentPath.match(/\/store\/([^\/]+)/);
     return {
@@ -101,28 +105,28 @@ export default function VerificationPage() {
   const fetchProfile = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
-    
+
     setIsLoading(true);
     setError('');
-    
+
     try {
       console.log('🔄 Fetching profile from:', PROFILE_API);
-      
+
       // ✅ Get current store context
       const storeInfo = getCurrentStoreInfo();
       setCurrentStoreInfo(storeInfo);
-      
-      const response = await axios.get(PROFILE_API, { 
+
+      const response = await axios.get(PROFILE_API, {
         headers,
         timeout: 15000
       });
-      
+
       console.log('✅ Profile data received:', response.data);
       setBuyer(response.data);
       const profilePhone = response.data.phone_number || '';
       setPhoneNumber(profilePhone);
       setIsPhoneEditable(!profilePhone);
-      
+
     } catch (error) {
       console.error("❌ Failed to fetch profile:", error);
       if (error.response?.status === 401) {
@@ -131,7 +135,7 @@ export default function VerificationPage() {
         localStorage.removeItem('buyerAccessToken');
         router.push('/login/buyer');
       } else {
-        const errorMessage = error.code === 'ECONNABORTED' 
+        const errorMessage = error.code === 'ECONNABORTED'
           ? 'Server timeout - please check your connection'
           : 'Failed to load profile from server. Please try again.';
         setError(errorMessage);
@@ -171,25 +175,25 @@ export default function VerificationPage() {
 
     setIsSubmitting(true);
     setError('');
-    
+
     try {
       console.log('🔄 Sending OTP to:', phoneNumber);
-      await axios.post(SEND_OTP_API, { phone: phoneNumber }, { 
+      await axios.post(SEND_OTP_API, { phone: phoneNumber }, {
         headers,
         timeout: 15000
       });
-      
+
       setOtpSent(true);
       setResendTimer(60); // 60 seconds countdown
       setOtpAttempts(0);
       setSuccessMessage(`6-digit OTP sent to +91 ${phoneNumber}`);
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
-      
+
     } catch (error) {
       console.error('❌ OTP sending failed:', error);
-      
+
       let errorMessage = 'Failed to send OTP. Please try again.';
       if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
@@ -205,7 +209,7 @@ export default function VerificationPage() {
       } else if (error.request) {
         errorMessage = 'Unable to connect to server. Please check your internet connection.';
       }
-      
+
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -223,22 +227,22 @@ export default function VerificationPage() {
 
     setIsSubmitting(true);
     setError('');
-    
+
     try {
       console.log('🔄 Verifying 6-digit OTP:', otp);
-      await axios.post(VERIFY_OTP_API, { 
-        otp, 
-        phone: phoneNumber 
-      }, { 
+      await axios.post(VERIFY_OTP_API, {
+        otp,
+        phone: phoneNumber
+      }, {
         headers,
         timeout: 15000
       });
-      
+
       setSuccessMessage('Phone verified successfully! 🎉');
-      
+
       // Refresh profile data
       await fetchProfile();
-      
+
       // ✅ Store-aware redirect
       setTimeout(() => {
         const redirectUrl = currentStoreInfo.isInStore && currentStoreInfo.storeId
@@ -246,11 +250,11 @@ export default function VerificationPage() {
           : '/profile';
         router.push(redirectUrl);
       }, 2000);
-      
+
     } catch (error) {
       console.error('❌ OTP verification failed:', error);
       setOtpAttempts(prev => prev + 1);
-      
+
       let errorMessage = 'Invalid OTP. Please try again.';
       if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
@@ -266,12 +270,12 @@ export default function VerificationPage() {
       } else if (error.request) {
         errorMessage = 'Unable to connect to server. Please check your connection.';
       }
-      
+
       setError(errorMessage);
-      
+
       // Clear OTP input on failure
       setOtp('');
-      
+
       // After 3 failed attempts, reset the process
       if (otpAttempts >= 2) {
         setOtpSent(false);
@@ -279,7 +283,7 @@ export default function VerificationPage() {
         setOtpAttempts(0);
         setError('Too many failed attempts. Please request a new OTP.');
       }
-      
+
     } finally {
       setIsSubmitting(false);
     }
@@ -318,7 +322,7 @@ export default function VerificationPage() {
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
         <p>Loading verification details from server...</p>
-        <p style={{fontSize: '12px', color: '#666'}}>
+        <p style={{ fontSize: '12px', color: '#666' }}>
           🌐 Connected to: {API_BASE_URL}
         </p>
       </div>
@@ -327,7 +331,8 @@ export default function VerificationPage() {
 
   return (
     <div style={styles.pageContainer}>
-      <header style={styles.header}>
+      <Header />
+      {/* <header style={styles.header}>
         <div style={styles.headerContainer}>
           <Link href={getBackUrl()} style={styles.backLink}>
             <ArrowLeft size={18} />
@@ -338,7 +343,8 @@ export default function VerificationPage() {
           <h1 style={styles.headerTitle}>Phone Verification</h1>
           <div style={styles.headerSpacer}></div>
         </div>
-      </header>
+      </header> */}
+
 
       <div style={styles.container}>
         {/* ✅ Show store context indicator */}
@@ -348,11 +354,11 @@ export default function VerificationPage() {
             <span>Verifying from Store ID: {currentStoreInfo.storeId}</span>
           </div>
         )}
-        
-        <p style={{fontSize: '12px', color: '#666', textAlign: 'center', marginBottom: '16px'}}>
+
+        {/* <p style={{ fontSize: '12px', color: '#666', textAlign: 'center', marginBottom: '16px' }}>
           🌐 Connected to: {API_BASE_URL}
-        </p>
-        
+        </p> */}
+
         {/* Success Message */}
         {successMessage && (
           <div style={styles.successAlert}>
@@ -375,42 +381,44 @@ export default function VerificationPage() {
         <div style={styles.verificationCard}>
           {buyer?.phone_verified ? (
             <div style={styles.verifiedSection}>
-              <div style={styles.verifiedIcon}>
-                <Check size={40} />
+              <div className='keralasellerprofileverificationiconcontainer' style={styles.verifiedIcon}>
+                <Check size={40} className='keralasellerprofileverificationpageicon' />
               </div>
               <div style={styles.verifiedContent}>
-                <h2 style={styles.verifiedTitle}>Phone Number Verified</h2>
-                <p style={styles.verifiedText}>
-                  Your phone number <strong>+91 {buyer.phone_number}</strong> is verified and secure.
+                <h2 className='keralasellerprofileverificationconftitle' style={styles.verifiedTitle}>Phone Number Verified</h2>
+                <p className='keralasellerprofileverificationconftext' style={styles.verifiedText}>
+                  Your phone number <strong className='keralasellerprofileverificationnoclr'>+91 {buyer.phone_number}</strong> is verified and secure.
                 </p>
-                
-                <div style={styles.benefits}>
-                  <h4 style={styles.benefitsTitle}>
+
+                <div className="benefits" style={styles.benefits}>
+                  <h4 className="keralasellerprofileverificationbenefitsTitle" style={styles.benefitsTitle}>
                     <Shield size={20} />
                     Benefits of verified account:
                   </h4>
                   <ul style={styles.benefitsList}>
-                    <li>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <Lock size={16} />
-                      <span>Enhanced account security</span>
+                      <span className='keralasellerprofileverificationbenefitslist'>Enhanced account security</span>
                     </li>
-                    <li>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <MessageCircle size={16} />
-                      <span>Order notifications via SMS</span>
+                      <span className='keralasellerprofileverificationbenefitslist'>Order notifications via SMS</span>
                     </li>
-                    <li>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <Check size={16} />
-                      <span>Faster checkout process</span>
+                      <span className='keralasellerprofileverificationbenefitslist'>Faster checkout process</span>
                     </li>
-                    <li>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <Shield size={16} />
-                      <span>Account recovery options</span>
+                      <span className='keralasellerprofileverificationbenefitslist'>Account recovery options</span>
                     </li>
                   </ul>
+
                 </div>
 
+
                 <div style={styles.verifiedActions}>
-                  <Link href={getBackUrl()} style={styles.backToProfileButton}>
+                  <Link href={getBackUrl()} className='keralasellerprofileverificationbtn' style={styles.backToProfileButton}>
                     {currentStoreInfo.isInStore ? 'Back to Store Profile' : 'Back to Profile'}
                   </Link>
                 </div>
@@ -418,36 +426,40 @@ export default function VerificationPage() {
             </div>
           ) : (
             <div style={styles.verificationSection}>
-              <div style={styles.verificationHeader}>
+              <div style={{ ...styles.verificationHeader, flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                 <div style={styles.headerIcon}>
-                  <Shield size={32} />
+                  <Shield className='keralasellerprofileverificationpageicon' size={35} />
                 </div>
                 <div>
-                  <h2 style={styles.sectionTitle}>Verify Your Phone Number</h2>
-                  <p style={styles.sectionDescription}>
+                  <h2 className='keralasellerprofileverificationpagetitle' style={styles.sectionTitle}>
+                    Verify Your Phone Number
+                  </h2>
+                  <p className='keralasellerprofileverificationpagetext' style={styles.sectionDescription}>
                     Secure your account and enable shopping by verifying your phone number with a 6-digit OTP.
                   </p>
                 </div>
               </div>
 
+
               <div style={styles.warningBox}>
                 <AlertCircle size={20} />
                 <div>
-                  <strong>Account Security Required</strong>
-                  <p>Phone verification is required for placing orders and account security.</p>
+                  <strong className='keralasellerprofileverificationpagetext'>Account Security Required</strong>
+                  <p className='keralasellerprofileverificationpagetext'> Phone verification is required for placing orders and account security.</p>
                 </div>
               </div>
 
               {!otpSent ? (
                 <div style={styles.phoneSection}>
                   <div style={styles.formGroup}>
-                    <label style={styles.label}>
+                    <label className='keralasellerprofileverificationpagetext' style={styles.label}>
                       <Phone size={16} />
                       Mobile Number
                     </label>
                     <div style={styles.phoneInputContainer}>
-                      <span style={styles.countryCode}>+91</span>
+                      <span className='keralasellerprofileverificationcountrycode' style={styles.countryCode}>+91</span>
                       <input
+                        className='keralasellerprofileverificationinput'
                         type="tel"
                         value={phoneNumber}
                         onChange={(e) => {
@@ -461,7 +473,7 @@ export default function VerificationPage() {
                         disabled={!isPhoneEditable}
                       />
                       {!isPhoneEditable && (
-                        <button 
+                        <button
                           onClick={() => setIsPhoneEditable(true)}
                           style={styles.editPhoneButton}
                           type="button"
@@ -474,8 +486,9 @@ export default function VerificationPage() {
                       Enter your mobile number to receive a 6-digit verification OTP
                     </p>
                   </div>
-                  
+
                   <button
+                    className='keralasellerprofileverificationbtn'
                     onClick={handleSendOtp}
                     disabled={isSubmitting || !phoneNumber}
                     style={{
@@ -498,14 +511,15 @@ export default function VerificationPage() {
                 </div>
               ) : (
                 <div style={styles.otpSection}>
-                  <div style={styles.otpSentInfo}>
-                    <MessageCircle size={16} />
-                    <span>6-digit OTP sent to +91 {phoneNumber}</span>
+                  <div className='keralasellerprofileverificationotpbadgeinfo' style={styles.otpSentInfo}>
+                    <MessageCircle className='keralasellerprofileverificationotpbadgeinfoicon' size={16} />
+                    <span className='keralasellerprofileverificationotpbadgetext'> 6-digit OTP sent to +91 {phoneNumber}</span>
                   </div>
-                  
+
                   <div style={styles.formGroup}>
                     <label style={styles.label}>Enter 6-digit Verification Code</label>
                     <input
+                      className='keralasellerprofileverificationinput'
                       type="text"
                       value={otp}
                       onChange={(e) => {
@@ -528,6 +542,7 @@ export default function VerificationPage() {
 
                   <div style={styles.otpActions}>
                     <button
+                      className='keralasellerprofileverificationbtn'
                       onClick={handleVerifyOtp}
                       disabled={isSubmitting || otp.length !== 6}
                       style={{
@@ -549,15 +564,16 @@ export default function VerificationPage() {
                     </button>
                   </div>
 
-                  <div style={styles.otpFooter}>
+                  <div className='keralasellerprofileverificationotpfooter' style={styles.otpFooter}>
                     <button
+                      className='keralasellerprofileverificationresendbtn'
                       onClick={handleChangeNumber}
                       style={styles.changeNumberButton}
                       disabled={isSubmitting}
                     >
                       Change Number
                     </button>
-                    
+
                     {resendTimer > 0 ? (
                       <div style={styles.timerInfo}>
                         <Clock size={14} />
@@ -565,6 +581,7 @@ export default function VerificationPage() {
                       </div>
                     ) : (
                       <button
+                        className='keralasellerprofileverificationresendbtn'
                         onClick={handleResendOtp}
                         style={styles.resendButton}
                         disabled={isSubmitting}
@@ -589,6 +606,8 @@ export default function VerificationPage() {
           )}
         </div>
       </div>
+
+      <Footer />
 
       {/* CSS Animations */}
       <style jsx>{`
@@ -629,9 +648,9 @@ const styles = {
 
   pageContainer: {
     minHeight: '100vh',
-    backgroundColor: '#f8fafc'
+    backgroundColor: '#FDFFF0'
   },
-  
+
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -640,7 +659,7 @@ const styles = {
     minHeight: '60vh',
     gap: '20px'
   },
-  
+
   spinner: {
     width: '32px',
     height: '32px',
@@ -649,7 +668,7 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
+
   buttonSpinner: {
     width: '16px',
     height: '16px',
@@ -665,7 +684,7 @@ const styles = {
     borderBottom: '1px solid #e5e7eb',
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
-  
+
   headerContainer: {
     maxWidth: '600px',
     margin: '0 auto',
@@ -674,7 +693,7 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center'
   },
-  
+
   backLink: {
     display: 'flex',
     alignItems: 'center',
@@ -687,14 +706,14 @@ const styles = {
     borderRadius: '6px',
     transition: 'all 0.2s'
   },
-  
+
   headerTitle: {
     fontSize: '18px',
     fontWeight: '600',
     color: '#1f2937',
     margin: 0
   },
-  
+
   headerSpacer: {
     width: '100px'
   },
@@ -719,7 +738,7 @@ const styles = {
     marginBottom: '24px',
     animation: 'slideIn 0.3s ease-out'
   },
-  
+
   errorAlert: {
     display: 'flex',
     alignItems: 'center',
@@ -732,7 +751,7 @@ const styles = {
     marginBottom: '24px',
     animation: 'slideIn 0.3s ease-out'
   },
-  
+
   closeAlert: {
     marginLeft: 'auto',
     background: 'none',
@@ -744,11 +763,11 @@ const styles = {
 
   // Verification Card
   verificationCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     borderRadius: '16px',
     padding: '32px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+    border: '1px solid #1a4845',
     animation: 'fadeIn 0.6s ease-out'
   },
 
@@ -756,12 +775,12 @@ const styles = {
   verifiedSection: {
     textAlign: 'center'
   },
-  
+
   verifiedIcon: {
     width: '80px',
     height: '80px',
     borderRadius: '50%',
-    backgroundColor: '#d1fae5',
+    backgroundColor: 'transparent',
     color: '#10b981',
     display: 'flex',
     alignItems: 'center',
@@ -769,62 +788,70 @@ const styles = {
     margin: '0 auto 24px auto',
     border: '3px solid #bbf7d0'
   },
-  
+
   verifiedContent: {
     textAlign: 'center'
   },
-  
+
   verifiedTitle: {
     fontSize: '24px',
     fontWeight: '700',
-    color: '#1f2937',
+    color: '#1a4845',
     marginBottom: '12px'
   },
-  
+
   verifiedText: {
     fontSize: '16px',
     color: '#6b7280',
     marginBottom: '24px',
     lineHeight: '1.5'
   },
-  
+
   benefits: {
     textAlign: 'left',
     marginTop: '24px',
     padding: '24px',
     backgroundColor: '#f0fdf4',
     borderRadius: '12px',
-    border: '1px solid #bbf7d0'
+    border: '1px solid #1a4845'
   },
-  
+
   benefitsTitle: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    fontSize: '16px',
+    fontSize: '17px',
     fontWeight: '600',
     color: '#166534',
     marginBottom: '16px'
   },
-  
+
   benefitsList: {
     listStyle: 'none',
-    padding: 0,
+    padding: '3px',
     margin: 0,
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px'
+    gap: '12px',
   },
-  
+
+  benefitItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px', // ✅ space between icon and text
+    color: '#166534',
+    fontSize: '15px',
+    fontWeight: '500',
+  },
   verifiedActions: {
     marginTop: '32px'
   },
-  
+
   backToProfileButton: {
     display: 'inline-flex',
     alignItems: 'center',
     padding: '12px 24px',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#1a4845',
     color: 'white',
     textDecoration: 'none',
     borderRadius: '8px',
@@ -837,42 +864,43 @@ const styles = {
   verificationSection: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '24px'
+    gap: '24px',
+    backgroundColor: '#FDFFF0',
   },
-  
+
   verificationHeader: {
     display: 'flex',
     alignItems: 'flex-start',
     gap: '16px',
     textAlign: 'left'
   },
-  
+
   headerIcon: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '12px',
-    backgroundColor: '#dbeafe',
-    color: '#3b82f6',
+    // width: '48px',
+    // height: '48px',
+    // borderRadius: '12px',
+    color: '#f63b3bff',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0
+    flexShrink: 0,
+    // marginTop: '3px'
   },
-  
+
   sectionTitle: {
     fontSize: '20px',
     fontWeight: '700',
     color: '#1f2937',
-    marginBottom: '8px'
+    // marginBottom: '8px'
   },
-  
+
   sectionDescription: {
     fontSize: '14px',
     color: '#6b7280',
     lineHeight: '1.5',
     margin: 0
   },
-  
+
   warningBox: {
     display: 'flex',
     alignItems: 'flex-start',
@@ -889,13 +917,13 @@ const styles = {
     flexDirection: 'column',
     gap: '20px'
   },
-  
+
   otpSection: {
     display: 'flex',
     flexDirection: 'column',
     gap: '20px'
   },
-  
+
   otpSentInfo: {
     display: 'flex',
     alignItems: 'center',
@@ -908,13 +936,13 @@ const styles = {
     borderRadius: '8px',
     border: '1px solid #bbf7d0'
   },
-  
+
   formGroup: {
     display: 'flex',
     flexDirection: 'column',
     gap: '8px'
   },
-  
+
   label: {
     display: 'flex',
     alignItems: 'center',
@@ -923,7 +951,7 @@ const styles = {
     fontWeight: '600',
     color: '#374151'
   },
-  
+
   phoneInputContainer: {
     display: 'flex',
     alignItems: 'center',
@@ -932,26 +960,26 @@ const styles = {
     overflow: 'hidden',
     transition: 'all 0.2s'
   },
-  
+
   countryCode: {
     padding: '12px 16px',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FDFFF0',
     border: 'none',
     fontSize: '16px',
     color: '#374151',
     fontWeight: '500',
     borderRight: '1px solid #e5e7eb'
   },
-  
+
   phoneInput: {
     flex: 1,
     padding: '12px 16px',
     border: 'none',
     fontSize: '16px',
     outline: 'none',
-    backgroundColor: 'white'
+    backgroundColor: '#FDFFF0'
   },
-  
+
   editPhoneButton: {
     padding: '8px 12px',
     backgroundColor: '#3b82f6',
@@ -961,7 +989,7 @@ const styles = {
     cursor: 'pointer',
     fontWeight: '500'
   },
-  
+
   otpInput: {
     padding: '16px',
     border: '2px solid #e5e7eb',
@@ -972,9 +1000,9 @@ const styles = {
     fontWeight: '700',
     outline: 'none',
     transition: 'all 0.2s',
-    backgroundColor: 'white'
+    backgroundColor: '#FDFFF0'
   },
-  
+
   helpText: {
     fontSize: '12px',
     color: '#6b7280',
@@ -997,7 +1025,7 @@ const styles = {
     fontWeight: '600',
     transition: 'all 0.2s'
   },
-  
+
   verifyButton: {
     display: 'flex',
     alignItems: 'center',
@@ -1014,45 +1042,46 @@ const styles = {
     transition: 'all 0.2s',
     width: '100%'
   },
-  
+
   disabledButton: {
     backgroundColor: '#9ca3af',
     cursor: 'not-allowed',
     opacity: 0.7
   },
-  
+
   otpActions: {
     display: 'flex',
     flexDirection: 'column',
     gap: '12px'
   },
-  
+
   otpFooter: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: '16px',
-    borderTop: '1px solid #f3f4f6'
+    gap: '12px',
+    // paddingTop: '16px',
+    // borderTop: '1px solid #f3f4f6'
   },
-  
+
   changeNumberButton: {
     padding: '8px 16px',
-    backgroundColor: '#f8fafc',
-    border: '1px solid #e5e7eb',
+    backgroundColor: '#FDFFF0',
+    border: '1px solid #e93434ff',
     borderRadius: '6px',
-    color: '#6b7280',
+    color: '#f43131ff',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500',
     transition: 'all 0.2s'
   },
-  
+
   resendButton: {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
     padding: '8px 16px',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#1a4845',
     color: 'white',
     border: 'none',
     borderRadius: '6px',
@@ -1061,15 +1090,15 @@ const styles = {
     fontWeight: '500',
     transition: 'all 0.2s'
   },
-  
+
   timerInfo: {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
-    color: '#6b7280',
+    color: '#1a4845',
     fontSize: '14px'
   },
-  
+
   attemptsWarning: {
     display: 'flex',
     alignItems: 'center',

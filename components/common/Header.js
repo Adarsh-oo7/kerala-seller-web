@@ -174,7 +174,7 @@ export default function Header() {
           position: sticky;
           top: 0;
           z-index: 1000;
-          background: white;
+          background: #FDFFF0;
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
