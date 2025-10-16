@@ -370,7 +370,7 @@ export default function CheckoutPage() {
         {/* ✅ FIXED: Back button */}
         <div style={{ marginBottom: '20px' }}>
           <button 
-            onClick={() => router.push(`/cart/${sellerPhone}`)}
+            onClick={() => router.push(`/cart/`)}
             style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               background: 'none', border: 'none', color: '#007bff',
