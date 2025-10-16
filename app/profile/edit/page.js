@@ -17,6 +17,7 @@ import {
   Globe
 } from 'lucide-react';
 
+
 // ✅ Enhanced API base URL handling with environment variables
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
