@@ -594,7 +594,7 @@ const CloudinaryImageUpload = ({
   );
 };
 
-// ✅ Enhanced Category Selector Component (simplified for space)
+// ✅ COMPLETELY FIXED Category Selector Component
 const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesChange }) => {
   const [allCategories, setAllCategories] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
@@ -608,74 +608,324 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     fetchCategories();
   }, []);
 
+  // ✅ FIXED: Update current categories when path changes
+  useEffect(() => {
+    if (allCategories.length > 0) {
+      updateCurrentCategories();
+    }
+  }, [currentPath, allCategories]);
+
+  // ✅ FIXED: Set selected category when selectedCategoryId is provided (for editing)
+  useEffect(() => {
+    if (selectedCategoryId && allCategories.length > 0) {
+      const category = allCategories.find(cat => cat.id === parseInt(selectedCategoryId));
+      if (category) {
+        setSelectedCategory(category);
+        // ✅ Build the path to this category
+        buildPathToCategory(category);
+      }
+    }
+  }, [selectedCategoryId, allCategories]);
+
   const fetchCategories = async () => {
     try {
       setLoading(true);
       setError('');
+      console.log('🔄 Fetching categories from:', `${API_BASE_URL}/api/categories/`);
+      
       const response = await apiClient.get('/api/categories/');
+      console.log('✅ Categories response:', response.data);
+      
       const categories = response.data.results || response.data || [];
       setAllCategories(categories);
+      
+      console.log(`📋 Loaded ${categories.length} categories:`, categories);
+      
+      // ✅ Initialize with root categories
       const rootCategories = categories.filter(cat => !cat.parent);
+      console.log(`🌳 Found ${rootCategories.length} root categories:`, rootCategories);
       setCurrentCategories(rootCategories);
+      
     } catch (err) {
       console.error('❌ Error fetching categories:', err);
-      setError('Failed to load categories');
+      setError(`Failed to load categories: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ NEW: Function to build path to a specific category (for editing mode)
+  const buildPathToCategory = (category) => {
+    const path = [];
+    let current = category;
+    
+    // Build path from child to root
+    while (current && current.parent) {
+      const parent = allCategories.find(cat => cat.id === current.parent);
+      if (parent) {
+        path.unshift(parent);
+        current = parent;
+      } else {
+        break;
+      }
+    }
+    
+    console.log('🛤️ Built path to category:', path.map(c => c.name));
+    setCurrentPath(path);
+  };
+
+  // ✅ FIXED: Update current categories based on current path
+  const updateCurrentCategories = () => {
+    let categories;
+    
+    if (currentPath.length === 0) {
+      // Show root categories
+      categories = allCategories.filter(cat => !cat.parent);
+      console.log('📂 Showing root categories:', categories.length);
+    } else {
+      // Show children of the last category in path
+      const parentId = currentPath[currentPath.length - 1].id;
+      categories = allCategories.filter(cat => cat.parent === parentId);
+      console.log(`📂 Showing children of ${currentPath[currentPath.length - 1].name}:`, categories.length);
+    }
+    
+    setCurrentCategories(categories);
+  };
+
+  // ✅ FIXED: Handle category click with proper navigation and selection
   const handleCategoryClick = (category) => {
+    console.log('🖱️ Category clicked:', category.name, 'ID:', category.id);
+    
     const hasChildren = allCategories.some(cat => cat.parent === category.id);
+    console.log('👶 Has children:', hasChildren);
     
     if (hasChildren) {
+      // ✅ Navigate deeper - add to path and clear selection
+      console.log('➡️ Navigating to category with children');
       setCurrentPath([...currentPath, category]);
       setSelectedCategory(null);
+      onCategorySelect(''); // Clear selection when navigating
     } else {
+      // ✅ Select this category (leaf node)
+      console.log('✅ Selecting leaf category:', category.name);
       setSelectedCategory(category);
       onCategorySelect(category.id);
       
+      // ✅ Handle category attributes
       const newAttributes = {};
-      if (category.default_attributes) {
+      if (category.default_attributes && Array.isArray(category.default_attributes)) {
         category.default_attributes.forEach(attr => {
-          newAttributes[attr.name] = '';
+          if (typeof attr === 'object' && attr.name) {
+            newAttributes[attr.name] = '';
+          } else if (typeof attr === 'string') {
+            newAttributes[attr] = '';
+          }
         });
       }
+      console.log('🏷️ Category attributes:', newAttributes);
       onAttributesChange(newAttributes);
     }
   };
 
-  if (loading) return <div>Loading categories...</div>;
-  if (error) return <div>Error: {error}</div>;
+  // ✅ NEW: Handle back navigation
+  const handleBackClick = () => {
+    if (currentPath.length > 0) {
+      const newPath = currentPath.slice(0, -1);
+      console.log('⬅️ Going back, new path:', newPath.map(c => c.name));
+      setCurrentPath(newPath);
+      
+      // ✅ Clear selection when going back
+      if (selectedCategory) {
+        setSelectedCategory(null);
+        onCategorySelect('');
+        onAttributesChange({});
+      }
+    }
+  };
+
+  // ✅ NEW: Handle breadcrumb click
+  const handleBreadcrumbClick = (index) => {
+    const newPath = currentPath.slice(0, index + 1);
+    console.log('🍞 Breadcrumb clicked, new path:', newPath.map(c => c.name));
+    setCurrentPath(newPath);
+    
+    // Clear selection
+    if (selectedCategory) {
+      setSelectedCategory(null);
+      onCategorySelect('');
+      onAttributesChange({});
+    }
+  };
+
+  // ✅ Loading state
+  if (loading) {
+    return (
+      <div style={categoryStyles.container}>
+        <h3>🏷️ Select Product Category</h3>
+        <div style={categoryStyles.loadingContainer}>
+          <div style={categoryStyles.spinner}></div>
+          <p>Loading categories...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Error state
+  if (error) {
+    return (
+      <div style={categoryStyles.container}>
+        <h3>🏷️ Select Product Category</h3>
+        <div style={categoryStyles.errorContainer}>
+          <p>❌ {error}</p>
+          <button onClick={fetchCategories} style={categoryStyles.retryButton}>
+            🔄 Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={categoryStyles.container}>
       <h3>🏷️ Select Product Category</h3>
+      
+      {/* ✅ Show selected category */}
       {selectedCategory && (
         <div style={categoryStyles.selectedCategory}>
-          ✅ {selectedCategory.name}
+          ✅ Selected: {selectedCategory.name}
+          <button 
+            onClick={() => {
+              setSelectedCategory(null);
+              onCategorySelect('');
+              onAttributesChange({});
+            }}
+            style={categoryStyles.clearButton}
+          >
+            ✕
+          </button>
         </div>
       )}
-      <div style={categoryStyles.categoriesGrid}>
-        {currentCategories.map(category => {
-          const hasChildren = allCategories.some(cat => cat.parent === category.id);
-          return (
-            <button
-              key={category.id}
-              type="button"
-              onClick={() => handleCategoryClick(category)}
-              style={categoryStyles.categoryCard}
-            >
-              <div>{category.name} {hasChildren ? '📁' : '📄'}</div>
-            </button>
-          );
-        })}
+      
+      {/* ✅ Navigation breadcrumbs */}
+      {currentPath.length > 0 && (
+        <div style={categoryStyles.breadcrumbs}>
+          <button 
+            onClick={() => {
+              setCurrentPath([]);
+              setSelectedCategory(null);
+              onCategorySelect('');
+              onAttributesChange({});
+            }}
+            style={categoryStyles.breadcrumbButton}
+          >
+            🏠 Home
+          </button>
+          {currentPath.map((pathCategory, index) => (
+            <span key={pathCategory.id}>
+              <span style={categoryStyles.separator}> → </span>
+              <button 
+                onClick={() => handleBreadcrumbClick(index)}
+                style={categoryStyles.breadcrumbButton}
+              >
+                {pathCategory.name}
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      
+      {/* ✅ Back button */}
+      {currentPath.length > 0 && (
+        <div style={categoryStyles.navigationButtons}>
+          <button 
+            onClick={handleBackClick}
+            style={categoryStyles.backButton}
+          >
+            ⬅️ Back
+          </button>
+        </div>
+      )}
+      
+      {/* ✅ Current level info */}
+      <div style={categoryStyles.levelInfo}>
+        {currentPath.length === 0 ? (
+          <span>📂 Browse Categories ({currentCategories.length})</span>
+        ) : (
+          <span>📂 {currentPath[currentPath.length - 1].name} → Subcategories ({currentCategories.length})</span>
+        )}
       </div>
+      
+      {/* ✅ Categories grid */}
+      {currentCategories.length > 0 ? (
+        <div style={categoryStyles.categoriesGrid}>
+          {currentCategories.map(category => {
+            const hasChildren = allCategories.some(cat => cat.parent === category.id);
+            const isSelected = selectedCategory && selectedCategory.id === category.id;
+            
+            return (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => handleCategoryClick(category)}
+                style={{
+                  ...categoryStyles.categoryCard,
+                  ...(isSelected ? categoryStyles.selectedCard : {}),
+                  ...(hasChildren ? categoryStyles.folderCard : categoryStyles.fileCard)
+                }}
+              >
+                <div style={categoryStyles.categoryHeader}>
+                  <span style={categoryStyles.categoryIcon}>
+                    {hasChildren ? '📁' : '📄'}
+                  </span>
+                  <span style={categoryStyles.categoryName}>{category.name}</span>
+                </div>
+                {category.description && (
+                  <div style={categoryStyles.categoryDescription}>
+                    {category.description}
+                  </div>
+                )}
+                <div style={categoryStyles.categoryFooter}>
+                  {hasChildren ? (
+                    <span style={categoryStyles.childrenCount}>
+                      {allCategories.filter(cat => cat.parent === category.id).length} subcategories
+                    </span>
+                  ) : (
+                    <span style={categoryStyles.selectHint}>Click to select</span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={categoryStyles.emptyState}>
+          <p>📭 No categories available at this level</p>
+          {currentPath.length > 0 && (
+            <button onClick={handleBackClick} style={categoryStyles.backButton}>
+              ⬅️ Go Back
+            </button>
+          )}
+        </div>
+      )}
+      
+      {/* ✅ Debug info (development only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <details style={categoryStyles.debugInfo}>
+          <summary>🔍 Debug Info</summary>
+          <div>
+            <strong>Total Categories:</strong> {allCategories.length}<br />
+            <strong>Current Path:</strong> {currentPath.map(c => c.name).join(' → ') || 'Root'}<br />
+            <strong>Current Level:</strong> {currentCategories.length} categories<br />
+            <strong>Selected:</strong> {selectedCategory ? selectedCategory.name : 'None'}<br />
+            <strong>Selected ID:</strong> {selectedCategoryId || 'None'}
+          </div>
+        </details>
+      )}
     </div>
   );
 };
 
-// ✅ Smart Stock Input Component (simplified)
+// ✅ Smart Stock Input Component
 const SmartStockInput = ({ formData, setFormData }) => {
   const [stockError, setStockError] = useState('');
   
@@ -784,10 +1034,10 @@ export default function ProductForm({ product, onClose, onSuccess }) {
       });
       setSelectedCategoryId(product.category);
       setDynamicAttributes(product.attributes || {});
-      setMainImageUrl(product.main_image_url || '');
+      setMainImageUrl(product.main_image_url || product.cloudinary_image_url || '');
       setSubImageUrls(product.sub_images?.map(img => ({
-        url: img.image_url || img.url,
-        public_id: img.public_id
+        url: img.image_url || img.cloudinary_image_url || img.url,
+        public_id: img.public_id || img.cloudinary_public_id
       })) || []);
     }
   }, [product]);
@@ -848,6 +1098,11 @@ export default function ProductForm({ product, onClose, onSuccess }) {
       return;
     }
 
+    if (!selectedCategoryId) {
+      setError('Please select a product category');
+      return;
+    }
+
     const priceValidation = validatePositiveNumber(formData.price, 'Selling Price');
     if (!priceValidation.isValid) {
       setError(priceValidation.error);
@@ -899,6 +1154,8 @@ export default function ProductForm({ product, onClose, onSuccess }) {
       }))
     };
 
+    console.log('🚀 Submitting product data:', submissionData);
+
     const url = product 
       ? `${PRODUCTS_API_URL}${product.id}/` 
       : PRODUCTS_API_URL;
@@ -942,6 +1199,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
         errorMessage = 'Request is taking too long. Please check your internet connection and try again.';
       }
       
+      console.error('❌ Product save error:', err);
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -1565,7 +1823,7 @@ const styles = {
   }
 };
 
-// Category Styles (simplified)
+// ✅ Enhanced Category Styles with better navigation and visual feedback
 const categoryStyles = {
   container: {
     marginBottom: '1.5rem',
@@ -1574,30 +1832,219 @@ const categoryStyles = {
     padding: '20px',
     backgroundColor: '#f8f9fa'
   },
+  
+  // Loading and Error States
+  loadingContainer: {
+    textAlign: 'center',
+    padding: '40px 20px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '16px'
+  },
+  
+  spinner: {
+    width: '24px',
+    height: '24px',
+    border: '3px solid #f3f3f3',
+    borderTop: '3px solid #0d6efd',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  },
+  
+  errorContainer: {
+    textAlign: 'center',
+    padding: '20px',
+    backgroundColor: '#f8d7da',
+    border: '1px solid #f5c6cb',
+    borderRadius: '8px',
+    color: '#721c24'
+  },
+  
+  retryButton: {
+    marginTop: '12px',
+    padding: '8px 16px',
+    backgroundColor: '#dc3545',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer'
+  },
+  
+  // Selected Category Display
   selectedCategory: {
     color: '#28a745',
     fontSize: '14px',
     fontWeight: '600',
     backgroundColor: '#d4edda',
-    padding: '6px 12px',
+    padding: '8px 12px',
     borderRadius: '20px',
     border: '2px solid #c3e6cb',
+    marginBottom: '16px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  
+  clearButton: {
+    background: 'none',
+    border: 'none',
+    color: '#28a745',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    padding: '0 4px',
+    marginLeft: '8px'
+  },
+  
+  // Breadcrumb Navigation
+  breadcrumbs: {
+    marginBottom: '16px',
+    padding: '12px',
+    backgroundColor: '#e9ecef',
+    borderRadius: '8px',
+    fontSize: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap'
+  },
+  
+  breadcrumbButton: {
+    background: 'none',
+    border: 'none',
+    color: '#0d6efd',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    fontSize: '14px',
+    padding: '2px 4px'
+  },
+  
+  separator: {
+    color: '#6c757d',
+    margin: '0 4px'
+  },
+  
+  // Navigation Buttons
+  navigationButtons: {
     marginBottom: '16px'
   },
+  
+  backButton: {
+    padding: '8px 16px',
+    backgroundColor: '#6c757d',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '14px'
+  },
+  
+  // Level Information
+  levelInfo: {
+    fontSize: '12px',
+    color: '#6c757d',
+    marginBottom: '16px',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  },
+  
+  // Categories Grid
   categoriesGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
     gap: '12px'
   },
+  
   categoryCard: {
     background: 'white',
     border: '2px solid #e9ecef',
     borderRadius: '8px',
     padding: '16px',
     cursor: 'pointer',
-    transition: 'all 0.3s',
+    transition: 'all 0.2s',
     textAlign: 'left',
-    minHeight: '60px'
+    minHeight: '100px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between'
+  },
+  
+  // Card Types
+  folderCard: {
+    borderColor: '#ffc107',
+    backgroundColor: '#fff8e1'
+  },
+  
+  fileCard: {
+    borderColor: '#28a745',
+    backgroundColor: '#f8fff8'
+  },
+  
+  selectedCard: {
+    borderColor: '#0d6efd',
+    backgroundColor: '#e3f2fd',
+    transform: 'scale(1.02)',
+    boxShadow: '0 4px 8px rgba(13, 110, 253, 0.2)'
+  },
+  
+  // Card Content
+  categoryHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '8px'
+  },
+  
+  categoryIcon: {
+    fontSize: '20px'
+  },
+  
+  categoryName: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#333',
+    lineHeight: '1.3'
+  },
+  
+  categoryDescription: {
+    fontSize: '12px',
+    color: '#6c757d',
+    marginBottom: '8px',
+    lineHeight: '1.4'
+  },
+  
+  categoryFooter: {
+    fontSize: '11px',
+    color: '#6c757d',
+    textAlign: 'right'
+  },
+  
+  childrenCount: {
+    fontStyle: 'italic'
+  },
+  
+  selectHint: {
+    color: '#28a745',
+    fontWeight: '500'
+  },
+  
+  // Empty State
+  emptyState: {
+    textAlign: 'center',
+    padding: '40px 20px',
+    color: '#6c757d'
+  },
+  
+  // Debug Information
+  debugInfo: {
+    marginTop: '16px',
+    padding: '12px',
+    backgroundColor: '#f8f9fa',
+    border: '1px solid #dee2e6',
+    borderRadius: '4px',
+    fontSize: '11px',
+    color: '#6c757d'
   }
 };
 
