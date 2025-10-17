@@ -486,14 +486,37 @@ export default function ShopWishlistPage() {
                   <div className="product-info" style={styles.productInfo}>
 
                     {/* Product details */}
-                    <div className="product-header" style={styles.productHeader}>
-                      <h3 className="product-name" style={styles.productName}>
+                    <div className="product-header" style={{ ...styles.productHeader, minWidth: 0 }}>
+                      <h3
+                        className="product-name"
+                        style={{
+                          ...styles.productName,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: 'block',
+                          width: '100%',
+                        }}
+                        title={`${product.name || ''}${product.model_name ? ` (${product.model_name})` : ''}`}
+                      >
                         {product.name || 'Unnamed Product'}
                         {product.model_name && (
-                          <span className='wishlistproduct-model' style={styles.productModel}> ({product.model_name})</span>
+                          <span
+                            className="wishlistproduct-model"
+                            style={{
+                              ...styles.productModel,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            {' '}
+                            ({product.model_name})
+                          </span>
                         )}
                       </h3>
                     </div>
+
 
                     {/* Pricing */}
                     <div className="product-pricing" style={styles.productPricing}>
@@ -509,6 +532,7 @@ export default function ShopWishlistPage() {
                       </div>
                     </div>
                     <button
+                      className='shopslugprofilewishlistaddtocartbtn'
                       onClick={() => addToCart(product)}
                       style={styles.addToCartButton}
                       disabled={!productPrice}
@@ -611,10 +635,7 @@ const styles = {
     transition: 'all 0.2s'
   },
   productInfo: { padding: '16px' },
-  productName: {
-    fontSize: '16px', fontWeight: '600', color: '#1f2937',
-    margin: '0 0 8px 0', lineHeight: '1.4'
-  },
+
   productPrice: {
     fontSize: '18px', fontWeight: '700', color: '#059669',
     margin: '0 0 8px 0'
@@ -787,7 +808,7 @@ const styles = {
   },
 
   productName: {
-    fontSize: '15px',
+    fontSize: '14px',
     fontWeight: '600',
     color: '#1a4845',
     margin: '0',
@@ -803,13 +824,7 @@ const styles = {
     fontSize: '0.85rem',
     fontWeight: '400',
     color: '#6b7280',
-    marginLeft: '4px',
-    whiteSpace: "nowrap",       // force one line
-    overflow: "hidden",         // cut extra text
-    textOverflow: "ellipsis",   // add "..."
-    maxWidth: "120px",          // width decides how much text is visible
-    display: "inline-block",    // required for ellipsis
-    verticalAlign: "middle"
+
   },
 
   productRating: {

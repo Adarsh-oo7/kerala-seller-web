@@ -4,11 +4,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
-import { 
-  Heart, 
-  ArrowLeft, 
-  Trash2, 
-  ShoppingCart, 
+import Header from '../../../components/common/Header';
+import Footer from '../../../components/common/Footer';
+import "../../../styles/Keralasellerprofilewishlist.css";
+import {
+  Heart,
+  ArrowLeft,
+  Trash2,
+  ShoppingCart,
   Star,
   RefreshCw,
   AlertCircle,
@@ -49,13 +52,13 @@ export default function WishlistPage() {
 
   // ✅ FIXED: Better token detection
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('access_token') || 
-                  localStorage.getItem('buyerAccessToken') ||
-                  localStorage.getItem('buyerToken') ||
-                  localStorage.getItem('accessToken');
-                  
+    const token = localStorage.getItem('access_token') ||
+      localStorage.getItem('buyerAccessToken') ||
+      localStorage.getItem('buyerToken') ||
+      localStorage.getItem('accessToken');
+
     console.log('🔍 Auth token found:', !!token);
-    
+
     if (!token) {
       return null;
     }
@@ -100,12 +103,12 @@ export default function WishlistPage() {
     try {
       console.log('🔍 Loading wishlist from API:', WISHLIST_API);
       const response = await axios.get(WISHLIST_API, { headers });
-      
+
       const wishlistData = response.data;
       console.log('✅ Wishlist API response:', wishlistData);
-      
+
       let items = [];
-      
+
       // ✅ ENHANCED: Better data extraction
       if (wishlistData && wishlistData.items && Array.isArray(wishlistData.items)) {
         items = wishlistData.items.map(item => {
@@ -133,13 +136,13 @@ export default function WishlistPage() {
           };
         });
       }
-      
+
       console.log('✅ Processed wishlist items:', items.length, items);
       setWishlistItems(items);
-      
+
       // Sync with localStorage
       localStorage.setItem('wishlist', JSON.stringify(items));
-      
+
     } catch (error) {
       console.error('❌ API wishlist failed:', error);
       if (error.response?.status === 401) {
@@ -159,14 +162,14 @@ export default function WishlistPage() {
       if (savedWishlist) {
         const parsedWishlist = JSON.parse(savedWishlist);
         const items = Array.isArray(parsedWishlist) ? parsedWishlist : [];
-        
+
         // ✅ FIXED: Ensure image URLs are properly constructed even from localStorage
         const itemsWithImages = items.map(item => ({
           ...item,
           main_image_url: getImageUrl(item.main_image_url || item.image_url || item.image),
           image_url: getImageUrl(item.image_url || item.main_image_url || item.image)
         }));
-        
+
         setWishlistItems(itemsWithImages);
         console.log('✅ Loaded from localStorage:', itemsWithImages.length, 'items');
       } else {
@@ -181,7 +184,7 @@ export default function WishlistPage() {
   const loadWishlist = useCallback(async () => {
     setIsLoading(true);
     setError('');
-    
+
     try {
       await loadWishlistFromAPI();
     } catch (error) {
@@ -199,14 +202,14 @@ export default function WishlistPage() {
   // ✅ ENHANCED: Better removal with API integration
   const removeFromWishlist = async (productId) => {
     setIsUpdating(prev => ({ ...prev, [productId]: 'removing' }));
-    
+
     try {
       const headers = getAuthHeaders();
-      
+
       if (headers) {
         try {
           console.log('🗑️ Removing from API wishlist:', productId);
-          
+
           // Try different API endpoints for removal
           try {
             await axios.post(`${API_BASE_URL}/api/wishlist/toggle_product/`, {
@@ -225,13 +228,13 @@ export default function WishlistPage() {
           console.warn('⚠️ API removal failed, continuing with local removal:', apiError);
         }
       }
-      
+
       // Update local state and localStorage
       const updatedWishlist = wishlistItems.filter(item => item.id !== productId);
       setWishlistItems(updatedWishlist);
       localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
       console.log('✅ Item removed from wishlist');
-      
+
     } catch (error) {
       console.error('❌ Error removing from wishlist:', error);
       setError('Failed to remove item. Please try again.');
@@ -242,12 +245,12 @@ export default function WishlistPage() {
 
   const addToCart = async (product) => {
     if (product.online_stock <= 0) return;
-    
+
     setIsUpdating(prev => ({ ...prev, [product.id]: 'adding_to_cart' }));
-    
+
     try {
       const headers = getAuthHeaders();
-      
+
       if (headers) {
         try {
           console.log('🛒 Adding to cart via API:', product.id);
@@ -255,7 +258,7 @@ export default function WishlistPage() {
             product_id: product.id,
             quantity: 1
           }, { headers });
-          
+
           alert('Added to cart successfully!');
           console.log('✅ Added to cart via API');
         } catch (apiError) {
@@ -267,17 +270,17 @@ export default function WishlistPage() {
         console.log('🛒 Adding to local cart:', product.id);
         const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
         const existingItem = cartItems.find(item => item.id === product.id);
-        
+
         if (existingItem) {
           existingItem.quantity += 1;
         } else {
           cartItems.push({ ...product, quantity: 1 });
         }
-        
+
         localStorage.setItem('cart', JSON.stringify(cartItems));
         alert('Added to cart successfully!');
       }
-      
+
     } catch (error) {
       console.error('❌ Error adding to cart:', error);
       setError('Failed to add to cart. Please try again.');
@@ -336,9 +339,10 @@ export default function WishlistPage() {
   }
 
   return (
-    <div style={styles.pageContainer}>
+    <div style={styles.pagecontainer}>
+      <Header />
       {/* Header */}
-      <header style={styles.header}>
+      {/* <header style={styles.header}>
         <div style={styles.headerContainer}>
           <button onClick={() => router.back()} style={styles.backButton}>
             <ArrowLeft size={20} />
@@ -359,7 +363,7 @@ export default function WishlistPage() {
             </div>
           </div>
         </div>
-      </header>
+      </header> */}
 
       <div style={styles.container}>
         {/* Error Message */}
@@ -390,7 +394,7 @@ export default function WishlistPage() {
         ) : (
           <>
             {/* Filters and Controls */}
-            <div style={styles.controlsSection}>
+            {/* <div style={styles.controlsSection}>
               <div style={styles.searchContainer}>
                 <Search size={18} style={styles.searchIcon} />
                 <input
@@ -401,12 +405,12 @@ export default function WishlistPage() {
                   style={styles.searchInput}
                 />
               </div>
-              
+
               <div style={styles.controlsRow}>
                 <div style={styles.sortContainer}>
                   <label style={styles.sortLabel}>Sort by:</label>
-                  <select 
-                    value={sortBy} 
+                  <select
+                    value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                     style={styles.sortSelect}
                   >
@@ -417,7 +421,7 @@ export default function WishlistPage() {
                     <option value="rating">Rating</option>
                   </select>
                 </div>
-                
+
                 <div style={styles.viewToggle}>
                   <button
                     onClick={() => setViewMode('grid')}
@@ -439,132 +443,189 @@ export default function WishlistPage() {
                   </button>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Wishlist Items */}
             <div style={viewMode === 'grid' ? styles.wishlistGrid : styles.wishlistList}>
               {filteredAndSortedItems.map((product) => {
+                // 🧮 Calculate discount %
                 const discount = calculateDiscount(product.price, product.mrp);
+
+                // 🏷️ Stock conditions
                 const isOutOfStock = (product.online_stock || 0) <= 0;
+
+                // 🔄 UI loading states (for wishlist/cart updates)
                 const isRemoving = isUpdating[product.id] === 'removing';
                 const isAddingToCart = isUpdating[product.id] === 'adding_to_cart';
 
-                // ✅ FIXED: Better image URL handling
-                const imageUrl = product.main_image_url || 
-                                product.image_url || 
-                                product.image || 
-                                getImageUrl(null);
-
-                console.log('🖼️ Product image URL for', product.name, ':', imageUrl);
+                // 🖼️ Safe image URL fallback
+                const imageUrl =
+                  product.main_image_url ||
+                  product.image_url ||
+                  product.image ||
+                  getImageUrl(null);
 
                 return (
-                  <div 
-                    key={product.id} 
-                    style={{
-                      ...styles.wishlistItem,
-                      ...(viewMode === 'list' ? styles.listItem : {}),
-                      ...(isRemoving ? styles.itemRemoving : {})
-                    }}
+                  <div
+                    key={product.id}
+                    className={`shop-product-card ${isOutOfStock ? 'out-of-stock' : ''}`}
+                    style={styles.shopProductCard}
+                    data-product-id={product.id}
                   >
-                    <Link href={`/product/${product.id}`} style={styles.productLink}>
-                      <div style={styles.imageContainer}>
-                        <img 
-                          src={imageUrl}
-                          alt={product.name || 'Product'}
-                          style={styles.productImage}
-                          onLoad={() => console.log('✅ Image loaded:', imageUrl)}
-                          onError={(e) => {
-                            console.warn('❌ Image failed to load:', imageUrl);
-                            e.target.src = 'https://via.placeholder.com/300x300/e9ecef/6c757d?text=No+Image';
-                          }}
-                        />
-                        {isOutOfStock && (
-                          <div style={styles.outOfStockBadge}>Out of Stock</div>
-                        )}
-                        {discount > 0 && (
-                          <div style={styles.discountBadge}>{discount}% OFF</div>
-                        )}
-                      </div>
-                    </Link>
-                    
-                    <div style={styles.productInfo}>
-                      <Link href={`/product/${product.id}`} style={styles.productLink}>
-                        <h3 style={styles.productName}>{product.name}</h3>
-                        {product.model_name && (
-                          <p style={styles.modelName}>{product.model_name}</p>
-                        )}
-                        
-                        <div style={styles.priceRow}>
-                          <span style={styles.currentPrice}>{formatPrice(product.price)}</span>
-                          {product.mrp && product.mrp > product.price && (
-                            <span style={styles.originalPrice}>{formatPrice(product.mrp)}</span>
-                          )}
+                    {/* ✅ Image section */}
+                    <div className="product-image-wrapper" style={styles.productImageWrapper}>
+                      <img
+                        src={imageUrl}
+                        alt={product.name || 'Product'}
+                        style={styles.productImageLink}
+                        onError={(e) => handleImageError(e, product.name)}
+                        onLoad={() =>
+                          console.log('✅ Image loaded successfully for:', product.name)
+                        }
+                      />
+
+                      {/* ⭐ Rating Overlay */}
+                      <div style={styles.ratingOverlay}>
+                        <div style={styles.ratingLeft}>
+                          <Star
+                            size={12}
+                            fill={product.average_rating > 0 ? '#fbbf24' : 'none'}
+                            color="#fbbf24"
+                          />
+                          <span style={styles.ratingLeftText}>
+                            {product.average_rating > 0
+                              ? `(${product.average_rating.toFixed(1)})`
+                              : ''}
+                          </span>
                         </div>
 
-                        {product.average_rating && (
-                          <div style={styles.ratingRow}>
-                            <Star size={14} fill="#ffc107" color="#ffc107" />
-                            <span style={styles.rating}>
-                              {Number(product.average_rating).toFixed(1)} ({product.review_count || 0} reviews)
-                            </span>
-                          </div>
+                        {product.review_count > 0 ? (
+                          <span style={styles.ratingRight}>
+                            {product.review_count} reviews
+                          </span>
+                        ) : (
+                          <span style={styles.ratingRight}>No reviews</span>
                         )}
-                        
-                        {product.store?.name && (
-                          <p style={styles.storeName}>by {product.store.name}</p>
-                        )}
+                      </div>
 
-                        {product.online_stock > 0 && product.online_stock <= 5 && (
-                          <p style={styles.lowStock}>Only {product.online_stock} left!</p>
+                      {/* 🏷️ Product badges */}
+                      <div className="product-badges" style={styles.productBadges}>
+                        {discount > 0 && (
+                          <span className="badge discount" style={styles.badgeDiscount}>
+                            {discount}% OFF
+                          </span>
                         )}
-                      </Link>
+                        {(product.online_stock || 0) <= 5 && (product.online_stock || 0) > 0 && (
+                          <span className="badge low-stock" style={styles.badgeLowStock}>
+                            Only {product.online_stock} left
+                          </span>
+                        )}
+                        {isOutOfStock && (
+                          <span className="badge out-of-stock" style={styles.badgeOutOfStock}>
+                            Out of Stock
+                          </span>
+                        )}
+                      </div>
 
-                      <div style={styles.actions}>
+                      {/* ❤️ Quick Actions */}
+                      <div className="quick-actions" style={styles.quickActions}>
                         <button
                           onClick={() => removeFromWishlist(product.id)}
-                          style={styles.removeButton}
-                          title="Remove from wishlist"
+                          style={{
+                            ...styles.removeButton,
+                            opacity: isRemoving ? 0.5 : 1,
+                            pointerEvents: isRemoving ? 'none' : 'auto',
+                          }}
                           disabled={isRemoving}
+                          title="Remove from wishlist"
                         >
                           {isRemoving ? (
-                            <div style={styles.smallSpinner}></div>
+                            <span style={{ fontSize: 12 }}>Removing...</span>
                           ) : (
                             <Trash2 size={16} />
                           )}
-                          <span>Remove</span>
                         </button>
-                        
-                        {!isOutOfStock && (
-                          <button 
-                            onClick={() => addToCart(product)}
-                            style={styles.addToCartButton}
-                            disabled={isAddingToCart}
-                          >
-                            {isAddingToCart ? (
-                              <>
-                                <div style={styles.smallSpinner}></div>
-                                Adding...
-                              </>
-                            ) : (
-                              <>
-                                <ShoppingCart size={16} />
-                                <span>Add to Cart</span>
-                              </>
-                            )}
-                          </button>
-                        )}
                       </div>
+                    </div>
+
+                    {/* 🧾 Product info */}
+                    <div className="product-info" style={styles.productInfo}>
+                      <div className="product-header" style={{ ...styles.productHeader, minWidth: 0 }}>
+                        <h3
+                          className="product-name"
+                          style={{
+                            ...styles.productName,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: 'block',
+                            width: '100%',
+                          }}
+                          title={`${product.name || ''}${product.model_name ? ` (${product.model_name})` : ''}`}
+                        >
+                          {product.name || 'Unnamed Product'}
+                          {product.model_name && (
+                            <span
+                              className="wishlistproduct-model"
+                              style={{
+                                ...styles.productModel,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              {' '}
+                              ({product.model_name})
+                            </span>
+                          )}
+                        </h3>
+                      </div>
+
+                      {/* 💰 Pricing */}
+                      <div className="product-pricing" style={styles.productPricing}>
+                        <div className="price-section" style={styles.priceSection}>
+                          <span className="current-price" style={styles.currentPrice}>
+                            {formatPrice(product.price)}
+                          </span>
+                          {product.mrp && product.mrp > product.price && (
+                            <span className="original-price" style={styles.originalPrice}>
+                              {formatPrice(product.mrp)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 🛒 Add to Cart Button */}
+                      <button
+                        className="shopslugprofilewishlistaddtocartbtn"
+                        onClick={() => addToCart(product)}
+                        style={{
+                          ...styles.addToCartButton,
+                          opacity: isAddingToCart ? 0.6 : 1,
+                        }}
+                        disabled={isOutOfStock || isAddingToCart}
+                      >
+                        {isAddingToCart ? (
+                          <span style={{ fontSize: 12 }}>Adding...</span>
+                        ) : (
+                          <>
+                            <ShoppingCart size={16} />
+                            Add to Cart
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
                 );
               })}
+
             </div>
 
             {/* Results Summary */}
             {searchQuery && (
               <div style={styles.resultsSummary}>
                 <p>
-                  {filteredAndSortedItems.length === 0 
+                  {filteredAndSortedItems.length === 0
                     ? `No items found for "${searchQuery}"`
                     : `Showing ${filteredAndSortedItems.length} of ${wishlistItems.length} items`
                   }
@@ -575,59 +636,17 @@ export default function WishlistPage() {
         )}
       </div>
 
-      {/* CSS Animations */}
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes slideOut {
-          from { opacity: 1; transform: translateX(0); }
-          to { opacity: 0.5; transform: translateX(-10px); }
-        }
-        
-        /* Responsive grid styles */
-        @media (max-width: 640px) {
-          .wishlist-grid {
-            grid-template-columns: repeat(1, 1fr) !important;
-          }
-        }
-        
-        @media (min-width: 641px) and (max-width: 768px) {
-          .wishlist-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
-        }
-        
-        @media (min-width: 769px) and (max-width: 1024px) {
-          .wishlist-grid {
-            grid-template-columns: repeat(3, 1fr) !important;
-          }
-        }
-        
-        @media (min-width: 1025px) {
-          .wishlist-grid {
-            grid-template-columns: repeat(4, 1fr) !important;
-          }
-        }
-      `}</style>
+      <Footer />
+
     </div>
   );
 }
 
 // Keep all your existing styles but add responsive grid class
 const styles = {
-  pageContainer: {
-    minHeight: '100vh',
-    backgroundColor: '#f8fafc'
-  },
-  
+  pagecontainer: { backgroundColor: "#FDFFF0" },
+  container: { minHeight: '100vh', backgroundColor: '#FDFFF0', padding: '40px 20px 20px', maxWidth: '1200px', margin: '0 auto', },
+
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -636,7 +655,7 @@ const styles = {
     minHeight: '100vh',
     gap: '20px'
   },
-  
+
   spinner: {
     width: '32px',
     height: '32px',
@@ -645,7 +664,7 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
+
   smallSpinner: {
     width: '14px',
     height: '14px',
@@ -664,7 +683,7 @@ const styles = {
     zIndex: 100,
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
-  
+
   headerContainer: {
     maxWidth: '1200px',
     margin: '0 auto',
@@ -673,7 +692,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between'
   },
-  
+
   backButton: {
     display: 'flex',
     alignItems: 'center',
@@ -688,19 +707,19 @@ const styles = {
     borderRadius: '6px',
     transition: 'all 0.2s'
   },
-  
+
   backText: {
     display: 'none',
     '@media (min-width: 640px)': {
       display: 'inline'
     }
   },
-  
+
   titleSection: {
     flex: 1,
     textAlign: 'center'
   },
-  
+
   headerTitle: {
     display: 'flex',
     alignItems: 'center',
@@ -711,13 +730,13 @@ const styles = {
     color: '#1f2937',
     margin: 0
   },
-  
+
   headerActions: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px'
   },
-  
+
   refreshButton: {
     display: 'flex',
     alignItems: 'center',
@@ -731,7 +750,7 @@ const styles = {
     color: '#6b7280',
     transition: 'all 0.2s'
   },
-  
+
   wishlistCount: {
     fontSize: '14px',
     color: '#ef4444',
@@ -740,13 +759,6 @@ const styles = {
     padding: '6px 12px',
     borderRadius: '20px',
     fontWeight: '600'
-  },
-
-  // Container
-  container: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '24px 20px'
   },
 
   // Error Alert
@@ -761,7 +773,7 @@ const styles = {
     color: '#991b1b',
     marginBottom: '24px'
   },
-  
+
   closeAlert: {
     marginLeft: 'auto',
     background: 'none',
@@ -779,31 +791,31 @@ const styles = {
     maxWidth: '500px',
     margin: '0 auto'
   },
-  
+
   emptyIcon: {
     color: '#fecaca',
     marginBottom: '24px'
   },
-  
+
   emptyTitle: {
     fontSize: '28px',
     fontWeight: '700',
     color: '#1f2937',
     marginBottom: '12px'
   },
-  
+
   emptyDesc: {
     color: '#6b7280',
     marginBottom: '32px',
     lineHeight: '1.6',
     fontSize: '16px'
   },
-  
+
   emptyActions: {
     display: 'flex',
     justifyContent: 'center'
   },
-  
+
   browseButton: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -826,12 +838,12 @@ const styles = {
     borderRadius: '12px',
     border: '1px solid #e5e7eb'
   },
-  
+
   searchContainer: {
     position: 'relative',
     marginBottom: '16px'
   },
-  
+
   searchIcon: {
     position: 'absolute',
     left: '16px',
@@ -840,7 +852,7 @@ const styles = {
     color: '#6b7280',
     zIndex: 1
   },
-  
+
   searchInput: {
     width: '100%',
     padding: '12px 16px 12px 48px',
@@ -851,7 +863,7 @@ const styles = {
     transition: 'border-color 0.2s',
     boxSizing: 'border-box'
   },
-  
+
   controlsRow: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -859,19 +871,19 @@ const styles = {
     gap: '16px',
     flexWrap: 'wrap'
   },
-  
+
   sortContainer: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px'
   },
-  
+
   sortLabel: {
     fontSize: '14px',
     fontWeight: '500',
     color: '#374151'
   },
-  
+
   sortSelect: {
     padding: '8px 12px',
     border: '1px solid #d1d5db',
@@ -880,14 +892,14 @@ const styles = {
     backgroundColor: 'white',
     color: '#374151'
   },
-  
+
   viewToggle: {
     display: 'flex',
     backgroundColor: '#f3f4f6',
     borderRadius: '6px',
     padding: '2px'
   },
-  
+
   viewButton: {
     padding: '8px 12px',
     background: 'none',
@@ -897,7 +909,7 @@ const styles = {
     color: '#6b7280',
     transition: 'all 0.2s'
   },
-  
+
   activeViewButton: {
     backgroundColor: 'white',
     color: '#3b82f6',
@@ -905,38 +917,79 @@ const styles = {
   },
 
   // ✅ FIXED: Responsive Wishlist Grid
-  wishlistGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '16px',
-    className: 'wishlist-grid'
-  },
-  
-  wishlistList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px'
-  },
 
-  // Wishlist Items
-  wishlistItem: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    overflow: 'hidden',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb',
-    transition: 'all 0.3s ease',
-    animation: 'fadeIn 0.6s ease-out'
+
+  wishlistGrid: {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+  gap: '16px',
+  justifyContent: 'center',      // ✅ centers cards
+  justifyItems:'center',
+  width: '100%',
+  maxWidth:'1200px',
+  margin: '0 auto',              // ✅ centers the grid itself
+  padding: '10px 0', // ✅ equal side padding responsive
+  boxSizing: 'border-box',
+},
+
+  wishlistCard: {
+    backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s',
+    border: '1px solid #e5e7eb'
   },
-  
-  listItem: {
-    display: 'flex',
-    alignItems: 'stretch'
+  productImage: { position: 'relative', height: '200px', overflow: 'hidden' },
+  image: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    backgroundColor: '#f3f4f6', // ✅ ADDED: Background color while loading
+    transition: 'opacity 0.3s ease' // ✅ ADDED: Smooth transition
   },
-  
-  itemRemoving: {
-    animation: 'slideOut 0.3s ease-out',
-    opacity: 0.5
+  removeButton: {
+    position: 'absolute', top: '12px', right: '12px',
+    backgroundColor: 'rgba(255,255,255,0.95)', border: 'none',
+    borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: '#ef4444', boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    transition: 'all 0.2s'
+  },
+  productInfo: { padding: '16px' },
+
+  productPrice: {
+    fontSize: '18px', fontWeight: '700', color: '#059669',
+    margin: '0 0 8px 0'
+  },
+  productDescription: {
+    fontSize: '14px', color: '#6b7280', margin: '0', lineHeight: '1.4',
+    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
+  },
+  productActions: {
+    padding: '16px', borderTop: '1px solid #f3f4f6',
+    display: 'flex', gap: '8px'
+  },
+  addToCartButton: {
+    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    gap: '6px', backgroundColor: '#10b981', color: 'white', border: 'none',
+    borderRadius: '6px', padding: '10px 12px', cursor: 'pointer', fontSize: '14px',
+    fontWeight: '500', transition: 'all 0.2s'
+  },
+  viewButton: {
+    backgroundColor: '#f3f4f6', color: '#374151', border: 'none',
+    borderRadius: '6px', padding: '10px 12px', cursor: 'pointer',
+    fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
+  },
+  shopProductCard: {
+    width: "100%",
+    maxWidth: "210px",
+    border: "1px solid #eee",
+    borderRadius: "10px",
+    overflow: "hidden",
+    background: "#fff",
+    display: "flex",
+    flexDirection: "column",
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+    position: "relative"
   },
 
   productLink: {
@@ -945,155 +998,280 @@ const styles = {
     display: 'block'
   },
 
-  imageContainer: {
-    position: 'relative',
-    aspectRatio: '1',
-    overflow: 'hidden',
-    minWidth: '150px'
+  productImageWrapper: {
+    width: "100%",
+    height: "185px",
+    position: "relative",
+    overflow: "hidden",
+    backgroundColor: "#f5f5f5",
+    borderBottom: "1px solid #eee",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+
+  productImageLink: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+    transition: "transform 0.3s ease",
   },
 
   productImage: {
     width: '100%',
-    height: '100%',
+    height: '180px',
     objectFit: 'cover',
-    transition: 'transform 0.3s ease',
-    backgroundColor: '#f3f4f6' // Fallback background while loading
+    transition: 'transform 0.3s ease'
   },
 
-  outOfStockBadge: {
+
+
+  productBadges: {
     position: 'absolute',
     top: '8px',
     left: '8px',
-    backgroundColor: '#ef4444',
-    color: 'white',
-    padding: '4px 8px',
-    borderRadius: '6px',
-    fontSize: '12px',
-    fontWeight: '600'
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    zIndex: 2
   },
-  
-  discountBadge: {
-    position: 'absolute',
-    top: '8px',
-    right: '8px',
-    backgroundColor: '#10b981',
-    color: 'white',
+
+
+
+
+  badgeDiscount: {
     padding: '4px 8px',
+    background: 'rgba(40, 167, 69, 0.9)',
+    color: 'white',
+    fontSize: '10px',
     borderRadius: '6px',
-    fontSize: '12px',
+    fontWeight: '600',
+    backdropFilter: 'blur(4px)',
+  },
+
+  badgeLowStock: {
+    padding: '4px 8px',
+    backgroundColor: '#be1e237a',
+    color: 'white',
+    fontSize: '10px',
+    borderRadius: '6px',
     fontWeight: '600'
   },
 
+  badgeOutOfStock: {
+    padding: '4px 8px',
+    backgroundColor: '#6b7280',
+    color: 'white',
+    fontSize: '0.75rem',
+    borderRadius: '4px',
+    fontWeight: '600'
+  },
+
+  quickActions: {
+    position: 'absolute',
+    top: '8px',
+    right: '8px',
+    zIndex: 10,
+  },
+
+  quickActionBtn: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#059669',
+    transition: 'all 0.2s',
+    backdropFilter: 'blur(4px)',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+    position: 'relative'
+  },
+
+  quickActionBtnActive: {
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    color: '#ef4444',
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    boxShadow: '0 2px 12px rgba(239, 68, 68, 0.25)'
+  },
+
+  quickActionBtnLoading: {
+    cursor: 'not-allowed',
+    opacity: 0.7,
+    pointerEvents: 'none'
+  },
+
   productInfo: {
-    padding: '16px',
+    padding: '10px',
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
+    justifyContent: 'space-between',
+  },
+
+
+  storeName: {
+    fontSize: '0.8rem',
+    color: '#059669',
+    fontWeight: '500',
+    marginBottom: '8px'
+  },
+
+  productHeader: {
+    marginBottom: '8px',
     flex: 1
   },
 
   productName: {
-    fontSize: '16px',
+    fontSize: '14px',
     fontWeight: '600',
-    color: '#1f2937',
-    margin: '0 0 4px 0',
-    lineHeight: '1.4',
+    color: '#1a4845',
+    margin: '0',
+    lineHeight: '1.3',
     display: '-webkit-box',
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
     overflow: 'hidden'
   },
 
-  modelName: {
-    fontSize: '14px',
+
+  productModel: {
+    fontSize: '0.85rem',
+    fontWeight: '400',
     color: '#6b7280',
-    margin: 0
+    marginLeft: '4px',
+    whiteSpace: "nowrap",       // force one line
+    overflow: "hidden",         // cut extra text
+    textOverflow: "ellipsis",   // add "..."
+    maxWidth: "120px",          // width decides how much text is visible
+    display: "inline-block",    // required for ellipsis
+    verticalAlign: "middle"
   },
 
-  priceRow: {
+  productRating: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    flexWrap: 'wrap',
+    gap: '6px',
     marginBottom: '8px'
   },
 
+  ratingStars: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1px'
+  },
+
+  ratingNumber: {
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    color: '#1f2937'
+  },
+
+  reviewCountText: {
+    fontSize: '0.8rem',
+    color: '#6b7280'
+  },
+
+  productPricing: {
+    marginBottom: '8px'
+  },
+
+  priceSection: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'nowrap',
+  },
+
   currentPrice: {
-    fontSize: '18px',
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#059669'
   },
 
   originalPrice: {
-    fontSize: '14px',
-    color: '#6b7280',
+    fontSize: '0.9rem',
+    color: 'rgb(156, 163, 175)',
     textDecoration: 'line-through'
   },
 
-  ratingRow: {
+  wishlistIndicator: {
     display: 'flex',
     alignItems: 'center',
-    gap: '6px',
-    marginBottom: '4px'
-  },
-
-  rating: {
-    fontSize: '14px',
-    color: '#6b7280'
-  },
-
-  storeName: {
-    fontSize: '14px',
-    color: '#059669',
-    margin: 0,
-    fontWeight: '500'
-  },
-  
-  lowStock: {
-    fontSize: '12px',
-    color: '#f59e0b',
-    margin: 0,
-    fontWeight: '600'
-  },
-
-  actions: {
-    display: 'flex',
-    gap: '8px',
-    marginTop: 'auto',
-    paddingTop: '12px'
-  },
-
-  removeButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    backgroundColor: '#fef2f2',
+    gap: '4px',
+    fontSize: '0.8rem',
     color: '#ef4444',
-    border: '1px solid #fecaca',
-    padding: '8px 12px',
-    borderRadius: '8px',
-    fontSize: '14px',
     fontWeight: '500',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    flex: 1
+    marginBottom: '8px',
+    padding: '4px 6px',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: '12px',
+    width: 'fit-content'
   },
 
-  addToCartButton: {
+  productActions: {
+    padding: '16px',
+    borderTop: '1px solid #f3f4f6'
+  },
+
+  addToCartBtn: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '6px',
-    backgroundColor: '#3b82f6',
+    gap: '8px',
+    width: '100%',
+    padding: '7px 42px',
+    backgroundColor: '#059669',
     color: 'white',
     border: 'none',
-    padding: '10px 16px',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '600',
+    borderRadius: '6px',
+    fontSize: '12px',
+    fontWeight: '500',
     cursor: 'pointer',
-    transition: 'all 0.2s',
-    flex: 2
+    transition: 'all 0.2s'
+  },
+
+
+
+  // ✅ Rating overlay (existing) - on image
+  ratingOverlay: {
+    position: "absolute",
+    bottom: "0px",
+    left: "0",
+    width: "100%",
+    background: "rgba(0,0,0,0.6)",
+    color: "white",
+    display: "flex",
+    alignItems: "center",
+    padding: "13px 12px",
+    boxSizing: "border-box",
+    zIndex: 2,
+  },
+
+  ratingLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+  },
+
+  ratingLeftText: {
+    fontSize: "0.8rem",
+    fontWeight: 500,
+    color: "white",
+  },
+
+  ratingRight: {
+    fontSize: "0.8rem",
+    fontWeight: 500,
+    color: "white",
+    marginLeft: "auto",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
 
   // Results Summary
