@@ -367,7 +367,7 @@ export default function CheckoutPage() {
       <Header />
       
       <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
-        {/* ✅ FIXED: Back button */}
+
         <div style={{ marginBottom: '20px' }}>
           <button 
             onClick={() => router.push(`/cart/`)}
