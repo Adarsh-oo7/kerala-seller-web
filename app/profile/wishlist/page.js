@@ -394,22 +394,13 @@ export default function WishlistPage() {
         ) : (
           <>
             {/* Filters and Controls */}
-            {/* <div style={styles.controlsSection}>
-              <div style={styles.searchContainer}>
-                <Search size={18} style={styles.searchIcon} />
-                <input
-                  type="text"
-                  placeholder="Search wishlist items..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={styles.searchInput}
-                />
-              </div>
-
+            <div style={styles.controlsSection}>
               <div style={styles.controlsRow}>
+                {/* Left side — Sort */}
                 <div style={styles.sortContainer}>
-                  <label style={styles.sortLabel}>Sort by:</label>
+                  {/* <label style={styles.sortLabel}>Sort by:</label> */}
                   <select
+                    className='keralasellersprofilewishlistsort'
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                     style={styles.sortSelect}
@@ -422,31 +413,24 @@ export default function WishlistPage() {
                   </select>
                 </div>
 
-                <div style={styles.viewToggle}>
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    style={{
-                      ...styles.viewButton,
-                      ...(viewMode === 'grid' ? styles.activeViewButton : {})
-                    }}
-                  >
-                    <Grid size={16} />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    style={{
-                      ...styles.viewButton,
-                      ...(viewMode === 'list' ? styles.activeViewButton : {})
-                    }}
-                  >
-                    <List size={16} />
-                  </button>
+                {/* Right side — Search */}
+                <div style={styles.searchContainer}>
+                  <Search size={18} style={styles.searchIcon} />
+                  <input
+                    className='keralasellersprofilewishlistsearch'
+                    type="text"
+                    placeholder="Search wishlist items..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={styles.searchInput}
+                  />
                 </div>
               </div>
-            </div> */}
+            </div>
+
 
             {/* Wishlist Items */}
-            <div style={viewMode === 'grid' ? styles.wishlistGrid : styles.wishlistList}>
+            <div className='profilewishlistgrid' style={viewMode === 'grid' ? styles.wishlistGrid : styles.wishlistList}>
               {filteredAndSortedItems.map((product) => {
                 // 🧮 Calculate discount %
                 const discount = calculateDiscount(product.price, product.mrp);
@@ -834,54 +818,60 @@ const styles = {
   controlsSection: {
     marginBottom: '24px',
     padding: '20px',
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     borderRadius: '12px',
-    border: '1px solid #e5e7eb'
+    border: '1px solid #e5e7eb',
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.3)",
+  },
+
+
+  controlsRow: {
+    display: 'flex',
+    justifyContent: 'space-between', // ✅ puts sort left, search right
+    alignItems: 'center',
+    gap: '16px',
+    flexWrap: 'wrap', // ✅ keeps it responsive
   },
 
   searchContainer: {
     position: 'relative',
-    marginBottom: '16px'
+    width: '250px',           // ✅ fixed width for desktop
+    maxWidth: '100%',         // ✅ responsive on mobile
   },
 
   searchIcon: {
     position: 'absolute',
-    left: '16px',
+    left: '12px',
     top: '50%',
     transform: 'translateY(-50%)',
-    color: '#6b7280',
-    zIndex: 1
+    color: '#1a4845',
+    zIndex: 1,
   },
 
   searchInput: {
     width: '100%',
-    padding: '12px 16px 12px 48px',
+    padding: '10px 12px 10px 40px',
     border: '2px solid #e5e7eb',
-    borderRadius: '12px',
-    fontSize: '16px',
+    borderRadius: '10px',
+    fontSize: '15px',
+    color: '#1a4845',
     outline: 'none',
+    backgroundColor: '#FDFFF0',
     transition: 'border-color 0.2s',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
   },
 
-  controlsRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: '16px',
-    flexWrap: 'wrap'
-  },
 
   sortContainer: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px'
+    gap: '8px',
   },
 
   sortLabel: {
     fontSize: '14px',
     fontWeight: '500',
-    color: '#374151'
+    color: '#1a4845'
   },
 
   sortSelect: {
@@ -889,8 +879,8 @@ const styles = {
     border: '1px solid #d1d5db',
     borderRadius: '6px',
     fontSize: '14px',
-    backgroundColor: 'white',
-    color: '#374151'
+    backgroundColor: '#FDFFF0',
+    color: '#1a4845'
   },
 
   viewToggle: {
@@ -920,17 +910,17 @@ const styles = {
 
 
   wishlistGrid: {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-  gap: '16px',
-  justifyContent: 'center',      // ✅ centers cards
-  justifyItems:'center',
-  width: '100%',
-  maxWidth:'1200px',
-  margin: '0 auto',              // ✅ centers the grid itself
-  padding: '10px 0', // ✅ equal side padding responsive
-  boxSizing: 'border-box',
-},
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+    gap: '16px',
+    justifyContent: 'center',      // ✅ centers cards
+    justifyItems: 'center',
+    width: '100%',
+    maxWidth: '1200px',
+    margin: '0 auto',              // ✅ centers the grid itself
+    padding: '10px 0', // ✅ equal side padding responsive
+    boxSizing: 'border-box',
+  },
 
   wishlistCard: {
     backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden',
