@@ -17,18 +17,60 @@ import {
   Shield
 } from 'lucide-react';
 
-// ✅ Updated API URLs to match your Django backend
+// ✅ Enhanced API URLs with subscription lifecycle support
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.4:8000';
 const PLANS_API_URL = `${API_BASE_URL}/api/subscriptions/plans/`;
 const CURRENT_SUB_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
 const CREATE_ORDER_API = `${API_BASE_URL}/api/subscriptions/create-order/`;
 const VERIFY_PAYMENT_API = `${API_BASE_URL}/api/subscriptions/verify-payment/`;
 
-// ✅ Use your actual Razorpay key
+// ✅ NEW: Subscription lifecycle APIs
+const STORE_STATUS_API = `${API_BASE_URL}/api/subscriptions/stores`;
+const SUBSCRIPTION_STATUS_API = `${API_BASE_URL}/api/subscriptions/status/`;
+
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RClyCqWG0I7Frn';
 
-// Enhanced Current Plan Card Component
-function CurrentPlanCard({ subscription, isLoading, error, onRefresh }) {
+// ✅ NEW: Helper function for status icons
+function getStatusIcon(status) {
+    const icons = {
+        'ACTIVE': '🟢',
+        'GRACE_PERIOD': '🟡',
+        'OFFLINE': '🔴',
+        'ARCHIVED': '⚫'
+    };
+    return icons[status] || '❓';
+}
+
+// ✅ ENHANCED: Current Plan Card with Store Status
+function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId }) {
+    const [storeStatus, setStoreStatus] = useState(null);
+    const [statusLoading, setStatusLoading] = useState(false);
+
+    // ✅ NEW: Load store operational status
+    const loadStoreStatus = useCallback(async () => {
+        if (!storeId) return;
+        
+        setStatusLoading(true);
+        try {
+            const response = await axios.get(`${STORE_STATUS_API}/${storeId}/status/`);
+            setStoreStatus(response.data);
+            console.log('✅ Store status loaded:', response.data);
+        } catch (err) {
+            console.error('❌ Failed to load store status:', err);
+        } finally {
+            setStatusLoading(false);
+        }
+    }, [storeId]);
+
+    // Load store status when component mounts or storeId changes
+    useEffect(() => {
+        loadStoreStatus();
+        
+        // Auto-refresh store status every 2 minutes
+        const interval = setInterval(loadStoreStatus, 2 * 60 * 1000);
+        return () => clearInterval(interval);
+    }, [loadStoreStatus]);
+    
     if (isLoading) {
         return (
             <div style={{...styles.card, ...styles.loadingCard}}>
@@ -60,19 +102,58 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh }) {
                 <Crown size={32} style={{color: '#f59e0b', marginBottom: '16px'}} />
                 <h2>No Active Plan</h2>
                 <p>Choose a plan below to unlock the full potential of your online store.</p>
+                
+                {/* ✅ NEW: Show store status even without subscription */}
+                {storeStatus && (
+                    <div style={styles.storeStatusInfo}>
+                        <div style={styles.statusDivider}></div>
+                        <h3 style={styles.storeStatusTitle}>Store Status</h3>
+                        <div style={{
+                            ...styles.storeStatusBanner,
+                            ...(storeStatus.subscription.can_sell ? styles.storeOnline : styles.storeOffline)
+                        }}>
+                            <span style={styles.statusIcon}>
+                                {storeStatus.subscription.can_sell ? '🟢' : '🔴'}
+                            </span>
+                            <span style={styles.statusMessage}>
+                                {storeStatus.subscription.message}
+                            </span>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
     
-    // ✅ Updated to work with your Django API response structure
+    // ✅ ENHANCED: Current plan with store status
     const remainingDays = subscription.days_remaining || 0;
     const isExpiringSoon = remainingDays <= 7;
+    
+    // Determine status style based on store status
+    const getStatusStyle = () => {
+        if (!storeStatus) return {};
+        
+        const status = storeStatus.subscription.status;
+        switch (status) {
+            case 'ACTIVE':
+                return { backgroundColor: '#dcfce7', borderColor: '#22c55e' };
+            case 'GRACE_PERIOD':
+                return { backgroundColor: '#fef3c7', borderColor: '#f59e0b' };
+            case 'OFFLINE':
+                return { backgroundColor: '#fee2e2', borderColor: '#ef4444' };
+            case 'ARCHIVED':
+                return { backgroundColor: '#f3f4f6', borderColor: '#6b7280' };
+            default:
+                return {};
+        }
+    };
     
     return (
         <div style={{
             ...styles.card, 
             ...styles.currentPlanCard,
-            ...(isExpiringSoon ? styles.expiringCard : {})
+            ...(isExpiringSoon ? styles.expiringCard : {}),
+            ...getStatusStyle()
         }}>
             <div style={styles.currentPlanHeader}>
                 <div>
@@ -104,6 +185,56 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh }) {
                 </div>
             </div>
             
+            {/* ✅ NEW: Enhanced Store Status Section */}
+            {storeStatus && (
+                <div style={styles.storeStatusSection}>
+                    <div style={styles.statusDivider}></div>
+                    <h3 style={styles.storeStatusTitle}>Store Status</h3>
+                    
+                    <div style={{
+                        ...styles.storeStatusBanner,
+                        ...(storeStatus.subscription.can_sell ? styles.storeOnline : styles.storeOffline)
+                    }}>
+                        <span style={styles.statusIcon}>
+                            {getStatusIcon(storeStatus.subscription.status)}
+                        </span>
+                        <div style={styles.statusDetails}>
+                            <span style={styles.statusMessage}>
+                                {storeStatus.subscription.message}
+                            </span>
+                            <span style={styles.orderStatus}>
+                                {storeStatus.subscription.can_sell 
+                                    ? '✅ Accepting Orders' 
+                                    : '❌ Orders Disabled'
+                                }
+                            </span>
+                        </div>
+                        
+                        {/* Show archive countdown for offline stores */}
+                        {storeStatus.subscription.status === 'OFFLINE' && 
+                         storeStatus.subscription.days_until_archive > 0 && (
+                            <div style={styles.archiveWarning}>
+                                <span style={styles.archiveText}>
+                                    Archive in {storeStatus.subscription.days_until_archive} days
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Refresh button */}
+                    <button 
+                        onClick={loadStoreStatus} 
+                        disabled={statusLoading}
+                        style={styles.refreshButton}
+                    >
+                        <RefreshCw size={14} style={{
+                            animation: statusLoading ? 'spin 1s linear infinite' : 'none'
+                        }} />
+                        {statusLoading ? 'Updating...' : 'Refresh Status'}
+                    </button>
+                </div>
+            )}
+            
             {isExpiringSoon && (
                 <div style={styles.expiringWarning}>
                     <AlertCircle size={16} />
@@ -114,9 +245,21 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh }) {
     );
 }
 
+// ✅ NEW: Order validation function
+export const validateStoreForOrder = async (storeId) => {
+    try {
+        const response = await axios.get(`${STORE_STATUS_API}/${storeId}/validate-order/`);
+        return response.data;
+    } catch (error) {
+        console.error('❌ Order validation failed:', error);
+        return { valid: false, message: 'Unable to validate store status' };
+    }
+};
+
 export default function SubscriptionPage() {
     const [plans, setPlans] = useState([]);
     const [currentSubscription, setCurrentSubscription] = useState(null);
+    const [storeId, setStoreId] = useState(null); // ✅ NEW: Store ID state
     const [isLoading, setIsLoading] = useState(true);
     const [subscriptionLoading, setSubscriptionLoading] = useState(true);
     const [subscriptionError, setSubscriptionError] = useState(null);
@@ -141,7 +284,6 @@ export default function SubscriptionPage() {
         document.body.appendChild(script);
 
         return () => {
-            // Cleanup script on unmount
             if (document.body.contains(script)) {
                 document.body.removeChild(script);
             }
@@ -159,6 +301,22 @@ export default function SubscriptionPage() {
         console.log('✅ Using Bearer token for authentication');
         return { Authorization: `Bearer ${token}` };
     }, [router]);
+
+    // ✅ NEW: Load seller's store ID
+    const loadStoreId = useCallback(async () => {
+        const headers = getAuthHeaders();
+        if (!headers) return;
+        
+        try {
+            // Assuming you have an endpoint to get current seller's store
+            // Adjust this endpoint based on your API structure
+            const response = await axios.get(`${API_BASE_URL}/api/store/profile/`, { headers });
+            setStoreId(response.data.id);
+            console.log('✅ Store ID loaded:', response.data.id);
+        } catch (err) {
+            console.error('❌ Failed to load store ID:', err);
+        }
+    }, [getAuthHeaders]);
 
     // ✅ Updated subscription data loading to match your API
     const loadSubscriptionData = useCallback(async () => {
@@ -181,7 +339,6 @@ export default function SubscriptionPage() {
                 setSubscriptionError('Session expired. Please log in again.');
                 setTimeout(() => router.push('/login/seller'), 2000);
             } else if (subErr.response?.status === 404) {
-                // 404 is normal - no subscription exists yet
                 console.log('ℹ️ No subscription found (normal for new users)');
             } else {
                 setSubscriptionError('Failed to load subscription data');
@@ -197,11 +354,9 @@ export default function SubscriptionPage() {
             console.log('🔍 Fetching plans from:', PLANS_API_URL);
             const plansResponse = await axios.get(PLANS_API_URL);
             
-            // ✅ Handle both paginated and direct response formats
             const plansData = plansResponse.data.results || plansResponse.data || [];
             console.log('✅ Plans loaded:', plansData);
             
-            // Sort plans by price (lowest first)
             const sortedPlans = plansData.sort((a, b) => {
                 const priceA = parseFloat(a.price) || 0;
                 const priceB = parseFloat(b.price) || 0;
@@ -214,6 +369,11 @@ export default function SubscriptionPage() {
             setError('Failed to load subscription plans. Please refresh the page.');
         }
     }, []);
+
+    // Load store ID on component mount
+    useEffect(() => {
+        loadStoreId();
+    }, [loadStoreId]);
 
     // Load plans and subscription data
     useEffect(() => {
@@ -234,13 +394,11 @@ export default function SubscriptionPage() {
 
     // ✅ Updated payment handling to match your Django API
     const handleChoosePlan = async (planId, planName) => {
-        // Check if Razorpay is loaded
         if (!razorpayLoaded || !window.Razorpay) {
             alert('Payment system is loading. Please wait a moment and try again.');
             return;
         }
 
-        // Find the plan to get pricing info
         const plan = plans.find(p => p.id === planId);
         if (!plan) {
             alert('Plan not found. Please refresh the page and try again.');
@@ -251,7 +409,6 @@ export default function SubscriptionPage() {
         const yearlyPrice = parseFloat(plan.yearly_price || '') || (basePrice * 12 * 0.90);
         const displayPrice = billingCycle === 'yearly' ? yearlyPrice : basePrice;
 
-        // Show confirmation
         const confirmed = confirm(
             `Subscribe to ${planName}?\n\n` +
             `Price: ₹${Math.round(displayPrice).toLocaleString('en-IN')}/${billingCycle === 'yearly' ? 'year' : 'month'}\n\n` +
@@ -270,7 +427,6 @@ export default function SubscriptionPage() {
         try {
             console.log('🔄 Creating order for plan:', planId, 'billing cycle:', billingCycle);
             
-            // ✅ Create order using your Django API
             const orderResponse = await axios.post(CREATE_ORDER_API, {
                 plan_id: planId,
                 billing_cycle: billingCycle 
@@ -279,15 +435,14 @@ export default function SubscriptionPage() {
             console.log('✅ Order created:', orderResponse.data);
             const { order_id, amount, currency } = orderResponse.data;
 
-            // ✅ Initialize Razorpay with proper options
             const options = {
                 key: RAZORPAY_KEY_ID,
-                amount: amount, // Already in paise from Django
+                amount: amount,
                 currency: currency || 'INR',
                 order_id: order_id,
                 name: 'Kerala Sellers',
                 description: `${planName} - ${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'} Subscription`,
-                image: '/logo.png', // Add your logo
+                image: '/logo.png',
                 theme: {
                     color: '#3b82f6'
                 },
@@ -298,7 +453,6 @@ export default function SubscriptionPage() {
                 handler: async function (response) {
                     console.log('✅ Payment successful:', response);
                     
-                    // ✅ Verify payment with your Django API
                     const verificationData = {
                         razorpay_payment_id: response.razorpay_payment_id,
                         razorpay_order_id: response.razorpay_order_id,
@@ -314,7 +468,6 @@ export default function SubscriptionPage() {
                         setError('');
                         alert('🎉 Payment Successful!\n\nYour subscription is now active! You can now sell products online with Kerala Sellers Premium features.');
                         
-                        // Refresh subscription data
                         await loadSubscriptionData();
                         
                     } catch (verifyError) {
@@ -341,7 +494,6 @@ export default function SubscriptionPage() {
                 }
             };
 
-            // Open Razorpay
             const rzp = new window.Razorpay(options);
             
             rzp.on('payment.failed', function (response) {
@@ -423,25 +575,24 @@ export default function SubscriptionPage() {
                 </button>
             </div>
             
-            {/* Current Plan Card */}
+            {/* ✅ ENHANCED: Current Plan Card with Store Status */}
             <CurrentPlanCard 
                 subscription={currentSubscription} 
                 isLoading={subscriptionLoading}
                 error={subscriptionError}
                 onRefresh={loadSubscriptionData}
+                storeId={storeId} // ✅ NEW: Pass store ID
             />
             
             {/* Plans Grid */}
             <div style={styles.planGrid}>
                 {plans.map((plan, index) => {
-                    // ✅ Updated pricing calculation to match your API
                     const basePrice = parseFloat(plan.price) || 0;
                     const yearlyPrice = parseFloat(plan.yearly_price || '') || (basePrice * 12 * 0.90);
                     const displayPrice = billingCycle === 'yearly' ? yearlyPrice : basePrice;
                     
                     const isCurrentPlan = currentSubscription?.plan?.id === plan.id && currentSubscription?.is_active;
                     
-                    // ✅ Updated popularity detection
                     const isPopular = plan.name.toLowerCase().includes('pro') || 
                                      plan.name.toLowerCase().includes('professional') ||
                                      index === Math.floor(plans.length / 2);
@@ -574,7 +725,7 @@ export default function SubscriptionPage() {
     );
 }
 
-// ✅ Updated styles with new additions
+// ✅ ENHANCED STYLES with Store Status Support
 const styles = {
     container: { 
         padding: '24px',
@@ -617,7 +768,6 @@ const styles = {
         color: '#6b7280'
     },
 
-    // ✅ NEW: Razorpay loading indicator
     razorpayLoading: {
         display: 'flex',
         alignItems: 'center',
@@ -870,6 +1020,102 @@ const styles = {
         color: '#92400e',
         fontSize: '14px'
     },
+
+    // ✅ NEW: Store Status Styles
+    storeStatusSection: {
+        marginTop: '24px',
+        paddingTop: '24px'
+    },
+    
+    storeStatusInfo: {
+        marginTop: '24px',
+        paddingTop: '24px'
+    },
+    
+    statusDivider: {
+        height: '1px',
+        backgroundColor: '#e5e7eb',
+        marginBottom: '16px'
+    },
+    
+    storeStatusTitle: {
+        fontSize: '16px',
+        fontWeight: '600',
+        color: '#374151',
+        marginBottom: '12px'
+    },
+    
+    storeStatusBanner: {
+        display: 'flex',
+        alignItems: 'center',
+        padding: '16px',
+        borderRadius: '12px',
+        border: '2px solid',
+        marginBottom: '12px'
+    },
+    
+    storeOnline: {
+        backgroundColor: '#dcfce7',
+        borderColor: '#22c55e',
+        color: '#166534'
+    },
+    
+    storeOffline: {
+        backgroundColor: '#fee2e2',
+        borderColor: '#ef4444',
+        color: '#991b1b'
+    },
+    
+    statusIcon: {
+        fontSize: '20px',
+        marginRight: '12px'
+    },
+    
+    statusDetails: {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px'
+    },
+    
+    statusMessage: {
+        fontSize: '14px',
+        fontWeight: '600'
+    },
+    
+    orderStatus: {
+        fontSize: '12px',
+        fontWeight: '500',
+        opacity: 0.8
+    },
+    
+    archiveWarning: {
+        padding: '8px 12px',
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderRadius: '6px',
+        border: '1px solid rgba(239, 68, 68, 0.2)'
+    },
+    
+    archiveText: {
+        fontSize: '12px',
+        fontWeight: '600',
+        color: '#991b1b'
+    },
+    
+    refreshButton: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '8px 16px',
+        backgroundColor: '#f3f4f6',
+        border: '1px solid #d1d5db',
+        borderRadius: '6px',
+        fontSize: '14px',
+        fontWeight: '500',
+        color: '#374151',
+        cursor: 'pointer',
+        transition: 'all 0.2s'
+    },
     
     // Plan Cards
     planGrid: { 
@@ -1021,7 +1267,6 @@ const styles = {
         cursor: 'not-allowed'
     },
 
-    // ✅ NEW: Disabled button style
     disabledButton: {
         backgroundColor: '#f9fafb',
         border: '2px solid #e5e7eb',
