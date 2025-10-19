@@ -245,21 +245,11 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
     );
 }
 
-// ✅ NEW: Order validation function
-export const validateStoreForOrder = async (storeId) => {
-    try {
-        const response = await axios.get(`${STORE_STATUS_API}/${storeId}/validate-order/`);
-        return response.data;
-    } catch (error) {
-        console.error('❌ Order validation failed:', error);
-        return { valid: false, message: 'Unable to validate store status' };
-    }
-};
-
+// ✅ FIXED: Move validateStoreForOrder INSIDE the component (no export)
 export default function SubscriptionPage() {
     const [plans, setPlans] = useState([]);
     const [currentSubscription, setCurrentSubscription] = useState(null);
-    const [storeId, setStoreId] = useState(null); // ✅ NEW: Store ID state
+    const [storeId, setStoreId] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [subscriptionLoading, setSubscriptionLoading] = useState(true);
     const [subscriptionError, setSubscriptionError] = useState(null);
@@ -268,6 +258,17 @@ export default function SubscriptionPage() {
     const [error, setError] = useState('');
     const [razorpayLoaded, setRazorpayLoaded] = useState(false);
     const router = useRouter();
+
+    // ✅ MOVED INSIDE COMPONENT: Order validation function (no export)
+    const validateStoreForOrder = async (storeId) => {
+        try {
+            const response = await axios.get(`${STORE_STATUS_API}/${storeId}/validate-order/`);
+            return response.data;
+        } catch (error) {
+            console.error('❌ Order validation failed:', error);
+            return { valid: false, message: 'Unable to validate store status' };
+        }
+    };
 
     // ✅ Load Razorpay script
     useEffect(() => {
@@ -308,8 +309,6 @@ export default function SubscriptionPage() {
         if (!headers) return;
         
         try {
-            // Assuming you have an endpoint to get current seller's store
-            // Adjust this endpoint based on your API structure
             const response = await axios.get(`${API_BASE_URL}/api/store/profile/`, { headers });
             setStoreId(response.data.id);
             console.log('✅ Store ID loaded:', response.data.id);
@@ -581,7 +580,7 @@ export default function SubscriptionPage() {
                 isLoading={subscriptionLoading}
                 error={subscriptionError}
                 onRefresh={loadSubscriptionData}
-                storeId={storeId} // ✅ NEW: Pass store ID
+                storeId={storeId}
             />
             
             {/* Plans Grid */}
