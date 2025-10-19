@@ -25,7 +25,6 @@ export default function ProductCard({
   rating,
   reviewCount = 0,
   primaryImage,
-  hoverImage,
   className,
   onAddToCart,
   onToggleWishlist,
@@ -98,7 +97,7 @@ export default function ProductCard({
 
     // Use enhanced stock checking
     const stockCheck = canBePurchasedOnline !== undefined ? canBePurchasedOnline : (onlineStock > 0)
-    
+
     if (!stockCheck) {
       console.warn('⚠️ Attempted to add out-of-stock item to cart')
       return
@@ -184,24 +183,24 @@ export default function ProductCard({
   // ✅ SMART: Get best available image URL with multiple fallbacks
   const getBestImageUrl = (size = 'default') => {
     // Priority order: Cloudinary optimized > thumbnailUrl > primaryImage > placeholder
-    
+
     if (size === 'thumbnail' && thumbnailUrl) {
       return thumbnailUrl
     }
-    
+
     if (size === 'large' && largeImageUrl) {
       return largeImageUrl
     }
-    
+
     // For default size, prefer optimized URLs
     if (thumbnailUrl && size === 'default') {
       return thumbnailUrl
     }
-    
+
     if (primaryImage) {
       return getImageUrl(primaryImage)
     }
-    
+
     return "/placeholder.svg"
   }
 
@@ -237,7 +236,7 @@ export default function ProductCard({
     if (imageError) return // Prevent infinite loop
 
     setImageError(true)
-    
+
     // Try fallback URLs in order
     const fallbacks = [
       primaryImage && getImageUrl(primaryImage),
@@ -378,22 +377,33 @@ export default function ProductCard({
             </div>
           </Link>
 
-          {rating && rating > 0 && (
-            <div className="rating-overlay">
-              <div className="rating">
-                {[1].map((star) => (
-                  <Star
-                    key={star}
-                    className={`star ${star <= Math.floor(rating) ? "star-filled" : ""}`}
-                  />
-                ))}
-              </div>
-              <span className="rating-text">
-                ({rating.toFixed(1)})
-                {reviewCount > 0 && <span>{reviewCount} reviews</span>}
-              </span>
+          <div style={styles.ratingOverlay}>
+            <div style={styles.ratingLeft}>
+              {[1].map((star) => (
+                <Star
+                  key={star}
+                  className="star"
+                  fill={rating && star <= Math.floor(rating) ? "#FFC107" : "none"} // filled if rated
+                  stroke="#FFC107" // always outline
+                  size={12}
+                />
+              ))}
+
+              {/* Show rating number only if rating exists */}
+              {rating > 0 && (
+                <span style={styles.ratingLeftText}>({rating.toFixed(1)})</span>
+              )}
             </div>
-          )}
+
+            <span style={styles.ratingRight}>
+              {reviewCount > 0 ? `${reviewCount} reviews` : 'No reviews'}
+            </span>
+          </div>
+
+
+
+
+
         </div>
 
         <div className="product-info">
@@ -429,9 +439,9 @@ export default function ProductCard({
               >
                 <ShoppingCart className="cart-icon" />
                 <span className="cart-text">
-                  {stockStatus === 'in-stock' || stockStatus === 'low-stock' 
-                    ? "ADD TO CART" 
-                    : stockStatus === 'unavailable' 
+                  {stockStatus === 'in-stock' || stockStatus === 'low-stock'
+                    ? "ADD TO CART"
+                    : stockStatus === 'unavailable'
                       ? "NOT AVAILABLE"
                       : "OUT OF STOCK"
                   }
@@ -442,14 +452,56 @@ export default function ProductCard({
         </div>
 
         {/* ✅ NEW: Debug info in development */}
-        {process.env.NODE_ENV === 'development' && imageMetadata && (
+        {/* {process.env.NODE_ENV === 'development' && imageMetadata && (
           <div className="debug-info" style={{ fontSize: '10px', opacity: 0.5, position: 'absolute', bottom: 0, right: 0, background: 'rgba(0,0,0,0.8)', color: 'white', padding: '2px' }}>
             {imageMetadata.optimized ? '⚡' : '📁'} 
             {imageMetadata.has_cloudinary ? 'C' : 'L'}
             {imageMetadata.sub_images_count > 0 && ` +${imageMetadata.sub_images_count}`}
           </div>
-        )}
+        )} */}
       </div>
     </>
   )
+}
+
+
+const styles = {
+
+
+  // ✅ Rating overlay (existing) - on image
+  ratingOverlay: {
+    position: "absolute",
+    bottom: "0px",
+    left: "0",
+    width: "100%",
+    background: "rgba(0,0,0,0.6)",
+    color: "white",
+    display: "flex",
+    alignItems: "center",
+    padding: "8px 12px",
+    boxSizing: "border-box",
+    zIndex: 2,
+  },
+
+  ratingLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+  },
+
+  ratingLeftText: {
+    fontSize: "0.8rem",
+    fontWeight: 500,
+    color: "white",
+  },
+
+  ratingRight: {
+    fontSize: "0.75rem",
+    fontWeight: 500,
+    color: "white",
+    marginLeft: "auto",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
 }

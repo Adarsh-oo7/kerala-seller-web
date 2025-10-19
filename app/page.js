@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import Link from 'next/link';
+import "../styles/Keralasellershomepage.css";
 import { useCart } from './context/CartContext';
 import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
@@ -39,24 +40,24 @@ const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 
-console.log('API URLs configured:', { 
-  API_BASE_URL, 
-  PRODUCTS_API_URL, 
+console.log('API URLs configured:', {
+  API_BASE_URL,
+  PRODUCTS_API_URL,
   CATEGORIES_API_URL,
   WISHLIST_TOGGLE_API,
-  WISHLIST_CHECK_API 
+  WISHLIST_CHECK_API
 });
 
 // ✅ Enhanced token handling function
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('access_token') || 
-                localStorage.getItem('buyerAccessToken');
-  
+  const token = localStorage.getItem('access_token') ||
+    localStorage.getItem('buyerAccessToken');
+
   if (!token) {
     console.error('❌ No authentication token found');
     return null;
   }
-  
+
   console.log('🔍 Using token:', token.substring(0, 30) + '...');
   return { 'Authorization': `Bearer ${token}` };
 };
@@ -67,14 +68,14 @@ function useMediaQuery(query) {
 
   useEffect(() => {
     const media = window.matchMedia(query);
-    
+
     if (media.matches !== matches) {
       setMatches(media.matches);
     }
-    
+
     const listener = () => setMatches(media.matches);
     media.addEventListener('change', listener);
-    
+
     return () => media.removeEventListener('change', listener);
   }, [matches, query]);
 
@@ -110,7 +111,7 @@ export default function Home() {
   const [showFilters, setShowFilters] = useState(false);
   const [error, setError] = useState('');
   const [wishlistLoading, setWishlistLoading] = useState(new Set());
-  
+
   const { addToCart } = useCart();
 
   // Media queries for responsive behavior
@@ -147,10 +148,10 @@ export default function Home() {
   const fetchProducts = useCallback(async (page = 1, appliedFilters = filters) => {
     setIsLoading(true);
     setError('');
-    
+
     try {
       let url = `${PRODUCTS_API_URL}?page=${page}`;
-      
+
       // Add filters to URL
       if (appliedFilters.category) {
         url += `&category=${appliedFilters.category}`;
@@ -158,14 +159,14 @@ export default function Home() {
       if (appliedFilters.search) {
         url += `&search=${encodeURIComponent(appliedFilters.search)}`;
       }
-      
+
       console.log('Fetching products from:', url);
       const response = await axios.get(url);
       const data = response.data;
       console.log('Products API response:', data);
-      
+
       let productList = [];
-      
+
       // ✅ Enhanced response structure handling
       if (Array.isArray(data.results)) {
         productList = data.results;
@@ -179,17 +180,17 @@ export default function Home() {
         console.warn('Unexpected API response structure:', data);
         productList = [];
       }
-      
+
       console.log('Processed product list:', productList.length, 'products');
-      
+
       // Set pagination info
       const count = data.count || data.total || productList.length;
       setTotalPages(Math.ceil(count / (data.page_size || 20)));
       setTotalProducts(count);
-      
+
       // Apply client-side filters
       const filteredList = applyClientFilters(productList, appliedFilters);
-      
+
       if (page === 1) {
         setProducts(filteredList);
         setFilteredProducts(filteredList);
@@ -197,7 +198,7 @@ export default function Home() {
         setProducts(prev => [...prev, ...filteredList]);
         setFilteredProducts(prev => [...prev, ...filteredList]);
       }
-      
+
     } catch (error) {
       console.error("Failed to fetch products:", error);
       if (error.response) {
@@ -207,7 +208,7 @@ export default function Home() {
       } else {
         setError('Failed to load products. Please try again.');
       }
-      
+
       // Set empty arrays to prevent crashes
       if (page === 1) {
         setProducts([]);
@@ -223,7 +224,7 @@ export default function Home() {
       console.warn('Product list is not an array:', productList);
       return [];
     }
-    
+
     let filtered = [...productList];
 
     // Price filter
@@ -239,14 +240,14 @@ export default function Home() {
     // Rating filter
     if (appliedFilters.rating) {
       const minRating = parseFloat(appliedFilters.rating);
-      filtered = filtered.filter(product => 
+      filtered = filtered.filter(product =>
         (product.average_rating || 0) >= minRating
       );
     }
 
     // Stock filter
     if (appliedFilters.inStock) {
-      filtered = filtered.filter(product => 
+      filtered = filtered.filter(product =>
         (product.online_stock || 0) > 0
       );
     }
@@ -274,7 +275,7 @@ export default function Home() {
   // ✅ Enhanced wishlist functionality
   const handleToggleWishlist = async (productId) => {
     console.log('🔍 Toggle wishlist for product:', productId);
-    
+
     const headers = getAuthHeaders();
     if (!headers) {
       alert('Please login to add items to wishlist');
@@ -294,7 +295,7 @@ export default function Home() {
       console.log('🔄 Sending wishlist toggle request...');
       const response = await axios.post(WISHLIST_TOGGLE_API, {
         product_id: productId
-      }, { 
+      }, {
         headers,
         timeout: 10000
       });
@@ -302,9 +303,9 @@ export default function Home() {
       console.log('✅ Wishlist toggle response:', response.data);
 
       // Update the product's wishlist status in your local state
-      const updateProducts = (prevProducts) => 
-        prevProducts.map(product => 
-          product.id === productId 
+      const updateProducts = (prevProducts) =>
+        prevProducts.map(product =>
+          product.id === productId
             ? { ...product, isWishlisted: response.data.is_wishlisted }
             : product
         );
@@ -316,13 +317,13 @@ export default function Home() {
       const action = response.data.is_wishlisted ? 'added to' : 'removed from';
       const productName = response.data.product_name || 'Product';
       console.log(`✅ ${productName} ${action} wishlist`);
-      
+
       // Optional: Show visual feedback (you can customize this)
       showWishlistFeedback(productId, response.data.is_wishlisted, productName);
 
     } catch (error) {
       console.error('❌ Wishlist toggle error:', error);
-      
+
       if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('buyerAccessToken');
@@ -351,7 +352,7 @@ export default function Home() {
       const originalColor = heartButton.style.color;
       heartButton.style.color = isWishlisted ? '#dc2626' : '#6b7280';
       heartButton.style.transform = 'scale(1.2)';
-      
+
       setTimeout(() => {
         heartButton.style.transform = 'scale(1)';
       }, 200);
@@ -369,7 +370,7 @@ export default function Home() {
 
     try {
       console.log('🔍 Checking wishlist status for products:', productIds.length);
-      
+
       // Check wishlist status for multiple products
       const promises = productIds.slice(0, 10).map(id => // Limit to 10 to avoid too many requests
         axios.get(`${WISHLIST_CHECK_API}?product_id=${id}`, { headers, timeout: 5000 })
@@ -382,12 +383,12 @@ export default function Home() {
 
       const results = await Promise.all(promises);
       console.log('✅ Wishlist status results:', results);
-      
+
       // Update products with wishlist status
-      const updateProductsWithWishlist = (prevProducts) => 
+      const updateProductsWithWishlist = (prevProducts) =>
         prevProducts.map(product => {
           const wishlistInfo = results.find(r => r.id === product.id);
-          return wishlistInfo 
+          return wishlistInfo
             ? { ...product, isWishlisted: wishlistInfo.isWishlisted }
             : product;
         });
@@ -452,7 +453,7 @@ export default function Home() {
       ...filters,
       search: ''
     };
-    
+
     setFilters(newFilters);
     setCurrentPage(1);
     fetchProducts(1, newFilters);
@@ -465,12 +466,12 @@ export default function Home() {
       category: categoryId.toString(),
       search: ''
     };
-    
+
     setFilters(newFilters);
     setSearchTerm('');
     setCurrentPage(1);
     fetchProducts(1, newFilters);
-    
+
     // Scroll to products section
     const productsSection = document.querySelector('[data-products-section]');
     if (productsSection) {
@@ -487,22 +488,22 @@ export default function Home() {
   const handleAddToCart = (e, product) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Check if product has required data
     if (!product) {
       alert("Product information is missing.");
       return;
     }
-    
+
     // ✅ Enhanced seller phone detection
-    const sellerPhone = product.store?.seller_phone || 
-                       product.seller_phone || 
-                       product.store?.phone ||
-                       product.phone;
-    
+    const sellerPhone = product.store?.seller_phone ||
+      product.seller_phone ||
+      product.store?.phone ||
+      product.phone;
+
     if (sellerPhone) {
       addToCart(sellerPhone, product);
-      
+
       // Show success feedback
       const button = e.target.closest('button');
       if (button) {
@@ -541,8 +542,7 @@ export default function Home() {
     ...styles,
     productsGrid: {
       ...styles.productsGrid,
-      gridTemplateColumns: gridColumns,
-      gap: gridGap
+
     },
     loadingGrid: {
       ...styles.loadingGrid,
@@ -554,14 +554,14 @@ export default function Home() {
   return (
     <div style={{ backgroundColor: "#FDFFF0", minHeight: '100vh' }}>
       <Header />
-      
+
       {/* Top Category Section */}
       <div style={dynamicStyles.topCategorySection}>
         <TopCategory onCategoryClick={handleCategoryClick} />
       </div>
 
       {/* Banner Section */}
-      <div style={dynamicStyles.bannerSection}>
+      <div className='bannersectionstyle' style={dynamicStyles.bannerSection}>
         <BannerSlider images={bannerImages} autoPlay={true} interval={4000} />
       </div>
 
@@ -570,9 +570,10 @@ export default function Home() {
         {/* Search Bar Section */}
         <div style={dynamicStyles.searchSection}>
           <div style={dynamicStyles.searchContainer}>
-            <div style={dynamicStyles.searchInputWrapper}>
-              <Search size={20} style={dynamicStyles.searchIcon} />
+            <div className='keralasellershomepagesearchwrapper' style={dynamicStyles.searchInputWrapper}>
+              <Search size={20} className='keralasellershomepagesearchicon' style={dynamicStyles.searchIcon} />
               <input
+              className='keralasellershomepagesearchsize'
                 type="text"
                 placeholder="Search products..."
                 value={searchTerm}
@@ -591,10 +592,10 @@ export default function Home() {
         {/* Products Section Header */}
         <div style={dynamicStyles.productsHeader}>
           <div style={dynamicStyles.headerLeft}>
-            <h2 style={dynamicStyles.sectionTitle}>All Products</h2>
-            <span style={dynamicStyles.productCount}>
+            <h2 className='keralasellershomepagetitle' style={dynamicStyles.sectionTitle}>All Products</h2>
+            {/* <span style={dynamicStyles.productCount}>
               {totalProducts} products found
-            </span>
+            </span> */}
             {searchTerm && (
               <span style={dynamicStyles.searchIndicator}>
                 for "{searchTerm}"
@@ -607,11 +608,13 @@ export default function Home() {
             )}
           </div>
           <div style={dynamicStyles.headerRight}>
-            <button 
+            <button
+            className='keralasellershomepagefiltericoncontainer'
+    
               onClick={() => setShowFilters(!showFilters)}
               style={dynamicStyles.filterToggle}
             >
-              <Filter size={16} />
+              <Filter size={16} className='keralasellershomepagefiltericon' />
               Filters {showFilters ? '▲' : '▼'}
             </button>
           </div>
@@ -634,10 +637,10 @@ export default function Home() {
         {/* Filters Section */}
         {showFilters && (
           <ProductFilters
-            filters={{...filters, search: ''}}
+            filters={{ ...filters, search: '' }}
             categories={categories}
             onFilterChange={(newFilters) => {
-              handleFilterChange({...newFilters, search: filters.search});
+              handleFilterChange({ ...newFilters, search: filters.search });
             }}
             productCount={filteredProducts.length}
             hideSearch={true}
@@ -656,55 +659,69 @@ export default function Home() {
         ) : (
           <>
             {filteredProducts.length > 0 ? (
-              <div style={dynamicStyles.productsGrid}>
-                {filteredProducts.map((product, index) => {
-                  return (
-                    <div key={`product-${product.id}-${index}`} data-product-id={product.id}>
-                      <ProductCard
-                        id={product.id}
-                        title={product.name || 'Product Name'}
-                        price={product.price || 0}
-                        mrp={product.mrp || null}
-                        rating={product.average_rating || 0}
-                        reviewCount={product.review_count || 0}
-                        primaryImage={
-                          product.main_image_url || 
-                          product.image_url || 
-                          product.images?.[0]?.url ||
-                          "/placeholder.svg"
-                        }
-                        hoverImage={
-                          product.sub_images?.[0]?.image_url || 
-                          product.images?.[1]?.url || 
-                          product.main_image_url || 
-                          product.image_url || 
-                          "/placeholder.svg"
-                        }
-                        onlineStock={product.online_stock || 0}
-                        storeName={
-                          product.store?.name || 
-                          product.seller_name || 
-                          product.shop_name ||
-                          'Store'
-                        }
-                        modelName={product.model_name || ''}
-                        isWishlisted={product.isWishlisted || false}
-                        isWishlistLoading={wishlistLoading.has(product.id)}
-                        onAddToCart={(e) => handleAddToCart(e, product)}
-                        onToggleWishlist={() => handleToggleWishlist(product.id)}
-                        className={product.online_stock === 0 ? "out-of-stock" : ""}
-                      />
-                    </div>
-                  );
-                })}
+              <div
+              className='products-container'
+                style={{
+                  justifyItems: "center",
+                  flexWrap: 'wrap',
+                  justifyContent: 'center', // center all cards
+                  // gap: isMobile ? '10px' : isTablet ? '15px' : '20px',
+                  maxWidth: '1200px',
+                  margin: '0 auto', // center the grid container
+                  padding: '10px 0',
+                }}
+              >
+                {filteredProducts.map((product, index) => (
+                  <div
+                    key={`product-${product.id}-${index}`}
+                    data-product-id={product.id}
+                    style={{ flex: '1 0 210px', maxWidth: '220px' }} // controls min and max width
+                  >
+                    <ProductCard
+                      id={product.id}
+                      title={product.name || 'Product Name'}
+                      price={product.price || 0}
+                      mrp={product.mrp || null}
+                      rating={product.average_rating || 0}
+                      reviewCount={product.review_count || 0}
+                      primaryImage={
+                        product.main_image_url ||
+                        product.image_url ||
+                        product.images?.[0]?.url ||
+                        "/placeholder.svg"
+                      }
+                      hoverImage={
+                        product.sub_images?.[0]?.image_url ||
+                        product.images?.[1]?.url ||
+                        product.main_image_url ||
+                        product.image_url ||
+                        "/placeholder.svg"
+                      }
+                      onlineStock={product.online_stock || 0}
+                      storeName={
+                        product.store?.name ||
+                        product.seller_name ||
+                        product.shop_name ||
+                        'Store'
+                      }
+                      modelName={product.model_name || ''}
+                      isWishlisted={product.isWishlisted || false}
+                      isWishlistLoading={wishlistLoading.has(product.id)}
+                      onAddToCart={(e) => handleAddToCart(e, product)}
+                      onToggleWishlist={() => handleToggleWishlist(product.id)}
+                      className={product.online_stock === 0 ? "out-of-stock" : ""}
+                    />
+                  </div>
+                ))}
               </div>
+
             ) : (
               /* No Products Message */
               <div style={dynamicStyles.noProducts}>
                 <Package size={48} />
                 <h3>No products found</h3>
                 <p>Try adjusting your filters or search terms</p>
-                <button 
+                <button
                   onClick={() => {
                     setSearchTerm('');
                     handleFilterChange({
@@ -727,7 +744,7 @@ export default function Home() {
             {/* Load More Button */}
             {currentPage < totalPages && filteredProducts.length > 0 && (
               <div style={dynamicStyles.loadMoreContainer}>
-                <button 
+                <button
                   onClick={loadMoreProducts}
                   disabled={isLoading}
                   style={dynamicStyles.loadMoreButton}
@@ -771,6 +788,8 @@ export default function Home() {
         .wishlist-loading {
           animation: pulse 1s infinite;
         }
+
+  }
       `}</style>
     </div>
   );
@@ -779,39 +798,40 @@ export default function Home() {
 // Static styles (enhanced for better product display)
 const styles = {
   topCategorySection: {
-    width: "100%", 
-    margin: 0, 
+    width: "100%",
+    margin: 0,
     padding: "8px 0",
     marginTop: "15px"
   },
 
-  bannerSection: { 
-    width: "100%", 
-    margin: 0, 
-    padding: 0, 
+  bannerSection: {
+    width: "100%",
+    margin: 0,
+    padding: 0,
     marginTop: "12px",
-    justifyContent: "center", 
-    display: "flex" 
+    marginBottom:'20px',
+    justifyContent: "center",
+    display: "flex"
   },
 
-  container: { 
-    maxWidth: '1200px', 
-    margin: '0 auto', 
-    padding: '15px',
+  container: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '0px 20px',
     animation: 'fadeIn 0.6s ease-out'
   },
-  
+
   searchSection: {
     marginBottom: '20px',
     padding: '0 5px'
   },
-  
+
   searchContainer: {
     display: 'flex',
     justifyContent: 'center',
     width: '100%'
   },
-  
+
   searchInputWrapper: {
     position: 'relative',
     width: '100%',
@@ -819,14 +839,14 @@ const styles = {
     display: 'flex',
     alignItems: 'center'
   },
-  
+
   searchIcon: {
     position: 'absolute',
     left: '16px',
-    color: '#64748b',
+    color: '#1a4845',
     zIndex: 1
   },
-  
+
   searchInput: {
     width: '100%',
     padding: '12px 16px 12px 50px',
@@ -834,12 +854,12 @@ const styles = {
     border: '2px solid #e5e7eb',
     borderRadius: '12px',
     outline: 'none',
-    backgroundColor: 'white',
-    color: '#1e293b',
+    backgroundColor: '#FDFFF0',
+    color: '#1a4845',
     transition: 'border-color 0.2s',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
   },
-  
+
   clearSearchButton: {
     position: 'absolute',
     right: '12px',
@@ -853,7 +873,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center'
   },
-  
+
   productsHeader: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -862,21 +882,21 @@ const styles = {
     flexWrap: 'wrap',
     gap: '10px'
   },
-  
+
   headerLeft: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
     flexWrap: 'wrap'
   },
-  
-  sectionTitle: { 
+
+  sectionTitle: {
     fontSize: '1.8rem',
     margin: 0,
     fontWeight: '700',
     color: '#1e293b'
   },
-  
+
   productCount: {
     fontSize: '14px',
     color: '#6b7280',
@@ -885,7 +905,7 @@ const styles = {
     borderRadius: '12px',
     fontWeight: '500'
   },
-  
+
   searchIndicator: {
     fontSize: '14px',
     color: '#3b82f6',
@@ -894,7 +914,7 @@ const styles = {
     borderRadius: '12px',
     fontWeight: '500'
   },
-  
+
   categoryIndicator: {
     fontSize: '14px',
     color: '#059669',
@@ -903,15 +923,15 @@ const styles = {
     borderRadius: '12px',
     fontWeight: '500'
   },
-  
+
   headerRight: {
     display: 'flex',
     gap: '10px'
   },
-  
+
   filterToggle: {
     padding: '8px 16px',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#1a4845',
     color: 'white',
     border: 'none',
     borderRadius: '6px',
@@ -923,7 +943,7 @@ const styles = {
     gap: '6px',
     transition: 'background-color 0.2s'
   },
-  
+
   errorContainer: {
     display: 'flex',
     alignItems: 'center',
@@ -935,7 +955,7 @@ const styles = {
     marginBottom: '20px',
     color: '#991b1b'
   },
-  
+
   retryButton: {
     padding: '8px 16px',
     backgroundColor: '#dc2626',
@@ -946,30 +966,26 @@ const styles = {
     fontSize: '14px',
     marginTop: '8px'
   },
-  
-  // Base grid (dynamically updated with responsive columns)
-  productsGrid: { 
-    display: 'grid',
-    marginBottom: '30px',
-    // gridTemplateColumns and gap will be set dynamically
-  },
-  
+
+
+
+
   loadingGrid: {
     display: 'grid',
     // gridTemplateColumns and gap will be set dynamically
   },
-  
+
   skeletonWrapper: {
     borderRadius: '8px',
     overflow: 'hidden'
   },
-  
+
   loadMoreContainer: {
     display: 'flex',
     justifyContent: 'center',
     marginTop: '30px'
   },
-  
+
   loadMoreButton: {
     padding: '12px 30px',
     backgroundColor: '#3b82f6',
@@ -981,7 +997,7 @@ const styles = {
     fontWeight: '500',
     transition: 'background-color 0.2s'
   },
-  
+
   noProducts: {
     textAlign: 'center',
     padding: '60px 20px',
@@ -994,7 +1010,7 @@ const styles = {
     gap: '16px',
     color: '#6b7280'
   },
-  
+
   clearFiltersButton: {
     padding: '10px 20px',
     backgroundColor: '#059669',

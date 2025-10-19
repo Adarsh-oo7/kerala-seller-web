@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Slider from "react-slick";
 import "../../styles/TopCategory.css";
 import {
@@ -93,88 +93,50 @@ const TopCategory = ({ onCategoryClick }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
+  const sliderRef = useRef(null);
+
 
   // Icon mapping for different category names
   const getIconForCategory = (categoryName) => {
     const iconMap = {
       // Clothing
-      "mens wear": <TShirt size={32} weight="duotone" color="#1a4845" />,
-      "men's wear": <TShirt size={32} weight="duotone" color="#1a4845" />,
-      "mens clothing": <TShirt size={32} weight="duotone" color="#1a4845" />,
-      "clothing": <ShirtFolded size={32} weight="duotone" color="#1a4845" />,
+      "mens wear": <TShirt className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "men's wear": <TShirt className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "mens clothing": <TShirt className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "clothing": <ShirtFolded className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
 
-      "womens wear": <Dress size={32} weight="duotone" color="#1a4845" />,
-      "women's wear": <Dress size={32} weight="duotone" color="#1a4845" />,
-      "womens clothing": <Dress size={32} weight="duotone" color="#1a4845" />,
+      "womens wear": <Dress className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "women's wear": <Dress className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "womens clothing": <Dress className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
 
       // Electronics & Gadgets
-      "electronics": <Laptop size={32} weight="duotone" color="#1a4845" />,
-      "gadgets": <DeviceMobile size={32} weight="duotone" color="#1a4845" />,
-      "mobile": <DeviceMobile size={32} weight="duotone" color="#1a4845" />,
-      "phone": <DeviceMobile size={32} weight="duotone" color="#1a4845" />,
-      "tablet": <DeviceTablet size={32} weight="duotone" color="#1a4845" />,
-      "laptop": <Laptop size={32} weight="duotone" color="#1a4845" />,
-      "computer": <Laptop size={32} weight="duotone" color="#1a4845" />,
+      "electronics": <Laptop className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "gadgets": <DeviceMobile className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "mobile": <DeviceMobile className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "phone": <DeviceMobile className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "tablet": <DeviceTablet className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "laptop": <Laptop className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "computer": <Laptop className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
 
       // Footwear
-      "footwears": <HighHeel size={32} weight="duotone" color="#1a4845" />,
-      "footwear": <HighHeel size={32} weight="duotone" color="#1a4845" />,
-      "shoes": <Sneaker size={32} weight="duotone" color="#1a4845" />,
-      "sneakers": <Sneaker size={32} weight="duotone" color="#1a4845" />,
+      "footwears": <HighHeel className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "footwear": <HighHeel className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "shoes": <Sneaker className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "sneakers": <Sneaker className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
 
       // Other categories
-      "grocery": <BeerBottle size={32} weight="duotone" color="#1a4845" />,
-      "food": <BeerBottle size={32} weight="duotone" color="#1a4845" />,
-      "beauty": <Flask size={32} weight="duotone" color="#1a4845" />,
-      "cosmetics": <Flask size={32} weight="duotone" color="#1a4845" />,
-      "books": <Package size={32} weight="duotone" color="#1a4845" />,
-      "accessories": <Package size={32} weight="duotone" color="#1a4845" />
+      "grocery": <BeerBottle className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "food": <BeerBottle className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "beauty": <Flask className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "cosmetics": <Flask className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "books": <Package className="topcategoryiconsize" weight="duotone" color="#1a4845" />,
+      "accessories": <Package className="topcategoryiconsize" weight="duotone" color="#1a4845" />
     };
 
     const normalizedName = categoryName ? categoryName.toLowerCase() : '';
-    return iconMap[normalizedName] || <Package size={32} weight="duotone" color="#1a4845" />;
+    return iconMap[normalizedName] || <Package className="topcategoryiconsize" weight="duotone" color="#1a4845" />;
   };
 
-
-
-  const getCategoryImage = (categoryName) => {
-
-      const categoryImages = {
-
-
-    "mens clothing": "/assets/images/TopCategory/1.png",
-    "mens wear": "/assets/images/TopCategory/1.png",
-    "men's wear": "/assets/images/TopCategory/1.png",
-    "clothing": "/assets/images/TopCategory/1.png",
-
-
-    "womens wear": "/assets/images/TopCategory/2.png",
-    "women's wear": "/assets/images/TopCategory/2.png",
-    "womens clothing": "/assets/images/TopCategory/2.png",
-
-    "electronics": "/assets/images/TopCategory/7.png",
-    "gadgets": "/assets/images/TopCategory/3.png",
-    "mobile": "/assets/images/TopCategory/7.png",
-    "phone": "/assets/images/TopCategory/7.png",
-    "tablet": "/assets/images/TopCategory/7.png",
-    "laptop": "/assets/images/TopCategory/7.png",
-    "computer": "/assets/images/TopCategory/7.png",
-
-    "footwears": "/assets/images/TopCategory/4.png",
-    "footwear": "/assets/images/TopCategory/4.png",
-    "shoes": "/assets/images/TopCategory/4.png",
-    "sneakers": "/assets/images/TopCategory/4.png",
-
-    "grocery": "/assets/images/TopCategory/6.png",
-    "food": "/assets/images/TopCategory/6.png",
-    "beauty": "/assets/images/TopCategory/5.png",
-    "cosmetics": "/assets/images/TopCategory/5.png",
-    "books": "/assets/images/TopCategory/3.png",
-    "accessories": "/assets/images/TopCategory/3.png"
-  };
-    const  normalizedName = categoryName?.toLowerCase() || '';
-    return categoryImages[ normalizedName] || "/images/categories/default.png";
-  };
 
 
   // ✅ Enhanced fetch for hosted backend
@@ -237,7 +199,7 @@ const TopCategory = ({ onCategoryClick }) => {
         if (error.code === 'ECONNABORTED') {
           errorMessage = 'Server timeout - the hosted backend is taking too long to respond';
         } else if (error.response) {
-          if (error.response.status === 404) {
+          if (error.response.status === 454) {
             errorMessage = 'Categories endpoint not found on the server';
           } else if (error.response.status === 500) {
             errorMessage = 'Server error - please try again later';
@@ -260,13 +222,23 @@ const TopCategory = ({ onCategoryClick }) => {
     fetchCategories();
   }, []);
 
-  // Mobile detection
+
   useEffect(() => {
-    const checkScreen = () => setIsMobile(window.innerWidth <= 768);
+    const checkScreen = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+
+      // Force Slick to recalc layout
+      if (sliderRef.current) {
+        sliderRef.current.slickGoTo(0);
+      }
+    };
+
     checkScreen();
     window.addEventListener("resize", checkScreen);
     return () => window.removeEventListener("resize", checkScreen);
   }, []);
+
 
   // Handle category click
   const handleCategoryClick = (categoryId, categoryName) => {
@@ -326,7 +298,7 @@ const TopCategory = ({ onCategoryClick }) => {
     arrows: !isMobile,
     infinite: categories.length > 3,
     speed: 1000,
-    slidesToShow: Math.min(7, categories.length || 1),
+    slidesToShow: isMobile ? 4 : Math.min(8, categories.length),
     slidesToScroll: 1,
     nextArrow: <SampleNextArrow />,
     prevArrow: <SamplePrevArrow />,
@@ -335,28 +307,28 @@ const TopCategory = ({ onCategoryClick }) => {
       {
         breakpoint: 1200,
         settings: {
-          slidesToShow: Math.min(6, categories.length || 1),
+          slidesToShow: Math.min(7, categories.length || 1),
           arrows: false
         }
       },
       {
         breakpoint: 992,
         settings: {
-          slidesToShow: Math.min(5, categories.length || 1),
+          slidesToShow: Math.min(6, categories.length || 1),
           arrows: false
         }
       },
       {
         breakpoint: 768,
         settings: {
-          slidesToShow: Math.min(4, categories.length || 1),
+          slidesToShow: Math.min(5, categories.length || 1),
           arrows: false
         }
       },
       {
         breakpoint: 480,
         settings: {
-          slidesToShow: Math.min(3, categories.length || 1),
+          slidesToShow: Math.min(4, categories.length || 1),
           arrows: false
         }
       },
@@ -423,7 +395,7 @@ const TopCategory = ({ onCategoryClick }) => {
           // Desktop / Tablet view (slider)
           <div className="position-relative arrow-center">
             <div className="feature-item-wrapper">
-              <Slider {...settings}>
+              <Slider ref={sliderRef} {...settings}>
                 {categories.map((category, index) => (
                   <div key={`desktop-${category.id || index}`} className="feature-item text-center">
                     <div
@@ -439,21 +411,11 @@ const TopCategory = ({ onCategoryClick }) => {
                       aria-label={`Browse ${category.name} category`}
                     >
                       <div className="desktopCategoryCard">
-                        {!isMobile ? (
-                          <img
-                            src={getCategoryImage(category.name)}
-                            alt={category.name}
-                            className="categoryImage"
-                            style={{ width: '90px', height: '90px', objectFit: 'contain', marginBottom: '8px' }}
-                          />
-                        ) : (
-                          <div className="iconWrapper">
-                            {getIconForCategory(category.name)}
-                          </div>
-                        )}
+                        <div className="iconWrapper">
+                          {getIconForCategory(category.name)}
+                        </div>
                         <h6 className="categoryName">{category.name}</h6>
                       </div>
-
                     </div>
                   </div>
                 ))}
@@ -488,9 +450,8 @@ const TopCategory = ({ onCategoryClick }) => {
           </div>
         )}
       </div>
-
-
     </div>
+
   );
 };
 
