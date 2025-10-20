@@ -3,15 +3,17 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import Header from '../../components/common/Header';
+import Footer from '../../components/common/Footer';
 import Link from 'next/link';
-import { 
-  User, 
-  Package, 
-  Edit3, 
-  Shield, 
-  Phone, 
-  MapPin, 
-  Check, 
+import {
+  User,
+  Package,
+  Edit3,
+  Shield,
+  Phone,
+  MapPin,
+  Check,
   X,
   LogOut,
   ChevronRight,
@@ -51,35 +53,35 @@ export default function ProfilePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
   const [storeData, setStoreData] = useState(null);
-  
+
   const hasFetchedRef = useRef(false);
   const router = useRouter();
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('access_token') || 
-                  localStorage.getItem('buyerAccessToken');
-    
+    const token = localStorage.getItem('access_token') ||
+      localStorage.getItem('buyerAccessToken');
+
     if (!token) {
       console.error('❌ No authentication token found');
       return null;
     }
-    
+
     return { 'Authorization': `Bearer ${token}` };
   };
 
   // ✅ FIXED: Enhanced shop context detection with proper priority
   const getShopContext = () => {
     if (typeof window === 'undefined') return { shopId: null, isInShop: false, shopUrl: null };
-    
+
     const currentPath = window.location.pathname;
     const searchParams = new URLSearchParams(window.location.search);
-    
+
     console.log('🔍 Analyzing shop context:', {
       path: currentPath,
       search: window.location.search,
       fullUrl: window.location.href
     });
-    
+
     let shopId = null;
     let shopUrl = null;
     let isInShop = false;
@@ -160,11 +162,11 @@ export default function ProfilePage() {
     // Save current valid shop context to sessionStorage
     if (isInShop && shopId && /^\d+$/.test(shopId)) {
       try {
-        sessionStorage.setItem('currentShopContext', JSON.stringify({ 
-          shopId, 
-          shopUrl, 
+        sessionStorage.setItem('currentShopContext', JSON.stringify({
+          shopId,
+          shopUrl,
           detectionMethod,
-          timestamp: Date.now() 
+          timestamp: Date.now()
         }));
       } catch (e) {
         console.warn('⚠️ Failed to save shop context to session');
@@ -178,20 +180,20 @@ export default function ProfilePage() {
 
   const clearAuthAndLogout = () => {
     console.log('🔄 Clearing all authentication data...');
-    
+
     const keysToRemove = [
       'access_token', 'buyerAccessToken', 'refresh_token',
       'userInfo', 'user', 'wishlist', 'multiCarts', 'cart',
       'cameFromLogin', 'preLoginPath'
     ];
-    
+
     keysToRemove.forEach(key => {
       localStorage.removeItem(key);
       sessionStorage.removeItem(key);
     });
-    
+
     const shopContext = getShopContext();
-    
+
     if (shopContext.isInShop && shopContext.shopId) {
       console.log('🏪 Redirecting to shop login:', `${shopContext.shopUrl}/login`);
       router.push(`${shopContext.shopUrl}/login`);
@@ -223,12 +225,12 @@ export default function ProfilePage() {
 
     try {
       console.log('🏪 Fetching store data for valid ID:', validStoreId);
-      
+
       let storeResponse;
-      
+
       // Try phone-based lookup first
       try {
-        storeResponse = await axios.get(`${API_BASE_URL}/api/stores/by-phone/${validStoreId}/`, { 
+        storeResponse = await axios.get(`${API_BASE_URL}/api/stores/by-phone/${validStoreId}/`, {
           headers,
           timeout: 10000
         });
@@ -236,11 +238,11 @@ export default function ProfilePage() {
       } catch (phoneError) {
         console.warn('⚠️ Phone lookup failed, trying ID lookup');
       }
-      
+
       // Fallback to ID lookup
       if (!storeResponse) {
         try {
-          storeResponse = await axios.get(`${API_BASE_URL}/api/stores/${validStoreId}/`, { 
+          storeResponse = await axios.get(`${API_BASE_URL}/api/stores/${validStoreId}/`, {
             headers,
             timeout: 10000
           });
@@ -249,7 +251,7 @@ export default function ProfilePage() {
           console.warn('⚠️ ID lookup failed');
         }
       }
-      
+
       if (storeResponse && storeResponse.data) {
         setStoreData(storeResponse.data);
         return storeResponse.data;
@@ -257,7 +259,7 @@ export default function ProfilePage() {
         setStoreData(null);
         return null;
       }
-      
+
     } catch (error) {
       console.error('❌ Error fetching store data:', error);
       setStoreData(null);
@@ -269,15 +271,15 @@ export default function ProfilePage() {
   const fetchWishlistCount = async (headers) => {
     try {
       const storeInfo = getCurrentStoreInfo();
-      
+
       console.log('🔍 Fetching wishlist count...');
       console.log('🔍 Store info:', storeInfo);
-      
+
       // ✅ FIXED: Try multiple wishlist endpoints
       const wishlistEndpoints = [
         // Method 1: With store filter if in shop
-        storeInfo.isInStore && storeInfo.storeId && /^\d+$/.test(storeInfo.storeId) 
-          ? `${WISHLIST_API}?store_id=${storeInfo.storeId}` 
+        storeInfo.isInStore && storeInfo.storeId && /^\d+$/.test(storeInfo.storeId)
+          ? `${WISHLIST_API}?store_id=${storeInfo.storeId}`
           : null,
         // Method 2: Standard wishlist endpoint
         WISHLIST_API,
@@ -286,20 +288,20 @@ export default function ProfilePage() {
         `${API_BASE_URL}/user/wishlist/`,
         `${API_BASE_URL}/wishlist/`
       ].filter(Boolean); // Remove null values
-      
+
       let wishlistData = null;
       let successfulEndpoint = null;
-      
+
       // Try each endpoint until one works
       for (const endpoint of wishlistEndpoints) {
         try {
           console.log(`🔍 Trying wishlist endpoint: ${endpoint}`);
-          
-          const wishlistResponse = await axios.get(endpoint, { 
+
+          const wishlistResponse = await axios.get(endpoint, {
             headers,
             timeout: 10000
           });
-          
+
           if (wishlistResponse.data) {
             wishlistData = wishlistResponse.data;
             successfulEndpoint = endpoint;
@@ -312,7 +314,7 @@ export default function ProfilePage() {
           continue;
         }
       }
-      
+
       // ✅ ENHANCED: Parse wishlist count from various response formats
       let count = 0;
       if (wishlistData) {
@@ -353,10 +355,10 @@ export default function ProfilePage() {
       } else {
         console.warn('⚠️ No wishlist data received from any endpoint');
       }
-      
+
       console.log('✅ Final wishlist count set:', count);
       setWishlistCount(count);
-      
+
     } catch (wishlistError) {
       console.warn("⚠️ All wishlist API attempts failed:", wishlistError);
       setWishlistCount(0);
@@ -366,7 +368,7 @@ export default function ProfilePage() {
   const fetchOrdersCount = async (headers) => {
     try {
       const storeInfo = getCurrentStoreInfo();
-      
+
       // ✅ FIXED: Only add store filter if we have a valid numeric store ID
       let ordersUrl = ORDERS_COUNT_API;
       if (storeInfo.isInStore && storeInfo.storeId && /^\d+$/.test(storeInfo.storeId)) {
@@ -375,16 +377,16 @@ export default function ProfilePage() {
       } else {
         console.log('🔍 Fetching orders without store filter:', ordersUrl);
       }
-      
-      const ordersResponse = await axios.get(ordersUrl, { 
+
+      const ordersResponse = await axios.get(ordersUrl, {
         headers,
         timeout: 10000
       });
-      
+
       const count = ordersResponse.data.count || ordersResponse.data.total || 0;
       console.log('✅ Orders count set:', count);
       setOrdersCount(count);
-      
+
     } catch (ordersError) {
       console.warn("⚠️ Orders count API error:", ordersError);
       setOrdersCount(0);
@@ -394,61 +396,61 @@ export default function ProfilePage() {
   const fetchProfile = async (showRefreshing = false) => {
     const headers = getAuthHeaders();
     if (!headers) return;
-    
+
     if (hasFetchedRef.current && !showRefreshing) {
       return;
     }
-    
+
     if (showRefreshing) {
       setIsRefreshing(true);
     } else {
       setIsLoading(true);
     }
     setError('');
-    
+
     try {
-      const response = await axios.get(PROFILE_API, { 
+      const response = await axios.get(PROFILE_API, {
         headers,
         timeout: 15000
       });
-      
+
       setBuyer(response.data);
-      
+
       try {
         localStorage.setItem('userInfo', JSON.stringify(response.data));
       } catch (storageError) {
         console.warn('⚠️ Failed to store user info:', storageError);
       }
-      
+
       const storeInfo = getCurrentStoreInfo();
       setCurrentStoreInfo(storeInfo);
       console.log('🏪 Store info set:', storeInfo);
-      
+
       if (!hasFetchedRef.current || showRefreshing) {
         const dataPromises = [
           fetchWishlistCount(headers),  // ✅ Enhanced wishlist fetching
           fetchOrdersCount(headers)
         ];
-        
+
         // ✅ FIXED: Only fetch store data if we have a valid numeric store ID
         if (storeInfo.isInStore && storeInfo.storeId && /^\d+$/.test(storeInfo.storeId)) {
           dataPromises.push(fetchStoreData(storeInfo.storeId, headers));
         }
-        
+
         await Promise.allSettled(dataPromises);
         hasFetchedRef.current = true;
       }
-      
+
     } catch (error) {
       console.error("❌ Failed to fetch profile:", error);
-      
+
       if (error.response?.status === 401) {
         clearAuthAndLogout();
       } else {
-        const errorMessage = error.response?.data?.error || 
-                           error.response?.data?.detail || 
-                           error.message || 
-                           'Unknown error occurred';
+        const errorMessage = error.response?.data?.error ||
+          error.response?.data?.detail ||
+          error.message ||
+          'Unknown error occurred';
         setError(`Failed to load profile data: ${errorMessage}`);
       }
     } finally {
@@ -464,7 +466,7 @@ export default function ProfilePage() {
   const handleLogout = () => {
     const shopContext = getShopContext();
     const context = shopContext.isInShop ? `shop ${shopContext.shopId}` : 'your account';
-    
+
     if (window.confirm(`Are you sure you want to logout from ${context}?`)) {
       clearAuthAndLogout();
     }
@@ -472,29 +474,29 @@ export default function ProfilePage() {
 
   const handleBackClick = () => {
     const shopContext = getShopContext();
-    
+
     console.log('🔄 Back button clicked with shop context:', shopContext);
-    
+
     if (shopContext.isInShop && shopContext.shopId) {
       // ✅ FIXED: Use the original URL format for back navigation
       let backUrl = shopContext.shopUrl || `/shop/${shopContext.shopId}`;
-      
+
       // If we detected from query params, preserve the original format
       if (shopContext.detectionMethod === 'query') {
         backUrl = `/shop/new?id=${shopContext.shopId}`;
       }
-      
+
       console.log('↩️ Staying in shop context, going to:', backUrl);
       router.push(backUrl);
       return;
     }
-    
+
     console.log('↩️ No shop context found, using regular navigation');
-    
+
     try {
       if (typeof window !== 'undefined' && window.history.length > 1) {
         const referrer = document.referrer;
-        
+
         if (referrer && referrer.includes(window.location.origin)) {
           router.back();
           return;
@@ -503,13 +505,13 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Navigation error:', error);
     }
-    
+
     router.push('/');
   };
 
   const renderMenuLinks = () => {
     const shopContext = getShopContext();
-    
+
     const getShopAwareUrl = (basePath) => {
       if (shopContext.isInShop && shopContext.shopId) {
         // Preserve the original URL format
@@ -521,7 +523,7 @@ export default function ProfilePage() {
       }
       return basePath;
     };
-    
+
     return (
       <div style={styles.menuGrid}>
         <Link href={getShopAwareUrl('/profile/edit')} style={styles.menuItem}>
@@ -547,7 +549,7 @@ export default function ProfilePage() {
                 {shopContext.isInShop ? `Orders from ${storeData?.name || 'this Shop'}` : 'My Orders'}
               </span>
               <p style={styles.menuDesc}>
-                {ordersCount > 0 
+                {ordersCount > 0
                   ? `${ordersCount} order${ordersCount !== 1 ? 's' : ''} • Track and manage`
                   : 'Track orders and view purchase history'
                 }
@@ -559,7 +561,7 @@ export default function ProfilePage() {
 
         <Link href={getShopAwareUrl('/profile/wishlist')} style={styles.menuItem}>
           <div style={styles.menuItemContent}>
-            <div style={{...styles.menuIcon, color: '#ef4444'}}>
+            <div style={{ ...styles.menuIcon, color: '#ef4444' }}>
               <Heart size={24} />
             </div>
             <div style={styles.menuInfo}>
@@ -567,7 +569,7 @@ export default function ProfilePage() {
                 {shopContext.isInShop ? `${storeData?.name || 'Shop'} Wishlist` : 'My Wishlist'}
               </span>
               <p style={styles.menuDesc}>
-                {wishlistCount > 0 
+                {wishlistCount > 0
                   ? `${wishlistCount} item${wishlistCount !== 1 ? 's' : ''} saved for later`
                   : 'Save products for later purchase'
                 }
@@ -580,7 +582,7 @@ export default function ProfilePage() {
         <Link href={getShopAwareUrl('/profile/verification')} style={styles.menuItem}>
           <div style={styles.menuItemContent}>
             <div style={{
-              ...styles.menuIcon, 
+              ...styles.menuIcon,
               color: buyer?.phone_verified ? '#10b981' : '#f59e0b'
             }}>
               <Shield size={24} />
@@ -588,8 +590,8 @@ export default function ProfilePage() {
             <div style={styles.menuInfo}>
               <span style={styles.menuLabel}>Account Security</span>
               <p style={styles.menuDesc}>
-                {buyer?.phone_verified 
-                  ? 'Your account is verified ✓' 
+                {buyer?.phone_verified
+                  ? 'Your account is verified ✓'
                   : 'Verify your phone number for security'
                 }
               </p>
@@ -601,7 +603,7 @@ export default function ProfilePage() {
         {shopContext.isInShop && shopContext.shopId && (
           <Link href={shopContext.detectionMethod === 'query' ? `/shop/new?id=${shopContext.shopId}` : `/shop/${shopContext.shopId}`} style={styles.menuItem}>
             <div style={styles.menuItemContent}>
-              <div style={{...styles.menuIcon, color: '#059669'}}>
+              <div style={{ ...styles.menuIcon, color: '#059669' }}>
                 <Store size={24} />
               </div>
               <div style={styles.menuInfo}>
@@ -665,7 +667,7 @@ export default function ProfilePage() {
         <div style={styles.spinner}></div>
         <p>Loading your profile...</p>
         {shopContext.isInShop && (
-          <p style={{fontSize: '12px', color: '#666'}}>
+          <p style={{ fontSize: '12px', color: '#666' }}>
             🏪 Shop ID: {shopContext.shopId} • Method: {shopContext.detectionMethod}
           </p>
         )}
@@ -680,7 +682,7 @@ export default function ProfilePage() {
         <AlertCircle size={48} color="#ef4444" />
         <h2>Something went wrong</h2>
         <p>{error}</p>
-        <div style={{display: 'flex', gap: '12px', marginTop: '20px'}}>
+        <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
           <button onClick={() => fetchProfile()} style={styles.retryButton}>
             <RefreshCw size={18} />
             Try Again
@@ -701,8 +703,8 @@ export default function ProfilePage() {
         <User size={48} color="#6b7280" />
         <h2>Profile not found</h2>
         <p>Could not load profile. Please try logging in again.</p>
-        <Link 
-          href={shopContext.isInShop ? `${shopContext.shopUrl}/login` : '/login/buyer'} 
+        <Link
+          href={shopContext.isInShop ? `${shopContext.shopUrl}/login` : '/login/buyer'}
           style={styles.loginButton}
         >
           Go to Login
@@ -715,6 +717,7 @@ export default function ProfilePage() {
 
   return (
     <div style={styles.pageContainer}>
+      <Header />
       {/* Header */}
       <header style={styles.header}>
         <div style={styles.headerContainer}>
@@ -728,12 +731,12 @@ export default function ProfilePage() {
             {shopContext.isInShop ? `${storeData?.name || 'Shop'} Profile` : 'My Account'}
           </h1>
           <div style={styles.headerActions}>
-            <button 
-              onClick={() => fetchProfile(true)} 
+            <button
+              onClick={() => fetchProfile(true)}
               style={styles.refreshButton}
               disabled={isRefreshing}
             >
-              <RefreshCw size={16} style={isRefreshing ? {animation: 'spin 1s linear infinite'} : {}} />
+              <RefreshCw size={16} style={isRefreshing ? { animation: 'spin 1s linear infinite' } : {}} />
             </button>
             <button onClick={handleLogout} style={styles.logoutButton}>
               <LogOut size={18} />
@@ -809,7 +812,7 @@ export default function ProfilePage() {
                 </span>
               </div>
             </div>
-            
+
             <div style={styles.statCard}>
               <div style={styles.statIcon}>
                 <Heart size={24} color="#ef4444" />
@@ -836,7 +839,7 @@ export default function ProfilePage() {
                 </p>
               </div>
             </div>
-            
+
             <div style={styles.infoCard}>
               <div style={styles.infoIcon}>
                 <MapPin size={20} />
@@ -875,7 +878,7 @@ export default function ProfilePage() {
               </div>
               <div style={styles.summaryItem}>
                 <span style={styles.summaryLabel}>Wishlist</span>
-                <span style={{...styles.summaryValue, color: '#ef4444'}}>
+                <span style={{ ...styles.summaryValue, color: '#ef4444' }}>
                   {wishlistCount}
                 </span>
               </div>
@@ -886,7 +889,7 @@ export default function ProfilePage() {
           <div style={styles.helpSection}>
             <h4 style={styles.helpTitle}>Need Help?</h4>
             <p style={styles.helpText}>
-              {shopContext.isInShop 
+              {shopContext.isInShop
                 ? `Contact support for assistance with your ${storeData?.name || 'shop'} account.`
                 : 'Contact our support team for assistance with your account or orders.'
               }
@@ -900,7 +903,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-
+      <Footer />
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -943,7 +946,7 @@ const styles = {
     color: '#059669',
     lineHeight: '1.4'
   },
-  pageContainer: { minHeight: '100vh', backgroundColor: '#f8fafc' },
+  pageContainer: { minHeight: '100vh', backgroundColor: '#FDFFF0' },
   loadingContainer: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
     justifyContent: 'center', minHeight: '100vh', gap: '20px', padding: '20px'
