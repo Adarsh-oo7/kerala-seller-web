@@ -3,36 +3,38 @@
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import Header from '../../../components/common/Header';
+import Footer from '../../../components/common/Footer';
 import Link from 'next/link';
-import { 
-  Package, 
-  ArrowLeft, 
-  Search, 
-  ShoppingBag,
-  AlertCircle,
-  RefreshCw,
-  Calendar,
-  Eye,
-  Clock,
-  CheckCircle,
-  Truck,
-  X,
-  Filter,
-  Globe,
-  Home,
-  Store
+import {
+    Package,
+    ArrowLeft,
+    Search,
+    ShoppingBag,
+    AlertCircle,
+    RefreshCw,
+    Calendar,
+    Eye,
+    Clock,
+    CheckCircle,
+    Truck,
+    X,
+    Filter,
+    Globe,
+    Home,
+    Store
 } from 'lucide-react';
 
 // ✅ Enhanced API base URL handling with environment variables
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
-  if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:8000';
-  }
-  return 'https://keralaseller-backend.onrender.com';
+    const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+    if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+        return envUrl.trim();
+    }
+    if (process.env.NODE_ENV === 'development') {
+        return 'http://localhost:8000';
+    }
+    return 'https://keralaseller-backend.onrender.com';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -51,16 +53,16 @@ export default function BuyerOrdersPage() {
 
     // ✅ Enhanced token handling - supports both Google login and regular login
     const getAuthHeaders = useCallback(() => {
-        const token = localStorage.getItem('access_token') || 
-                      localStorage.getItem('buyerAccessToken') ||
-                      localStorage.getItem('accessToken');
-        
+        const token = localStorage.getItem('access_token') ||
+            localStorage.getItem('buyerAccessToken') ||
+            localStorage.getItem('accessToken');
+
         if (!token) {
             console.error('❌ No authentication token found');
             router.push('/login/buyer');
             return null;
         }
-        
+
         console.log('🔍 Using token:', token.substring(0, 30) + '...');
         return { 'Authorization': `Bearer ${token}` };
     }, [router]);
@@ -68,7 +70,7 @@ export default function BuyerOrdersPage() {
     // ✅ Enhanced: Get current store info from URL - supports both shop and store structures
     const getCurrentStoreInfo = useCallback(() => {
         if (typeof window === 'undefined') return { storeId: null, isInStore: false };
-        
+
         const currentPath = window.location.pathname;
         // Support both /shop/[slug] and /store/[id] URL patterns
         const storeMatch = currentPath.match(/\/shop\/([^\/]+)/) || currentPath.match(/\/store\/([^\/]+)/);
@@ -90,23 +92,23 @@ export default function BuyerOrdersPage() {
             // Get current store context
             const storeInfo = getCurrentStoreInfo();
             setCurrentStoreInfo(storeInfo);
-            
+
             // Build API URL with store filter if in store context
             let apiUrl = ORDERS_API_URL;
             if (storeInfo.isInStore && storeInfo.storeId) {
                 const separator = apiUrl.includes('?') ? '&' : '?';
                 apiUrl = `${apiUrl}${separator}store_id=${storeInfo.storeId}`;
             }
-            
+
             console.log('Fetching orders from:', apiUrl);
-            const response = await axios.get(apiUrl, { 
+            const response = await axios.get(apiUrl, {
                 headers,
-                timeout: 15000 
+                timeout: 15000
             });
-            
+
             const orderData = response.data.results || response.data || [];
             console.log('Orders received:', orderData);
-            
+
             setOrders(orderData);
             setFilteredOrders(orderData);
         } catch (err) {
@@ -136,7 +138,7 @@ export default function BuyerOrdersPage() {
 
         // Apply status filter
         if (statusFilter !== 'all') {
-            filtered = filtered.filter(order => 
+            filtered = filtered.filter(order =>
                 order.status?.toLowerCase() === statusFilter.toLowerCase()
             );
         }
@@ -146,7 +148,7 @@ export default function BuyerOrdersPage() {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(order =>
                 order.id.toString().includes(query) ||
-                order.items?.some(item => 
+                order.items?.some(item =>
                     item.product?.name?.toLowerCase().includes(query) ||
                     item.product_name?.toLowerCase().includes(query)
                 ) ||
@@ -173,7 +175,7 @@ export default function BuyerOrdersPage() {
 
         setFilteredOrders(filtered);
     }, [orders, statusFilter, searchQuery, sortBy]);
-    
+
     const getStatusStyle = (status) => {
         const statusStyles = {
             'PENDING': { backgroundColor: '#fef3c7', color: '#92400e', icon: Clock },
@@ -226,7 +228,7 @@ export default function BuyerOrdersPage() {
 
     if (isLoading) {
         return (
-            <div style={styles.pageContainer}>
+            <div style={styles.pagecontainer}>
                 <div style={styles.loadingContainer}>
                     <div style={styles.spinner}></div>
                     <h3>Loading orders...</h3>
@@ -238,7 +240,7 @@ export default function BuyerOrdersPage() {
 
     if (error) {
         return (
-            <div style={styles.pageContainer}>
+            <div style={styles.pagecontainer}>
                 <div style={styles.errorContainer}>
                     <AlertCircle size={48} color="#ef4444" />
                     <h2>Something went wrong</h2>
@@ -261,11 +263,12 @@ export default function BuyerOrdersPage() {
     const statusCounts = getStatusCounts();
 
     return (
-        <div style={styles.pageContainer}>
+        <div style={styles.pagecontainer}>
+            <Header />
             <div style={styles.container}>
-                <div style={styles.header}>
+                {/* <div style={styles.header}>
                     <Link href={getBackUrl()} style={styles.backLink}>
-                        <ArrowLeft size={20}/>
+                        <ArrowLeft size={20} />
                         <span>
                             {currentStoreInfo.isInStore ? 'Back to Store' : 'Back to Profile'}
                         </span>
@@ -276,7 +279,7 @@ export default function BuyerOrdersPage() {
                             {currentStoreInfo.isInStore ? 'Store Orders' : 'My Orders'}
                         </h1>
                         <p style={styles.subtitle}>
-                            {currentStoreInfo.isInStore 
+                            {currentStoreInfo.isInStore
                                 ? 'Orders from this store only'
                                 : 'Track and manage all your orders'
                             }
@@ -285,7 +288,7 @@ export default function BuyerOrdersPage() {
                     <button onClick={fetchOrders} style={styles.refreshButton}>
                         <RefreshCw size={18} />
                     </button>
-                </div>
+                </div> */}
 
                 {/* ✅ Show store context indicator */}
                 {currentStoreInfo.isInStore && (
@@ -295,27 +298,27 @@ export default function BuyerOrdersPage() {
                     </div>
                 )}
 
-                <div style={styles.filtersSection}>
-                    {/* Search Box */}
-                    <div style={styles.searchBox}>
+                {/* <div style={styles.filtersSection}> */}
+                {/* Search Box */}
+                {/* <div style={styles.searchBox}>
                         <Search size={18} style={styles.searchIcon} />
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             placeholder={`Search by Order ID, Product name${currentStoreInfo.isInStore ? '...' : ', Store name...'}`}
-                            value={searchQuery} 
-                            onChange={(e) => setSearchQuery(e.target.value)} 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             style={styles.searchInput}
                         />
-                    </div>
+                    </div> */}
 
-                    {/* Filter Tabs */}
-                    <div style={styles.filterTabs}>
+                {/* Filter Tabs */}
+                {/* <div style={styles.filterTabs}>
                         {['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'].map(status => (
-                            <button 
-                                key={status} 
-                                onClick={() => setStatusFilter(status)} 
+                            <button
+                                key={status}
+                                onClick={() => setStatusFilter(status)}
                                 style={{
-                                    ...styles.filterTab, 
+                                    ...styles.filterTab,
                                     ...(statusFilter === status ? styles.activeFilterTab : {})
                                 }}
                             >
@@ -327,13 +330,13 @@ export default function BuyerOrdersPage() {
                                 )}
                             </button>
                         ))}
-                    </div>
+                    </div> */}
 
-                    {/* Sort Options */}
-                    <div style={styles.sortSection}>
+                {/* Sort Options */}
+                {/* <div style={styles.sortSection}>
                         <label style={styles.sortLabel}>Sort by:</label>
-                        <select 
-                            value={sortBy} 
+                        <select
+                            value={sortBy}
                             onChange={(e) => setSortBy(e.target.value)}
                             style={styles.sortSelect}
                         >
@@ -342,23 +345,23 @@ export default function BuyerOrdersPage() {
                             <option value="amount_high">Amount (High to Low)</option>
                             <option value="amount_low">Amount (Low to High)</option>
                         </select>
-                    </div>
-                </div>
+                    </div> */}
+                {/* </div> */}
 
                 {filteredOrders.length === 0 ? (
                     <div style={styles.emptyState}>
                         <ShoppingBag size={64} />
                         <h3>No orders found</h3>
                         <p>
-                            {searchQuery || statusFilter !== 'all' 
-                                ? 'Try adjusting your search or filters.' 
+                            {searchQuery || statusFilter !== 'all'
+                                ? 'Try adjusting your search or filters.'
                                 : currentStoreInfo.isInStore
                                     ? "You haven't ordered from this store yet."
                                     : "You haven't placed any orders yet. Start shopping to see your orders here!"
                             }
                         </p>
                         {(searchQuery || statusFilter !== 'all') && (
-                            <button 
+                            <button
                                 onClick={() => {
                                     setSearchQuery('');
                                     setStatusFilter('all');
@@ -370,11 +373,11 @@ export default function BuyerOrdersPage() {
                         )}
                         {!searchQuery && statusFilter === 'all' && (
                             <div style={styles.emptyActions}>
-                                <Link 
-                                    href={currentStoreInfo.isInStore 
-                                        ? `/shop/${currentStoreInfo.storeId}` 
+                                <Link
+                                    href={currentStoreInfo.isInStore
+                                        ? `/shop/${currentStoreInfo.storeId}`
                                         : "/shop"
-                                    } 
+                                    }
                                     style={styles.shopButton}
                                 >
                                     <ShoppingBag size={18} />
@@ -392,12 +395,12 @@ export default function BuyerOrdersPage() {
                         {filteredOrders.map(order => {
                             const statusStyle = getStatusStyle(order.status);
                             const StatusIcon = statusStyle.icon;
-                            
+
                             return (
                                 <div key={order.id} style={styles.card}>
                                     <div style={styles.cardHeader}>
                                         <div style={styles.orderInfo}>
-                                            <h3 style={styles.orderId}>Order #{order.id}</h3>
+                                            {/* <h3 style={styles.orderId}>Order #{order.id}</h3> */}
                                             <div style={styles.orderMeta}>
                                                 <Calendar size={14} />
                                                 <span>Placed on {formatDate(order.created_at)}</span>
@@ -406,30 +409,32 @@ export default function BuyerOrdersPage() {
                                                 </span>
                                             </div>
                                             {/* ✅ Show store name if not in store context */}
-                                            {!currentStoreInfo.isInStore && order.store_name && (
+                                            {/* {!currentStoreInfo.isInStore && order.store_name && (
                                                 <div style={styles.storeInfo}>
                                                     <span style={styles.storeLabel}>From:</span>
                                                     <span style={styles.storeName}>{order.store_name}</span>
                                                 </div>
-                                            )}
+                                            )} */}
                                         </div>
-                                        <div style={styles.orderAmount}>
-                                            <strong style={styles.total}>
-                                                ₹{parseFloat(order.total_amount).toFixed(2)}
-                                            </strong>
-                                        </div>
-                                    </div>
 
-                                    <div style={styles.cardBody}>
+
                                         <div style={styles.statusSection}>
                                             <span style={styles.statusLabel}>Status:</span>
                                             <span style={{
-                                                ...styles.statusBadge, 
+                                                ...styles.statusBadge,
                                                 ...statusStyle
                                             }}>
                                                 <StatusIcon size={14} />
                                                 {order.status}
                                             </span>
+                                        </div>
+                                    </div>
+
+                                    <div style={styles.cardBody}>
+                                        <div style={styles.orderAmount}>
+                                            <strong style={styles.total}>
+                                                ₹{parseFloat(order.total_amount).toFixed(2)}
+                                            </strong>
                                         </div>
 
                                         {order.items && order.items.length > 0 && (
@@ -480,7 +485,7 @@ export default function BuyerOrdersPage() {
 
                                     <div style={styles.cardFooter}>
                                         <div style={styles.cardActions}>
-                                            <Link 
+                                            <Link
                                                 href={`/profile/orders/${order.id}`}
                                                 style={styles.viewButton}
                                             >
@@ -513,7 +518,7 @@ export default function BuyerOrdersPage() {
                     </div>
                 )}
             </div>
-
+            <Footer />
             {/* CSS Animations */}
             <style jsx>{`
                 @keyframes spin {
@@ -569,12 +574,8 @@ const styles = {
         borderRadius: '4px'
     },
 
-    pageContainer: {
-        minHeight: '100vh',
-        backgroundColor: '#f8fafc',
-        display: 'flex',
-        flexDirection: 'column'
-    },
+    pagecontainer: { backgroundColor: "#FDFFF0" },
+    container: { minHeight: '100vh', backgroundColor: '#FDFFF0', padding: '20px', maxWidth: '1200px', margin: '0 auto' },
 
     // Loading and Error States
     loadingContainer: {
@@ -641,28 +642,22 @@ const styles = {
         fontWeight: '500'
     },
 
-    // Main Layout
-    container: { 
-        maxWidth: '1000px', 
-        margin: '0 auto', 
-        padding: '24px 20px',
-        flex: 1
-    },
 
-    header: { 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
+
+    header: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         marginBottom: '32px',
         flexWrap: 'wrap',
         gap: '16px'
     },
 
-    backLink: { 
+    backLink: {
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-        textDecoration: 'none', 
+        textDecoration: 'none',
         color: '#3b82f6',
         fontSize: '16px',
         fontWeight: '500',
@@ -677,7 +672,7 @@ const styles = {
         flex: 1
     },
 
-    title: { 
+    title: {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -709,17 +704,17 @@ const styles = {
     },
 
     // Filters Section
-    filtersSection: { 
-        backgroundColor: 'white', 
-        borderRadius: '16px', 
-        padding: '24px', 
-        marginBottom: '24px', 
+    filtersSection: {
+        backgroundColor: 'white',
+        borderRadius: '16px',
+        padding: '24px',
+        marginBottom: '24px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         border: '1px solid #e5e7eb'
     },
 
-    searchBox: { 
-        position: 'relative', 
+    searchBox: {
+        position: 'relative',
         marginBottom: '20px'
     },
 
@@ -732,10 +727,10 @@ const styles = {
         zIndex: 1
     },
 
-    searchInput: { 
-        width: '100%', 
-        padding: '12px 16px 12px 48px', 
-        border: '2px solid #e5e7eb', 
+    searchInput: {
+        width: '100%',
+        padding: '12px 16px 12px 48px',
+        border: '2px solid #e5e7eb',
         borderRadius: '12px',
         fontSize: '16px',
         outline: 'none',
@@ -743,21 +738,21 @@ const styles = {
         boxSizing: 'border-box'
     },
 
-    filterTabs: { 
-        display: 'flex', 
-        gap: '8px', 
+    filterTabs: {
+        display: 'flex',
+        gap: '8px',
         flexWrap: 'wrap',
         marginBottom: '16px'
     },
 
-    filterTab: { 
+    filterTab: {
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
-        padding: '10px 16px', 
-        backgroundColor: '#f8fafc', 
-        border: '2px solid #e5e7eb', 
-        borderRadius: '20px', 
+        padding: '10px 16px',
+        backgroundColor: '#f8fafc',
+        border: '2px solid #e5e7eb',
+        borderRadius: '20px',
         cursor: 'pointer',
         fontSize: '14px',
         fontWeight: '500',
@@ -765,8 +760,8 @@ const styles = {
         transition: 'all 0.2s'
     },
 
-    activeFilterTab: { 
-        backgroundColor: '#3b82f6', 
+    activeFilterTab: {
+        backgroundColor: '#3b82f6',
         borderColor: '#3b82f6',
         color: 'white'
     },
@@ -800,8 +795,8 @@ const styles = {
     },
 
     // Empty State
-    emptyState: { 
-        textAlign: 'center', 
+    emptyState: {
+        textAlign: 'center',
         padding: '80px 40px',
         backgroundColor: 'white',
         borderRadius: '16px',
@@ -856,27 +851,26 @@ const styles = {
     },
 
     // Order List
-    orderList: { 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: '20px',
-        animation: 'fadeIn 0.6s ease-out'
+    orderList: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem',
+        width: '100%',
     },
-
-    card: { 
-        border: '1px solid #e5e7eb', 
-        borderRadius: '16px', 
-        backgroundColor: '#fff', 
+    card: {
+        width: '100%',          // ✅ Make card full width
+        boxSizing: 'border-box',
+        padding: '1rem',
+        borderRadius: '8px',
+        background: '#fff',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        overflow: 'hidden',
-        transition: 'all 0.2s'
     },
 
-    cardHeader: { 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'flex-start', 
-        padding: '20px 24px', 
+    cardHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        padding: '20px 24px',
         borderBottom: '1px solid #f3f4f6',
         backgroundColor: '#f8fafc'
     },
@@ -912,13 +906,13 @@ const styles = {
         textAlign: 'right'
     },
 
-    total: { 
-        fontSize: '20px', 
+    total: {
+        fontSize: '20px',
         fontWeight: '700',
         color: '#059669'
     },
 
-    cardBody: { 
+    cardBody: {
         padding: '20px 24px'
     },
 
@@ -935,13 +929,13 @@ const styles = {
         color: '#374151'
     },
 
-    statusBadge: { 
+    statusBadge: {
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
-        padding: '6px 12px', 
-        borderRadius: '20px', 
-        fontSize: '12px', 
+        padding: '6px 12px',
+        borderRadius: '20px',
+        fontSize: '12px',
         fontWeight: '600',
         textTransform: 'uppercase',
         letterSpacing: '0.5px'
@@ -951,16 +945,16 @@ const styles = {
         marginBottom: '16px'
     },
 
-    itemsHeader: { 
+    itemsHeader: {
         fontSize: '16px',
         fontWeight: '600',
         color: '#1f2937',
         margin: '0 0 8px 0'
     },
 
-    itemList: { 
+    itemList: {
         listStyle: 'none',
-        padding: 0, 
+        padding: 0,
         margin: 0,
         display: 'flex',
         flexDirection: 'column',
@@ -1021,9 +1015,9 @@ const styles = {
         fontSize: '13px'
     },
 
-    cardFooter: { 
-        padding: '16px 24px', 
-        borderTop: '1px solid #f3f4f6', 
+    cardFooter: {
+        padding: '16px 24px',
+        borderTop: '1px solid #f3f4f6',
         backgroundColor: '#f8fafc'
     },
 
@@ -1034,14 +1028,14 @@ const styles = {
         flexWrap: 'wrap'
     },
 
-    viewButton: { 
+    viewButton: {
         display: 'inline-flex',
         alignItems: 'center',
         gap: '6px',
-        padding: '10px 16px', 
-        backgroundColor: '#3b82f6', 
-        color: 'white', 
-        textDecoration: 'none', 
+        padding: '10px 16px',
+        backgroundColor: '#3b82f6',
+        color: 'white',
+        textDecoration: 'none',
         borderRadius: '8px',
         fontSize: '14px',
         fontWeight: '500',

@@ -3,14 +3,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import Header from '../../../components/common/Header';
+import Footer from '../../../components/common/Footer';
+import "../../../styles/Keralasellersprofileedit.css";
+
 import Link from 'next/link';
-import { 
-  ArrowLeft, 
-  Save, 
-  User, 
-  Phone, 
-  MapPin, 
-  AlertCircle, 
+import {
+  ArrowLeft,
+  Save,
+  User,
+  Phone,
+  MapPin,
+  AlertCircle,
   CheckCircle,
   RefreshCw,
   X,
@@ -35,11 +39,11 @@ const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 
 export default function EditProfilePage() {
   const [formData, setFormData] = useState({
-    full_name: '', 
-    address_line_1: '', 
+    full_name: '',
+    address_line_1: '',
     address_line_2: '',
-    city: '', 
-    pincode: '', 
+    city: '',
+    pincode: '',
     phone_number: ''
   });
   const [originalData, setOriginalData] = useState({});
@@ -54,15 +58,15 @@ export default function EditProfilePage() {
 
   // ✅ Enhanced token handling - supports both Google login and regular login
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('access_token') || 
-                  localStorage.getItem('buyerAccessToken');
-    
+    const token = localStorage.getItem('access_token') ||
+      localStorage.getItem('buyerAccessToken');
+
     if (!token) {
       console.error('❌ No authentication token found');
       router.push('/login/buyer');
       return null;
     }
-    
+
     console.log('🔍 Using token:', token.substring(0, 30) + '...');
     return { 'Authorization': `Bearer ${token}` };
   }, [router]);
@@ -70,7 +74,7 @@ export default function EditProfilePage() {
   // ✅ Get current store info from URL
   const getCurrentStoreInfo = useCallback(() => {
     if (typeof window === 'undefined') return { storeId: null, isInStore: false };
-    
+
     const currentPath = window.location.pathname;
     const storeMatch = currentPath.match(/\/store\/([^\/]+)/);
     return {
@@ -82,12 +86,12 @@ export default function EditProfilePage() {
   const fetchProfile = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
-    
+
     setIsLoading(true);
     try {
       console.log('Fetching profile from:', PROFILE_API);
       const response = await axios.get(PROFILE_API, { headers });
-      
+
       console.log('Profile data received:', response.data);
       const data = response.data;
       const profileData = {
@@ -98,14 +102,14 @@ export default function EditProfilePage() {
         pincode: data.pincode || '',
         phone_number: data.phone_number || ''
       };
-      
+
       setFormData(profileData);
       setOriginalData(profileData);
       setHasChanges(false);
-      
+
       // ✅ Update current store info
       setCurrentStoreInfo(getCurrentStoreInfo());
-      
+
     } catch (error) {
       console.error("Failed to fetch profile:", error);
       if (error.response?.status === 401) {
@@ -172,17 +176,17 @@ export default function EditProfilePage() {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear specific field error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
-    
+
     // Clear general error
     if (errors.general) {
       setErrors(prev => ({ ...prev, general: '' }));
     }
-    
+
     // Clear success message
     if (successMessage) {
       setSuccessMessage('');
@@ -191,7 +195,7 @@ export default function EditProfilePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
     if (!hasChanges) {
       setSuccessMessage('No changes to save.');
@@ -200,21 +204,21 @@ export default function EditProfilePage() {
 
     const headers = getAuthHeaders();
     if (!headers) return;
-    
+
     setIsSaving(true);
     setErrors({});
-    
+
     try {
       console.log('Updating profile with data:', formData);
       await axios.patch(PROFILE_API, formData, { headers });
-      
+
       setOriginalData(formData);
       setHasChanges(false);
       setSuccessMessage('Profile updated successfully!');
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
-      
+
     } catch (error) {
       console.error('Profile update failed:', error);
       if (error.response?.status === 401) {
@@ -245,7 +249,7 @@ export default function EditProfilePage() {
 
   const navigateBack = () => {
     const { storeId, isInStore } = currentStoreInfo;
-    
+
     if (isInStore && storeId) {
       // If we're in a store, go back to that store's profile page
       router.push(`/store/${storeId}/profile`);
@@ -280,14 +284,15 @@ export default function EditProfilePage() {
 
   return (
     <div style={styles.pageContainer}>
+      <Header />
       {/* Unsaved Changes Warning Modal */}
       {showUnsavedWarning && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
             <div style={styles.modalHeader}>
               <h3>Unsaved Changes</h3>
-              <button 
-                onClick={() => setShowUnsavedWarning(false)} 
+              <button
+                onClick={() => setShowUnsavedWarning(false)}
                 style={styles.closeButton}
               >
                 <X size={20} />
@@ -295,14 +300,14 @@ export default function EditProfilePage() {
             </div>
             <p>You have unsaved changes. Are you sure you want to leave without saving?</p>
             <div style={styles.modalActions}>
-              <button 
-                onClick={() => setShowUnsavedWarning(false)} 
+              <button
+                onClick={() => setShowUnsavedWarning(false)}
                 style={styles.stayButton}
               >
                 Stay and Edit
               </button>
-              <button 
-                onClick={confirmCancel} 
+              <button
+                onClick={confirmCancel}
                 style={styles.leaveButton}
               >
                 Leave Without Saving
@@ -313,7 +318,7 @@ export default function EditProfilePage() {
       )}
 
       {/* Header */}
-      <header style={styles.header}>
+      {/* <header style={styles.header}>
         <div style={styles.headerContainer}>
           <button onClick={handleCancel} style={styles.backButton}>
             <ArrowLeft size={20} />
@@ -331,7 +336,7 @@ export default function EditProfilePage() {
             )}
           </div>
         </div>
-      </header>
+      </header> */}
 
       <div style={styles.container}>
         <div style={styles.formWrapper}>
@@ -363,22 +368,23 @@ export default function EditProfilePage() {
             {/* Personal Information Section */}
             <div style={styles.section}>
               <div style={styles.sectionHeader}>
-                <User size={24} color="#3b82f6" />
-                <h3 style={styles.sectionTitle}>Personal Information</h3>
+                <User size={20} color="red" />
+                <h3 className='keralasellersprofiledittitle' style={styles.sectionTitle}>Personal Information</h3>
               </div>
-              
+
               <div style={styles.formGrid}>
                 <div style={styles.inputGroup}>
-                  <label style={styles.label}>
+                  {/* <label style={styles.label}>
                     Full Name *
                     <span style={styles.required}>Required</span>
-                  </label>
+                  </label> */}
                   <input
+                    className='keralasellersprofileditinput'
                     type="text"
                     value={formData.full_name}
                     onChange={(e) => handleInputChange('full_name', e.target.value)}
                     style={{
-                      ...styles.input, 
+                      ...styles.input,
                       ...(errors.full_name ? styles.inputError : {})
                     }}
                     placeholder="Enter your full name"
@@ -393,10 +399,11 @@ export default function EditProfilePage() {
                 </div>
 
                 <div style={styles.inputGroup}>
-                  <label style={styles.label}>Phone Number</label>
+                  {/* <label style={styles.label}>Phone Number</label> */}
                   <div style={styles.phoneInputContainer}>
-                    <span style={styles.phonePrefix}>+91</span>
+                    <span className='keralasellersprofileditinput' style={styles.phonePrefix}>+91</span>
                     <input
+                      className='keralasellersprofileditinput'
                       type="tel"
                       value={formData.phone_number}
                       onChange={(e) => {
@@ -404,7 +411,7 @@ export default function EditProfilePage() {
                         handleInputChange('phone_number', value);
                       }}
                       style={{
-                        ...styles.phoneInput, 
+                        ...styles.phoneInput,
                         ...(errors.phone_number ? styles.inputError : {})
                       }}
                       placeholder="Enter 10-digit mobile number"
@@ -424,14 +431,15 @@ export default function EditProfilePage() {
             {/* Address Section */}
             <div style={styles.section}>
               <div style={styles.sectionHeader}>
-                <MapPin size={24} color="#10b981" />
-                <h3 style={styles.sectionTitle}>Address Information</h3>
+                <MapPin size={20} color="red" />
+                <h3 className='keralasellersprofiledittitle' style={styles.sectionTitle}>Address Information</h3>
               </div>
-              
+
               <div style={styles.formGrid}>
                 <div style={styles.inputGroup}>
-                  <label style={styles.label}>Address Line 1</label>
+                  {/* <label style={styles.label}>Address Line 1</label> */}
                   <input
+                    className='keralasellersprofileditinput'
                     type="text"
                     value={formData.address_line_1}
                     onChange={(e) => handleInputChange('address_line_1', e.target.value)}
@@ -442,9 +450,10 @@ export default function EditProfilePage() {
                 </div>
 
                 <div style={styles.inputGroup}>
-                  <label style={styles.label}>Address Line 2 (Optional)</label>
+                  {/* <label style={styles.label}>Address Line 2 (Optional)</label> */}
                   <input
                     type="text"
+                    className='keralasellersprofileditinput'
                     value={formData.address_line_2}
                     onChange={(e) => handleInputChange('address_line_2', e.target.value)}
                     style={styles.input}
@@ -454,13 +463,14 @@ export default function EditProfilePage() {
                 </div>
 
                 <div style={styles.inputGroup}>
-                  <label style={styles.label}>City</label>
+                  {/* <label style={styles.label}>City</label> */}
                   <input
                     type="text"
+                    className='keralasellersprofileditinput'
                     value={formData.city}
                     onChange={(e) => handleInputChange('city', e.target.value)}
                     style={{
-                      ...styles.input, 
+                      ...styles.input,
                       ...(errors.city ? styles.inputError : {})
                     }}
                     placeholder="Enter city name"
@@ -475,16 +485,17 @@ export default function EditProfilePage() {
                 </div>
 
                 <div style={styles.inputGroup}>
-                  <label style={styles.label}>Pincode</label>
+                  {/* <label style={styles.label}>Pincode</label> */}
                   <input
                     type="text"
+                    className='keralasellersprofileditinput'
                     value={formData.pincode}
                     onChange={(e) => {
                       const value = e.target.value.replace(/\D/g, '');
                       handleInputChange('pincode', value);
                     }}
                     style={{
-                      ...styles.input, 
+                      ...styles.input,
                       ...(errors.pincode ? styles.inputError : {})
                     }}
                     placeholder="Enter 6-digit pincode"
@@ -502,18 +513,20 @@ export default function EditProfilePage() {
 
             {/* Action Buttons */}
             <div style={styles.actions}>
-              <button 
-                type="button" 
-                onClick={handleCancel} 
+              <button
+                className='keralasellersprofilesavebtn'
+                type="button"
+                onClick={handleCancel}
                 style={styles.cancelButton}
               >
                 Cancel
               </button>
-              <button 
-                type="submit" 
+              <button
+              className='keralasellersprofilesavebtn'
+                type="submit"
                 disabled={isSaving || !hasChanges}
                 style={{
-                  ...styles.saveButton, 
+                  ...styles.saveButton,
                   ...(isSaving || !hasChanges ? styles.disabledButton : {})
                 }}
               >
@@ -534,6 +547,7 @@ export default function EditProfilePage() {
         </div>
       </div>
 
+      <Footer />
       {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
@@ -571,11 +585,9 @@ const styles = {
     marginBottom: '24px'
   },
 
-  pageContainer: {
-    minHeight: '100vh',
-    backgroundColor: '#f8fafc'
-  },
-  
+  pageContainer: { backgroundColor: "#FDFFF0" },
+  container: { minHeight: '100vh', backgroundColor: '#FDFFF0', padding: '40px 20px', maxWidth: '800px', margin: '0 auto', },
+
   // Loading
   loadingContainer: {
     display: 'flex',
@@ -586,7 +598,7 @@ const styles = {
     gap: '20px',
     padding: '20px'
   },
-  
+
   spinner: {
     width: '32px',
     height: '32px',
@@ -595,7 +607,7 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
+
   buttonSpinner: {
     width: '16px',
     height: '16px',
@@ -619,7 +631,7 @@ const styles = {
     zIndex: 1000,
     padding: '20px'
   },
-  
+
   modalContent: {
     backgroundColor: 'white',
     borderRadius: '16px',
@@ -628,14 +640,14 @@ const styles = {
     width: '100%',
     animation: 'slideIn 0.2s ease-out'
   },
-  
+
   modalHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '16px'
   },
-  
+
   closeButton: {
     background: 'none',
     border: 'none',
@@ -643,13 +655,13 @@ const styles = {
     color: '#6b7280',
     padding: '4px'
   },
-  
+
   modalActions: {
     display: 'flex',
     gap: '12px',
     marginTop: '24px'
   },
-  
+
   stayButton: {
     flex: 1,
     padding: '10px 16px',
@@ -660,7 +672,7 @@ const styles = {
     cursor: 'pointer',
     fontWeight: '500'
   },
-  
+
   leaveButton: {
     flex: 1,
     padding: '10px 16px',
@@ -673,24 +685,25 @@ const styles = {
   },
 
   // Header
+  // Header
   header: {
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     borderBottom: '1px solid #e5e7eb',
     position: 'sticky',
     top: 0,
     zIndex: 100,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    boxShadow: '1px 3px 10px rgba(0,0,0,0.3)',
   },
-  
+
   headerContainer: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '16px 20px',
+    margin: '0 auto', // center horizontally
+    padding: '12px 20px',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
   },
-  
+
+
   backButton: {
     display: 'flex',
     alignItems: 'center',
@@ -705,27 +718,27 @@ const styles = {
     borderRadius: '6px',
     transition: 'all 0.2s'
   },
-  
+
   backText: {
     display: 'none',
     '@media (min-width: 640px)': {
       display: 'inline'
     }
   },
-  
+
   headerTitle: {
     fontSize: '20px',
     fontWeight: '700',
     color: '#1f2937',
     margin: 0
   },
-  
+
   headerActions: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px'
   },
-  
+
   resetButton: {
     display: 'flex',
     alignItems: 'center',
@@ -740,12 +753,7 @@ const styles = {
     transition: 'all 0.2s'
   },
 
-  // Container
-  container: {
-    maxWidth: '800px',
-    margin: '0 auto',
-    padding: '24px 20px'
-  },
+
 
   // Alerts
   successAlert: {
@@ -759,7 +767,7 @@ const styles = {
     color: '#065f46',
     marginBottom: '24px'
   },
-  
+
   errorAlert: {
     display: 'flex',
     alignItems: 'center',
@@ -776,7 +784,7 @@ const styles = {
   formWrapper: {
     animation: 'fadeIn 0.6s ease-out'
   },
-  
+
   form: {
     display: 'flex',
     flexDirection: 'column',
@@ -785,13 +793,13 @@ const styles = {
 
   // Sections
   section: {
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     borderRadius: '16px',
     padding: '32px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
     border: '1px solid #e5e7eb'
   },
-  
+
   sectionHeader: {
     display: 'flex',
     alignItems: 'center',
@@ -800,9 +808,9 @@ const styles = {
     paddingBottom: '16px',
     borderBottom: '1px solid #f3f4f6'
   },
-  
+
   sectionTitle: {
-    fontSize: '20px',
+    fontSize: '18px',
     fontWeight: '700',
     color: '#1f2937',
     margin: 0
@@ -824,7 +832,7 @@ const styles = {
     flexDirection: 'column',
     gap: '8px'
   },
-  
+
   label: {
     display: 'flex',
     alignItems: 'center',
@@ -834,56 +842,56 @@ const styles = {
     color: '#374151',
     marginBottom: '6px'
   },
-  
+
   required: {
     fontSize: '12px',
     color: '#ef4444',
     fontWeight: '400'
   },
-  
+
   input: {
     width: '100%',
-    padding: '14px 16px',
+    padding: '12px 16px',
     border: '2px solid #e5e7eb',
-    borderRadius: '12px',
+    borderRadius: '8px',
     fontSize: '16px',
     outline: 'none',
     transition: 'all 0.2s',
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     boxSizing: 'border-box'
   },
-  
+
   phoneInputContainer: {
     display: 'flex',
     alignItems: 'center',
     border: '2px solid #e5e7eb',
-    borderRadius: '12px',
+    borderRadius: '8px',
     overflow: 'hidden',
     transition: 'all 0.2s'
   },
-  
+
   phonePrefix: {
-    padding: '14px 12px',
-    backgroundColor: '#f8fafc',
+    padding: '12px 16px',
+    backgroundColor: '#FDFFF0',
     border: 'none',
     fontSize: '16px',
     color: '#374151',
     fontWeight: '500'
   },
-  
+
   phoneInput: {
     flex: 1,
-    padding: '14px 16px',
+    padding: '12px 16px',
     border: 'none',
     fontSize: '16px',
     outline: 'none',
-    backgroundColor: 'white'
+    backgroundColor: '#FDFFF0'
   },
-  
+
   inputError: {
     borderColor: '#ef4444'
   },
-  
+
   errorMessage: {
     display: 'flex',
     alignItems: 'center',
@@ -897,44 +905,43 @@ const styles = {
   actions: {
     display: 'flex',
     gap: '16px',
-    justifyContent: 'flex-end',
-    paddingTop: '32px',
-    borderTop: '2px solid #f3f4f6'
+    justifyContent: 'center',
+    // paddingTop: '32px',
   },
-  
+
   cancelButton: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '14px 24px',
-    backgroundColor: 'white',
-    border: '2px solid #e5e7eb',
-    borderRadius: '12px',
-    color: '#6b7280',
+    padding: '10px 20px',
+    backgroundColor: '#f63c3cff',
+    border: 'none',
+    borderRadius: '8px',
+    color: 'white',
     fontSize: '16px',
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'all 0.2s',
     minWidth: '120px'
   },
-  
+
   saveButton: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    padding: '14px 24px',
+    padding: '10px 20px',
     backgroundColor: '#10b981',
     color: 'white',
     border: 'none',
-    borderRadius: '12px',
+    borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '16px',
     fontWeight: '600',
     transition: 'all 0.2s',
     minWidth: '140px'
   },
-  
+
   disabledButton: {
     backgroundColor: '#9ca3af',
     cursor: 'not-allowed',

@@ -1,0 +1,120 @@
+.keralasellersprofilelogouticon {
+    width: 17px !important;
+    height: 17px !important;
+}
+
+@media (max-width: 767px) {
+    .keralasellersprofileavatar {
+        width: 75px !important;
+        height: 75px !important;
+        font-size: 22px !important;
+    }
+
+    .keralasellersnamefont {
+        font-size: 18px !important;
+    }
+
+    .keralasellerssubnamesfont {
+        font-size: 13px !important;
+    }
+
+    .keralasellersprofilemenulabel {
+        font-size: 16px !important;
+    }
+
+}
+
+@media (max-width: 576px) {
+    .keralasellersprofileavatar {
+        width: 65px !important;
+        height: 65px !important;
+        font-size: 22px !important;
+    }
+
+    .keralasellersnamefont {
+        font-size: 17px !important;
+        margin: 0px 0px 7px !important;
+
+    }
+
+    .keralasellerssubnamesfont {
+        font-size: 13px !important;
+        margin: 0px 0px 11px !important;
+
+    }
+
+
+}
+
+@media (max-width: 480px) {
+    .keralasellersprofileavatar {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 20px !important;
+    }
+
+    .keralasellersprofilecardsize {
+        padding: 14px !important;
+    }
+
+    .keralasellersnamefont {
+        font-size: 15px !important;
+        margin: 0px 0px 5px !important;
+    }
+
+    .keralasellerssubnamesfont {
+        font-size: 12px !important;
+        margin: 0px 0px 6px !important;
+    }
+
+
+    .keralasellersprofileheaderaction {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+
+    .keralasellersprofilecardgap {
+        gap: 12px !important;
+    }
+
+    .keralasellersprofilerefreshbtn {
+        width: 100% !important;
+    }
+
+    .keralasellersprofilelogoutbtn {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 7px 9px !important;
+    }
+
+    .keralasellersprofilelogouticon {
+        width: 12px !important;
+        height: 12px !important;
+    }
+
+    .keralasellersprofilemenulabel {
+        font-size: 15px !important;
+    }
+
+    .keralasellersprofilemenudesc {
+        font-size: 13px !important;
+    }
+
+    .keralasellersprofilestatnum {
+        font-size: 18px !important;
+    }
+
+    .keralasellersprofilestatlabel {
+        font-size: 13px !important;
+    }
+
+    .keralasellershelpbtn {
+        font-size: 13px !important;
+        padding: 7px 11px !important;
+    }
+    .keralasellersstatcardgap{
+        padding: 8px !important;
+        gap: 3px !important;
+    }
+}

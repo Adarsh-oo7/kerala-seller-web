@@ -5,6 +5,8 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
+import "../../styles/KeralasellersProfile.css";
+
 import Link from 'next/link';
 import {
   User,
@@ -532,8 +534,8 @@ export default function ProfilePage() {
               <Edit3 size={24} />
             </div>
             <div style={styles.menuInfo}>
-              <span style={styles.menuLabel}>Edit Profile</span>
-              <p style={styles.menuDesc}>Update personal information and address</p>
+              <span className='keralasellersprofilemenulabel' style={styles.menuLabel}>Edit Profile</span>
+              <p className='keralasellersprofilemenudesc' style={styles.menuDesc}>Update personal information and address</p>
             </div>
           </div>
           <ChevronRight size={20} style={styles.chevron} />
@@ -545,10 +547,10 @@ export default function ProfilePage() {
               <Package size={24} />
             </div>
             <div style={styles.menuInfo}>
-              <span style={styles.menuLabel}>
+              <span className='keralasellersprofilemenulabel' style={styles.menuLabel}>
                 {shopContext.isInShop ? `Orders from ${storeData?.name || 'this Shop'}` : 'My Orders'}
               </span>
-              <p style={styles.menuDesc}>
+              <p className='keralasellersprofilemenudesc' style={styles.menuDesc}>
                 {ordersCount > 0
                   ? `${ordersCount} order${ordersCount !== 1 ? 's' : ''} • Track and manage`
                   : 'Track orders and view purchase history'
@@ -565,10 +567,10 @@ export default function ProfilePage() {
               <Heart size={24} />
             </div>
             <div style={styles.menuInfo}>
-              <span style={styles.menuLabel}>
+              <span className='keralasellersprofilemenulabel' style={styles.menuLabel}>
                 {shopContext.isInShop ? `${storeData?.name || 'Shop'} Wishlist` : 'My Wishlist'}
               </span>
-              <p style={styles.menuDesc}>
+              <p className='keralasellersprofilemenudesc' style={styles.menuDesc}>
                 {wishlistCount > 0
                   ? `${wishlistCount} item${wishlistCount !== 1 ? 's' : ''} saved for later`
                   : 'Save products for later purchase'
@@ -588,8 +590,8 @@ export default function ProfilePage() {
               <Shield size={24} />
             </div>
             <div style={styles.menuInfo}>
-              <span style={styles.menuLabel}>Account Security</span>
-              <p style={styles.menuDesc}>
+              <span className='keralasellersprofilemenulabel' style={styles.menuLabel}>Account Security</span>
+              <p className='keralasellersprofilemenudesc' style={styles.menuDesc}>
                 {buyer?.phone_verified
                   ? 'Your account is verified ✓'
                   : 'Verify your phone number for security'
@@ -607,17 +609,17 @@ export default function ProfilePage() {
                 <Store size={24} />
               </div>
               <div style={styles.menuInfo}>
-                <span style={styles.menuLabel}>
+                <span className='keralasellersprofilemenulabel' style={styles.menuLabel}>
                   Back to {storeData?.name || 'Shop'}
                 </span>
-                <p style={styles.menuDesc}>Continue shopping in this store</p>
+                <p className='keralasellersprofilemenudesc' style={styles.menuDesc}>Continue shopping in this store</p>
               </div>
             </div>
             <ChevronRight size={20} style={styles.chevron} />
           </Link>
         )}
 
-        {!shopContext.isInShop && (
+        {/* {!shopContext.isInShop && (
           <Link href="/profile/settings" style={styles.menuItem}>
             <div style={styles.menuItemContent}>
               <div style={styles.menuIcon}>
@@ -630,7 +632,7 @@ export default function ProfilePage() {
             </div>
             <ChevronRight size={20} style={styles.chevron} />
           </Link>
-        )}
+        )} */}
       </div>
     );
   };
@@ -719,7 +721,7 @@ export default function ProfilePage() {
     <div style={styles.pageContainer}>
       <Header />
       {/* Header */}
-      <header style={styles.header}>
+      {/* <header style={styles.header}>
         <div style={styles.headerContainer}>
           <button onClick={handleBackClick} style={styles.backButton}>
             <ArrowLeft size={20} />
@@ -730,21 +732,9 @@ export default function ProfilePage() {
           <h1 style={styles.headerTitle}>
             {shopContext.isInShop ? `${storeData?.name || 'Shop'} Profile` : 'My Account'}
           </h1>
-          <div style={styles.headerActions}>
-            <button
-              onClick={() => fetchProfile(true)}
-              style={styles.refreshButton}
-              disabled={isRefreshing}
-            >
-              <RefreshCw size={16} style={isRefreshing ? { animation: 'spin 1s linear infinite' } : {}} />
-            </button>
-            <button onClick={handleLogout} style={styles.logoutButton}>
-              <LogOut size={18} />
-              <span style={styles.logoutText}>Logout</span>
-            </button>
-          </div>
+
         </div>
-      </header>
+      </header> */}
 
       <div style={styles.container}>
         <div style={styles.content}>
@@ -768,22 +758,22 @@ export default function ProfilePage() {
           )}
 
           {/* Profile Card */}
-          <div style={styles.profileCard}>
-            <div style={styles.avatarSection}>
-              <div style={styles.avatar}>
+          <div className='keralasellersprofilecardsize' style={styles.profileCard}>
+            <div className='keralasellersprofilecardgap' style={styles.avatarSection}>
+              <div className='keralasellersprofileavatar' style={styles.avatar}>
                 {getInitials(buyer.full_name)}
               </div>
               <div style={styles.userInfo}>
-                <h2 style={styles.userName}>{buyer.full_name || 'User'}</h2>
-                <p style={styles.userEmail}>{buyer.email || 'No email provided'}</p>
+                <h2 className='keralasellersnamefont' style={styles.userName}>{buyer.full_name || 'User'}</h2>
+                <p className='keralasellerssubnamesfont' style={styles.userEmail}>{buyer.email || 'No email provided'}</p>
                 <div style={styles.badgeContainer}>
                   <div style={styles.verificationBadge}>
                     {buyer.phone_verified ? (
-                      <span style={styles.verified}>
+                      <span className='keralasellerssubnamesfont' style={styles.verified}>
                         <Check size={14} /> Phone Verified
                       </span>
                     ) : (
-                      <span style={styles.notVerified}>
+                      <span className='keralasellerssubnamesfont' style={styles.notVerified}>
                         <X size={14} /> Phone Not Verified
                       </span>
                     )}
@@ -796,30 +786,44 @@ export default function ProfilePage() {
                   )}
                 </div>
               </div>
+              <div className='keralasellersprofileheaderaction' style={styles.headerActions}>
+                <button
+                className='keralasellersprofilerefreshbtn'
+                  onClick={() => fetchProfile(true)}
+                  style={styles.refreshButton}
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className='keralasellersprofilelogouticon' style={isRefreshing ? { animation: 'spin 1s linear infinite' } : {}} />
+                </button>
+                <button className='keralasellersprofilelogoutbtn' onClick={handleLogout} style={styles.logoutButton}>
+                  <LogOut className='keralasellersprofilelogouticon' />
+                  <span style={styles.logoutText}>Logout</span>
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Quick Stats */}
           <div style={styles.statsGrid}>
-            <div style={styles.statCard}>
+            <div className='keralasellersstatcardgap' style={styles.statCard}>
               <div style={styles.statIcon}>
                 <Package size={24} color="#3b82f6" />
               </div>
               <div style={styles.statContent}>
-                <span style={styles.statNumber}>{ordersCount}</span>
-                <span style={styles.statLabel}>
+                <span className='keralasellersprofilestatnum' style={styles.statNumber}>{ordersCount}</span>
+                <span className='keralasellersprofilestatlabel' style={styles.statLabel}>
                   {shopContext.isInShop ? `Orders from ${storeData?.name || 'this Shop'}` : 'Total Orders'}
                 </span>
               </div>
             </div>
 
-            <div style={styles.statCard}>
+            <div className='keralasellersstatcardgap' style={styles.statCard}>
               <div style={styles.statIcon}>
                 <Heart size={24} color="#ef4444" />
               </div>
               <div style={styles.statContent}>
-                <span style={styles.statNumber}>{wishlistCount}</span>
-                <span style={styles.statLabel}>
+                <span className='keralasellersprofilestatnum' style={styles.statNumber}>{wishlistCount}</span>
+                <span className='keralasellersprofilestatlabel' style={styles.statLabel}>
                   {shopContext.isInShop ? `${storeData?.name || 'Shop'} Wishlist` : 'Wishlist Items'}
                 </span>
               </div>
@@ -827,7 +831,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Contact Information */}
-          <div style={styles.infoCards}>
+          {/* <div style={styles.infoCards}>
             <div style={styles.infoCard}>
               <div style={styles.infoIcon}>
                 <Phone size={20} />
@@ -852,18 +856,18 @@ export default function ProfilePage() {
                 </p>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Menu section */}
-          <div style={styles.menuSection}>
-            <h3 style={styles.menuTitle}>
-              {shopContext.isInShop ? `${storeData?.name || 'Shop'} Account Management` : 'Account Management'}
-            </h3>
-            {renderMenuLinks()}
-          </div>
+          {/* <div style={styles.menuSection}> */}
+          {/* <h3 style={styles.menuTitle}>
+            {shopContext.isInShop ? `${storeData?.name || 'Shop'} Account Management` : 'Account Management'}
+          </h3> */}
+          {renderMenuLinks()}
+          {/* </div> */}
 
           {/* Account Summary */}
-          <div style={styles.summaryCard}>
+          {/* <div style={styles.summaryCard}>
             <h3 style={styles.summaryTitle}>Account Overview</h3>
             <div style={styles.summaryGrid}>
               <div style={styles.summaryItem}>
@@ -883,19 +887,19 @@ export default function ProfilePage() {
                 </span>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Help Section */}
           <div style={styles.helpSection}>
-            <h4 style={styles.helpTitle}>Need Help?</h4>
-            <p style={styles.helpText}>
+            <h4 className='keralasellersprofilemenulabel' style={styles.helpTitle}>Need Help?</h4>
+            <p className='keralasellersprofilemenudesc' style={styles.helpText}>
               {shopContext.isInShop
                 ? `Contact support for assistance with your ${storeData?.name || 'shop'} account.`
                 : 'Contact our support team for assistance with your account or orders.'
               }
             </p>
             <div style={styles.helpActions}>
-              <Link href="/support" style={styles.helpButton}>
+              <Link className='keralasellershelpbtn' href="/support" style={styles.helpButton}>
                 <Globe size={16} />
                 Contact Support
               </Link>
@@ -963,7 +967,7 @@ const styles = {
   },
   retryButton: {
     display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px',
-    backgroundColor: '#3b82f6', color: 'white', border: 'none',
+    backgroundColor: '#FDFFF0', color: '#1a4845', border: 'none',
     borderRadius: '8px', cursor: 'pointer', fontSize: '16px', fontWeight: '500'
   },
   logoutButtonError: {
@@ -996,32 +1000,32 @@ const styles = {
   headerActions: { display: 'flex', alignItems: 'center', gap: '8px' },
   refreshButton: {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    width: '36px', height: '36px', backgroundColor: '#f3f4f6',
-    border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', color: '#6b7280'
+    width: '36px', height: '36px', backgroundColor: '#FDFFF0',
+    border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', color: '#1a4845'
   },
   logoutButton: {
     display: 'flex', alignItems: 'center', gap: '6px', background: 'none',
-    border: '2px solid #fee2e2', borderRadius: '8px', padding: '8px 12px',
+    border: '2px solid red', borderRadius: '8px', padding: '8px 12px',
     color: '#dc2626', cursor: 'pointer', fontSize: '14px', fontWeight: '500'
   },
   logoutText: { display: 'none' },
-  container: { maxWidth: '1200px', margin: '0 auto', padding: '24px 20px' },
+  container: { maxWidth: '900px', margin: '0 auto', padding: '24px 20px' },
   content: {
     display: 'flex', flexDirection: 'column', gap: '24px',
     animation: 'fadeIn 0.6s ease-out'
   },
   profileCard: {
-    backgroundColor: 'white', borderRadius: '16px', padding: '32px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb'
+    backgroundColor: '#FDFFF0', borderRadius: '12px', padding: '32px',
+    boxShadow: 'rgba(0, 0, 0, 0.3) 0px 1px 3px', border: '1px solid #e5e7eb'
   },
   avatarSection: { display: 'flex', alignItems: 'center', gap: '24px' },
   avatar: {
-    width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#3b82f6',
+    width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#1a4845',
     color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontSize: '28px', fontWeight: '700', flexShrink: 0, border: '3px solid #dbeafe'
   },
   userInfo: { flex: 1, minWidth: 0 },
-  userName: { fontSize: '28px', fontWeight: '700', color: '#1f2937', margin: '0 0 8px 0' },
+  userName: { fontSize: '25px', fontWeight: '600', color: '#1f2937', margin: '0 0 8px 0' },
   userEmail: { color: '#6b7280', margin: '0 0 16px 0', fontSize: '16px' },
   badgeContainer: { display: 'flex', flexDirection: 'column', gap: '8px' },
   verificationBadge: { display: 'inline-block' },
@@ -1038,15 +1042,15 @@ const styles = {
     color: '#6b7280', fontSize: '13px'
   },
   statsGrid: {
-    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px'
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(137px, 1fr))', gap: '16px'
   },
   statCard: {
-    backgroundColor: 'white', padding: '24px', borderRadius: '12px',
+    backgroundColor: '#FDFFF0', padding: '20px', borderRadius: '12px',
     display: 'flex', alignItems: 'center', gap: '16px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb'
+    boxShadow: 'rgba(0, 0, 0, 0.3) 0px 1px 3px', border: '1px solid #e5e7eb'
   },
   statIcon: {
-    width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#f1f5f9',
+    width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#FDFFF0',
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
   },
   statContent: { display: 'flex', flexDirection: 'column' },
@@ -1056,12 +1060,12 @@ const styles = {
     display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px'
   },
   infoCard: {
-    backgroundColor: 'white', padding: '24px', borderRadius: '12px',
+    backgroundColor: '#FDFFF0', padding: '20px', borderRadius: '12px',
     display: 'flex', alignItems: 'flex-start', gap: '16px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb'
+    boxShadow: 'rgba(0, 0, 0, 0.3) 0px 1px 3px', border: '1px solid #e5e7eb'
   },
   infoIcon: {
-    width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#f1f5f9',
+    width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#FDFFF0',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: '#6b7280', flexShrink: 0
   },
@@ -1084,16 +1088,17 @@ const styles = {
   menuGrid: { display: 'flex', flexDirection: 'column', gap: '12px' },
   menuItem: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '20px', backgroundColor: '#f8fafc', borderRadius: '12px',
-    textDecoration: 'none', color: 'inherit', border: '2px solid transparent'
+    padding: '20px', backgroundColor: '#FDFFF0', borderRadius: '12px',
+    textDecoration: 'none', color: 'inherit', border: '1px solid #e5e7eb',
+    boxShadow: 'rgba(0, 0, 0, 0.3) 0px 1px 3px',
   },
   menuItemContent: {
     display: 'flex', alignItems: 'center', gap: '16px', flex: 1
   },
   menuIcon: {
-    width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'white',
+    width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#FDFFF0',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#3b82f6', flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    color: '#3b82f6', flexShrink: 0,
   },
   menuInfo: { flex: 1, minWidth: 0 },
   menuLabel: {
@@ -1103,8 +1108,8 @@ const styles = {
   menuDesc: { margin: 0, fontSize: '14px', color: '#6b7280', lineHeight: '1.4' },
   chevron: { color: '#9ca3af', flexShrink: 0 },
   summaryCard: {
-    backgroundColor: 'white', borderRadius: '16px', padding: '32px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb'
+    backgroundColor: '#FDFFF0', borderRadius: '12px', padding: '32px',
+    boxShadow: 'rgba(0, 0, 0, 0.3) 0px 1px 3px', border: '1px solid #e5e7eb'
   },
   summaryTitle: {
     fontSize: '20px', fontWeight: '700', color: '#1f2937', margin: '0 0 20px 0'
@@ -1114,13 +1119,13 @@ const styles = {
   },
   summaryItem: {
     display: 'flex', flexDirection: 'column', gap: '6px', padding: '20px',
-    backgroundColor: '#f8fafc', borderRadius: '12px', textAlign: 'center'
+    backgroundColor: '#FDFFF0', borderRadius: '12px', textAlign: 'center'
   },
   summaryLabel: { fontSize: '14px', color: '#6b7280', fontWeight: '500' },
   summaryValue: { fontSize: '18px', fontWeight: '700', color: '#1f2937' },
   helpSection: {
-    backgroundColor: 'white', borderRadius: '16px', padding: '32px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb', textAlign: 'center'
+    backgroundColor: '#FDFFF0', padding: '32px',
+    textAlign: 'center'
   },
   helpTitle: {
     fontSize: '18px', fontWeight: '600', color: '#1f2937', margin: '0 0 8px 0'
