@@ -216,7 +216,7 @@ function EnhancedStoreBanner({ store, shopSlug }) {
 
   // Collect all available banner URLs
   const banners = [];
-  
+
   if (store.banner_1_url) {
     banners.push({ id: 1, url: store.banner_1_url, label: 'Primary Banner' });
   }
@@ -226,7 +226,7 @@ function EnhancedStoreBanner({ store, shopSlug }) {
   if (store.banner_3_url) {
     banners.push({ id: 3, url: store.banner_3_url, label: 'Tertiary Banner' });
   }
-  
+
   if (banners.length === 0 && store.banner_image_url) {
     banners.push({ id: 'legacy', url: store.banner_image_url, label: 'Store Banner' });
   }
@@ -312,7 +312,7 @@ function EnhancedStoreBanner({ store, shopSlug }) {
                       e.target.style.display = 'none';
                     }}
                   />
-                  <div className="banner-overlay" style={styles.bannerOverlay}></div>
+                  {/* <div className="banner-overlay" style={styles.bannerOverlay}></div> */}
                 </div>
               </div>
             </div>
@@ -320,7 +320,7 @@ function EnhancedStoreBanner({ store, shopSlug }) {
         </div>
 
         {/* Navigation arrows (only show if multiple banners) */}
-        {banners.length > 1 && (
+        {/* {banners.length > 1 && (
           <>
             <button
               onClick={prevSlide}
@@ -339,7 +339,6 @@ function EnhancedStoreBanner({ store, shopSlug }) {
               ›
             </button>
 
-            {/* Dots indicator */}
             <div style={styles.dotsContainer}>
               {banners.map((_, index) => (
                 <button
@@ -354,7 +353,7 @@ function EnhancedStoreBanner({ store, shopSlug }) {
               ))}
             </div>
           </>
-        )}
+        )} */}
       </div>
     </div>
   );
@@ -426,7 +425,7 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
 
   return (
     <div className="enhanced-filter-section" style={styles.filterSection} ref={filterRef}>
-      <div className="container" style={styles.container}>
+      <div className="shopshopslugfiltercontainer" style={styles.container}>
         <div className="filter-header" style={styles.filterHeader}>
           <div className="filter-search-row" style={styles.filterSearchRow}>
             <div className="filter-left" style={styles.filterLeft}>
@@ -841,10 +840,10 @@ function EnhancedSellerStorefrontPage() {
           ) : (
             <div className="enhanced-empty-state" style={styles.emptyState}>
               <div className="empty-icon">
-                <Filter size={64} />
+                <Filter size={40} className="keralasellersemptyicon" />
               </div>
-              <h3>No products found</h3>
-              <p>No products match the selected filters.</p>
+              <h3 className="keralasellersemptytext">No products found</h3>
+              <p className="keralasellersemptysubtext">No products match the selected filters.</p>
               <button
                 onClick={() => {
                   const defaultFilters = { priceRange: null, stockStatus: [], sortBy: 'name-asc' };
@@ -853,7 +852,7 @@ function EnhancedSellerStorefrontPage() {
                 className="clear-filters-button-enhanced"
                 style={styles.clearFiltersButtonEnhanced}
               >
-                <X size={16} />
+                <X size={16}  />
                 Clear All Filters
               </button>
             </div>
@@ -897,9 +896,20 @@ export default ShopPageWithSuspense;
 // ✅ ALL STYLES
 const styles = {
   pageContainer: {
+    display: 'flex',
+    flexDirection: 'column',
     minHeight: '100vh',
-    backgroundColor: '#FDFFF0'
+    backgroundColor: '#FDFFF0',
   },
+
+  container: {
+    flex: 1,
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '20px 20px', // default padding
+    boxSizing: 'border-box',
+  },
+
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -954,11 +964,7 @@ const styles = {
     fontSize: '16px',
     fontWeight: '500'
   },
-  container: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '0 20px'
-  },
+
   mainWrapper: {
     paddingTop: '10px',
   },
@@ -967,12 +973,12 @@ const styles = {
     position: 'relative',
     width: '100%',
     overflow: 'hidden',
-    marginTop: '130px',
+    marginTop: '80px',
   },
   slidesWrapper: {
     position: 'relative',
     width: '100%',
-    aspectRatio: '4 / 1',
+    aspectRatio: '3 / 1',
   },
   slide: {
     position: 'absolute',
@@ -1080,7 +1086,7 @@ const styles = {
   // Filter Section
   filterSection: {
     backgroundColor: '#FDFFF0',
-    padding: '30px 0'
+    paddingBottom: "30px",
   },
   filterHeader: {
     display: 'flex',
@@ -1252,7 +1258,7 @@ const styles = {
     alignItems: 'center',
     gap: '6px',
     padding: '10px 20px',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#1a4845',
     color: 'white',
     border: 'none',
     borderRadius: '8px',

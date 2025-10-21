@@ -573,7 +573,7 @@ export default function Home() {
             <div className='keralasellershomepagesearchwrapper' style={dynamicStyles.searchInputWrapper}>
               <Search size={20} className='keralasellershomepagesearchicon' style={dynamicStyles.searchIcon} />
               <input
-              className='keralasellershomepagesearchsize'
+                className='keralasellershomepagesearchsize'
                 type="text"
                 placeholder="Search products..."
                 value={searchTerm}
@@ -609,8 +609,8 @@ export default function Home() {
           </div>
           <div style={dynamicStyles.headerRight}>
             <button
-            className='keralasellershomepagefiltericoncontainer'
-    
+              className='keralasellershomepagefiltericoncontainer'
+
               onClick={() => setShowFilters(!showFilters)}
               style={dynamicStyles.filterToggle}
             >
@@ -660,7 +660,7 @@ export default function Home() {
           <>
             {filteredProducts.length > 0 ? (
               <div
-              className='products-container'
+                className='products-container'
                 style={{
                   justifyItems: "center",
                   flexWrap: 'wrap',
@@ -718,10 +718,11 @@ export default function Home() {
             ) : (
               /* No Products Message */
               <div style={dynamicStyles.noProducts}>
-                <Package size={48} />
-                <h3>No products found</h3>
+                <Package size={48} color='#1a4845' />
+                <h3 className='keralasellershomepagetitle'>No products found</h3>
                 <p>Try adjusting your filters or search terms</p>
                 <button
+                  className='keralasellershomepagefiltericoncontainer'
                   onClick={() => {
                     setSearchTerm('');
                     handleFilterChange({
@@ -809,7 +810,7 @@ const styles = {
     margin: 0,
     padding: 0,
     marginTop: "12px",
-    marginBottom:'20px',
+    marginBottom: '20px',
     justifyContent: "center",
     display: "flex"
   },
@@ -1001,7 +1002,7 @@ const styles = {
   noProducts: {
     textAlign: 'center',
     padding: '60px 20px',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#FDFFF0',
     borderRadius: '12px',
     marginTop: '20px',
     display: 'flex',

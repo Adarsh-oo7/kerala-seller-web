@@ -53,6 +53,10 @@
         gap: 10px !important;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
     }
+
+    .banner-slider-container {
+        margin-top: 100px !important;
+    }
 }
 
 @media (max-width: 630px) {
@@ -82,13 +86,41 @@
         gap: 10px !important;
         grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
     }
+
+    .keralasellersemptyicon {
+        width: 30px !important;
+        height: 30px !important;
+    }
+
+    .keralasellersemptytext {
+        font-size: 18px !important;
+    }
+
+    .keralasellersemptysubtext {
+        font-size: 15px !important;
+    }
+
+    .clear-filters-button-enhanced {
+        font-size: 14px !important;
+        padding: 8px 15px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .banner-slider-container {
+        margin-top: 100px !important;
+    }
+
+    .shopshopslugfiltercontainer {
+        padding: '1px 20px' !important;
+    }
 }
 
 
 @media (max-width: 480px) {
     .enhanced-banner-container {
         /* aspect-ratio: 1.5 / 1;  */
-        margin-top: 70px !important;
+        margin-top: 0px !important;
     }
 
     .filter-toggle-button {
@@ -119,11 +151,38 @@
     }
 
     .enhanced-filter-section {
-        padding: 20px 0px !important;
+        padding: 0px 0px !important;
     }
 
     .products-container {
         gap: 8px !important;
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
     }
+
+    .keralasellersemptyicon {
+        width: 25px !important;
+        height: 25px !important;
+    }
+
+    .keralasellersemptytext {
+        font-size: 16px !important;
+    }
+
+    .keralasellersemptysubtext {
+        font-size: 14px !important;
+    }
+
+    .clear-filters-button-enhanced {
+        font-size: 12px !important;
+        padding: 7px 11px !important;
+    }
+
+    .banner-slider-container {
+        margin-top: 50px !important;
+    }
+
+    .shopshopslugfiltercontainer {
+        padding: 9px 20px !important;
+    }
+
 }

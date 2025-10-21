@@ -473,9 +473,9 @@ export default function ShopPage() {
           </div>
         ) : (
           <div className="ShopemptyState">
-            <Search size={48} />
-            <h3>No shops found</h3>
-            <p>
+            <Search size={48} className="Shopemptyicon" />
+            <h3 className="Shopemptytext">No shops found</h3>
+            <p className="Shopemptysubtext">
               {searchTerm
                 ? `No shops match "${searchTerm}". Try different search terms or browse by location.`
                 : "No shops available at the moment. Check back later!"}
