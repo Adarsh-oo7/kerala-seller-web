@@ -8,7 +8,6 @@ import "../../../styles/Shopslugpage.css";
 import { useCart } from '../../context/CartContext';
 import SHeader from '../../../components/common/SHeader';
 import Footer from '../../../components/common/Footer';
-// ✅ Import the new ShopProductCard component
 import ShopProductCard from '../../../components/common/ShopProductCard';
 import {
   ShoppingCart,
@@ -44,101 +43,63 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-// ✅ Helper function to get API base URL with environment variable handling
+// ✅ Helper function to get API base URL
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
     return envUrl.trim();
   }
-
   if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:8000';
   }
-
   return 'https://keralaseller-backend.onrender.com';
 };
 
-// ✅ Wishlist API URLs
 const API_BASE_URL = getApiBaseUrl();
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 
-// ✅ Enhanced auth headers function
 const getAuthHeaders = () => {
   const token = localStorage.getItem('access_token') ||
     localStorage.getItem('buyerAccessToken') ||
     localStorage.getItem('buyerToken') ||
     localStorage.getItem('accessToken');
-
   return token ? { 'Authorization': `Bearer ${token}` } : null;
 };
 
-// ✅ Helper function to extract phone from slug or query params with null safety
 const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
-  console.log('🔍 Extracting phone from:', { shopSlug, searchParams: searchParams?.toString() });
+  if (!shopSlug || !searchParams) return null;
 
-  // ✅ Add null/undefined checks
-  if (!shopSlug || !searchParams) {
-    console.log('❌ Missing shopSlug or searchParams');
-    return null;
-  }
-
-  // Try to get phone from query params first (for SEO URLs)
   const phoneFromParams = searchParams.get('id');
-  console.log('📱 Phone from params:', phoneFromParams);
-
   if (phoneFromParams) {
-    // ✅ More flexible validation for development
     if (process.env.NODE_ENV === 'development') {
-      // Allow any numeric string with 3+ digits for testing
-      if (/^\d{3,}$/.test(phoneFromParams)) {
-        console.log('✅ Valid phone found (dev mode):', phoneFromParams);
-        return phoneFromParams;
-      }
+      if (/^\d{3,}$/.test(phoneFromParams)) return phoneFromParams;
     } else {
-      // ✅ Production: strict Indian mobile validation
-      if (/^[6-9]\d{9}$/.test(phoneFromParams)) {
-        console.log('✅ Valid Indian mobile number:', phoneFromParams);
-        return phoneFromParams;
-      }
+      if (/^[6-9]\d{9}$/.test(phoneFromParams)) return phoneFromParams;
     }
   }
 
-  // Fallback: try to extract phone from slug if it's a direct phone URL
   if (typeof shopSlug === 'string') {
     if (process.env.NODE_ENV === 'development' && /^\d{3,}$/.test(shopSlug)) {
-      console.log('✅ Phone extracted from slug (dev):', shopSlug);
       return shopSlug;
     }
     if (/^[6-9]\d{9}$/.test(shopSlug)) {
-      console.log('✅ Phone extracted from slug:', shopSlug);
       return shopSlug;
     }
-  }
-
-  // Extract phone from compound slug (e.g., "raj-electronics-kochi-9544344339")
-  if (typeof shopSlug === 'string') {
     const phoneMatch = shopSlug.match(/[6-9]\d{9}$/);
-    if (phoneMatch) {
-      console.log('✅ Phone extracted from compound slug:', phoneMatch[0]);
-      return phoneMatch[0];
-    }
+    if (phoneMatch) return phoneMatch[0];
   }
-
-  console.log('❌ No valid phone number found');
   return null;
 };
 
-// ✅ SEO Helper: Generate structured data for the shop
+// ✅ SEO Helper
 const generateShopStructuredData = (store, products, shopSlug) => {
   if (!store) return null;
-
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Store",
     "name": store.name,
-    "description": store.description || `Shop ${store.name} in Kerala - Browse quality products from a trusted local seller`,
+    "description": store.description || `Shop ${store.name} in Kerala`,
     "url": `https://keralasellers.in/shop/${shopSlug}`,
     "telephone": store.phone || store.seller_phone,
     "address": {
@@ -146,28 +107,8 @@ const generateShopStructuredData = (store, products, shopSlug) => {
       "addressRegion": "Kerala",
       "addressCountry": "IN",
       "streetAddress": store.address || store.seller_address
-    },
-    "aggregateRating": store.average_rating ? {
-      "@type": "AggregateRating",
-      "ratingValue": store.average_rating,
-      "ratingCount": store.review_count || 1
-    } : null,
-    "hasOfferCatalog": {
-      "@type": "OfferCatalog",
-      "name": "Products",
-      "itemListElement": products.slice(0, 10).map(product => ({
-        "@type": "Offer",
-        "itemOffered": {
-          "@type": "Product",
-          "name": product.name,
-          "price": product.price,
-          "priceCurrency": "INR",
-          "availability": product.online_stock > 0 ? "InStock" : "OutOfStock"
-        }
-      }))
     }
   };
-
   return JSON.stringify(structuredData);
 };
 
@@ -177,11 +118,9 @@ class ErrorBoundary extends React.Component {
     super(props);
     this.state = { hasError: false };
   }
-
   static getDerivedStateFromError(error) {
     return { hasError: true };
   }
-
   render() {
     if (this.state.hasError) {
       return (
@@ -216,21 +155,16 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// ✅ Enhanced SEO Head Component
+// ✅ SEO Head Component
 function ShopSEOHead({ store, products, shopSlug, sellerPhone }) {
   useEffect(() => {
     if (!store) return;
-
-    // Update page title
     const pageTitle = `${store.name} - Shop in Kerala | Kerala Sellers`;
     document.title = pageTitle;
-
-    // Update meta description
     const metaDescription = store.description ?
-      `${store.description.substring(0, 150)}... Shop from ${store.name} in Kerala. ${products.length} products available.` :
-      `Shop from ${store.name} in Kerala. Browse ${products.length} quality products from a trusted local seller on Kerala Sellers.`;
+      `${store.description.substring(0, 150)}... Shop from ${store.name} in Kerala.` :
+      `Shop from ${store.name} in Kerala. Browse ${products.length} quality products.`;
 
-    // Update or create meta tags
     const updateOrCreateMeta = (property, content) => {
       let meta = document.querySelector(`meta[property="${property}"], meta[name="${property}"]`);
       if (!meta) {
@@ -249,12 +183,7 @@ function ShopSEOHead({ store, products, shopSlug, sellerPhone }) {
     updateOrCreateMeta('og:title', pageTitle);
     updateOrCreateMeta('og:description', metaDescription);
     updateOrCreateMeta('og:url', `https://keralasellers.in/shop/${shopSlug}`);
-    updateOrCreateMeta('og:type', 'website');
-    updateOrCreateMeta('twitter:card', 'summary_large_image');
-    updateOrCreateMeta('twitter:title', pageTitle);
-    updateOrCreateMeta('twitter:description', metaDescription);
 
-    // Add structured data
     const structuredData = generateShopStructuredData(store, products, shopSlug);
     if (structuredData) {
       let script = document.querySelector('script[type="application/ld+json"]');
@@ -265,24 +194,15 @@ function ShopSEOHead({ store, products, shopSlug, sellerPhone }) {
       }
       script.textContent = structuredData;
     }
-
-    // Update canonical URL
-    let canonical = document.querySelector('link[rel="canonical"]');
-    if (!canonical) {
-      canonical = document.createElement('link');
-      canonical.setAttribute('rel', 'canonical');
-      document.head.appendChild(canonical);
-    }
-    canonical.setAttribute('href', `https://keralasellers.in/shop/${shopSlug}`);
-
   }, [store, products, shopSlug]);
-
-  return null; // This component only updates head tags
+  return null;
 }
 
-// Enhanced Store Banner Component
+// ✅ AUTO-SLIDER Banner Component
 function EnhancedStoreBanner({ store, shopSlug }) {
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState({});
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slideIntervalRef = useRef(null);
 
   if (!store) return null;
 
@@ -294,47 +214,151 @@ function EnhancedStoreBanner({ store, shopSlug }) {
     return url;
   };
 
-  return (
-    <div style={styles.mainWrapper}>
+  // Collect all available banner URLs
+  const banners = [];
+  
+  if (store.banner_1_url) {
+    banners.push({ id: 1, url: store.banner_1_url, label: 'Primary Banner' });
+  }
+  if (store.banner_2_url) {
+    banners.push({ id: 2, url: store.banner_2_url, label: 'Secondary Banner' });
+  }
+  if (store.banner_3_url) {
+    banners.push({ id: 3, url: store.banner_3_url, label: 'Tertiary Banner' });
+  }
+  
+  if (banners.length === 0 && store.banner_image_url) {
+    banners.push({ id: 'legacy', url: store.banner_image_url, label: 'Store Banner' });
+  }
 
-      <div className="enhanced-banner-container" style={styles.bannerContainer}>
-        <div className="banner-background" style={styles.bannerBackground}>
-          {store.banner_image_url ? (
-            <img
-              src={getBannerImageUrl(store.banner_image_url)}
-              alt={`${store.name || 'Store'} - Kerala local business banner`}
-              className={`banner-image ${imageLoaded ? 'loaded' : ''}`}
-              style={styles.bannerImage}
-              onLoad={() => setImageLoaded(true)}
-              loading="lazy"
-              onError={(e) => {
-                console.warn('Banner image failed to load');
-                e.target.style.display = 'none';
-              }}
-            />
-          ) : (
+  // ✅ Auto-slide effect
+  useEffect(() => {
+    if (banners.length <= 1) return; // Don't auto-slide if only one banner
+
+    slideIntervalRef.current = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % banners.length);
+    }, 4000); // Change slide every 4 seconds
+
+    return () => {
+      if (slideIntervalRef.current) {
+        clearInterval(slideIntervalRef.current);
+      }
+    };
+  }, [banners.length]);
+
+  // Manual navigation
+  const goToSlide = (index) => {
+    setCurrentSlide(index);
+    // Reset auto-slide timer
+    if (slideIntervalRef.current) {
+      clearInterval(slideIntervalRef.current);
+      slideIntervalRef.current = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % banners.length);
+      }, 4000);
+    }
+  };
+
+  const nextSlide = () => {
+    goToSlide((currentSlide + 1) % banners.length);
+  };
+
+  const prevSlide = () => {
+    goToSlide((currentSlide - 1 + banners.length) % banners.length);
+  };
+
+  // If no banners, show fallback
+  if (banners.length === 0) {
+    return (
+      <div style={styles.mainWrapper}>
+        <div className="enhanced-banner-container" style={styles.bannerContainer}>
+          <div className="banner-background" style={styles.bannerBackground}>
             <div className="banner-fallback" style={styles.bannerFallback}>
               <div className="fallback-pattern" style={styles.fallbackPattern}></div>
             </div>
-          )}
-          <div className="banner-overlay" style={styles.bannerOverlay}></div>
+            <div className="banner-overlay" style={styles.bannerOverlay}></div>
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* ✅ Enhanced breadcrumbs for SEO */}
-      {/* <div className="breadcrumbs" style={styles.breadcrumbs}>
-        <Link href="/" style={styles.breadcrumbLink}>Kerala Sellers</Link>
-        <span className="breadcrumb-separator" style={styles.breadcrumbSeparator}>›</span>
-        <Link href="/shop" style={styles.breadcrumbLink}>Shops</Link>
-        <span className="breadcrumb-separator" style={styles.breadcrumbSeparator}>›</span>
-        <span className="current-page" style={styles.currentPage}>{store.name}</span>
-      </div> */}
+  return (
+    <div style={styles.mainWrapper}>
+      <div className="banner-slider-container" style={styles.sliderContainer}>
+        {/* Slides */}
+        <div className="banner-slides-wrapper" style={styles.slidesWrapper}>
+          {banners.map((banner, index) => (
+            <div
+              key={banner.id}
+              className="banner-slide"
+              style={{
+                ...styles.slide,
+                transform: `translateX(${(index - currentSlide) * 100}%)`,
+                opacity: index === currentSlide ? 1 : 0,
+                transition: 'transform 0.8s ease-in-out, opacity 0.8s ease-in-out'
+              }}
+            >
+              <div className="enhanced-banner-container" style={styles.bannerContainer}>
+                <div className="banner-background" style={styles.bannerBackground}>
+                  <img
+                    src={getBannerImageUrl(banner.url)}
+                    alt={`${store.name || 'Store'} - ${banner.label}`}
+                    className={`banner-image ${imageLoaded[banner.id] ? 'loaded' : ''}`}
+                    style={styles.bannerImage}
+                    onLoad={() => setImageLoaded(prev => ({ ...prev, [banner.id]: true }))}
+                    loading="lazy"
+                    onError={(e) => {
+                      console.warn(`Banner ${banner.id} failed to load`);
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                  <div className="banner-overlay" style={styles.bannerOverlay}></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
 
+        {/* Navigation arrows (only show if multiple banners) */}
+        {banners.length > 1 && (
+          <>
+            <button
+              onClick={prevSlide}
+              style={styles.navButton}
+              className="banner-nav-prev"
+              aria-label="Previous banner"
+            >
+              ‹
+            </button>
+            <button
+              onClick={nextSlide}
+              style={styles.navButtonNext}
+              className="banner-nav-next"
+              aria-label="Next banner"
+            >
+              ›
+            </button>
+
+            {/* Dots indicator */}
+            <div style={styles.dotsContainer}>
+              {banners.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  style={{
+                    ...styles.dot,
+                    backgroundColor: index === currentSlide ? '#fff' : 'rgba(255,255,255,0.5)'
+                  }}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
-
-
 
 // Enhanced Filter Component
 function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
@@ -352,12 +376,6 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
     { label: '₹1000 - ₹2000', min: 1000, max: 2000 },
     { label: '₹2000 - ₹5000', min: 2000, max: 5000 },
     { label: 'Above ₹5000', min: 5000, max: 999999 }
-  ];
-
-  const stockStatus = [
-    { label: 'In Stock', value: 'in-stock' },
-    { label: 'Low Stock', value: 'low-stock' },
-    { label: 'Out of Stock', value: 'out-of-stock' }
   ];
 
   const sortOptions = [
@@ -406,8 +424,6 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
     }
   }, [activeFilters]);
 
-
-
   return (
     <div className="enhanced-filter-section" style={styles.filterSection} ref={filterRef}>
       <div className="container" style={styles.container}>
@@ -418,13 +434,9 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
                 className="filter-toggle-button"
                 style={styles.filterToggleButton}
                 onClick={() => setShowFilters(!showFilters)}
-                aria-expanded={showFilters}
-                aria-controls="filter-panel"
               >
-                <Filter className='filtericonsize' aria-hidden="true" />
+                <Filter className='filtericonsize' />
                 <span>Filters</span>
-
-
                 {getActiveFilterCount() > 0 && (
                   <span className="filter-count" style={styles.filterCount}>{getActiveFilterCount()}</span>
                 )}
@@ -435,30 +447,24 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
                   className="clear-filters-button"
                   style={styles.clearFiltersButton}
                   onClick={handleClearFilters}
-                  aria-label="Clear all filters"
                 >
-                  <X size={14} aria-hidden="true" />
+                  <X size={14} />
                   Clear All
                 </button>
               )}
             </div>
-
-
             <div className="search-right" style={styles.searchRight}>
               <input
                 className='search-input'
                 type="text"
                 placeholder="Search products..."
-                // value={searchQuery}
-                // onChange={(e) => setSearchQuery(e.target.value)}
                 style={styles.searchInput}
               />
             </div>
-
           </div>
         </div>
         {showFilters && (
-          <div className="filter-panel" style={styles.filterPanel} id="filter-panel">
+          <div className="filter-panel" style={styles.filterPanel}>
             <div className="filter-group" style={styles.filterGroup}>
               <h4>Sort By</h4>
               <div className="filter-options" style={styles.filterOptions}>
@@ -470,7 +476,6 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
                       value={option.value}
                       checked={tempFilters.sortBy === option.value}
                       onChange={(e) => setTempFilters({ ...tempFilters, sortBy: e.target.value })}
-                      aria-label={option.label}
                     />
                     <span className="checkmark" style={styles.checkmark}></span>
                     {option.label}
@@ -478,7 +483,6 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
                 ))}
               </div>
             </div>
-
             <div className="filter-group" style={styles.filterGroup}>
               <h4>Price Range</h4>
               <div className="filter-options" style={styles.filterOptions}>
@@ -493,7 +497,6 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
                         tempFilters.priceRange.max === range.max
                       }
                       onChange={() => setTempFilters({ ...tempFilters, priceRange: range })}
-                      aria-label={range.label}
                     />
                     <span className="checkmark" style={styles.checkmark}></span>
                     {range.label}
@@ -501,38 +504,31 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
                 ))}
               </div>
             </div>
-
             <div className="filter-actions" style={styles.filterActions}>
               <button
                 className="apply-filters-button"
                 style={styles.applyFiltersButton}
                 onClick={handleApplyFilters}
-                aria-label="Apply filters"
               >
-                <Check size={16} aria-hidden="true" />
+                <Check size={16} />
                 Apply Filters
               </button>
               <button
                 className="cancel-filters-button"
                 style={styles.cancelFiltersButton}
                 onClick={() => setShowFilters(false)}
-                aria-label="Cancel filter changes"
               >
                 Cancel
               </button>
-
             </div>
           </div>
         )}
       </div>
-
-
     </div>
-
   );
 }
 
-// ✅ MAIN COMPONENT - Updated with FIXED wishlist functionality
+// ✅ MAIN COMPONENT
 function EnhancedSellerStorefrontPage() {
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
@@ -547,8 +543,6 @@ function EnhancedSellerStorefrontPage() {
     stockStatus: [],
     sortBy: 'name-asc'
   });
-
-  // ✅ Wishlist state management
   const [wishlistProducts, setWishlistProducts] = useState(new Set());
   const [wishlistLoading, setWishlistLoading] = useState(false);
 
@@ -556,136 +550,65 @@ function EnhancedSellerStorefrontPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { shopSlug } = params;
-
-  // ✅ Extract seller phone from slug or query params with null safety
   const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams);
-
   const cartContext = useCart();
   const { addToCart, cartItems } = cartContext || { addToCart: null, cartItems: [] };
   const abortControllerRef = useRef(null);
 
-  // ✅ FIXED: Enhanced fetchWishlist with proper data parsing
   const fetchWishlist = useCallback(async () => {
     const headers = getAuthHeaders();
-    if (!headers) {
-      console.log('🚫 No auth token found, skipping wishlist fetch');
-      return;
-    }
-
+    if (!headers) return;
     try {
       setWishlistLoading(true);
-      console.log('🔍 Fetching wishlist from API...');
-
-      const response = await axios.get(WISHLIST_API, {
-        headers,
-        timeout: 10000
-      });
-
-      console.log('🔍 Raw wishlist API response:', response.data);
-      console.log('🔍 Response type:', typeof response.data);
-      console.log('🔍 Is array:', Array.isArray(response.data));
-
-      // ✅ FIXED: Handle different response structures
+      const response = await axios.get(WISHLIST_API, { headers, timeout: 10000 });
       let wishlistItems = [];
-
       if (Array.isArray(response.data)) {
-        // Direct array response
         wishlistItems = response.data;
-        console.log('📝 Using direct array format');
       } else if (response.data && Array.isArray(response.data.results)) {
-        // Paginated response with results array
         wishlistItems = response.data.results;
-        console.log('📝 Using paginated format with results');
       } else if (response.data && Array.isArray(response.data.items)) {
-        // Items wrapper
         wishlistItems = response.data.items;
-        console.log('📝 Using items wrapper format');
-      } else {
-        console.warn('⚠️ Unexpected wishlist response format:', response.data);
-        wishlistItems = [];
       }
-
-      console.log('🔍 Extracted wishlist items:', wishlistItems);
-      console.log('🔍 Wishlist items count:', wishlistItems.length);
-
-      // ✅ FIXED: Extract product IDs with comprehensive fallbacks
       const wishlistedProductIds = new Set();
-
-      wishlistItems.forEach((item, index) => {
-        console.log(`🔍 Processing wishlist item ${index}:`, JSON.stringify(item, null, 2));
-
+      wishlistItems.forEach((item) => {
         let productId = null;
-
-        // Try multiple ways to extract product ID
         if (item.product_id) {
           productId = item.product_id;
-          console.log(`📝 Found product_id: ${productId}`);
         } else if (item.product && typeof item.product === 'object' && item.product.id) {
           productId = item.product.id;
-          console.log(`📝 Found product.id: ${productId}`);
         } else if (item.product && typeof item.product === 'number') {
-          // Sometimes product is just the ID
           productId = item.product;
-          console.log(`📝 Found direct product ID: ${productId}`);
         } else if (item.id && !item.product && !item.product_id) {
-          // Sometimes the item ID is actually the product ID
           productId = item.id;
-          console.log(`📝 Using item.id as product ID: ${productId}`);
         }
-
         if (productId) {
-          // ✅ CRITICAL: Ensure consistent data type (convert to number)
           const normalizedProductId = Number(productId);
           if (!isNaN(normalizedProductId)) {
             wishlistedProductIds.add(normalizedProductId);
-            console.log(`✅ Added product ${normalizedProductId} to wishlist set`);
-          } else {
-            console.warn(`⚠️ Invalid product ID (not a number): ${productId}`);
           }
-        } else {
-          console.warn('⚠️ Could not extract product ID from item:', item);
         }
       });
-
-      console.log('✅ Final wishlist set:', Array.from(wishlistedProductIds));
-      console.log('✅ Wishlist loaded successfully:', wishlistedProductIds.size, 'items');
-
       setWishlistProducts(wishlistedProductIds);
-
     } catch (error) {
       console.error('❌ Failed to fetch wishlist:', error);
-      if (error.response) {
-        console.error('❌ Wishlist API error response:', error.response.status, error.response.data);
-      }
-      // Don't show error to user for wishlist - it's not critical
     } finally {
       setWishlistLoading(false);
     }
   }, []);
 
-  // ✅ Handle wishlist updates from ShopProductCard
   const handleWishlistUpdate = useCallback((productId, isWishlisted) => {
-    console.log('🔄 Wishlist update received:', productId, isWishlisted);
-    console.log('🔄 Product ID type:', typeof productId);
-
     setWishlistProducts(prev => {
       const newSet = new Set(prev);
-      const normalizedProductId = Number(productId); // Ensure consistent type
-
+      const normalizedProductId = Number(productId);
       if (isWishlisted) {
         newSet.add(normalizedProductId);
-        console.log(`➕ Added product ${normalizedProductId} to local wishlist`);
       } else {
         newSet.delete(normalizedProductId);
-        console.log(`➖ Removed product ${normalizedProductId} from local wishlist`);
       }
-
-      console.log('💖 Updated local wishlist:', Array.from(newSet));
       return newSet;
     });
   }, []);
 
-  // Check login status
   useEffect(() => {
     try {
       const token = localStorage.getItem('buyerAccessToken') ||
@@ -693,27 +616,22 @@ function EnhancedSellerStorefrontPage() {
         localStorage.getItem('accessToken');
       setIsLoggedIn(!!token);
     } catch (error) {
-      console.warn('localStorage access error:', error);
       setIsLoggedIn(false);
     }
   }, []);
 
-  // Apply filters to products
   const applyFilters = useCallback(() => {
     if (!Array.isArray(products)) {
       setFilteredProducts([]);
       return;
     }
-
     let filtered = [...products];
-
     if (filters?.priceRange) {
       filtered = filtered.filter((product) => {
         const price = product?.price || 0;
         return price >= filters.priceRange.min && price <= filters.priceRange.max;
       });
     }
-
     if (filters?.stockStatus?.length > 0) {
       filtered = filtered.filter((product) => {
         const stock = product?.online_stock || 0;
@@ -721,7 +639,6 @@ function EnhancedSellerStorefrontPage() {
         return filters.stockStatus.includes(stockStatus);
       });
     }
-
     filtered.sort((a, b) => {
       switch (filters?.sortBy) {
         case 'price-asc':
@@ -736,78 +653,52 @@ function EnhancedSellerStorefrontPage() {
           return 0;
       }
     });
-
     setFilteredProducts(filtered);
   }, [products, filters]);
 
-  // ✅ Enhanced fetch store data with wishlist integration
   useEffect(() => {
     if (!sellerPhone) {
-      console.log('❌ No seller phone - showing error');
       setError('Invalid shop URL. Please check the link and try again.');
       setIsLoading(false);
       return;
     }
-
     const fetchStoreData = async () => {
       try {
         setIsLoading(true);
         setError(null);
-
         abortControllerRef.current = new AbortController();
-
-        console.log('🔍 Fetching shop data for phone:', sellerPhone);
-
-        // ✅ Use /shop/ endpoint (matches your Django main URLs)
         const response = await axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/`, {
           signal: abortControllerRef.current.signal,
           timeout: 15000,
         });
-
-        console.log('✅ Shop API response:', response.data);
-
         if (response.data) {
           setStore(response.data.store || null);
           const productsData = response.data.products || [];
-
-          // ✅ CRITICAL: Ensure product IDs are numbers for consistent comparison
           const normalizedProducts = productsData.map(product => ({
             ...product,
-            id: Number(product.id) // Ensure product ID is a number
+            id: Number(product.id)
           }));
-
           setProducts(normalizedProducts);
-          console.log('✅ Shop data loaded successfully');
-          console.log('📝 Products with IDs:', normalizedProducts.map(p => ({ id: p.id, name: p.name, idType: typeof p.id })));
         } else {
           throw new Error('No data received from server');
         }
       } catch (error) {
         if (axios.isCancel(error)) return;
-
-        console.error('❌ Shop data fetch failed:', error);
-
         if (error.response?.status === 404) {
-          setError('Shop not found. This shop may have been moved or is temporarily unavailable.');
+          setError('Shop not found.');
         } else if (error.response?.status >= 500) {
-          setError('Server error. Please try again in a few moments.');
-        } else if (error.code === 'ECONNABORTED') {
-          setError('Request timed out. Please check your connection and try again.');
+          setError('Server error. Please try again.');
         } else {
-          setError(error.response?.data?.error || error.message || 'Failed to load shop. Please try again.');
+          setError('Failed to load shop. Please try again.');
         }
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchStoreData();
-
-    // ✅ CRITICAL: Fetch wishlist after store data loads
     const timeoutId = setTimeout(() => {
       fetchWishlist();
-    }, 1500); // Increased delay to ensure shop loads first
-
+    }, 1500);
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -816,45 +707,33 @@ function EnhancedSellerStorefrontPage() {
     };
   }, [sellerPhone, fetchWishlist]);
 
-  // Apply filters when products or filters change
   useEffect(() => {
     applyFilters();
   }, [products, filters, applyFilters]);
 
-  // ✅ Enhanced add to cart handler
   const handleAddToCart = useCallback(async (e, product) => {
     e.preventDefault();
     e.stopPropagation();
-
     if (!product?.id || (product.online_stock || 0) <= 0) {
       alert(product?.id ? 'Product is out of stock' : 'Invalid product');
       return;
     }
-
-    // Check if user is logged in
     const token = localStorage.getItem('buyerAccessToken') ||
       localStorage.getItem('access_token') ||
       localStorage.getItem('accessToken');
-
     if (!token) {
-      // Redirect to login with return URL
       router.push(`/login/buyer?redirect=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
-
     if (!addToCart) {
       alert('Cart service unavailable. Please refresh the page.');
       return;
     }
-
     const productId = product.id;
-
     try {
       setLoadingProducts(prev => ({ ...prev, [productId]: true }));
       await Promise.resolve(addToCart(sellerPhone, product));
-      console.log('✅ Successfully added to cart:', product.name);
     } catch (error) {
-      console.error('❌ Add to cart failed:', error);
       alert('Failed to add to cart. Please try again.');
     } finally {
       setLoadingProducts(prev => {
@@ -873,23 +752,21 @@ function EnhancedSellerStorefrontPage() {
     });
   }, []);
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="enhanced-loading-container" style={styles.loadingContainer}>
         <div className="loading-spinner-enhanced" style={styles.loadingSpinner}></div>
         <h3>Loading Kerala shop...</h3>
-        <p>Please wait while we fetch the latest products from this local seller</p>
+        <p>Please wait while we fetch the latest products</p>
       </div>
     );
   }
 
-  // Error state
   if (error || !store) {
     return (
       <div className="enhanced-error-container" style={styles.errorContainer}>
         <div className="error-icon">
-          <Package size={48} aria-hidden="true" />
+          <Package size={48} />
         </div>
         <h2>Shop Not Found</h2>
         <p>{error || 'This Kerala shop could not be found.'}</p>
@@ -913,14 +790,12 @@ function EnhancedSellerStorefrontPage() {
   return (
     <ErrorBoundary>
       <div className="enhanced-page-container" style={styles.pageContainer}>
-        {/* ✅ SEO Head component */}
         <ShopSEOHead
           store={store}
           products={products}
           shopSlug={shopSlug}
           sellerPhone={sellerPhone}
         />
-
         <SHeader store={store} isLoggedIn={isLoggedIn} />
         <EnhancedStoreBanner store={store} shopSlug={shopSlug} />
         <EnhancedFilterSection
@@ -928,15 +803,9 @@ function EnhancedSellerStorefrontPage() {
           onFilterChange={handleFilterChange}
           activeFilters={filters}
         />
-
-
-
         <div className="container" style={styles.container}>
           <div className="products-header-enhanced" style={styles.productsHeader}>
             <div className="products-title-enhanced" style={styles.productsTitle}>
-              {/* <h2 className="products-main-title-enhanced" style={styles.productsMainTitle}>
-                Products from {store.name}
-              </h2> */}
               <span className="product-text" style={styles.producttext}>
                 All Products
               </span>
@@ -945,42 +814,13 @@ function EnhancedSellerStorefrontPage() {
               <span className="product-count-enhanced" style={styles.productCount}>
                 {filteredProducts.length} of {products.length} products available
               </span>
-              {/* <div className="view-toggle-group" style={styles.viewToggleGroup}>
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`view-toggle-enhanced ${viewMode === 'grid' ? 'active' : ''}`}
-                  style={viewMode === 'grid' ? styles.viewToggleActive : styles.viewToggle}
-                  aria-label="Grid view"
-                >
-                  <Grid size={16} aria-hidden="true" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`view-toggle-enhanced ${viewMode === 'list' ? 'active' : ''}`}
-                  style={viewMode === 'list' ? styles.viewToggleActive : styles.viewToggle}
-                  aria-label="List view"
-                >
-                  <List size={16} aria-hidden="true" />
-                </button>
-              </div> */}
             </div>
           </div>
-
           {filteredProducts.length > 0 ? (
             <div className={`products-container ${viewMode}`} style={styles.productsContainer}>
               {filteredProducts.map((product) => {
                 if (!product?.id) return null;
-
-                // ✅ CRITICAL: Check wishlist status with detailed logging
                 const isInWishlist = wishlistProducts.has(product.id);
-                console.log(`🔍 Rendering product ${product.id} (${product.name}):`, {
-                  productId: product.id,
-                  productIdType: typeof product.id,
-                  isInWishlist,
-                  wishlistSize: wishlistProducts.size,
-                  wishlistContents: Array.from(wishlistProducts)
-                });
-
                 return (
                   <ShopProductCard
                     key={product.id}
@@ -991,8 +831,7 @@ function EnhancedSellerStorefrontPage() {
                     onAddToCart={handleAddToCart}
                     isLoading={loadingProducts[product.id] || false}
                     cartItems={cartItems || []}
-                    showStoreName={false} // Don't show store name since we're in the store
-                    // ✅ CRITICAL: Pass correct wishlist state and callback
+                    showStoreName={false}
                     isWishlisted={isInWishlist}
                     onWishlistUpdate={handleWishlistUpdate}
                   />
@@ -1002,10 +841,10 @@ function EnhancedSellerStorefrontPage() {
           ) : (
             <div className="enhanced-empty-state" style={styles.emptyState}>
               <div className="empty-icon">
-                <Filter size={64} aria-hidden="true" />
+                <Filter size={64} />
               </div>
               <h3>No products found</h3>
-              <p>No products match the selected filters. Try adjusting your filter criteria or browse all products from this Kerala seller.</p>
+              <p>No products match the selected filters.</p>
               <button
                 onClick={() => {
                   const defaultFilters = { priceRange: null, stockStatus: [], sortBy: 'name-asc' };
@@ -1013,22 +852,19 @@ function EnhancedSellerStorefrontPage() {
                 }}
                 className="clear-filters-button-enhanced"
                 style={styles.clearFiltersButtonEnhanced}
-                aria-label="Clear all filters"
               >
-                <X size={16} aria-hidden="true" />
+                <X size={16} />
                 Clear All Filters
               </button>
             </div>
           )}
         </div>
-
         <Footer />
       </div>
     </ErrorBoundary>
   );
 }
 
-// ✅ Main Export with Suspense Boundary
 function ShopPageWithSuspense() {
   return (
     <Suspense fallback={
@@ -1049,7 +885,6 @@ function ShopPageWithSuspense() {
           animation: 'spin 1s linear infinite'
         }}></div>
         <h3>Loading Kerala shop...</h3>
-        <p>Please wait while we fetch the latest products from this local seller</p>
       </div>
     }>
       <EnhancedSellerStorefrontPage />
@@ -1059,18 +894,12 @@ function ShopPageWithSuspense() {
 
 export default ShopPageWithSuspense;
 
-
-
-
-
-
-// ✅ All styles remain the same
+// ✅ ALL STYLES
 const styles = {
   pageContainer: {
     minHeight: '100vh',
     backgroundColor: '#FDFFF0'
   },
-
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -1079,7 +908,6 @@ const styles = {
     minHeight: '60vh',
     gap: '20px'
   },
-
   loadingSpinner: {
     width: '32px',
     height: '32px',
@@ -1088,7 +916,6 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-
   errorContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -1099,13 +926,11 @@ const styles = {
     textAlign: 'center',
     padding: '40px 20px'
   },
-
   errorActions: {
     display: 'flex',
     gap: '16px',
     flexWrap: 'wrap'
   },
-
   backButton: {
     display: 'inline-block',
     padding: '12px 24px',
@@ -1116,7 +941,6 @@ const styles = {
     fontSize: '16px',
     fontWeight: '500'
   },
-
   retryButton: {
     display: 'flex',
     alignItems: 'center',
@@ -1130,22 +954,39 @@ const styles = {
     fontSize: '16px',
     fontWeight: '500'
   },
-
   container: {
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '0 20px'
   },
-
-  // Banner Styles
+  mainWrapper: {
+    paddingTop: '10px',
+  },
+  // ✅ SLIDER STYLES
+  sliderContainer: {
+    position: 'relative',
+    width: '100%',
+    overflow: 'hidden',
+    marginTop: '130px',
+  },
+  slidesWrapper: {
+    position: 'relative',
+    width: '100%',
+    aspectRatio: '4 / 1',
+  },
+  slide: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+  },
   bannerContainer: {
     position: 'relative',
     width: '100%',
-    aspectRatio: '4 / 1',   // keeps 1400x700 ratio (modern CSS)
+    height: '100%',
     overflow: 'hidden',
-    marginTop: "130px",
   },
-
   bannerBackground: {
     position: 'absolute',
     top: 0,
@@ -1153,20 +994,17 @@ const styles = {
     right: 0,
     bottom: 0
   },
-
   bannerImage: {
     width: '100%',
     height: '100%',
-    objectFit: 'contain',   // show full image without cut
+    objectFit: 'contain',
     display: 'block'
   },
-
   bannerFallback: {
     width: '100%',
     height: '100%',
     background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)'
   },
-
   fallbackPattern: {
     width: '100%',
     height: '100%',
@@ -1174,328 +1012,107 @@ const styles = {
     backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
     backgroundSize: '20px 20px'
   },
-
   bannerOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    // background: 'rgba(0,0,0,0.4)'
   },
-
-
-
-  breadcrumbs: {
-    width: "100%",
-    background: "#1a4845", // light background
-    padding: "12px 150px",
-    display: "flex",
-    alignItems: "center",
-    fontSize: "14px",
-    gap: "8px",
-    boxSizing: "border-box",
-    marginTop: "20px",
-  },
-
-  breadcrumbLink: {
-    color: "white",
-    textDecoration: "none",
-    fontWeight: 500,
-  },
-
-  breadcrumbLinkHover: {
-    textDecoration: "underline",
-  },
-
-  breadcrumbSeparator: {
-    color: "#9ca3af",
-  },
-
-  currentPage: {
-    color: "white",
-    fontWeight: 600,
-  },
-
-
-  // Store Info Styles
-  storeInfoSection: {
-    backgroundColor: 'white',
-    borderBottom: '1px solid #e5e7eb',
-    padding: '32px 0',
-    marginBottom: '32px'
-  },
-
-  storeHeader: {
-    display: 'flex',
-    gap: '24px',
-    alignItems: 'flex-start',
-    marginBottom: '24px',
-    flexWrap: 'wrap'
-  },
-
-  storeIdentity: {
-    display: 'flex',
-    gap: '20px',
-    flex: 1,
-    minWidth: '300px'
-  },
-
-  storeLogoWrapper: {
-    position: 'relative',
-    flexShrink: 0
-  },
-
-  storeLogo: {
-    width: '120px',
-    height: '120px',
-    borderRadius: '50%',
-    objectFit: 'cover',
-    border: '4px solid #f1f5f9',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-  },
-
-  storeLogoPlaceholder: {
-    width: '120px',
-    height: '120px',
-    borderRadius: '50%',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '2rem',
-    fontWeight: '700',
-    border: '4px solid #f1f5f9',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-  },
-
-  verifiedBadge: {
+  // Navigation buttons
+  navButton: {
     position: 'absolute',
-    bottom: '5px',
-    right: '5px',
-    width: '24px',
-    height: '24px',
-    backgroundColor: '#10b981',
+    left: '20px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     color: 'white',
+    border: 'none',
     borderRadius: '50%',
+    width: '50px',
+    height: '50px',
+    fontSize: '24px',
+    cursor: 'pointer',
+    zIndex: 10,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: '2px solid white'
+    transition: 'background-color 0.3s',
   },
-
-  storeDetails: {
-    flex: 1,
-    minWidth: '250px'
-  },
-
-  storeNameSection: {
-    marginBottom: '12px'
-  },
-
-  storeName: {
-    fontSize: '2rem',
-    fontWeight: '700',
-    color: '#1f2937',
-    margin: '0 0 8px 0',
-    lineHeight: '1.2'
-  },
-
-  storeBadges: {
-    display: 'flex',
-    gap: '8px',
-    flexWrap: 'wrap'
-  },
-
-  badgeVerified: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '4px 8px',
-    backgroundColor: '#ecfdf5',
-    border: '1px solid #10b981',
-    borderRadius: '12px',
-    fontSize: '0.75rem',
-    color: '#065f46',
-    fontWeight: '500'
-  },
-
-  badgeResponsive: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '4px 8px',
-    backgroundColor: '#eff6ff',
-    border: '1px solid #3b82f6',
-    borderRadius: '12px',
-    fontSize: '0.75rem',
-    color: '#1e40af',
-    fontWeight: '500'
-  },
-
-  storeTagline: {
-    fontSize: '1.1rem',
-    color: '#3b82f6',
-    fontWeight: '500',
-    margin: '0 0 16px 0'
-  },
-
-  storeMeta: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
-  },
-
-  metaItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '0.9rem',
-    color: '#4b5563'
-  },
-
-  metaItemLocation: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '0.9rem',
-    color: '#059669',
-    fontWeight: '600'
-  },
-
-  storeActions: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
-  },
-
-  actionButtonPrimary: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    padding: '10px 16px',
-    backgroundColor: '#3b82f6',
+  navButtonNext: {
+    position: 'absolute',
+    right: '20px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
-    fontSize: '0.9rem',
-    fontWeight: '500',
+    borderRadius: '50%',
+    width: '50px',
+    height: '50px',
+    fontSize: '24px',
     cursor: 'pointer',
-    whiteSpace: 'nowrap'
-  },
-
-  actionButtonSecondary: {
+    zIndex: 10,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px',
-    padding: '10px 16px',
-    backgroundColor: 'white',
-    color: '#374151',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    fontSize: '0.9rem',
-    fontWeight: '500',
+    transition: 'background-color 0.3s',
+  },
+  // Dots indicator
+  dotsContainer: {
+    position: 'absolute',
+    bottom: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    display: 'flex',
+    gap: '10px',
+    zIndex: 10,
+  },
+  dot: {
+    width: '12px',
+    height: '12px',
+    borderRadius: '50%',
+    border: '2px solid white',
     cursor: 'pointer',
-    whiteSpace: 'nowrap'
+    transition: 'background-color 0.3s',
+    padding: 0,
   },
-
-  actionButtonIcon: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '40px',
-    height: '40px',
-    backgroundColor: 'white',
-    color: '#6b7280',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    cursor: 'pointer'
-  },
-
-  // Store Performance
-  storePerformance: {
-    display: 'flex',
-    gap: '32px',
-    padding: '20px 0',
-    borderTop: '1px solid #f3f4f6',
-    flexWrap: 'wrap'
-  },
-
-  performanceCard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px'
-  },
-
-  performanceIcon: {
-    color: '#3b82f6'
-  },
-
-  performanceContent: {
-    display: 'flex',
-    flexDirection: 'column'
-  },
-
-  performanceNumber: {
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    color: '#1f2937'
-  },
-
-  performanceLabel: {
-    fontSize: '0.8rem',
-    color: '#6b7280',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px'
-  },
-
-  storeDescriptionCard: {
-    marginTop: '24px',
-    padding: '20px',
-    backgroundColor: '#f8fafc',
-    borderRadius: '8px',
-    border: '1px solid #e5e7eb'
-  },
-
-  descriptionExpanded: {
-    margin: '12px 0'
-  },
-
-  descriptionCollapsed: {
-    margin: '12px 0',
-    display: '-webkit-box',
-    WebkitLineClamp: 3,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden'
-  },
-
-  expandButton: {
-    background: 'none',
-    border: 'none',
-    color: '#3b82f6',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    fontSize: '0.9rem',
-    fontWeight: '500'
-  },
-
   // Filter Section
   filterSection: {
     backgroundColor: '#FDFFF0',
     padding: '30px 0'
   },
-
   filterHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center'
   },
-
+  filterSearchRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    width: '100%',
+  },
+  filterLeft: {
+    display: 'flex',
+    gap: '0.5rem',
+    alignItems: 'center',
+  },
+  searchRight: {
+    marginLeft: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  searchInput: {
+    padding: '0.5rem 1rem',
+    borderRadius: '8px',
+    border: '2px solid #e5e7eb',
+    boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.3)',
+    minWidth: '200px',
+    maxWidth: '400px',
+    background: '#FDFFF0',
+    color: "#1a4845",
+  },
   filterToggleButton: {
     display: 'flex',
     alignItems: 'center',
@@ -1509,7 +1126,6 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px'
   },
-
   filterCount: {
     backgroundColor: '#3b82f6',
     color: 'white',
@@ -1518,7 +1134,6 @@ const styles = {
     fontSize: '12px',
     fontWeight: '500'
   },
-
   clearFiltersButton: {
     display: 'flex',
     alignItems: 'center',
@@ -1531,7 +1146,6 @@ const styles = {
     fontSize: '13px',
     color: '#374151'
   },
-
   filterPanel: {
     marginTop: '16px',
     padding: '20px',
@@ -1539,18 +1153,15 @@ const styles = {
     borderRadius: '8px',
     border: '1px solid #e5e7eb'
   },
-
   filterGroup: {
     marginBottom: '20px'
   },
-
   filterOptions: {
     display: 'flex',
     flexDirection: 'column',
     gap: '8px',
     marginTop: '8px'
   },
-
   filterOption: {
     display: 'flex',
     alignItems: 'center',
@@ -1558,20 +1169,17 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px'
   },
-
   checkmark: {
     width: '16px',
     height: '16px',
     border: '2px solid #d1d5db',
     borderRadius: '3px'
   },
-
   filterActions: {
     display: 'flex',
     gap: '12px',
     marginTop: '20px'
   },
-
   applyFiltersButton: {
     display: 'flex',
     alignItems: 'center',
@@ -1585,7 +1193,6 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500'
   },
-
   cancelFiltersButton: {
     padding: '10px 20px',
     backgroundColor: 'white',
@@ -1595,7 +1202,6 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px'
   },
-
   // Products Section
   productsHeader: {
     display: 'flex',
@@ -1605,72 +1211,32 @@ const styles = {
     flexWrap: 'wrap',
     gap: '16px'
   },
-
   productsTitle: {
     flex: 1
   },
-
-  productsMainTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '600',
-    color: '#1a4845',
-    margin: '0 0 4px 0'
-  },
-
   productCount: {
     fontSize: '0.9rem',
     color: '#6b7280'
   },
-
   producttext: {
     fontSize: '1.2rem',
     color: '#1a4845'
   },
-
   productsControls: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px'
   },
-
-  viewToggleGroup: {
-    display: 'flex',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    overflow: 'hidden'
-  },
-  mainWrapper: {
-    paddingTop: '10px',
-  },
-
-  viewToggle: {
-    padding: '8px',
-    backgroundColor: '#FDFFF0',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#6b7280'
-  },
-
-  viewToggleActive: {
-    padding: '8px',
-    backgroundColor: '#1a4845',
-    border: 'none',
-    cursor: 'pointer',
-    color: 'white'
-  },
-
   productsContainer: {
     display: 'grid',
     gap: '16px',
-    justifyContent: 'center', // centers grid items horizontally
+    justifyContent: 'center',
     width: '100%',
     margin: '0 auto',
     padding: '10px 0',
     boxSizing: 'border-box',
     gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
   },
-
-
   emptyState: {
     display: 'flex',
     flexDirection: 'column',
@@ -1680,7 +1246,6 @@ const styles = {
     textAlign: 'center',
     color: '#6b7280'
   },
-
   clearFiltersButtonEnhanced: {
     marginTop: '16px',
     display: 'flex',
@@ -1695,38 +1260,4 @@ const styles = {
     fontSize: '0.9rem',
     fontWeight: '500'
   },
-
-  filterSearchRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem', // optional spacing between left and right
-    width: '100%',
-  },
-
-  filterLeft: {
-    display: 'flex',
-    gap: '0.5rem',
-    alignItems: 'center',
-  },
-
-  searchRight: {
-    marginLeft: 'auto', // pushes it to the right
-    display: 'flex',
-    alignItems: 'center',
-  },
-
-  searchInput: {
-    padding: '0.5rem 1rem',
-    borderRadius: '8px',
-    border: '2px solid #e5e7eb',
-    boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.3)', minWidth: '200px',
-    maxWidth: '400px',
-    background: '#FDFFF0',
-    color: "#1a4845",
-  },
-
-
-
-
-
 };
