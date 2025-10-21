@@ -2605,6 +2605,7 @@ const styles = {
     padding: 'clamp(20px, 4vw, 30px)',
     margin: '30px 0'
   },
+  
 
   reviewFormTitle: {
     fontSize: 'clamp(1.1rem, 2.5vw, 1.2rem)',
