@@ -537,6 +537,15 @@ export default function Home() {
     fetchProducts(1);
   };
 
+  useEffect(() => {
+    if (showFilters) {
+      document.body.style.overflow = 'hidden'; // disable page scroll
+    } else {
+      document.body.style.overflow = '';       // enable page scroll
+    }
+  }, [showFilters]);
+
+
   // Dynamic styles based on media queries
   const dynamicStyles = {
     ...styles,
@@ -635,17 +644,34 @@ export default function Home() {
         )}
 
         {/* Filters Section */}
+        {/* Filter Sidebar Overlay */}
         {showFilters && (
-          <ProductFilters
-            filters={{ ...filters, search: '' }}
-            categories={categories}
-            onFilterChange={(newFilters) => {
-              handleFilterChange({ ...newFilters, search: filters.search });
-            }}
-            productCount={filteredProducts.length}
-            hideSearch={true}
-          />
+          <div
+            className="filter-sidebar-overlay"
+            onClick={() => setShowFilters(false)} // click outside closes
+          >
+            <div
+              className="filter-sidebar"
+              onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
+            >
+              <div className="filter-header">
+                <h3>Filters</h3>
+                <button onClick={() => setShowFilters(false)} className="close-btn">✕</button>
+              </div>
+
+              <ProductFilters
+                filters={{ ...filters, search: '' }}
+                categories={categories}
+                onFilterChange={(newFilters) => {
+                  handleFilterChange({ ...newFilters, search: filters.search });
+                }}
+                productCount={filteredProducts.length}
+                hideSearch={true}
+              />
+            </div>
+          </div>
         )}
+
 
         {/* Products Grid */}
         {isLoading && currentPage === 1 ? (
@@ -944,6 +970,8 @@ const styles = {
     gap: '6px',
     transition: 'background-color 0.2s'
   },
+
+
 
   errorContainer: {
     display: 'flex',

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import "../../styles/Keralasellershomepage.css";
+
 
 export default function ProductFilters({ filters, categories, onFilterChange, productCount, hideSearch = false }) {
   const [localFilters, setLocalFilters] = useState(filters);
@@ -58,6 +60,7 @@ export default function ProductFilters({ filters, categories, onFilterChange, pr
         <div style={styles.filterGroup}>
           <label style={styles.filterLabel}>Category</label>
           <select
+            className='keralasellersfilterselectbox'
             value={localFilters.category}
             onChange={(e) => handleFilterUpdate('category', e.target.value)}
             style={styles.select}
@@ -76,6 +79,7 @@ export default function ProductFilters({ filters, categories, onFilterChange, pr
           <label style={styles.filterLabel}>Price Range</label>
           <div style={styles.priceInputs}>
             <input
+              className='keralasellerspricebox'
               type="number"
               placeholder="Min ₹"
               value={localFilters.priceMin}
@@ -84,6 +88,7 @@ export default function ProductFilters({ filters, categories, onFilterChange, pr
             />
             <span style={styles.priceSeparator}>-</span>
             <input
+              className='keralasellerspricebox'
               type="number"
               placeholder="Max ₹"
               value={localFilters.priceMax}
@@ -102,7 +107,7 @@ export default function ProductFilters({ filters, categories, onFilterChange, pr
                 }}
                 style={{
                   ...styles.priceRangeButton,
-                  ...(localFilters.priceMin == range.min && localFilters.priceMax == range.max 
+                  ...(localFilters.priceMin == range.min && localFilters.priceMax == range.max
                     ? styles.activePriceRange : {})
                 }}
               >
@@ -147,6 +152,7 @@ export default function ProductFilters({ filters, categories, onFilterChange, pr
         <div style={styles.filterGroup}>
           <label style={styles.filterLabel}>Sort By</label>
           <select
+            className='keralasellersfilterselectbox'
             value={localFilters.sortBy}
             onChange={(e) => handleFilterUpdate('sortBy', e.target.value)}
             style={styles.select}
@@ -182,7 +188,7 @@ export default function ProductFilters({ filters, categories, onFilterChange, pr
                 name="availability"
                 value="all"
                 checked={true}
-                onChange={() => {}}
+                onChange={() => { }}
                 style={styles.radioInput}
               />
               All Products
@@ -193,7 +199,7 @@ export default function ProductFilters({ filters, categories, onFilterChange, pr
                 name="availability"
                 value="sale"
                 checked={false}
-                onChange={() => {}}
+                onChange={() => { }}
                 style={styles.radioInput}
               />
               On Sale
@@ -208,7 +214,7 @@ export default function ProductFilters({ filters, categories, onFilterChange, pr
           {localFilters.category && (
             <span style={styles.activeFilter}>
               Category: {categories.find(cat => cat.id.toString() === localFilters.category)?.name}
-              <button 
+              <button
                 onClick={() => handleFilterUpdate('category', '')}
                 style={styles.removeFilter}
               >
@@ -219,7 +225,7 @@ export default function ProductFilters({ filters, categories, onFilterChange, pr
           {(localFilters.priceMin || localFilters.priceMax) && (
             <span style={styles.activeFilter}>
               Price: ₹{localFilters.priceMin || '0'} - ₹{localFilters.priceMax || '∞'}
-              <button 
+              <button
                 onClick={() => {
                   handleFilterUpdate('priceMin', '');
                   handleFilterUpdate('priceMax', '');
@@ -233,7 +239,7 @@ export default function ProductFilters({ filters, categories, onFilterChange, pr
           {localFilters.rating && (
             <span style={styles.activeFilter}>
               Rating: {localFilters.rating}★ & above
-              <button 
+              <button
                 onClick={() => handleFilterUpdate('rating', '')}
                 style={styles.removeFilter}
               >
@@ -257,13 +263,15 @@ export default function ProductFilters({ filters, categories, onFilterChange, pr
   );
 }
 
+
+
 const styles = {
   filtersContainer: {
-    backgroundColor: '#f8f9fa',
-    border: '1px solid #e9ecef',
+    backgroundColor: '#FDFFF0',
+    border: '1px solid #1a4845',
     borderRadius: '12px',
     padding: '20px',
-    marginBottom: '20px',
+    marginBottom: '45px',
     boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
   },
 
@@ -287,7 +295,7 @@ const styles = {
   filterLabel: {
     fontSize: '14px',
     fontWeight: '600',
-    color: '#333',
+    color: '#1a4845',
     marginBottom: '4px'
   },
 
@@ -296,8 +304,8 @@ const styles = {
     border: '2px solid #e9ecef',
     borderRadius: '8px',
     fontSize: '14px',
-    backgroundColor: 'white',
-    color: '#333',
+    backgroundColor: '#FDFFF0',
+    color: '#1a4845',
     outline: 'none',
     transition: 'border-color 0.2s',
     cursor: 'pointer'
@@ -311,7 +319,9 @@ const styles = {
 
   priceInput: {
     padding: '10px 12px',
+    width: "60px",
     border: '2px solid #e9ecef',
+    backgroundColor: '#FDFFF0',
     borderRadius: '8px',
     fontSize: '14px',
     flex: 1,
@@ -320,7 +330,7 @@ const styles = {
   },
 
   priceSeparator: {
-    color: '#666',
+    color: '#1a4845',
     fontWeight: '600',
     minWidth: '16px',
     textAlign: 'center'
@@ -335,7 +345,7 @@ const styles = {
 
   priceRangeButton: {
     padding: '8px 12px',
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     border: '1px solid #ddd',
     borderRadius: '6px',
     cursor: 'pointer',
@@ -347,7 +357,7 @@ const styles = {
 
   activePriceRange: {
     backgroundColor: '#0d6efd',
-    color: 'white',
+    color: '#1a4845',
     borderColor: '#0d6efd'
   },
 
@@ -368,7 +378,7 @@ const styles = {
 
   radioInput: {
     margin: 0,
-    accentColor: '#0d6efd'
+    accentColor: '#1a4845'
   },
 
   checkboxLabel: {
@@ -382,7 +392,7 @@ const styles = {
 
   checkbox: {
     margin: 0,
-    accentColor: '#0d6efd',
+    accentColor: '#1a4845',
     width: '16px',
     height: '16px'
   },
@@ -413,7 +423,7 @@ const styles = {
     alignItems: 'center',
     gap: '6px',
     backgroundColor: '#0d6efd',
-    color: 'white',
+    color: '#1a4845',
     padding: '4px 8px',
     borderRadius: '16px',
     fontSize: '12px',
@@ -423,7 +433,7 @@ const styles = {
   removeFilter: {
     background: 'none',
     border: 'none',
-    color: 'white',
+    color: '#1a4845',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: 'bold',
@@ -448,7 +458,7 @@ const styles = {
 
   resultCount: {
     fontSize: '14px',
-    color: '#666',
+    color: '#1a4845',
     fontWeight: '500'
   },
 
