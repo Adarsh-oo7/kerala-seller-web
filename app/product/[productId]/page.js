@@ -25,194 +25,194 @@ const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 
 // ✅ Enhanced auth headers function
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('access_token') ||
-    localStorage.getItem('buyerAccessToken') ||
-    localStorage.getItem('buyerToken') ||
-    localStorage.getItem('accessToken');
+    const token = localStorage.getItem('access_token') ||
+        localStorage.getItem('buyerAccessToken') ||
+        localStorage.getItem('buyerToken') ||
+        localStorage.getItem('accessToken');
 
-  return token ? { 'Authorization': `Bearer ${token}` } : null;
+    return token ? { 'Authorization': `Bearer ${token}` } : null;
 };
 
 // ✅ SMART: Get best image URL with Cloudinary support
 const getBestImageUrl = (product, imageType = 'main', size = 'default') => {
-  if (!product) return 'https://placehold.co/400x400?text=No+Image';
+    if (!product) return 'https://placehold.co/400x400?text=No+Image';
 
-  // Priority order for different image types
-  const imageUrls = {
-    thumbnail: product.thumbnail_url || product.main_image_url || product.cloudinary_url,
-    large: product.large_image_url || product.main_image_url || product.cloudinary_url,
-    main: product.main_image_url || product.cloudinary_url
-  };
+    // Priority order for different image types
+    const imageUrls = {
+        thumbnail: product.thumbnail_url || product.main_image_url || product.cloudinary_url,
+        large: product.large_image_url || product.main_image_url || product.cloudinary_url,
+        main: product.main_image_url || product.cloudinary_url
+    };
 
-  let imageUrl = imageUrls[imageType] || product.main_image_url;
+    let imageUrl = imageUrls[imageType] || product.main_image_url;
 
-  if (!imageUrl) return 'https://placehold.co/400x400?text=No+Image';
+    if (!imageUrl) return 'https://placehold.co/400x400?text=No+Image';
 
-  // If it's already a Cloudinary URL, return as is
-  if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
-    return imageUrl;
-  }
+    // If it's already a Cloudinary URL, return as is
+    if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
+        return imageUrl;
+    }
 
-  // Handle local URLs
-  if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
-    return `${API_BASE_URL}${imageUrl}`;
-  }
+    // Handle local URLs
+    if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
+        return `${API_BASE_URL}${imageUrl}`;
+    }
 
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    return imageUrl;
-  }
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        return imageUrl;
+    }
 
-  return imageUrl.startsWith('/') ? `${API_BASE_URL}${imageUrl}` : imageUrl;
+    return imageUrl.startsWith('/') ? `${API_BASE_URL}${imageUrl}` : imageUrl;
 };
 
 // ✅ Enhanced Image Gallery Component with Mobile Square Support
 function ProductImageGallery({ product }) {
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [isZoomed, setIsZoomed] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [isZoomed, setIsZoomed] = useState(false);
+    const [imageLoaded, setImageLoaded] = useState(false);
 
-  // Combine main image and sub-images
-  const allImages = [
-    {
-      url: getBestImageUrl(product, 'main'),
-      thumbnail: getBestImageUrl(product, 'thumbnail'),
-      large: getBestImageUrl(product, 'large'),
-      alt: product.name
-    },
-    ...(product.sub_images || []).map((subImage, index) => ({
-      url: subImage.image_url || subImage.thumbnail_url || getBestImageUrl({ main_image_url: subImage.image }),
-      thumbnail: subImage.thumbnail_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
-      large: subImage.large_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
-      alt: `${product.name} - Image ${index + 2}`
-    }))
-  ];
+    // Combine main image and sub-images
+    const allImages = [
+        {
+            url: getBestImageUrl(product, 'main'),
+            thumbnail: getBestImageUrl(product, 'thumbnail'),
+            large: getBestImageUrl(product, 'large'),
+            alt: product.name
+        },
+        ...(product.sub_images || []).map((subImage, index) => ({
+            url: subImage.image_url || subImage.thumbnail_url || getBestImageUrl({ main_image_url: subImage.image }),
+            thumbnail: subImage.thumbnail_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
+            large: subImage.large_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
+            alt: `${product.name} - Image ${index + 2}`
+        }))
+    ];
 
-  const handlePrevious = () => {
-    setSelectedImageIndex((prev) => 
-      prev === 0 ? allImages.length - 1 : prev - 1
-    );
-    setImageLoaded(false);
-  };
+    const handlePrevious = () => {
+        setSelectedImageIndex((prev) =>
+            prev === 0 ? allImages.length - 1 : prev - 1
+        );
+        setImageLoaded(false);
+    };
 
-  const handleNext = () => {
-    setSelectedImageIndex((prev) => 
-      prev === allImages.length - 1 ? 0 : prev + 1
-    );
-    setImageLoaded(false);
-  };
+    const handleNext = () => {
+        setSelectedImageIndex((prev) =>
+            prev === allImages.length - 1 ? 0 : prev + 1
+        );
+        setImageLoaded(false);
+    };
 
-  const handleThumbnailClick = (index) => {
-    setSelectedImageIndex(index);
-    setImageLoaded(false);
-  };
+    const handleThumbnailClick = (index) => {
+        setSelectedImageIndex(index);
+        setImageLoaded(false);
+    };
 
-  const currentImage = allImages[selectedImageIndex];
+    const currentImage = allImages[selectedImageIndex];
 
-  return (
-    <div style={styles.imageGallery} className="image-gallery">
-      {/* Main Image Display */}
-      <div style={styles.mainImageContainer}>
-        <div 
-          style={styles.mainImageWrapper}
-          className="main-image-wrapper"
-          onMouseEnter={() => setIsZoomed(true)}
-          onMouseLeave={() => setIsZoomed(false)}
-        >
-          {!imageLoaded && (
-            <div style={styles.imageLoader}>
-              <div style={styles.spinner}></div>
-              <p style={styles.loadingText}>Loading image...</p>
+    return (
+        <div style={styles.imageGallery} className="image-gallery">
+            {/* Main Image Display */}
+            <div style={styles.mainImageContainer}>
+                <div
+                    style={styles.mainImageWrapper}
+                    className="main-image-wrapper"
+                    onMouseEnter={() => setIsZoomed(true)}
+                    onMouseLeave={() => setIsZoomed(false)}
+                >
+                    {!imageLoaded && (
+                        <div style={styles.imageLoader}>
+                            <div style={styles.spinner}></div>
+                            <p style={styles.loadingText}>Loading image...</p>
+                        </div>
+                    )}
+
+                    <img
+                        src={isZoomed ? currentImage.large : currentImage.url}
+                        alt={currentImage.alt}
+                        className="main-image"
+                        style={{
+                            ...styles.mainImage,
+                            opacity: imageLoaded ? 1 : 0,
+                            transform: isZoomed ? 'scale(1.1)' : 'scale(1)'
+                        }}
+                        onLoad={() => setImageLoaded(true)}
+                        onError={(e) => {
+                            e.target.src = 'https://placehold.co/600x400?text=No+Image';
+                            setImageLoaded(true);
+                        }}
+                    />
+
+                    {/* Navigation Arrows - Hidden on mobile */}
+                    {allImages.length > 1 && (
+                        <>
+                            <button
+                                style={{ ...styles.navButton, ...styles.prevButton }}
+                                className="nav-button"
+                                onClick={handlePrevious}
+                                aria-label="Previous image"
+                            >
+                                <ChevronLeft size={20} />
+                            </button>
+                            <button
+                                style={{ ...styles.navButton, ...styles.nextButton }}
+                                className="nav-button"
+                                onClick={handleNext}
+                                aria-label="Next image"
+                            >
+                                <ChevronRight size={20} />
+                            </button>
+                        </>
+                    )}
+
+                    {/* Image Counter */}
+                    {allImages.length > 1 && (
+                        <div style={styles.imageCounter} className="image-counter">
+                            {selectedImageIndex + 1} / {allImages.length}
+                        </div>
+                    )}
+
+                    {/* Optimized Badge */}
+                    {product.image_metadata?.optimized && (
+                        <div style={styles.optimizedBadge} className="optimized-badge" title="Fast loading optimized image">
+                            <Zap size={12} />
+                        </div>
+                    )}
+
+                    {/* Zoom hint */}
+                    <div style={styles.zoomHint} className="zoom-hint">
+                        🖱️ Hover to zoom • 📱 Tap to select
+                    </div>
+                </div>
             </div>
-          )}
-          
-          <img 
-            src={isZoomed ? currentImage.large : currentImage.url}
-            alt={currentImage.alt}
-            className="main-image"
-            style={{
-              ...styles.mainImage,
-              opacity: imageLoaded ? 1 : 0,
-              transform: isZoomed ? 'scale(1.1)' : 'scale(1)'
-            }}
-            onLoad={() => setImageLoaded(true)}
-            onError={(e) => {
-              e.target.src = 'https://placehold.co/600x400?text=No+Image';
-              setImageLoaded(true);
-            }}
-          />
-          
-          {/* Navigation Arrows - Hidden on mobile */}
-          {allImages.length > 1 && (
-            <>
-              <button 
-                style={{...styles.navButton, ...styles.prevButton}} 
-                className="nav-button"
-                onClick={handlePrevious}
-                aria-label="Previous image"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button 
-                style={{...styles.navButton, ...styles.nextButton}} 
-                className="nav-button"
-                onClick={handleNext}
-                aria-label="Next image"
-              >
-                <ChevronRight size={20} />
-              </button>
-            </>
-          )}
 
-          {/* Image Counter */}
-          {allImages.length > 1 && (
-            <div style={styles.imageCounter} className="image-counter">
-              {selectedImageIndex + 1} / {allImages.length}
-            </div>
-          )}
-
-          {/* Optimized Badge */}
-          {product.image_metadata?.optimized && (
-            <div style={styles.optimizedBadge} className="optimized-badge" title="Fast loading optimized image">
-              <Zap size={12} />
-            </div>
-          )}
-
-          {/* Zoom hint */}
-          <div style={styles.zoomHint} className="zoom-hint">
-            🖱️ Hover to zoom • 📱 Tap to select
-          </div>
+            {/* Thumbnail Selector */}
+            {allImages.length > 1 && (
+                <div style={styles.thumbnailContainer}>
+                    <div style={styles.thumbnailScroller} className="thumbnail-scroller">
+                        {allImages.map((image, index) => (
+                            <div
+                                key={index}
+                                style={{
+                                    ...styles.thumbnailWrapper,
+                                    ...(index === selectedImageIndex ? styles.activeThumbnail : {})
+                                }}
+                                className="thumbnail-wrapper"
+                                onClick={() => handleThumbnailClick(index)}
+                            >
+                                <img
+                                    src={image.thumbnail}
+                                    alt={image.alt}
+                                    style={styles.thumbnailImage}
+                                    onError={(e) => {
+                                        e.target.src = 'https://placehold.co/80x80?text=No+Image';
+                                    }}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
-      </div>
-
-      {/* Thumbnail Selector */}
-      {allImages.length > 1 && (
-        <div style={styles.thumbnailContainer}>
-          <div style={styles.thumbnailScroller} className="thumbnail-scroller">
-            {allImages.map((image, index) => (
-              <div
-                key={index}
-                style={{
-                  ...styles.thumbnailWrapper,
-                  ...(index === selectedImageIndex ? styles.activeThumbnail : {})
-                }}
-                className="thumbnail-wrapper"
-                onClick={() => handleThumbnailClick(index)}
-              >
-                <img
-                  src={image.thumbnail}
-                  alt={image.alt}
-                  style={styles.thumbnailImage}
-                  onError={(e) => {
-                    e.target.src = 'https://placehold.co/80x80?text=No+Image';
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    );
 }
 
 // Enhanced Review Form Component
@@ -225,7 +225,7 @@ function ReviewForm({ productId, onReviewSubmitted }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (comment.trim().length < 10) {
             setError('Review must be at least 10 characters long');
             return;
@@ -234,7 +234,7 @@ function ReviewForm({ productId, onReviewSubmitted }) {
         setIsSubmitting(true);
         setError('');
         setSuccess('');
-        
+
         const token = localStorage.getItem('buyerAccessToken');
         if (!token) {
             setError('Please login to submit a review');
@@ -244,20 +244,20 @@ function ReviewForm({ productId, onReviewSubmitted }) {
 
         try {
             const response = await axios.post(
-                `${API_URL}${productId}/create-review/`, 
-                { rating, comment: comment.trim() }, 
+                `${API_URL}${productId}/create-review/`,
+                { rating, comment: comment.trim() },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            
+
             setComment('');
             setRating(5);
             setSuccess('Review submitted successfully!');
-            
+
             setTimeout(() => {
                 onReviewSubmitted();
                 setSuccess('');
             }, 1500);
-            
+
         } catch (err) {
             console.error('Review submission error:', err);
             setError(err.response?.data?.error || 'Failed to submit review');
@@ -265,14 +265,14 @@ function ReviewForm({ productId, onReviewSubmitted }) {
             setIsSubmitting(false);
         }
     };
-    
+
     return (
         <div style={styles.reviewForm}>
             <h4 style={styles.reviewFormTitle}>Write Your Review</h4>
-            
+
             {error && <div style={styles.errorMessage}>{error}</div>}
             {success && <div style={styles.successMessage}>{success}</div>}
-            
+
             <form onSubmit={handleSubmit}>
                 <div style={styles.ratingSection}>
                     <label style={styles.label}>Your Rating:</label>
@@ -290,13 +290,13 @@ function ReviewForm({ productId, onReviewSubmitted }) {
                         <span style={styles.ratingText}>({rating}/5 stars)</span>
                     </div>
                 </div>
-                
+
                 <div style={styles.commentSection}>
                     <label style={styles.label}>Your Review:</label>
-                    <textarea 
-                        value={comment} 
-                        onChange={e => setComment(e.target.value)} 
-                        placeholder="Share your experience with this product. What did you like or dislike about it?" 
+                    <textarea
+                        value={comment}
+                        onChange={e => setComment(e.target.value)}
+                        placeholder="Share your experience with this product. What did you like or dislike about it?"
                         style={styles.textarea}
                         rows={4}
                         maxLength={500}
@@ -305,9 +305,9 @@ function ReviewForm({ productId, onReviewSubmitted }) {
                         {comment.length}/500 characters (minimum 10 required)
                     </small>
                 </div>
-                
-                <button 
-                    type="submit" 
+
+                <button
+                    type="submit"
                     disabled={isSubmitting || comment.trim().length < 10}
                     style={{
                         ...styles.submitButton,
@@ -394,9 +394,9 @@ function WishlistButton({ productId, isLoggedIn, router }) {
 
             try {
                 console.log(`🔍 Checking wishlist status for product ${productId}`);
-                const response = await axios.get(`${WISHLIST_CHECK_API}?product_id=${productId}`, { 
+                const response = await axios.get(`${WISHLIST_CHECK_API}?product_id=${productId}`, {
                     headers,
-                    timeout: 5000 
+                    timeout: 5000
                 });
                 const isInWishlist = response.data.is_wishlisted || false;
                 console.log(`✅ Product ${productId} wishlist status:`, isInWishlist);
@@ -481,7 +481,7 @@ function WishlistButton({ productId, isLoggedIn, router }) {
     };
 
     return (
-        <button 
+        <button
             style={{
                 ...styles.secondaryButton,
                 ...(isWishlisted ? styles.wishlistActive : {}),
@@ -495,8 +495,8 @@ function WishlistButton({ productId, isLoggedIn, router }) {
             {isWishlistLoading ? (
                 <RefreshCw size={16} className="spinning" />
             ) : (
-                <Heart 
-                    size={16} 
+                <Heart
+                    size={16}
                     fill={isWishlisted ? '#ef4444' : 'none'}
                     color={isWishlisted ? '#ef4444' : '#6b7280'}
                 />
@@ -507,17 +507,17 @@ function WishlistButton({ productId, isLoggedIn, router }) {
 
 // ✅ Razorpay Script Loader
 const loadRazorpayScript = () => {
-  return new Promise((resolve) => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => {
-      resolve(true);
-    };
-    script.onerror = () => {
-      resolve(false);
-    };
-    document.body.appendChild(script);
-  });
+    return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => {
+            resolve(true);
+        };
+        script.onerror = () => {
+            resolve(false);
+        };
+        document.body.appendChild(script);
+    });
 };
 
 // ✅ ENHANCED: Main Product Detail Component with Working Buy Now
@@ -531,7 +531,7 @@ export default function ProductDetailPage() {
     const [reviewsLoading, setReviewsLoading] = useState(false);
     const [addingToCart, setAddingToCart] = useState(false);
     const [buyingNow, setBuyingNow] = useState(false);
-    
+
     const { productId } = useParams();
     const router = useRouter();
     const { addToCart } = useCart();
@@ -546,9 +546,9 @@ export default function ProductDetailPage() {
         try {
             setIsLoading(true);
             setError('');
-            
+
             console.log('Fetching product from:', `${API_URL}${productId}/`);
-            
+
             const productResponse = await axios.get(`${API_URL}${productId}/`);
             console.log('Product response:', productResponse.data);
             setProduct(productResponse.data);
@@ -558,7 +558,7 @@ export default function ProductDetailPage() {
 
         } catch (err) {
             console.error('Failed to fetch product:', err);
-            
+
             if (err.response?.status === 404) {
                 setError('Product not found');
             } else if (err.response) {
@@ -609,8 +609,8 @@ export default function ProductDetailPage() {
             const headers = { 'Authorization': `Bearer ${token}` };
             axios.get(BUYER_PROFILE_URL, { headers })
                 .then(res => {
-                    setBuyerStatus({ 
-                        isLoggedIn: true, 
+                    setBuyerStatus({
+                        isLoggedIn: true,
                         isVerified: res.data.phone_verified,
                         name: res.data.full_name,
                         email: res.data.email,
@@ -647,13 +647,13 @@ export default function ProductDetailPage() {
             router.push('/profile');
             return;
         }
-        
+
         setAddingToCart(true);
-        
+
         try {
             if (product.store && product.store.seller_phone) {
                 addToCart(product.store.seller_phone, product);
-                
+
                 // Show success feedback
                 const button = document.querySelector('[data-add-to-cart]');
                 if (button) {
@@ -686,9 +686,9 @@ export default function ProductDetailPage() {
             router.push('/profile');
             return;
         }
-        
+
         setBuyingNow(true);
-        
+
         try {
             // ✅ Load Razorpay script
             const isRazorpayLoaded = await loadRazorpayScript();
@@ -724,7 +724,7 @@ export default function ProductDetailPage() {
 
             // ✅ STEP 2: Create Razorpay order using your existing endpoint
             const createOrderResponse = await axios.post(
-                CREATE_RAZORPAY_ORDER_URL, 
+                CREATE_RAZORPAY_ORDER_URL,
                 {
                     amount: totalAmount,
                     order_data: orderData
@@ -747,11 +747,11 @@ export default function ProductDetailPage() {
                 name: 'Kerala Sellers',
                 description: `Buy Now: ${product.name}`,
                 order_id: razorpay_order_id,
-                
+
                 // ✅ STEP 4: Payment success handler
                 handler: async function (response) {
                     console.log('💳 Payment successful:', response);
-                    
+
                     try {
                         // ✅ Use your existing payment verification endpoint
                         const verifyResponse = await axios.post(
@@ -769,24 +769,24 @@ export default function ProductDetailPage() {
 
                         // ✅ Show success message
                         alert(`🎉 Payment successful! Your order #${verifyResponse.data.order_id} has been placed.`);
-                        
+
                         // ✅ Redirect to orders page
                         router.push('/profile/orders');
 
-                        
+
                     } catch (verifyError) {
                         console.error('❌ Payment verification failed:', verifyError);
                         alert('Payment completed but order creation failed. Please contact support.');
                     }
                 },
-                
+
                 // ✅ Prefill user information
                 prefill: {
                     name: buyerStatus.name || 'Customer',
                     email: buyerStatus.email || '',
                     contact: buyerStatus.phone || ''
                 },
-                
+
                 // ✅ Order notes
                 notes: {
                     product_id: product.id,
@@ -794,15 +794,15 @@ export default function ProductDetailPage() {
                     seller_phone: product.store?.seller_phone,
                     order_type: 'buy_now'
                 },
-                
+
                 // ✅ Theme
                 theme: {
                     color: '#3b82f6'
                 },
-                
+
                 // ✅ Modal close handler
                 modal: {
-                    ondismiss: function() {
+                    ondismiss: function () {
                         console.log('💳 Payment cancelled by user');
                         setBuyingNow(false);
                     }
@@ -811,7 +811,7 @@ export default function ProductDetailPage() {
 
             // ✅ STEP 5: Open Razorpay payment modal
             const razorpayInstance = new window.Razorpay(options);
-            
+
             // ✅ Handle payment failure
             razorpayInstance.on('payment.failed', function (response) {
                 console.error('❌ Payment failed:', response.error);
@@ -824,7 +824,7 @@ export default function ProductDetailPage() {
 
         } catch (error) {
             console.error('❌ Buy now error:', error);
-            
+
             if (error.response?.status === 401) {
                 localStorage.removeItem('buyerAccessToken');
                 alert('Session expired. Please login again.');
@@ -834,7 +834,7 @@ export default function ProductDetailPage() {
             } else {
                 alert('Failed to process payment. Please try again.');
             }
-            
+
             setBuyingNow(false);
         }
     };
@@ -911,7 +911,7 @@ export default function ProductDetailPage() {
     return (
         <div style={styles.pageContainer}>
             <Header />
-            
+
             {/* Product Details Section */}
             <div style={styles.container} className="container">
                 <div style={styles.productLayout} className="product-layout">
@@ -919,18 +919,18 @@ export default function ProductDetailPage() {
                     <div className="image-gallery">
                         <ProductImageGallery product={product} />
                     </div>
-                    
+
                     <div style={styles.detailsContainer} className="details-container">
                         <h1 style={styles.name} className="product-name">{product.name}</h1>
                         {product.model_name && <p style={styles.model}>Model: {product.model_name}</p>}
-                        
-                        <StarRating 
-                            rating={product.average_rating || 0} 
-                            reviewCount={product.review_count || 0} 
+
+                        <StarRating
+                            rating={product.average_rating || 0}
+                            reviewCount={product.review_count || 0}
                         />
 
                         {product.description && <p style={styles.description}>{product.description}</p>}
-                        
+
                         <div style={styles.priceContainer} className="price-container">
                             <span style={styles.price} className="product-price">₹{product.price}</span>
                             {product.mrp && product.mrp > product.price && (
@@ -942,14 +942,14 @@ export default function ProductDetailPage() {
                                 </>
                             )}
                         </div>
-                        
+
                         <div style={styles.stockContainer} className="stock-container">
                             <p style={{
                                 ...styles.stock,
                                 color: product.online_stock > 0 ? '#059669' : '#dc2626'
                             }}>
-                                {product.online_stock > 0 
-                                    ? `✓ ${product.online_stock} available` 
+                                {product.online_stock > 0
+                                    ? `✓ ${product.online_stock} available`
                                     : '✗ Out of Stock'
                                 }
                             </p>
@@ -972,15 +972,15 @@ export default function ProductDetailPage() {
                                 </div>
                             )}
                         </div>
-                        
+
                         {/* ✅ ENHANCED: Action Buttons with Working Buy Now */}
                         <div style={styles.actionButtons} className="action-buttons">
-                            <button 
+                            <button
                                 style={{
                                     ...styles.addToCartButton,
                                     backgroundColor: product.online_stock === 0 ? '#6c757d' : (addingToCart ? '#28a745' : '#3b82f6'),
                                     cursor: product.online_stock === 0 ? 'not-allowed' : 'pointer'
-                                }} 
+                                }}
                                 disabled={product.online_stock === 0 || addingToCart}
                                 onClick={handleAddToCart}
                                 data-add-to-cart
@@ -1001,12 +1001,12 @@ export default function ProductDetailPage() {
                             </button>
 
                             {/* ✅ WORKING: Buy Now Button with Your Backend */}
-                            <button 
+                            <button
                                 style={{
                                     ...styles.buyNowButton,
                                     backgroundColor: product.online_stock === 0 ? '#6c757d' : (buyingNow ? '#28a745' : '#ff6b35'),
                                     cursor: product.online_stock === 0 ? 'not-allowed' : 'pointer'
-                                }} 
+                                }}
                                 disabled={product.online_stock === 0 || buyingNow}
                                 onClick={handleBuyNow}
                                 data-buy-now
@@ -1028,14 +1028,14 @@ export default function ProductDetailPage() {
 
                             <div style={styles.secondaryActions} className="secondary-actions">
                                 {/* ✅ Working Wishlist Button */}
-                                <WishlistButton 
+                                <WishlistButton
                                     productId={productId}
                                     isLoggedIn={buyerStatus.isLoggedIn}
                                     router={router}
                                 />
-                                
+
                                 {/* ✅ Working Share Button */}
-                                <button 
+                                <button
                                     style={styles.secondaryButton}
                                     onClick={handleShare}
                                     title="Share this product"
@@ -1053,18 +1053,18 @@ export default function ProductDetailPage() {
                 <div style={styles.reviewsHeader}>
                     <h2>Customer Reviews</h2>
                     <div style={styles.reviewsSummary}>
-                        <StarRating 
-                            rating={product.average_rating || 0} 
+                        <StarRating
+                            rating={product.average_rating || 0}
                             reviewCount={reviews.length}
                         />
                     </div>
                 </div>
-                
+
                 {buyerStatus.isLoggedIn ? (
                     canReview ? (
-                        <ReviewForm 
-                            productId={productId} 
-                            onReviewSubmitted={handleReviewSubmitted} 
+                        <ReviewForm
+                            productId={productId}
+                            onReviewSubmitted={handleReviewSubmitted}
                         />
                     ) : (
                         <div style={styles.cannotReviewMessage}>
@@ -1078,10 +1078,10 @@ export default function ProductDetailPage() {
                         </p>
                     </div>
                 )}
-                
+
                 <div style={styles.reviewsList}>
                     <h3>All Reviews ({reviews.length})</h3>
-                    
+
                     {reviewsLoading ? (
                         <div style={styles.loadingText}>
                             <div style={styles.spinner}></div>
@@ -1108,8 +1108,8 @@ export default function ProductDetailPage() {
             <Footer />
 
             {/* ✅ Enhanced CSS with Mobile Square Images */}
-{/* ✅ Enhanced CSS with Smaller Mobile Images for Better UI */}
-<style jsx>{`
+            {/* ✅ Enhanced CSS with Smaller Mobile Images for Better UI */}
+            <style jsx>{`
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
@@ -1424,10 +1424,20 @@ export default function ProductDetailPage() {
 // ✅ Enhanced Styles with Mobile Square Images + Responsive Layout
 const styles = {
     pageContainer: {
+        display: 'flex',
+        flexDirection: 'column',
         minHeight: '100vh',
-        backgroundColor: '#f8fafc'
+        backgroundColor: '#FDFFF0',
     },
-    
+    container: {
+        width: '100%',
+        maxWidth: '1200px', // reduced for better balance
+        margin: '0 auto',
+        padding: 'clamp(16px, 3vw, 32px)', // dynamic padding
+        paddingTop: '50px',
+        boxSizing: 'border-box',
+    },
+
     loadingContainer: {
         display: 'flex',
         flexDirection: 'column',
@@ -1436,7 +1446,7 @@ const styles = {
         minHeight: '60vh',
         gap: '20px'
     },
-    
+
     spinner: {
         width: '20px',
         height: '20px',
@@ -1445,19 +1455,19 @@ const styles = {
         borderRadius: '50%',
         animation: 'spin 1s linear infinite'
     },
-    
+
     errorContainer: {
         textAlign: 'center',
         padding: '60px 20px',
         color: '#dc3545'
     },
-    
+
     errorText: {
         color: '#dc3545',
         marginBottom: '20px',
         fontSize: '1.1rem'
     },
-    
+
     retryButton: {
         padding: '12px 24px',
         backgroundColor: '#3b82f6',
@@ -1468,14 +1478,7 @@ const styles = {
         fontSize: '1rem',
         fontWeight: '500'
     },
-    
-    container: { 
-        maxWidth: '1200px', 
-        margin: '0 auto', 
-        padding: '20px',
-        animation: 'fadeIn 0.6s ease-out'
-    },
-    
+
     productLayout: {
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
@@ -1647,72 +1650,72 @@ const styles = {
         height: '100%',
         objectFit: 'cover'
     },
-    
-    detailsContainer: { 
+
+    detailsContainer: {
         display: 'flex',
         flexDirection: 'column',
         gap: '20px'
     },
-    
-    name: { 
-        fontSize: '2rem', 
+
+    name: {
+        fontSize: '2rem',
         margin: 0,
         color: '#1f2937',
         fontWeight: '700',
         lineHeight: '1.2'
     },
-    
-    model: { 
-        color: '#6b7280', 
+
+    model: {
+        color: '#6b7280',
         margin: 0,
         fontSize: '1.1rem'
     },
-    
-    starContainer: { 
-        display: 'flex', 
-        alignItems: 'center', 
+
+    starContainer: {
+        display: 'flex',
+        alignItems: 'center',
         gap: '8px',
         flexWrap: 'wrap'
     },
-    
+
     stars: {
         display: 'flex',
         gap: '2px'
     },
-    
+
     ratingDisplay: {
         fontSize: '0.9rem',
         color: '#6b7280',
         fontWeight: '500'
     },
-    
-    reviewCount: { 
-        color: '#6b7280', 
-        fontSize: '0.9rem' 
+
+    reviewCount: {
+        color: '#6b7280',
+        fontSize: '0.9rem'
     },
-    
-    description: { 
+
+    description: {
         lineHeight: '1.6',
         margin: 0,
         color: '#374151',
         fontSize: '1rem'
     },
-    
-    priceContainer: { 
-        display: 'flex', 
-        alignItems: 'baseline', 
+
+    priceContainer: {
+        display: 'flex',
+        alignItems: 'baseline',
         gap: '15px',
         flexWrap: 'wrap'
     },
-    
-    price: { 
-        fontSize: '2rem', 
+
+    price: {
+        fontSize: '2rem',
         fontWeight: '700',
         color: '#059669'
     },
-    
-    mrp: { 
-        textDecoration: 'line-through', 
+
+    mrp: {
+        textDecoration: 'line-through',
         color: '#9ca3af',
         fontSize: '1.2rem'
     },
@@ -1725,23 +1728,23 @@ const styles = {
         fontSize: '0.8rem',
         fontWeight: '600'
     },
-    
+
     stockContainer: {
         margin: '10px 0'
     },
-    
-    stock: { 
+
+    stock: {
         fontWeight: '600',
         margin: 0,
         fontSize: '1rem'
     },
-    
+
     features: {
         display: 'flex',
         gap: '20px',
         flexWrap: 'wrap'
     },
-    
+
     feature: {
         display: 'flex',
         alignItems: 'center',
@@ -1750,21 +1753,21 @@ const styles = {
         fontSize: '0.9rem',
         fontWeight: '500'
     },
-    
+
     actionButtons: {
         display: 'flex',
         flexDirection: 'column',
         gap: '12px'
     },
-    
-    addToCartButton: { 
+
+    addToCartButton: {
         width: '100%',
-        padding: '16px 24px', 
-        backgroundColor: '#3b82f6', 
-        color: 'white', 
-        border: 'none', 
-        borderRadius: '8px', 
-        fontSize: '1.1rem', 
+        padding: '16px 24px',
+        backgroundColor: '#3b82f6',
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        fontSize: '1.1rem',
         fontWeight: '600',
         cursor: 'pointer',
         transition: 'all 0.3s ease',
@@ -1773,14 +1776,14 @@ const styles = {
         justifyContent: 'center'
     },
 
-    buyNowButton: { 
+    buyNowButton: {
         width: '100%',
-        padding: '16px 24px', 
-        backgroundColor: '#ff6b35', 
-        color: 'white', 
-        border: 'none', 
-        borderRadius: '8px', 
-        fontSize: '1.1rem', 
+        padding: '16px 24px',
+        backgroundColor: '#ff6b35',
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        fontSize: '1.1rem',
         fontWeight: '600',
         cursor: 'pointer',
         transition: 'all 0.3s ease',
@@ -1788,19 +1791,19 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'center'
     },
-    
+
     buttonContent: {
         display: 'flex',
         alignItems: 'center',
         gap: '8px'
     },
-    
+
     secondaryActions: {
         display: 'flex',
         gap: '8px',
         justifyContent: 'center'
     },
-    
+
     secondaryButton: {
         width: '48px',
         height: '48px',
@@ -1825,26 +1828,26 @@ const styles = {
         cursor: 'not-allowed',
         opacity: 0.7
     },
-    
+
     // Reviews Section Styles (keeping existing styles)
-    reviewsSection: { 
-        maxWidth: '1200px', 
-        margin: '0 auto', 
+    reviewsSection: {
+        maxWidth: '1200px',
+        margin: '0 auto',
         padding: '40px 20px',
         backgroundColor: 'white',
         borderRadius: '12px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
     },
-    
+
     reviewsHeader: {
         marginBottom: '30px',
         textAlign: 'center'
     },
-    
+
     reviewsSummary: {
         marginTop: '15px'
     },
-    
+
     loginPrompt: {
         backgroundColor: '#f8fafc',
         padding: '20px',
@@ -1853,13 +1856,13 @@ const styles = {
         margin: '20px 0',
         border: '1px solid #e5e7eb'
     },
-    
+
     loginLink: {
         color: '#3b82f6',
         textDecoration: 'none',
         fontWeight: '600'
     },
-    
+
     cannotReviewMessage: {
         backgroundColor: '#fef3c7',
         color: '#92400e',
@@ -1868,23 +1871,23 @@ const styles = {
         margin: '20px 0',
         border: '1px solid #fbbf24'
     },
-    
+
     // Review Form Styles
-    reviewForm: { 
+    reviewForm: {
         backgroundColor: '#f8fafc',
-        border: '1px solid #e5e7eb', 
-        borderRadius: '12px', 
-        padding: '30px', 
+        border: '1px solid #e5e7eb',
+        borderRadius: '12px',
+        padding: '30px',
         margin: '30px 0'
     },
-    
+
     reviewFormTitle: {
         fontSize: '1.2rem',
         fontWeight: '600',
         color: '#1f2937',
         marginBottom: '20px'
     },
-    
+
     errorMessage: {
         color: '#dc2626',
         backgroundColor: '#fef2f2',
@@ -1893,7 +1896,7 @@ const styles = {
         marginBottom: '15px',
         border: '1px solid #fecaca'
     },
-    
+
     successMessage: {
         color: '#065f46',
         backgroundColor: '#ecfdf5',
@@ -1902,45 +1905,45 @@ const styles = {
         marginBottom: '15px',
         border: '1px solid #a7f3d0'
     },
-    
+
     ratingSection: {
         marginBottom: '20px'
     },
-    
+
     label: {
         display: 'block',
         fontWeight: '600',
         marginBottom: '8px',
         color: '#374151'
     },
-    
-    starRatingInput: { 
-        display: 'flex', 
+
+    starRatingInput: {
+        display: 'flex',
         alignItems: 'center',
         gap: '5px',
         marginTop: '8px'
     },
-    
+
     starButton: {
         cursor: 'pointer',
         transition: 'transform 0.2s'
     },
-    
+
     ratingText: {
         marginLeft: '10px',
         color: '#6b7280',
         fontSize: '0.9rem'
     },
-    
+
     commentSection: {
         marginBottom: '20px'
     },
-    
-    textarea: { 
-        width: '100%', 
-        minHeight: '100px', 
-        padding: '12px', 
-        border: '1px solid #d1d5db', 
+
+    textarea: {
+        width: '100%',
+        minHeight: '100px',
+        padding: '12px',
+        border: '1px solid #d1d5db',
         borderRadius: '8px',
         resize: 'vertical',
         fontFamily: 'inherit',
@@ -1949,50 +1952,50 @@ const styles = {
         outline: 'none',
         transition: 'border-color 0.2s'
     },
-    
+
     charCount: {
         color: '#6b7280',
         fontSize: '0.8rem',
         marginTop: '5px',
         display: 'block'
     },
-    
-    submitButton: { 
-        padding: '12px 30px', 
-        border: 'none', 
-        borderRadius: '8px', 
-        backgroundColor: '#059669', 
-        color: 'white', 
+
+    submitButton: {
+        padding: '12px 30px',
+        border: 'none',
+        borderRadius: '8px',
+        backgroundColor: '#059669',
+        color: 'white',
         cursor: 'pointer',
         fontSize: '1rem',
         fontWeight: '600',
         transition: 'all 0.3s ease'
     },
-    
+
     disabledButton: {
         backgroundColor: '#9ca3af',
         cursor: 'not-allowed'
     },
-    
+
     // Reviews List Styles
     reviewsList: {
         marginTop: '40px'
     },
-    
+
     reviewsContainer: {
         display: 'flex',
         flexDirection: 'column',
         gap: '20px',
         marginTop: '20px'
     },
-    
+
     reviewItem: {
         backgroundColor: '#f8fafc',
         border: '1px solid #e5e7eb',
         borderRadius: '12px',
         padding: '25px'
     },
-    
+
     reviewHeader: {
         display: 'flex',
         justifyContent: 'space-between',
@@ -2001,26 +2004,26 @@ const styles = {
         flexWrap: 'wrap',
         gap: '10px'
     },
-    
+
     reviewerName: {
         margin: '8px 0 0 0',
         fontSize: '1rem',
         fontWeight: '600',
         color: '#1f2937'
     },
-    
+
     reviewDate: {
         fontSize: '0.85rem',
         color: '#6b7280'
     },
-    
+
     reviewComment: {
         margin: 0,
         lineHeight: '1.6',
         color: '#374151',
         fontSize: '1rem'
     },
-    
+
     noReviews: {
         textAlign: 'center',
         padding: '40px',
@@ -2030,7 +2033,7 @@ const styles = {
         borderRadius: '8px',
         border: '1px solid #e5e7eb'
     },
-    
+
     loadingText: {
         display: 'flex',
         alignItems: 'center',
