@@ -29,6 +29,38 @@
     color: #ef4444;
 }
 
+/* When there's only one shop card inside the container */
+.shopsContainer>.shopCard:only-child {
+    max-width: 350px;
+    width: 100%;
+    margin: 0 auto;
+    justify-self: center;
+    align-self: start;
+}
+
+.ShopdropdownOption {
+    width: 100%;
+    text-align: left;
+    padding: 14px 16px;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #374151;
+}
+
+.ShopactiveOption {
+    background-color: rgba(14, 69, 30, 0.145);
+    color: #1a4845 !important;
+    font-weight: 600;
+}
+
+.shopdropdowntitle {
+    font-size: 20px;
+}
+
 .Shopspinner {
     width: 40px;
     height: 40px;
@@ -225,24 +257,7 @@
     color: #64748b;
 }
 
-.ShopdropdownOption {
-    display: block;
-    width: 100%;
-    padding: 16px;
-    background-color: transparent;
-    border: none;
-    text-align: left;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 8px;
-    margin-bottom: 4px;
-}
 
-.ShopactiveOption {
-    background-color: #eff6ff;
-    color: #3b82f6;
-    font-weight: 600;
-}
 
 /* =====================
    Results
@@ -356,9 +371,15 @@
 }
 
 .shopDescription {
-    font-size: 14px;
-    color: #374151;
-    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    /* limit to 2 lines */
+    font-size: 15px;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 3em;
+    /* optional: ensures cards with short text still have space */
 }
 
 /* Phone row */
@@ -727,6 +748,29 @@
         padding: 7px 14px;
         font-size: 14px;
     }
+
+    .ShopdropdownOption {
+        width: 100%;
+        text-align: left;
+        padding: 12px 14px;
+        border: none;
+        background: transparent;
+        font-size: 14px !important;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #374151;
+    }
+
+    .ShopactiveOption {
+        background-color: rgba(14, 69, 30, 0.145);
+        color: #1a4845 !important;
+        font-weight: 600;
+    }
+
+    .shopdropdowntitle {
+        font-size: 18px;
+    }
 }
 
 @media (min-width: 576px) and (max-width: 680px) {
@@ -761,6 +805,29 @@
         gap: 8px;
         padding: 7px 14px;
         font-size: 14px;
+    }
+
+    .ShopdropdownOption {
+        width: 100%;
+        text-align: left;
+        padding: 12px 14px;
+        border: none;
+        background: transparent;
+        font-size: 14px !important;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #374151;
+    }
+
+    .ShopactiveOption {
+        background-color: rgba(14, 69, 30, 0.145);
+        color: #1a4845 !important;
+        font-weight: 600;
+    }
+
+    .shopdropdowntitle {
+        font-size: 18px;
     }
 }
 
@@ -815,15 +882,41 @@
         padding: 8px 16px !important;
         font-size: 13px !important;
     }
-     .Shopemptyicon{
+
+    .Shopemptyicon {
         width: 29px !important;
         height: 29px !important;
     }
-    .Shopemptytext{
+
+    .Shopemptytext {
         font-size: 18px !important;
     }
-    .Shopemptysubtext{
+
+    .Shopemptysubtext {
         font-size: 14px !important;
+    }
+
+    .ShopdropdownOption {
+        width: 100%;
+        text-align: left;
+        padding: 11px 13px;
+        border: none;
+        background: transparent;
+        font-size: 13px !important;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #374151;
+    }
+
+    .ShopactiveOption {
+        background-color: rgba(14, 69, 30, 0.145);
+        color: #1a4845 !important;
+        font-weight: 600;
+    }
+
+    .shopdropdowntitle {
+        font-size: 17px;
     }
 }
 
@@ -867,13 +960,14 @@
     .shopDescription {
         display: -webkit-box;
         -webkit-line-clamp: 2;
-        /* show 2 lines max */
+        /* limit to 2 lines */
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
-        font-size: 12px;
-        white-space: normal;
+        min-height: 3em;
+        /* optional: ensures cards with short text still have space */
     }
+
 
     .phoneIconWrapper {
         width: 24px;
@@ -912,14 +1006,40 @@
         padding: 8px 16px !important;
         font-size: 13px !important;
     }
-    .Shopemptyicon{
+
+    .Shopemptyicon {
         width: 25px !important;
         height: 25px !important;
     }
-    .Shopemptytext{
+
+    .Shopemptytext {
         font-size: 16px !important;
     }
-    .Shopemptysubtext{
+
+    .Shopemptysubtext {
         font-size: 13px !important;
+    }
+
+    .ShopdropdownOption {
+        width: 100%;
+        text-align: left;
+        padding: 10px 12px;
+        border: none;
+        background: transparent;
+        font-size: 12px !important;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #374151;
+    }
+
+    .ShopactiveOption {
+        background-color: rgba(14, 69, 30, 0.145);
+        color: #1a4845 !important;
+        font-weight: 600;
+    }
+
+    .shopdropdowntitle {
+        font-size: 16px;
     }
 }

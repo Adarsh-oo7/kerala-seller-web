@@ -22,6 +22,7 @@
 }
 
 .bottomNavItem {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -72,8 +73,9 @@
 
 .cartBadge {
     position: absolute;
-    top: -5px;
-    right: -10px;
+    top: 0%;
+    right: 0%;
+    transform: translate(-81%, -43%);
     background-color: red;
     color: white;
     width: 18px;

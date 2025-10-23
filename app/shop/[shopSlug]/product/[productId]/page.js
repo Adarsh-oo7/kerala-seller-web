@@ -357,35 +357,12 @@ function ProductImageGallery({ product }) {
       large: getBestImageUrl(product, 'large'),
       alt: product.name
     },
-    ...(Array.isArray(product.sub_images)
-      ? product.sub_images
-        .map((subImage, index) => {
-          // ✅ Normalize possible keys
-          const possibleUrl =
-            subImage.image_url ||
-            subImage.image ||
-            subImage.url ||
-            subImage.thumbnail_url ||
-            subImage.large_url;
-
-          // ✅ Convert relative paths (like "/media/...") into full URLs
-          const fixedUrl = possibleUrl
-            ? possibleUrl.startsWith('http')
-              ? possibleUrl
-              : `${getApiBaseUrl()}${possibleUrl}`
-            : null;
-
-          if (!fixedUrl) return null; // skip invalid ones
-
-          return {
-            url: fixedUrl,
-            thumbnail: fixedUrl,
-            large: fixedUrl,
-            alt: `${product.name} - Image ${index + 2}`
-          };
-        })
-        .filter(Boolean)
-      : [])
+    ...(product.sub_images || []).map((subImage, index) => ({
+      url: subImage.image_url || subImage.thumbnail_url || getBestImageUrl({ main_image_url: subImage.image }),
+      thumbnail: subImage.thumbnail_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
+      large: subImage.large_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
+      alt: `${product.name} - Image ${index + 2}`
+    }))
   ];
 
 
@@ -428,13 +405,16 @@ function ProductImageGallery({ product }) {
           )}
 
           <img
-            src={isZoomed ? currentImage.large : currentImage.url}
+            src={currentImage.large}
             alt={currentImage.alt}
             className="main-image"
             style={{
               ...styles.mainImage,
               opacity: imageLoaded ? 1 : 0,
               transform: isZoomed ? 'scale(1.1)' : 'scale(1)',
+              width: '100%',
+              height: 'auto',
+              objectFit: 'contain'
             }}
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
@@ -442,6 +422,8 @@ function ProductImageGallery({ product }) {
               setImageLoaded(true);
             }}
           />
+
+
 
           {/* Optimized Badge */}
           {product.image_metadata?.optimized && (
@@ -1123,7 +1105,7 @@ function RelatedProductCard({ product, shopSlug, sellerPhone }) {
           <h3 className='shopslugrelatedproductname' style={styles.relatedProductName}>{product.name}</h3>
 
           <div style={styles.priceRow}>
-            <p className='shopslugrelatedproductprice'  style={styles.relatedProductPrice}>
+            <p className='shopslugrelatedproductprice' style={styles.relatedProductPrice}>
               ₹{product.price?.toLocaleString('en-IN')}
             </p>
             {product.mrp && product.mrp > product.price && (
@@ -1476,449 +1458,7 @@ function ShopProductPageContent() {
 
       <Footer />
 
-      {/* ✅ FULLY RESPONSIVE CSS */}
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        .spinning {
-          animation: spin 1s linear infinite;
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
 
-        /* ✅ MOBILE FIRST: Extra Small Devices (320px - 479px) */
-        @media (max-width: 479px) {
-          .page-container {
-            padding: 0 !important;
-          }
-          
-          .container {
-            padding: 8px !important;
-          }
-          
-          .product-container {
-            grid-template-columns: 1fr !important;
-            gap: 15px !important;
-            padding: 12px !important;
-            margin-bottom: 15px !important;
-            border-radius: 8px !important;
-          }
-          
-          /* Image at top - compact but visible */
-          .image-gallery {
-            order: 1 !important;
-            margin-bottom: 12px !important;
-          }
-          
-          .main-image-container {
-            height: 65vw !important;
-            max-height: 250px !important;
-            min-height: 200px !important;
-            border-radius: 12px !important;
-          }
-          
-          .main-image {
-            border-radius: 12px !important;
-          }
-          
-          /* Product info below image */
-          .product-info {
-            order: 2 !important;
-            gap: 12px !important;
-            padding: 0 !important;
-          }
-          
-          .product-title {
-            font-size: 1.1rem !important;
-            line-height: 1.2 !important;
-          }
-          
-          .current-price {
-            font-size: 1.3rem !important;
-          }
-          
-          .action-buttons {
-            gap: 10px !important;
-            margin-top: 15px !important;
-          }
-          
-          .add-to-cart-button,
-          .buy-now-button {
-            padding: 14px 16px !important;
-            font-size: 0.9rem !important;
-            min-height: 44px !important;
-            border-radius: 8px !important;
-          }
-          
-          .secondary-actions {
-            flex-direction: column !important;
-            gap: 8px !important;
-          }
-          
-          .wishlist-button,
-          .share-button {
-            padding: 12px 16px !important;
-            font-size: 13px !important;
-            min-height: 42px !important;
-          }
-          
-          .thumbnail {
-            width: 45px !important;
-            height: 45px !important;
-          }
-          
-          .breadcrumb-container {
-            display: none !important;
-          }
-          
-          .related-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 10px !important;
-          }
-          
-          .related-product-name {
-            font-size: 12px !important;
-          }
-          
-          .related-product-price {
-            font-size: 13px !important;
-          }
-        }
-
-        /* ✅ MOBILE: Small Devices (480px - 767px) */
-        @media (min-width: 480px) and (max-width: 767px) {
-          .container {
-            padding: 12px !important;
-          }
-          
-          .product-container {
-            grid-template-columns: 1fr !important;
-            gap: 20px !important;
-            padding: 16px !important;
-            margin-bottom: 20px !important;
-          }
-          
-          .image-gallery {
-            order: 1 !important;
-            margin-bottom: 15px !important;
-          }
-          
-          .main-image-container {
-            height: 70vw !important;
-            max-height: 300px !important;
-            min-height: 240px !important;
-            border-radius: 14px !important;
-          }
-          
-          .main-image {
-            border-radius: 14px !important;
-          }
-          
-          .product-info {
-            order: 2 !important;
-            gap: 16px !important;
-            padding: 0 !important;
-          }
-          
-          .product-title {
-            font-size: 1.3rem !important;
-            line-height: 1.2 !important;
-          }
-          
-          .current-price {
-            font-size: 1.5rem !important;
-          }
-          
-          .action-buttons {
-            gap: 12px !important;
-            margin-top: 18px !important;
-          }
-          
-          .add-to-cart-button,
-          .buy-now-button {
-            padding: 15px 20px !important;
-            font-size: 0.95rem !important;
-            min-height: 48px !important;
-            border-radius: 10px !important;
-          }
-          
-          .secondary-actions {
-            flex-direction: column !important;
-            gap: 10px !important;
-          }
-          
-          .wishlist-button,
-          .share-button {
-            padding: 13px 18px !important;
-            font-size: 14px !important;
-            min-height: 46px !important;
-          }
-          
-          .thumbnail {
-            width: 50px !important;
-            height: 50px !important;
-          }
-          
-          .related-grid {
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
-            gap: 12px !important;
-          }
-        }
-
-        /* ✅ TABLET: Medium Devices (768px - 1023px) */
-        @media (min-width: 768px) and (max-width: 1023px) {
-          .container {
-            padding: 16px !important;
-          }
-          
-          .product-container {
-            grid-template-columns: 1fr 1fr !important;
-            gap: 30px !important;
-            padding: 24px !important;
-            margin-bottom: 30px !important;
-          }
-          
-          .image-gallery {
-            order: unset !important;
-          }
-          
-          .main-image-container {
-            height: auto !important;
-            max-height: 450px !important;
-            aspect-ratio: 1 !important;
-            border-radius: 12px !important;
-          }
-          
-          .product-info {
-            order: unset !important;
-            gap: 18px !important;
-            padding: 0 !important;
-          }
-          
-          .product-title {
-            font-size: 1.6rem !important;
-          }
-          
-          .current-price {
-            font-size: 1.7rem !important;
-          }
-          
-          .action-buttons {
-            gap: 14px !important;
-          }
-          
-          .add-to-cart-button,
-          .buy-now-button {
-            padding: 16px 24px !important;
-            font-size: 1rem !important;
-            min-height: 52px !important;
-          }
-          
-          .secondary-actions {
-            flex-direction: row !important;
-            gap: 12px !important;
-          }
-          
-          .wishlist-button,
-          .share-button {
-            flex: 1 !important;
-            padding: 14px 18px !important;
-            font-size: 14px !important;
-          }
-          
-          .related-grid {
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
-            gap: 16px !important;
-          }
-        }
-
-        /* ✅ DESKTOP: Large Devices (1024px - 1439px) */
-        @media (min-width: 1024px) and (max-width: 1439px) {
-          .container {
-            padding: 20px !important;
-            max-width: 1200px !important;
-          }
-          
-          .product-container {
-            grid-template-columns: 1fr 1fr !important;
-            gap: 40px !important;
-            padding: 32px !important;
-          }
-          
-          .main-image-container {
-            max-height: 500px !important;
-            aspect-ratio: 1 !important;
-          }
-          
-          .main-image {
-            object-fit: contain !important;
-          }
-          
-          .product-title {
-            font-size: 1.8rem !important;
-          }
-          
-          .current-price {
-            font-size: 1.75rem !important;
-          }
-          
-          .secondary-actions {
-            flex-direction: row !important;
-          }
-          
-          .related-grid {
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
-            gap: 20px !important;
-          }
-        }
-
-        /* ✅ LARGE DESKTOP: Extra Large Devices (1440px+) */
-        @media (min-width: 1440px) {
-          .container {
-            max-width: 1400px !important;
-            padding: 24px !important;
-          }
-          
-          .product-container {
-            grid-template-columns: 1fr 1fr !important;
-            gap: 50px !important;
-            padding: 40px !important;
-          }
-          
-          .main-image-container {
-            max-height: 600px !important;
-          }
-          
-          .product-title {
-            font-size: 2rem !important;
-          }
-          
-          .current-price {
-            font-size: 1.9rem !important;
-          }
-          
-          .related-grid {
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
-            gap: 24px !important;
-          }
-        }
-
-        /* ✅ RELATED PRODUCTS: Responsive Square Images */
-        @media (max-width: 479px) {
-          .related-product-image-container {
-            aspect-ratio: 1 !important;
-            height: auto !important;
-          }
-          
-          .related-product-image {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover !important;
-          }
-        }
-
-        @media (min-width: 480px) {
-          .related-product-image-container {
-            aspect-ratio: 1 !important;
-            overflow: hidden !important;
-          }
-          
-          .related-product-image {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover !important;
-          }
-        }
-
-        /* ✅ HOVER EFFECTS: Desktop Only */
-        @media (min-width: 1024px) {
-          .related-product-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-          }
-          
-          .main-image-container:hover .main-image {
-            transform: scale(1.02);
-          }
-          
-          .add-to-cart-button:hover,
-          .buy-now-button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          }
-        }
-
-        /* ✅ TOUCH INTERACTIONS: Mobile & Tablet */
-        @media (max-width: 1023px) {
-          .related-product-card:active {
-            transform: scale(0.98);
-          }
-          
-          .thumbnail:active {
-            transform: scale(0.95);
-          }
-          
-          .add-to-cart-button:active,
-          .buy-now-button:active {
-            transform: scale(0.98);
-          }
-          
-          .wishlist-button:active,
-          .share-button:active {
-            transform: scale(0.97);
-          }
-        }
-
-        /* ✅ ACCESSIBILITY: Focus States */
-        @media (prefers-reduced-motion: no-preference) {
-          .add-to-cart-button,
-          .buy-now-button,
-          .wishlist-button,
-          .share-button {
-            transition: all 0.2s ease;
-          }
-          
-          .related-product-card {
-            transition: all 0.3s ease;
-          }
-        }
-
-        /* ✅ HIGH DPI DISPLAYS */
-        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-          .main-image,
-          .related-product-image {
-            image-rendering: -webkit-optimize-contrast;
-          }
-        }
-
-        /* ✅ PRINT STYLES */
-        @media print {
-          .breadcrumb-container,
-          .back-button,
-          .action-buttons,
-          .secondary-actions,
-          .related-container {
-            display: none !important;
-          }
-          
-          .product-container {
-            grid-template-columns: 1fr !important;
-            gap: 20px !important;
-            page-break-inside: avoid;
-          }
-        }
-      `}</style>
     </div>
   );
 }
@@ -1994,7 +1534,7 @@ const styles = {
 
   mainImageWrapper: {
     width: '100%',          // take full container width
-    maxWidth: '550px',  
+    maxWidth: '550px',
     aspectRatio: '1 / 1',   // maintain square ratio
     backgroundColor: '#FDFFF0',
     display: 'flex',
@@ -2010,6 +1550,18 @@ const styles = {
     height: '100%',
     objectFit: 'contain',   // ✅ Show full image
     transition: 'transform 0.3s ease, opacity 0.3s ease',
+  },
+  imageLoader: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+    gap: '10px'
   },
 
   optimizedBadge: {
@@ -2605,7 +2157,7 @@ const styles = {
     padding: 'clamp(20px, 4vw, 30px)',
     margin: '30px 0'
   },
-  
+
 
   reviewFormTitle: {
     fontSize: 'clamp(1.1rem, 2.5vw, 1.2rem)',
@@ -2862,8 +2414,8 @@ const styles = {
     position: 'absolute',
     top: '8px',
     right: '8px',
-    width:'25px',
-    height:"25px",
+    width: '25px',
+    height: "25px",
     background: 'rgba(255,255,255,0.85)',
     border: 'none',
     borderRadius: '50%',

@@ -7,7 +7,9 @@ import { useCart } from '../../context/CartContext';
 import WhatsAppButton from '../../../components/common/WhatsAppButton';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
-import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw, ChevronLeft, ChevronRight, Zap, CreditCard } from 'lucide-react';
+import "../../../styles/Keralasellersproductpage.css";
+
+import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw, ChevronLeft, Minus, Plus, ChevronRight, Zap, CreditCard } from 'lucide-react';
 
 // ✅ API configuration - matches your existing backend
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
@@ -126,13 +128,16 @@ function ProductImageGallery({ product }) {
                     )}
 
                     <img
-                        src={isZoomed ? currentImage.large : currentImage.url}
+                        src={currentImage.large}
                         alt={currentImage.alt}
                         className="main-image"
                         style={{
                             ...styles.mainImage,
                             opacity: imageLoaded ? 1 : 0,
-                            transform: isZoomed ? 'scale(1.1)' : 'scale(1)'
+                            transform: isZoomed ? 'scale(1.1)' : 'scale(1)',
+                            width: '100%',
+                            height: 'auto',
+                            objectFit: 'contain'
                         }}
                         onLoad={() => setImageLoaded(true)}
                         onError={(e) => {
@@ -141,76 +146,69 @@ function ProductImageGallery({ product }) {
                         }}
                     />
 
-                    {/* Navigation Arrows - Hidden on mobile */}
-                    {allImages.length > 1 && (
-                        <>
-                            <button
-                                style={{ ...styles.navButton, ...styles.prevButton }}
-                                className="nav-button"
-                                onClick={handlePrevious}
-                                aria-label="Previous image"
-                            >
-                                <ChevronLeft size={20} />
-                            </button>
-                            <button
-                                style={{ ...styles.navButton, ...styles.nextButton }}
-                                className="nav-button"
-                                onClick={handleNext}
-                                aria-label="Next image"
-                            >
-                                <ChevronRight size={20} />
-                            </button>
-                        </>
-                    )}
-
-                    {/* Image Counter */}
-                    {allImages.length > 1 && (
-                        <div style={styles.imageCounter} className="image-counter">
-                            {selectedImageIndex + 1} / {allImages.length}
-                        </div>
-                    )}
-
                     {/* Optimized Badge */}
                     {product.image_metadata?.optimized && (
-                        <div style={styles.optimizedBadge} className="optimized-badge" title="Fast loading optimized image">
+                        <div
+                            style={styles.optimizedBadge}
+                            className="optimized-badge"
+                            title="Fast loading optimized image"
+                        >
                             <Zap size={12} />
                         </div>
                     )}
 
-                    {/* Zoom hint */}
-                    <div style={styles.zoomHint} className="zoom-hint">
-                        🖱️ Hover to zoom • 📱 Tap to select
-                    </div>
                 </div>
             </div>
 
             {/* Thumbnail Selector */}
             {allImages.length > 1 && (
-                <div style={styles.thumbnailContainer}>
-                    <div style={styles.thumbnailScroller} className="thumbnail-scroller">
-                        {allImages.map((image, index) => (
-                            <div
-                                key={index}
-                                style={{
-                                    ...styles.thumbnailWrapper,
-                                    ...(index === selectedImageIndex ? styles.activeThumbnail : {})
-                                }}
-                                className="thumbnail-wrapper"
-                                onClick={() => handleThumbnailClick(index)}
-                            >
-                                <img
-                                    src={image.thumbnail}
-                                    alt={image.alt}
-                                    style={styles.thumbnailImage}
-                                    onError={(e) => {
-                                        e.target.src = 'https://placehold.co/80x80?text=No+Image';
+                <div style={styles.thumbnailRowWrapper}>
+                    {/* Prev Arrow */}
+                    <button
+                        style={styles.thumbnailNavButtonLeft}
+                        onClick={handlePrevious}
+                        aria-label="Previous image"
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+
+                    {/* Thumbnails */}
+                    <div style={styles.thumbnailContainer}>
+                        <div style={styles.thumbnailScroller} className="thumbnail-scroller">
+                            {allImages.map((image, index) => (
+                                <div
+                                    key={index}
+                                    style={{
+                                        ...styles.thumbnailWrapper,
+                                        ...(index === selectedImageIndex ? styles.activeThumbnail : {}),
                                     }}
-                                />
-                            </div>
-                        ))}
+                                    className="thumbnail-wrapper"
+                                    onClick={() => handleThumbnailClick(index)}
+                                >
+                                    <img
+                                        src={image.thumbnail}
+                                        alt={image.alt}
+                                        style={styles.thumbnailImage}
+                                        onError={(e) => {
+                                            e.target.src = 'https://placehold.co/80x80?text=No+Image';
+                                        }}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </div>
+
+                    {/* Next Arrow */}
+                    <button
+                        style={styles.thumbnailNavButtonRight}
+                        onClick={handleNext}
+                        aria-label="Next image"
+                    >
+                        <ChevronRight size={20} />
+                    </button>
                 </div>
             )}
+
         </div>
     );
 }
@@ -482,6 +480,7 @@ function WishlistButton({ productId, isLoggedIn, router }) {
 
     return (
         <button
+            className='keralasellersproductsharebtn'
             style={{
                 ...styles.secondaryButton,
                 ...(isWishlisted ? styles.wishlistActive : {}),
@@ -495,11 +494,17 @@ function WishlistButton({ productId, isLoggedIn, router }) {
             {isWishlistLoading ? (
                 <RefreshCw size={16} className="spinning" />
             ) : (
-                <Heart
-                    size={16}
-                    fill={isWishlisted ? '#ef4444' : 'none'}
-                    color={isWishlisted ? '#ef4444' : '#6b7280'}
-                />
+                <>
+                    <Heart
+                        size={16}
+                        fill={isWishlisted ? '#ef4444' : 'none'}
+                        color={isWishlisted ? '#ef4444' : '#1a4845'}
+                    />
+                    <span style={{ marginLeft: '8px', fontWeight: 500 }}>
+                        {isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                    </span>
+                </>
+
             )}
         </button>
     );
@@ -531,6 +536,8 @@ export default function ProductDetailPage() {
     const [reviewsLoading, setReviewsLoading] = useState(false);
     const [addingToCart, setAddingToCart] = useState(false);
     const [buyingNow, setBuyingNow] = useState(false);
+    const [quantity, setQuantity] = useState(1);
+
 
     const { productId } = useParams();
     const router = useRouter();
@@ -633,6 +640,14 @@ export default function ProductDetailPage() {
     const handleReviewSubmitted = () => {
         fetchReviews();
         fetchPageData();
+    };
+
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            minimumFractionDigits: 0
+        }).format(price);
     };
 
     const handleAddToCart = async () => {
@@ -839,6 +854,7 @@ export default function ProductDetailPage() {
         }
     };
 
+
     // ✅ Share functionality
     const handleShare = async () => {
         const shareData = {
@@ -913,72 +929,75 @@ export default function ProductDetailPage() {
             <Header />
 
             {/* Product Details Section */}
-            <div style={styles.container} className="container">
-                <div style={styles.productLayout} className="product-layout">
-                    {/* ✅ ENHANCED: Image Gallery Component */}
-                    <div className="image-gallery">
+            <div style={styles.container}>
+                <div className='keralasellersproductpageproductcontainer' style={styles.productLayout}>
+                    {/* Left: Image Gallery */}
+                    <div style={styles.imageGallery}>
                         <ProductImageGallery product={product} />
                     </div>
 
-                    <div style={styles.detailsContainer} className="details-container">
-                        <h1 style={styles.name} className="product-name">{product.name}</h1>
-                        {product.model_name && <p style={styles.model}>Model: {product.model_name}</p>}
-
-                        <StarRating
-                            rating={product.average_rating || 0}
-                            reviewCount={product.review_count || 0}
-                        />
-
-                        {product.description && <p style={styles.description}>{product.description}</p>}
-
-                        <div style={styles.priceContainer} className="price-container">
-                            <span style={styles.price} className="product-price">₹{product.price}</span>
-                            {product.mrp && product.mrp > product.price && (
-                                <>
-                                    <span style={styles.mrp} className="product-mrp">MRP: ₹{product.mrp}</span>
-                                    <span style={styles.discount}>
-                                        {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% off
-                                    </span>
-                                </>
-                            )}
-                        </div>
-
-                        <div style={styles.stockContainer} className="stock-container">
-                            <p style={{
-                                ...styles.stock,
-                                color: product.online_stock > 0 ? '#059669' : '#dc2626'
-                            }}>
-                                {product.online_stock > 0
-                                    ? `✓ ${product.online_stock} available`
-                                    : '✗ Out of Stock'
-                                }
-                            </p>
-                        </div>
-
-                        {/* Features */}
-                        <div style={styles.features} className="features">
-                            <div style={styles.feature}>
-                                <Truck size={16} />
-                                <span>Free Delivery</span>
-                            </div>
-                            <div style={styles.feature}>
-                                <Shield size={16} />
-                                <span>Secure Payment</span>
-                            </div>
-                            {product.image_metadata?.optimized && (
-                                <div style={styles.feature}>
-                                    <Zap size={16} />
-                                    <span>Fast Loading</span>
+                    {/* Right: Product Details */}
+                    <div style={styles.detailsContainer}>
+                        <div className="keralasellersproductdetails-top">
+                            <div className="keralasellersproductdetails-left">
+                                <h1 className='keralasellersproducttitle' style={styles.name}>{product.name}</h1>
+                                {product.model_name && (
+                                    <p className='keralasellersproductmodel' style={styles.model}>
+                                        Model: {product.model_name}
+                                    </p>
+                                )}
+                                <div style={styles.priceContainer}>
+                                    <span className='keralasellersproductprice' style={styles.price}>₹{product.price}</span>
+                                    {product.mrp && product.mrp > product.price && (
+                                        <>
+                                            <span className='keralasellersproductmrp' style={styles.mrp}>MRP: ₹{product.mrp}</span>
+                                            <span style={styles.discount}>
+                                                {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% off
+                                            </span>
+                                        </>
+                                    )}
                                 </div>
-                            )}
+                            </div>
+
+                            <div className="keralasellersproductdetails-right">
+                                <StarRating rating={product.average_rating || 0} reviewCount={product.review_count || 0} />
+                                <p className='keralasellersproductstock' style={{ ...styles.stock, color: product.online_stock > 0 ? '#059669' : '#dc2626' }}>
+                                    {product.online_stock > 0 ? `✓ ${product.online_stock} available` : '✗ Out of Stock'}
+                                </p>
+                                <div className='keralasellersproductquantity' style={styles.quantityContainer}>
+                                    <label style={styles.quantityLabel}>Quantity:</label>
+                                    <div style={styles.quantitySelector}>
+                                        <button
+                                            className='keralasellersproductqntybtn'
+                                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                            style={styles.quantityButton}
+                                            disabled={quantity <= 1}
+                                        >
+                                            <Minus size={16} />
+                                        </button>
+                                        <span className='keralasellersproductqntyvalue' style={styles.quantityValue}>{quantity}</span>
+                                        <button
+                                            className='keralasellersproductqntybtn'
+                                            onClick={() => setQuantity(Math.min(product.online_stock, quantity + 1))}
+                                            style={styles.quantityButton}
+                                            disabled={quantity >= product.online_stock}
+                                        >
+                                            <Plus size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* ✅ ENHANCED: Action Buttons with Working Buy Now */}
-                        <div style={styles.actionButtons} className="action-buttons">
+
+
+
+                        <div style={styles.actionButtons} className='keralasellersproductactnbtngap'>
                             <button
+                                className='keralasellersproductaddcartbtn'
                                 style={{
                                     ...styles.addToCartButton,
-                                    backgroundColor: product.online_stock === 0 ? '#6c757d' : (addingToCart ? '#28a745' : '#3b82f6'),
+                                    backgroundColor: product.online_stock === 0 ? '#6c757d' : (addingToCart ? '#28a745' : 'rgb(5, 150, 105)'),
                                     cursor: product.online_stock === 0 ? 'not-allowed' : 'pointer'
                                 }}
                                 disabled={product.online_stock === 0 || addingToCart}
@@ -1002,6 +1021,7 @@ export default function ProductDetailPage() {
 
                             {/* ✅ WORKING: Buy Now Button with Your Backend */}
                             <button
+                                className='keralasellersproductaddcartbtn'
                                 style={{
                                     ...styles.buyNowButton,
                                     backgroundColor: product.online_stock === 0 ? '#6c757d' : (buyingNow ? '#28a745' : '#ff6b35'),
@@ -1020,13 +1040,22 @@ export default function ProductDetailPage() {
                                     ) : (
                                         <>
                                             <CreditCard size={18} />
-                                            {product.online_stock > 0 ? 'Buy Now' : 'Out of Stock'}
+                                            <span style={{ marginLeft: '8px', fontWeight: 500 }}>
+                                                {product.online_stock > 0 ? 'Buy Now' : 'Out of Stock'}
+                                            </span>
+
+                                            {product.online_stock > 0 && (
+                                                <span style={{ marginLeft: '8px', color: 'white', fontWeight: 600 }}>
+                                                    {formatPrice(product.price * quantity)}
+                                                </span>
+                                            )}
                                         </>
+
                                     )}
                                 </span>
                             </button>
 
-                            <div style={styles.secondaryActions} className="secondary-actions">
+                            <div style={styles.secondaryActions} className="keralasellerssecondary-actions">
                                 {/* ✅ Working Wishlist Button */}
                                 <WishlistButton
                                     productId={productId}
@@ -1036,386 +1065,108 @@ export default function ProductDetailPage() {
 
                                 {/* ✅ Working Share Button */}
                                 <button
+                                    className='keralasellersproductsharebtn'
                                     style={styles.secondaryButton}
                                     onClick={handleShare}
                                     title="Share this product"
                                 >
                                     <Share2 size={16} />
+                                    <span style={{ marginLeft: '8px' }}>Share Product</span>
                                 </button>
                             </div>
+                            {/* Product Features */}
+                            <div style={styles.features}>
+                                <div style={styles.feature}>
+                                    <Truck size={16} />
+                                    <span>Free delivery across Kerala</span>
+                                </div>
+                                <div style={styles.feature}>
+                                    <Shield size={16} />
+                                    <span>Genuine product guarantee</span>
+                                </div>
+                                <div style={styles.feature}>
+                                    <RefreshCw size={16} />
+                                    <span>Easy returns & exchanges</span>
+                                </div>
+                            </div>
                         </div>
+
                     </div>
                 </div>
             </div>
 
-            {/* Reviews Section */}
-            <div style={styles.reviewsSection}>
-                <div style={styles.reviewsHeader}>
-                    <h2>Customer Reviews</h2>
-                    <div style={styles.reviewsSummary}>
-                        <StarRating
-                            rating={product.average_rating || 0}
-                            reviewCount={reviews.length}
-                        />
-                    </div>
-                </div>
 
-                {buyerStatus.isLoggedIn ? (
-                    canReview ? (
-                        <ReviewForm
-                            productId={productId}
-                            onReviewSubmitted={handleReviewSubmitted}
-                        />
-                    ) : (
-                        <div style={styles.cannotReviewMessage}>
-                            <p>You can only review products you have purchased and received.</p>
+
+            <div style={styles.pageContainerInner}>
+                {product.description && (
+                    <div style={styles.descriptionContainer}>
+                        <h2 className='keralasellersproductpagedescriptiontitle' style={styles.sectionTitle}>Product Description</h2>
+                        <div className='keralasellersproductpagedescription' style={styles.description}>
+                            <p>{product.description}</p>
                         </div>
-                    )
-                ) : (
-                    <div style={styles.loginPrompt}>
-                        <p>
-                            Please <a href="/login/buyer" style={styles.loginLink}>login</a> to write a review
-                        </p>
                     </div>
                 )}
 
-                <div style={styles.reviewsList}>
-                    <h3>All Reviews ({reviews.length})</h3>
+                {/* Reviews Section */}
+                <div style={styles.reviewsSection}>
+                    <div style={styles.reviewsHeader}>
+                        <h2 className='keralasellersproductpagedescriptiontitle'>Customer Reviews</h2>
+                        <div style={styles.reviewsSummary}>
+                            <StarRating
+                                rating={product.average_rating || 0}
+                                reviewCount={reviews.length}
+                            />
+                        </div>
+                    </div>
 
-                    {reviewsLoading ? (
-                        <div style={styles.loadingText}>
-                            <div style={styles.spinner}></div>
-                            <span>Loading reviews...</span>
-                        </div>
-                    ) : reviews.length > 0 ? (
-                        <div style={styles.reviewsContainer}>
-                            {reviews.map(review => (
-                                <ReviewItem key={review.id} review={review} />
-                            ))}
-                        </div>
+                    {buyerStatus.isLoggedIn ? (
+                        canReview ? (
+                            <ReviewForm
+                                productId={productId}
+                                onReviewSubmitted={handleReviewSubmitted}
+                            />
+                        ) : (
+                            <div style={styles.cannotReviewMessage}>
+                                <p className='keralasellersproductpagedescription'>You can only review products you have purchased and received.</p>
+                            </div>
+                        )
                     ) : (
-                        <div style={styles.noReviews}>
-                            <p>No reviews yet. Be the first to review this product!</p>
+                        <div style={styles.loginPrompt}>
+                            <p className='keralasellersproductpagedescription'>
+                                Please <a href="/login/buyer" style={styles.loginLink}>login</a> to write a review
+                            </p>
                         </div>
                     )}
+
+                    <div style={styles.reviewsList}>
+                        <h3 className='keralasellersproductpagedescriptiontitle'>All Reviews ({reviews.length})</h3>
+
+                        {reviewsLoading ? (
+                            <div style={styles.loadingText}>
+                                <div style={styles.spinner}></div>
+                                <span className='keralasellersproductpagedescription'>Loading reviews...</span>
+                            </div>
+                        ) : reviews.length > 0 ? (
+                            <div style={styles.reviewsContainer}>
+                                {reviews.map(review => (
+                                    <ReviewItem key={review.id} review={review} />
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={styles.noReviews}>
+                                <p className='keralasellersproductpagedescription'>No reviews yet. Be the first to review this product!</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
-
             {product.store?.whatsapp_number && (
                 <WhatsAppButton phoneNumber={product.store.whatsapp_number} />
             )}
 
             <Footer />
 
-            {/* ✅ Enhanced CSS with Mobile Square Images */}
-            {/* ✅ Enhanced CSS with Smaller Mobile Images for Better UI */}
-            <style jsx>{`
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    
-    .spinning {
-        animation: spin 1s linear infinite;
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
 
-    /* ✅ MOBILE: Smaller Square Images + Better Proportions */
-    @media (max-width: 768px) {
-        .container {
-            padding: 15px !important;
-        }
-        
-        .product-layout {
-            grid-template-columns: 1fr !important;
-            gap: 25px !important;
-            margin-bottom: 20px !important;
-        }
-        
-        /* ✅ MOBILE: Image Gallery - Full width at top */
-        .image-gallery {
-            order: 1;
-            width: 100% !important;
-            margin-bottom: 15px !important;
-        }
-        
-        /* ✅ MOBILE: Smaller Square Image Container - Better proportions */
-        .main-image-wrapper {
-            width: 100% !important;
-            height: 65vw !important; /* Smaller than before (was 80vw) */
-            max-height: 320px !important; /* Smaller max height (was 400px) */
-            min-height: 250px !important; /* Smaller min height (was 300px) */
-            aspect-ratio: 1 / 1 !important;
-            margin: 0 auto !important;
-        }
-        
-        /* ✅ MOBILE: Square Image - Cover to fill square */
-        .main-image {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover !important;
-            max-height: none !important;
-        }
-        
-        /* ✅ MOBILE: Details section below image - Better spacing */
-        .details-container {
-            order: 2;
-            padding: 20px 15px !important;
-            gap: 16px !important;
-            background: white;
-            border-radius: 12px;
-            margin-top: 5px !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-        }
-        
-        /* ✅ MOBILE: Hide navigation arrows */
-        .nav-button {
-            display: none !important;
-        }
-        
-        /* ✅ MOBILE: Smaller thumbnails */
-        .thumbnail-wrapper {
-            min-width: 55px !important;
-            width: 55px !important;
-            height: 55px !important;
-        }
-        
-        /* ✅ MOBILE: Better thumbnail scrolling */
-        .thumbnail-scroller {
-            gap: 6px !important;
-            padding: 8px 5px !important;
-            justify-content: center !important;
-        }
-        
-        /* ✅ MOBILE: Responsive text sizes */
-        .product-name {
-            font-size: 1.3rem !important;
-            line-height: 1.3 !important;
-            margin-bottom: 8px !important;
-        }
-        
-        .product-price {
-            font-size: 1.5rem !important;
-        }
-        
-        .product-mrp {
-            font-size: 1rem !important;
-        }
-        
-        /* ✅ MOBILE: Action buttons with better spacing */
-        .action-buttons {
-            gap: 12px !important;
-            margin-top: 18px !important;
-        }
-        
-        .action-buttons button {
-            padding: 16px 24px !important;
-            font-size: 0.95rem !important;
-            font-weight: 600 !important;
-        }
-        
-        /* ✅ MOBILE: Secondary actions spacing */
-        .secondary-actions {
-            justify-content: center !important;
-            gap: 10px !important;
-            margin-top: 8px !important;
-        }
-        
-        /* ✅ MOBILE: Features section */
-        .features {
-            flex-wrap: wrap !important;
-            gap: 12px !important;
-            justify-content: center !important;
-        }
-        
-        /* ✅ MOBILE: Stock container */
-        .stock-container {
-            text-align: center !important;
-            padding: 8px !important;
-            background: rgba(5, 150, 105, 0.1) !important;
-            border-radius: 8px !important;
-        }
-        
-        /* ✅ MOBILE: Price container */
-        .price-container {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 6px !important;
-            padding: 12px 0 !important;
-        }
-        
-        /* ✅ MOBILE: Image counter positioning */
-        .image-counter {
-            font-size: 0.7rem !important;
-            padding: 3px 6px !important;
-            bottom: 8px !important;
-            right: 8px !important;
-        }
-        
-        /* ✅ MOBILE: Zoom hint */
-        .zoom-hint {
-            font-size: 0.6rem !important;
-            padding: 2px 6px !important;
-            bottom: 8px !important;
-            left: 8px !important;
-        }
-        
-        /* ✅ MOBILE: Optimized badge */
-        .optimized-badge {
-            width: 18px !important;
-            height: 18px !important;
-            top: 8px !important;
-            right: 8px !important;
-        }
-    }
-
-    /* ✅ MOBILE: Small screens - Even more compact and proportional */
-    @media (max-width: 480px) {
-        .container {
-            padding: 10px !important;
-        }
-        
-        /* ✅ SMALL MOBILE: Smaller square image - More proportional */
-        .main-image-wrapper {
-            height: 60vw !important; /* Even smaller (was 85vw) */
-            max-height: 280px !important; /* Smaller max (was 350px) */
-            min-height: 220px !important; /* Smaller min (was 280px) */
-            margin: 0 auto !important;
-        }
-        
-        .details-container {
-            padding: 15px 12px !important;
-            gap: 14px !important;
-            margin-top: 8px !important;
-        }
-        
-        .product-name {
-            font-size: 1.2rem !important;
-        }
-        
-        .product-price {
-            font-size: 1.4rem !important;
-        }
-        
-        .action-buttons button {
-            padding: 15px 20px !important;
-            font-size: 0.9rem !important;
-        }
-        
-        .thumbnail-wrapper {
-            min-width: 45px !important;
-            width: 45px !important;
-            height: 45px !important;
-        }
-        
-        .thumbnail-scroller {
-            gap: 4px !important;
-            padding: 5px 3px !important;
-        }
-    }
-
-    /* ✅ MOBILE: Very small screens - Ultra compact */
-    @media (max-width: 360px) {
-        .main-image-wrapper {
-            height: 55vw !important;
-            max-height: 250px !important;
-            min-height: 200px !important;
-        }
-        
-        .details-container {
-            padding: 12px 10px !important;
-            gap: 12px !important;
-        }
-        
-        .product-name {
-            font-size: 1.1rem !important;
-        }
-        
-        .product-price {
-            font-size: 1.3rem !important;
-        }
-        
-        .action-buttons button {
-            padding: 14px 18px !important;
-            font-size: 0.85rem !important;
-        }
-    }
-
-    /* ✅ DESKTOP: Keep large screen styles unchanged */
-    @media (min-width: 769px) {
-        .product-layout {
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-        }
-        
-        .main-image-wrapper {
-            min-height: 300px;
-            max-height: 600px;
-            height: auto;
-            aspect-ratio: unset;
-        }
-        
-        .main-image {
-            width: 100%;
-            height: auto;
-            max-height: 600px;
-            object-fit: contain;
-        }
-        
-        .details-container {
-            order: unset;
-            padding: 0;
-            margin-top: 0;
-            background: transparent;
-            box-shadow: none;
-        }
-        
-        .nav-button {
-            display: flex !important;
-        }
-    }
-
-    /* ✅ MOBILE: Touch interactions */
-    @media (max-width: 768px) {
-        .main-image {
-            cursor: default !important;
-        }
-        
-        .thumbnail-wrapper {
-            cursor: pointer;
-            -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
-        }
-        
-        .thumbnail-wrapper:active {
-            transform: scale(0.95);
-        }
-    }
-
-    /* ✅ MOBILE: Smooth scrolling for thumbnails */
-    .thumbnail-scroller {
-        -webkit-overflow-scrolling: touch;
-        scroll-behavior: smooth;
-    }
-
-    /* ✅ SCROLLBAR STYLING */
-    .thumbnail-scroller::-webkit-scrollbar {
-        height: 4px;
-    }
-    
-    .thumbnail-scroller::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 2px;
-    }
-    
-    .thumbnail-scroller::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 2px;
-    }
-`}</style>
 
         </div>
     );
@@ -1431,12 +1182,20 @@ const styles = {
     },
     container: {
         width: '100%',
-        maxWidth: '1200px', // reduced for better balance
+        maxWidth: '1200px',
         margin: '0 auto',
-        padding: 'clamp(16px, 3vw, 32px)', // dynamic padding
-        paddingTop: '50px',
+        padding: '0 20px', // reduce top/bottom padding
         boxSizing: 'border-box',
     },
+
+    pageContainerInner: {
+        width: '100%',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '0 20px', // ✅ adds side spacing
+        boxSizing: 'border-box',
+    },
+
 
     loadingContainer: {
         display: 'flex',
@@ -1481,48 +1240,61 @@ const styles = {
 
     productLayout: {
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
         gap: '40px',
-        marginBottom: '40px'
+        marginBottom: '40px',
+        backgroundColor: 'rgb(253, 255, 240)',
+        padding: '32px',
+        borderRadius: '12px',
+        boxSizing: 'border-box',
     },
+
 
     // ✅ Image Gallery Styles
     imageGallery: {
         display: 'flex',
         flexDirection: 'column',
-        gap: '15px',
-        width: '100%'
+        alignItems: 'center',
+        width: '100%',
     },
 
     mainImageContainer: {
-        position: 'relative',
+        display: 'flex',
+        justifyContent: 'center',
         width: '100%',
-        margin: '0 auto'
     },
 
     mainImageWrapper: {
-        position: 'relative',
-        width: '100%',
-        minHeight: '300px',
-        maxHeight: '600px',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        border: '1px solid #e5e7eb',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        backgroundColor: '#f9fafb',
+        width: '100%',          // take full container width
+        maxWidth: '550px',
+        aspectRatio: '1 / 1',   // maintain square ratio
+        backgroundColor: '#FDFFF0',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        overflow: 'hidden',
+        borderRadius: '12px',
+        position: 'relative',
     },
 
     mainImage: {
         width: '100%',
-        height: 'auto',
-        maxHeight: '600px',
-        objectFit: 'contain',
-        transition: 'all 0.3s ease',
-        cursor: 'zoom-in',
-        touchAction: 'manipulation'
+        height: '100%',
+        objectFit: 'contain',   // ✅ Show full image
+        transition: 'transform 0.3s ease, opacity 0.3s ease',
+    },
+    optimizedBadge: {
+        position: 'absolute',
+        top: '10px',
+        right: '10px',
+        background: '#4CAF50',
+        color: 'white',
+        padding: '3px 6px',
+        borderRadius: '4px',
+        fontSize: '10px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '3px',
     },
 
     imageLoader: {
@@ -1583,22 +1355,6 @@ const styles = {
         zIndex: 2
     },
 
-    optimizedBadge: {
-        position: 'absolute',
-        top: '10px',
-        right: '10px',
-        background: 'rgba(34, 197, 94, 0.9)',
-        color: 'white',
-        borderRadius: '50%',
-        width: '24px',
-        height: '24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '10px',
-        zIndex: 2
-    },
-
     zoomHint: {
         position: 'absolute',
         bottom: '10px',
@@ -1611,64 +1367,108 @@ const styles = {
         opacity: 0.6
     },
 
+    thumbnailRowWrapper: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        marginTop: '12px',
+        position: 'relative',
+    },
+
     thumbnailContainer: {
-        width: '100%',
-        margin: '0 auto'
+        overflowX: 'auto',
+        flex: 1,
+        maxWidth: '300px', // adjust width to show ~4 thumbnails
+        display: 'flex',
+        justifyContent: 'center',
     },
 
     thumbnailScroller: {
         display: 'flex',
         gap: '8px',
-        overflowX: 'auto',
-        padding: '5px',
-        scrollbarWidth: 'thin',
-        WebkitOverflowScrolling: 'touch',
-        justifyContent: 'flex-start'
+        padding: '5px 0',
+        scrollbarWidth: 'none', // Firefox
+    },
+
+    thumbnailNavButtonLeft: {
+        backgroundColor: '#FDFFF0',
+        color: 'black',
+        border: 'none',
+        borderRadius: '50%',
+        width: '32px',
+        height: '32px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        flexShrink: 0,
+    },
+
+    thumbnailNavButtonRight: {
+        backgroundColor: '#FDFFF0',
+        color: 'black',
+        border: 'none',
+        borderRadius: '50%',
+        width: '32px',
+        height: '32px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        flexShrink: 0,
     },
 
     thumbnailWrapper: {
-        minWidth: '70px',
-        width: '70px',
-        height: '70px',
-        borderRadius: '8px',
-        border: '2px solid transparent',
+        flex: '0 0 calc(25% - 7.5px)', // 4 thumbnails visible
+        borderRadius: '6px',
         overflow: 'hidden',
         cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        backgroundColor: '#f9fafb',
-        flexShrink: 0
+        border: '2px solid transparent',
+        flexShrink: 0,
+    },
+    activeThumbnail: {
+        border: '2px solid #007bff',
     },
 
-    activeThumbnail: {
-        borderColor: '#3b82f6',
-        boxShadow: '0 0 0 1px #3b82f6',
-        transform: 'scale(1.05)'
+    thumbnail: {
+        width: '60px',
+        height: '60px',
+        borderRadius: '6px',
+        objectFit: 'cover',
+        border: '2px solid transparent',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        flexShrink: 0
     },
 
     thumbnailImage: {
         width: '100%',
-        height: '100%',
-        objectFit: 'cover'
+        height: 'auto',
+        objectFit: 'cover',
+        display: 'block',
     },
+
 
     detailsContainer: {
         display: 'flex',
         flexDirection: 'column',
-        gap: '20px'
+        gap: '15px',
+        justifyContent: "center",
     },
 
     name: {
-        fontSize: '2rem',
-        margin: 0,
-        color: '#1f2937',
+        fontSize: 'clamp(1.2rem, 4vw, 2rem)',
         fontWeight: '700',
+        color: '#1f2937',
+        margin: 0,
         lineHeight: '1.2'
     },
 
     model: {
+        fontSize: '1rem',
         color: '#6b7280',
-        margin: 0,
-        fontSize: '1.1rem'
+        margin: 0
     },
 
     starContainer: {
@@ -1694,22 +1494,15 @@ const styles = {
         fontSize: '0.9rem'
     },
 
-    description: {
-        lineHeight: '1.6',
-        margin: 0,
-        color: '#374151',
-        fontSize: '1rem'
-    },
-
     priceContainer: {
         display: 'flex',
         alignItems: 'baseline',
-        gap: '15px',
+        gap: '12px',
         flexWrap: 'wrap'
     },
 
     price: {
-        fontSize: '2rem',
+        fontSize: '25px',
         fontWeight: '700',
         color: '#059669'
     },
@@ -1717,15 +1510,15 @@ const styles = {
     mrp: {
         textDecoration: 'line-through',
         color: '#9ca3af',
-        fontSize: '1.2rem'
+        fontSize: '16px'
     },
 
     discount: {
-        backgroundColor: '#dc2626',
+        backgroundColor: '#059669',
         color: 'white',
         padding: '4px 8px',
         borderRadius: '4px',
-        fontSize: '0.8rem',
+        fontSize: '14px',
         fontWeight: '600'
     },
 
@@ -1736,23 +1529,9 @@ const styles = {
     stock: {
         fontWeight: '600',
         margin: 0,
-        fontSize: '1rem'
+        fontSize: '14px'
     },
 
-    features: {
-        display: 'flex',
-        gap: '20px',
-        flexWrap: 'wrap'
-    },
-
-    feature: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        color: '#059669',
-        fontSize: '0.9rem',
-        fontWeight: '500'
-    },
 
     actionButtons: {
         display: 'flex',
@@ -1762,34 +1541,39 @@ const styles = {
 
     addToCartButton: {
         width: '100%',
-        padding: '16px 24px',
-        backgroundColor: '#3b82f6',
+        padding: '14px 24px',
+        backgroundColor: 'rgb(5, 150, 105)',
         color: 'white',
         border: 'none',
         borderRadius: '8px',
-        fontSize: '1.1rem',
+        fontSize: '16px',
         fontWeight: '600',
         cursor: 'pointer',
         transition: 'all 0.3s ease',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        gap: '8px',
+        minHeight: '48px'
     },
 
     buyNowButton: {
         width: '100%',
-        padding: '16px 24px',
+        padding: '14px 24px',
         backgroundColor: '#ff6b35',
         color: 'white',
         border: 'none',
         borderRadius: '8px',
-        fontSize: '1.1rem',
+        fontSize: '16px',
         fontWeight: '600',
         cursor: 'pointer',
         transition: 'all 0.3s ease',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        gap: '8px',
+        minHeight: '48px'
+
     },
 
     buttonContent: {
@@ -1800,23 +1584,27 @@ const styles = {
 
     secondaryActions: {
         display: 'flex',
-        gap: '8px',
-        justifyContent: 'center'
+        gap: '12px',
+        justifyContent: 'space-between', // spread buttons across full width
+        width: '100%',                  // full container width
+        marginTop: '2px'
     },
 
+
     secondaryButton: {
-        width: '48px',
+        flex: 1,                  // each button takes equal space
         height: '48px',
-        backgroundColor: 'white',
-        border: '1px solid #e5e7eb',
+        backgroundColor: '#FDFFF0',
+        border: '1px solid #1a4845',
         borderRadius: '8px',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#6b7280',
+        color: '#1a4845',
         transition: 'all 0.2s ease'
     },
+
 
     wishlistActive: {
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -1830,14 +1618,7 @@ const styles = {
     },
 
     // Reviews Section Styles (keeping existing styles)
-    reviewsSection: {
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '40px 20px',
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-    },
+
 
     reviewsHeader: {
         marginBottom: '30px',
@@ -2041,5 +1822,110 @@ const styles = {
         gap: '10px',
         color: '#6b7280',
         padding: '20px'
-    }
+    },
+    descriptionContainer: {
+        width: '100%',
+        maxWidth: '1200px',
+        margin: '0 auto 40px',
+        backgroundColor: '#FDFFF0',
+        padding: '32px',
+        borderRadius: '12px',
+        border: '1px solid #e5e7eb',
+        boxShadow:
+            '0 -20px 25px -5px rgba(0, 0, 0, 0.2), ' +
+            '0 10px 10px -5px rgba(0, 0, 0, 0.1), ' +
+            '0 -10px 10px -5px rgba(0, 0, 0, 0.1)',
+        boxSizing: 'border-box', // ✅ important
+        overflow: 'hidden',       // ✅ prevents horizontal scroll
+        wordBreak: 'break-word',  // ✅ long text doesn't expand container
+    },
+    reviewsSection: {
+        width: '100%',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '40px 20px',
+        backgroundColor: '#FDFFF0',
+        border: '1px solid #e5e7eb',
+        borderRadius: '12px',
+        boxShadow:
+            '0 -20px 25px -5px rgba(0, 0, 0, 0.2), ' +
+            '0 10px 10px -5px rgba(0, 0, 0, 0.1), ' +
+            '0 -10px 10px -5px rgba(0, 0, 0, 0.1)',
+        boxSizing: 'border-box', // ✅ important
+        overflow: 'hidden',       // ✅ prevents horizontal scroll
+        wordBreak: 'break-word',  // ✅ long text doesn't expand container        boxSizing: 'border-box', // ✅ add
+        overflow: 'hidden'
+    },
+
+    sectionTitle: {
+        fontSize: 'clamp(1.2rem, 3vw, 1.5rem)',
+        fontWeight: '600',
+        color: '#1f2937',
+        marginBottom: '16px'
+    },
+
+    description: {
+        fontSize: '16px',
+        color: '#374151',
+        lineHeight: '1.7'
+    },
+    features: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        padding: '16px',
+        backgroundColor: 'transparent',
+        borderRadius: '8px',
+        border: '1px solid #1a4845'
+    },
+
+    feature: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        fontSize: '14px',
+        color: '#1a4845'
+    },
+    quantityContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        flexWrap: 'wrap'
+    },
+
+    quantityLabel: {
+        fontSize: '14px',
+        fontWeight: '500',
+        color: '#374151'
+    },
+
+    quantitySelector: {
+        display: 'flex',
+        alignItems: 'center',
+        backgroundColor: '#FDFFF0',
+        border: '1px solid #1a4845',
+        borderRadius: '8px',
+        overflow: 'hidden'
+    },
+
+    quantityButton: {
+        padding: '8px 12px',
+        border: 'none',
+        backgroundColor: '#FDFFF0',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#374151',
+        transition: 'background-color 0.2s'
+    },
+
+    quantityValue: {
+        padding: '8px 16px',
+        fontSize: '16px',
+        fontWeight: '500',
+        color: '#1f2937',
+        minWidth: '50px',
+        textAlign: 'center'
+    },
 };

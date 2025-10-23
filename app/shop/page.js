@@ -280,7 +280,7 @@ export default function ShopPage() {
           <div className="ShopmobileDropdown">
             <div className="ShopdropdownContent">
               <div className="ShopdropdownHeader">
-                <h3>Sort By</h3>
+                <h3 className='shopdropdowntitle'>Sort By</h3>
                 <button onClick={() => setShowMobileSort(false)} className="ShopcloseButton">
                   <X size={20} />
                 </button>

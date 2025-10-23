@@ -1,0 +1,457 @@
+/* Save this in your CSS file */
+.thumbnail-scroller {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    /* Firefox */
+    -ms-overflow-style: auto;
+    /* IE 10+ */
+}
+
+.keralasellersproducticon {
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.keralasellersproductpageproductcontainer {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+    gap: 60px !important;
+    /* spacing between image and details columns */
+    margin-bottom: 40px !important;
+    background-color: rgb(253, 255, 240);
+    padding: 32px !important;
+}
+
+.product-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+    /* matches your original style */
+}
+
+.keralasellersproductdetails {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Ensure vertical layout + spacing for details (desktop) */
+.keralasellersproductdetails-top {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.keralasellersproductdetails-left {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.keralasellersproductdetails-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+
+
+
+.thumbnail-scroller::-webkit-scrollbar {
+    height: 6px !important;
+    /* scrollbar thickness */
+}
+
+.thumbnail-scroller::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    border-radius: 3px !important;
+}
+
+.thumbnail-scroller::-webkit-scrollbar-track {
+    background-color: transparent !important;
+}
+
+.keralasellersproductrelatedhearticon {
+    width: 12px !important;
+    height: 12px !important;
+    margin-top: 3px !important;
+}
+
+@media (max-width:991px) {
+    .keralasellersproducttitle {
+        font-size: 22px !important;
+    }
+
+    .keralasellersproductmodel {
+        font-size: 15px !important;
+    }
+
+    .keralasellersproductmrp {
+        font-size: 15px !important;
+    }
+
+    .keralasellersproductproductinfo {
+        gap: 15px !important;
+    }
+
+    .keralasellersproductqntybtn {
+        padding: 6px 12px !important;
+    }
+
+    .keralasellersproductqntyvalue {
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+        min-width: 20px !important;
+    }
+
+    .keralasellersproductaddcartbtn {
+        padding: 12px 22px !important;
+        font-size: 14px !important;
+        min-height: 35px !important;
+    }
+
+    .keralasellersproductprice {
+        font-size: 20px !important;
+    }
+
+    .keralasellersproducticon {
+        width: 17px !important;
+        height: 17px !important;
+    }
+
+    .keralasellersproductsharebtn {
+        font-size: 13px !important;
+        padding: 2px 2px !important;
+        height: 40px !important;
+    }
+
+    .keralasellersproductpagedescriptiontitle {
+        font-size: 20px !important;
+    }
+
+    .keralasellersproductpagedescription {
+        font-size: 15px !important;
+    }
+
+    .keralasellersproductrelatedprod {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .thumbnail-wrapper-container {
+        max-width: 280px !important;
+    }
+
+    .thumbnail-item {
+        height: 60px !important;
+        flex: 0 0 22% !important;
+    }
+
+    .keralasellersproductpageproductcontainer {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+        padding: 16px !important;
+    }
+
+    .keralasellersproductdetails-top {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-items: start;
+    }
+
+    .keralasellersproductdetails-left {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .keralasellersproductdetails-right {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-end;
+        text-align: right;
+    }
+
+    .product-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        margin-top: 20px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .right-column {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        /* ✅ right-align everything inside */
+        text-align: right !important;
+        /* ✅ make text also right-aligned */
+        gap: 8px !important;
+    }
+
+    .left-column {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .action-buttons {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .action-buttons button,
+    .keralasellerssecondary-actions button {
+        width: 100% !important;
+        height: 40px !important;
+    }
+
+    .features {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        margin-top: 10px !important;
+    }
+
+    .keralasellersproductpagedescriptiontitle {
+        font-size: 18px !important;
+    }
+
+    .keralasellersproductpagedescription {
+        font-size: 14px !important;
+    }
+
+    .keralasellersproductrelatedprod {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .thumbnail-wrapper-container {
+        max-width: 220px;
+    }
+
+    .thumbnail-item {
+        height: 50px;
+        flex: 0 0 22%;
+    }
+
+    .keralasellersproducttitle {
+        font-size: 18px !important;
+    }
+
+    .keralasellersproductmodel {
+        font-size: 14px !important;
+    }
+
+    .keralasellersproductproductinfo {
+        gap: 15px !important;
+    }
+
+    .keralasellersproductqntybtn {
+        padding: 6px 12px !important;
+    }
+
+    .keralasellersproductqntyvalue {
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+        min-width: 20px !important;
+    }
+
+    .keralasellersproductaddcartbtn {
+        padding: 8px 22px !important;
+        font-size: 13px !important;
+        min-height: 30px !important;
+    }
+
+    .keralasellersproductprice {
+        font-size: 18px !important;
+    }
+
+    .keralasellersproducticon {
+        width: 17px !important;
+        height: 17px !important;
+    }
+
+    .keralasellersproductsharebtn {
+        font-size: 13px !important;
+        padding: 2px 2px !important;
+        min-height: 30px !important;
+    }
+
+
+
+    .keralasellersproductactnbtngap {
+        gap: 15px !important;
+    }
+
+    .keralasellersproductpagedescriptiontitle {
+        font-size: 18px !important;
+    }
+
+    .keralasellersproductpagedescription {
+        font-size: 14px !important;
+    }
+
+    .keralasellersproductpagestarsicon {
+        scale: 0.8 !important;
+    }
+
+    .keralasellersproductrelatedprod {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+
+    .keralasellersrelatedproductname {
+        font-size: 14px !important;
+    }
+
+    .keralasellersrelatedproductprice {
+        font-size: 14px !important;
+    }
+
+}
+
+
+
+@media (max-width: 480px) {
+    .thumbnail-wrapper-container {
+        max-width: 220px;
+    }
+
+    .thumbnail-item {
+        height: 50px;
+        flex: 0 0 22%;
+    }
+
+    .keralasellersproducttitle {
+        font-size: 17px !important;
+    }
+
+    .keralasellersproductmodel {
+        font-size: 14px !important;
+    }
+
+    .keralasellersproductproductinfo {
+        gap: 15px !important;
+    }
+
+    .keralasellersproductqntybtn {
+        padding: 6px 12px !important;
+    }
+
+    .keralasellersproductqntyvalue {
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+        min-width: 20px !important;
+    }
+
+    .keralasellersproductaddcartbtn {
+        padding: 8px 22px !important;
+        font-size: 13px !important;
+        min-height: 30px !important;
+    }
+
+    .keralasellersproductprice {
+        font-size: 17px !important;
+    }
+
+    .keralasellersproducticon {
+        width: 17px !important;
+        height: 17px !important;
+    }
+
+    .keralasellersproductsharebtn {
+        font-size: 13px !important;
+        padding: 8px 4px !important;
+        min-height: 33px !important;
+    }
+
+    .product-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+
+    .keralasellersproductdetails-top {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        /* spacing between each section */
+    }
+
+    .keralasellersproductdetails-left,
+    .keralasellersproductdetails-right {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        text-align: left !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+
+    .keralasellersproductpagecontainer {
+        padding: 80px 20px 20px !important;
+    }
+
+    .keralasellersproductactnbtngap {
+        gap: 15px !important;
+    }
+
+    .keralasellersproductpagedescriptiontitle {
+        font-size: 17px !important;
+    }
+
+    .keralasellersproductpagedescription {
+        font-size: 13px !important;
+    }
+
+    .keralasellersproductpagestarsicongap {
+        gap: 0px !important;
+    }
+
+    .keralasellersproductpagestarsicon {
+        scale: 0.7 !important;
+    }
+
+    .keralasellersproductreview-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+    }
+
+    .keralasellersproductreview-date {
+        display: block !important;
+        margin-left: 52px !important;
+        /* aligns under name, matching avatar width */
+        margin-top: -2px !important;
+        font-size: 12px !important;
+        opacity: 0.8;
+    }
+
+    .keralasellersproductreviewtext {
+        font-size: 12px !important;
+    }
+
+    .keralasellersproductrelatedprod {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .keralasellersrelatedproductname {
+        font-size: 13px !important;
+    }
+
+    .keralasellersrelatedproductprice {
+        font-size: 13px !important;
+    }
+
+}

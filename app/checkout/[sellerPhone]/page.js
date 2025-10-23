@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
-import { ArrowLeft, CreditCard, User, AlertTriangle } from 'lucide-react';
+import "../../../styles/keralasellerscheckout.css";
+
+import { ArrowLeft, CreditCard, User, AlertTriangle, Package, CheckCircle } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
@@ -22,7 +24,7 @@ const loadRazorpayScript = () => {
 export default function CheckoutPage() {
   const { sellerPhone } = useParams();
   const router = useRouter();
-  
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [cartItems, setCartItems] = useState([]);
@@ -66,7 +68,7 @@ export default function CheckoutPage() {
       // ✅ FIXED: Load cart from localStorage (not context)
       const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
       const sellerCart = multiCarts[sellerPhone] || [];
-      
+
       console.log('📦 Cart loaded for seller:', sellerPhone, sellerCart);
 
       if (!sellerCart || sellerCart.length === 0) {
@@ -128,9 +130,9 @@ export default function CheckoutPage() {
 
     try {
       console.log('💳 Starting online payment...');
-      
+
       const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
-      
+
       // Step 1: Create Razorpay order
       const createOrderResponse = await fetch(`${API_BASE_URL}/user/orders/create-razorpay-order/`, {
         method: 'POST',
@@ -162,7 +164,7 @@ export default function CheckoutPage() {
         order_id: razorpay_order_id,
         handler: async function (response) {
           console.log('💳 Payment completed, verifying...');
-          
+
           try {
             // Step 3: Verify payment and create order
             const verifyResponse = await fetch(`${API_BASE_URL}/user/orders/verify-payment-and-create-order/`, {
@@ -180,16 +182,16 @@ export default function CheckoutPage() {
             });
 
             const verifyData = await verifyResponse.json();
-            
+
             if (verifyResponse.ok && verifyData.success) {
               // ✅ FIXED: Clear cart using sellerPhone
               const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
               delete multiCarts[sellerPhone];
               localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
-              
+
               console.log('✅ Payment verified and order created');
               alert(`Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`);
-              
+
               router.push(`/profile/orders`);
             } else {
               throw new Error(verifyData.error || 'Payment verification failed');
@@ -198,11 +200,11 @@ export default function CheckoutPage() {
             console.error('❌ Payment verification failed:', verifyError);
             alert(`Payment completed but order creation failed: ${verifyError.message}. Please contact support with payment ID: ${response.razorpay_payment_id}`);
           }
-          
+
           setSubmitting(false);
         },
         modal: {
-          ondismiss: function() {
+          ondismiss: function () {
             console.log('💳 Payment modal closed');
             setSubmitting(false);
           }
@@ -218,13 +220,13 @@ export default function CheckoutPage() {
       };
 
       const rzp = new window.Razorpay(options);
-      
+
       rzp.on('payment.failed', function (response) {
         console.error('💳 Payment failed:', response.error);
         alert(`Payment failed: ${response.error.description}`);
         setSubmitting(false);
       });
-      
+
       rzp.open();
       return true;
     } catch (error) {
@@ -242,8 +244,8 @@ export default function CheckoutPage() {
     console.log('- Seller phone:', sellerPhone);
 
     // ✅ FIXED: Enhanced validation
-    if (!shippingInfo.name || !shippingInfo.phone || !shippingInfo.address || 
-        !shippingInfo.city || !shippingInfo.pincode || !paymentMethod) {
+    if (!shippingInfo.name || !shippingInfo.phone || !shippingInfo.address ||
+      !shippingInfo.city || !shippingInfo.pincode || !paymentMethod) {
       alert('Please fill all required fields and select a payment method');
       return;
     }
@@ -287,7 +289,7 @@ export default function CheckoutPage() {
       } else {
         // Handle COD
         const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
-        
+
         const response = await fetch(`${API_BASE_URL}/user/orders/create-order/`, {
           method: 'POST',
           headers: {
@@ -305,7 +307,7 @@ export default function CheckoutPage() {
           const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
           delete multiCarts[sellerPhone];
           localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
-          
+
           alert(`Order placed successfully! Order #${responseData.order_id} 🎉`);
           router.push(`/profile/orders`);
         } else {
@@ -313,7 +315,7 @@ export default function CheckoutPage() {
           console.error('❌ COD Order failed:', responseData);
           alert('Order failed: ' + errorMessage);
         }
-        
+
         setSubmitting(false);
       }
     } catch (error) {
@@ -322,7 +324,7 @@ export default function CheckoutPage() {
         data: error.response?.data,
         message: error.message
       });
-      
+
       const errorMessage = error.response?.data?.error || error.message || 'Network error occurred';
       alert('Order failed: ' + errorMessage);
       setSubmitting(false);
@@ -334,8 +336,8 @@ export default function CheckoutPage() {
       <div>
         <Header />
         <div style={{ padding: '50px', textAlign: 'center' }}>
-          <div style={{fontSize: '18px', marginBottom: '20px'}}>Loading checkout...</div>
-          <div style={{fontSize: '14px', color: '#666'}}>Store: {sellerPhone}</div>
+          <div style={{ fontSize: '18px', marginBottom: '20px' }}>Loading checkout...</div>
+          <div style={{ fontSize: '14px', color: '#666' }}>Store: {sellerPhone}</div>
         </div>
         <Footer />
       </div>
@@ -363,213 +365,272 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#FDFFF0' }}>
       <Header />
-      
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
 
-        <div style={{ marginBottom: '20px' }}>
-          <button 
+      <div style={{
+        backgroundColor: 'rgb(253, 255, 240)',
+        padding: '10px 20px 20px',
+        maxWidth: '1400px',
+        margin: '0 auto'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(14, 69, 30, 0.145)', justifyContent: 'space-between', marginBottom: '30px', border: '1px solid rgba(14, 69, 30, 0.145)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', padding: '20px', borderRadius: '12px' }}>
+
+          {/* Left: Back Arrow */}
+          <button
             onClick={() => router.push(`/cart/`)}
             style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              background: 'none', border: 'none', color: '#007bff',
-              cursor: 'pointer', fontSize: '16px'
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'none',
+              border: 'none',
+              color: '#1a4845',
+              cursor: 'pointer',
+              fontSize: '16px'
             }}
           >
             <ArrowLeft size={20} />
-            Back to Cart
           </button>
+
+          {/* Right: Package icon + Checkout text */}
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontSize: '20px' }}>
+            <Package size={20} />
+            Checkout
+          </h1>
         </div>
 
-        <h1 style={{ marginBottom: '30px' }}>
-          Checkout - {storeData?.name || `Store ${sellerPhone}`}
-        </h1>
-        
+
+
+
         {/* Debug Info (remove in production) */}
-        <div style={{ 
+        {/* <div style={{ 
           backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '4px', 
           marginBottom: '20px', fontSize: '12px' 
         }}>
           <strong>Debug:</strong> Store: {sellerPhone} | Items: {cartItems.length} | 
           Payment: {paymentMethod} | Razorpay: {razorpayLoaded ? '✅' : '❌'}
-        </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
-          {/* Left Side - Forms */}
-          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '30px' }}>
-            <h2 style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-              <User size={20} />
-              Shipping Information
-            </h2>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                Full Name *
-              </label>
-              <input
-                type="text"
-                value={shippingInfo.name}
-                onChange={(e) => setShippingInfo({...shippingInfo, name: e.target.value})}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #ddd',
-                  borderRadius: '8px'
-                }}
-                placeholder="Enter your full name"
-                required
-              />
+        </div> */}
+
+        <div className='keralasellerscheckoutlayout' style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 350px', // Left column flexible, right column fixed
+          gap: '30px'
+        }}>          {/* Left Side - Shipping + Payment stacked */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+            <div style={{ backgroundColor: '#FDFFF0', color: '#1a4845', border: '1px solid #bbbbbbff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', borderRadius: '12px', padding: '30px' }}>
+              <h2 className='keralasellerscheckouttitle' style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px' }}>
+                <User size={20} />
+                SHIPPING INFORMATION
+              </h2>
+
+              <div style={{ marginBottom: '20px' }}>
+
+                <input
+                  type="text"
+                  className='keralasellersckeckoutinputsize'
+                  value={shippingInfo.name}
+                  onChange={(e) => setShippingInfo({ ...shippingInfo, name: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: '1px solid rgb(229, 231, 235)',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    boxSizing: 'border-box',
+                    backgroundColor: 'rgb(253, 255, 240)'
+                  }}
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+
+                <input
+                  type="tel"
+                  className='keralasellersckeckoutinputsize'
+                  value={shippingInfo.phone}
+                  onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: '1px solid rgb(229, 231, 235)',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    boxSizing: 'border-box',
+                    backgroundColor: 'rgb(253, 255, 240)'
+                  }}
+                  placeholder="Enter phone number"
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+
+                <textarea
+                  value={shippingInfo.address}
+                  className='keralasellersckeckoutinputsize'
+                  onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value })}
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: '1px solid rgb(229, 231, 235)',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    boxSizing: 'border-box',
+                    backgroundColor: 'rgb(253, 255, 240)',
+                    resize: 'vertical'
+                  }}
+                  placeholder="Enter your complete address"
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+                <div>
+
+                  <input
+                    type="text"
+                    className='keralasellersckeckoutinputsize'
+                    value={shippingInfo.city}
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '1px solid rgb(229, 231, 235)',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      boxSizing: 'border-box',
+                      backgroundColor: 'rgb(253, 255, 240)'
+                    }}
+                    placeholder="City"
+                    required
+                  />
+                </div>
+                <div>
+
+                  <input
+                    type="text"
+                    className='keralasellersckeckoutinputsize'
+                    value={shippingInfo.pincode}
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, pincode: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '1px solid rgb(229, 231, 235)',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      boxSizing: 'border-box',
+                      backgroundColor: 'rgb(253, 255, 240)'
+                    }}
+                    placeholder="Pincode"
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                Phone Number *
-              </label>
-              <input
-                type="tel"
-                value={shippingInfo.phone}
-                onChange={(e) => setShippingInfo({...shippingInfo, phone: e.target.value})}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #ddd',
-                  borderRadius: '8px'
-                }}
-                placeholder="Enter phone number"
-                required
-              />
-            </div>
 
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                Address *
-              </label>
-              <textarea
-                value={shippingInfo.address}
-                onChange={(e) => setShippingInfo({...shippingInfo, address: e.target.value})}
-                rows={3}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #ddd',
+            <div style={{ backgroundColor: '#FDFFF0', color: '#1a4845', border: '1px solid #bbbbbbff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', borderRadius: '12px', padding: '30px' }}>
+
+              <h2 className='keralasellerscheckouttitle' style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px' }}>
+                <CreditCard size={20} />
+                PAYMENT METHOD
+              </h2>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label className='keralasellerscheckoutpayment' style={{
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  display: 'flex',
+                  padding: '16px',
+                  border: `2px solid ${paymentMethod === 'COD' ? 'rgba(14, 69, 30, 0.145)' : 'rgba(14, 69, 30, 0.145)'}`,
                   borderRadius: '8px',
-                  resize: 'vertical'
-                }}
-                placeholder="Enter your complete address"
-                required
-              />
-            </div>
+                  marginBottom: '12px',
+                  cursor: 'pointer',
+                  backgroundColor: paymentMethod === 'COD' ? 'rgba(14, 69, 30, 0.145)' : '#FDFFF0',
+                  transition: 'background-color 0.3s ease'
+                }}>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                  City *
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="COD"
+                    checked={paymentMethod === 'COD'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    style={{ marginRight: '12px', accentColor: '#1a4845' }}
+                  />
+                  <div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      <span>Cash on Delivery</span>
+                      {paymentMethod === 'COD' && <CheckCircle size={16} color="#10b981" />}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#1a4845' }}>Pay when you receive the order</div>
+                  </div>
                 </label>
-                <input
-                  type="text"
-                  value={shippingInfo.city}
-                  onChange={(e) => setShippingInfo({...shippingInfo, city: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '2px solid #ddd',
-                    borderRadius: '8px'
-                  }}
-                  placeholder="City"
-                  required
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                  Pincode *
-                </label>
-                <input
-                  type="text"
-                  value={shippingInfo.pincode}
-                  onChange={(e) => setShippingInfo({...shippingInfo, pincode: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '2px solid #ddd',
-                    borderRadius: '8px'
-                  }}
-                  placeholder="Pincode"
-                  required
-                />
-              </div>
-            </div>
 
-            <h2 style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-              <CreditCard size={20} />
-              Payment Method
-            </h2>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{
-                display: 'block',
-                padding: '16px',
-                border: `2px solid ${paymentMethod === 'COD' ? '#007bff' : '#ddd'}`,
-                borderRadius: '8px',
-                marginBottom: '12px',
-                cursor: 'pointer',
-                backgroundColor: paymentMethod === 'COD' ? '#f0f8ff' : 'white'
-              }}>
-                <input
-                  type="radio"
-                  name="payment"
-                  value="COD"
-                  checked={paymentMethod === 'COD'}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  style={{ marginRight: '12px' }}
-                />
-                <div>
-                  <div style={{fontWeight: 'bold'}}>Cash on Delivery</div>
-                  <div style={{fontSize: '12px', color: '#666'}}>Pay when you receive the order</div>
-                </div>
-              </label>
-              
-              <label style={{
-                display: 'block',
-                padding: '16px',
-                border: `2px solid ${paymentMethod === 'ONLINE' ? '#007bff' : '#ddd'}`,
-                borderRadius: '8px',
-                cursor: 'pointer',
-                backgroundColor: paymentMethod === 'ONLINE' ? '#f0f8ff' : 'white',
-                opacity: razorpayLoaded ? 1 : 0.5
-              }}>
-                <input
-                  type="radio"
-                  name="payment"
-                  value="ONLINE"
-                  checked={paymentMethod === 'ONLINE'}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  style={{ marginRight: '12px' }}
-                  disabled={!razorpayLoaded}
-                />
-                <div>
-                  <div style={{fontWeight: 'bold'}}>
-                    Pay Online {!razorpayLoaded && '(Loading...)'}
+                <label className='keralasellerscheckoutpayment' style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  padding: '16px',
+                  border: `2px solid ${paymentMethod === 'ONLINE' ? 'rgba(14, 69, 30, 0.145)' : 'rgba(14, 69, 30, 0.145)'}`,
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  backgroundColor: paymentMethod === 'ONLINE' ? 'rgba(14, 69, 30, 0.145)' : '#FDFFF0',
+                  opacity: razorpayLoaded ? 1 : 0.5,
+                  transition: 'background-color 0.3s ease'
+                }}>
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="ONLINE"
+                    checked={paymentMethod === 'ONLINE'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    style={{ marginRight: '12px', accentColor: '#1a4845' }}
+                    disabled={!razorpayLoaded}
+                  />
+                  <div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      <span>Pay Online {!razorpayLoaded && '(Loading...)'}</span>
+                      {paymentMethod === 'ONLINE' && <CheckCircle size={16} color="#10b981" />}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#1a4845' }}>
+                      {razorpayLoaded ? 'UPI, Card, Net Banking via Razorpay' : 'Loading payment system...'}
+                    </div>
                   </div>
-                  <div style={{fontSize: '12px', color: '#666'}}>
-                    {razorpayLoaded ? 'UPI, Card, Net Banking via Razorpay' : 'Loading payment system...'}
-                  </div>
-                </div>
-              </label>
+                </label>
+              </div>
             </div>
           </div>
 
           {/* Right Side - Order Summary */}
-          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '30px' }}>
-            <h2>Order Summary</h2>
-            
+          <div style={{ flex: '0 0 400px', backgroundColor: '#FDFFF0', color: '#1a4845', border: '1px solid #bbbbbbff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', borderRadius: '12px', padding: '30px', height: 'fit-content' }}>
+            <h2 className='keralasellerscheckouttitle' style={{ fontSize: '18px' }}>ORDER SUMMARY</h2>
+
             <div style={{
-              backgroundColor: '#f8f9fa', padding: '12px', borderRadius: '8px',
-              marginBottom: '20px', textAlign: 'center'
+              backgroundColor: 'rgba(14, 69, 30, 0.145)', padding: '12px', borderRadius: '8px',
+              marginBottom: '20px', textAlign: 'center', border: '1px solid rgba(14, 69, 30, 0.145)',
             }}>
               <strong>{storeData?.name || `Store ${sellerPhone}`}</strong>
             </div>
-            
+
             {cartItems.map(item => (
               <div key={item.id} style={{
                 display: 'flex',
@@ -578,54 +639,93 @@ export default function CheckoutPage() {
                 padding: '12px 0',
                 borderBottom: '1px solid #eee'
               }}>
-                <div>
-                  <div style={{ fontWeight: 'bold' }}>{item.name}</div>
-                  <div style={{ color: '#666', fontSize: '0.9rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div className='keralasellerscheckoutitemname' style={{ fontSize: '18px' }}>{item.name}</div>
+                  <div style={{ color: '#666', fontSize: '12px' }}>
                     {formatPrice(item.price)} × {item.quantity}
                   </div>
                 </div>
-                <div style={{ fontWeight: 'bold' }}>
+
+                <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
                   {formatPrice(item.price * item.quantity)}
                 </div>
               </div>
             ))}
-            
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingTop: '16px',
+                fontSize: '14px'
+              }}
+            >
+              <span>
+                Subtotal ({cartItems.length} item{cartItems.length !== 1 ? 's' : ''})
+              </span>
+              <span className='keralasellerscheckoutitemname'>{formatPrice(calculateTotal())}</span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: '8px',
+                fontSize: '14px'
+              }}
+            >
+              <span>Delivery</span>
+              <span style={{ color: '#10b981', fontWeight: '600' }}>Free</span>
+            </div>
+
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '16px 0',
               marginTop: '16px',
-              borderTop: '2px solid #007bff',
-              fontSize: '1.2rem',
-              fontWeight: 'bold'
+              fontSize: '20px',
+
             }}>
-              <span>Total:</span>
-              <span>{formatPrice(calculateTotal())}</span>
+              <span className='keralasellerscheckoutitemname'>Total:</span>
+              <span className='keralasellerscheckoutitemname' style={{ color: 'rgb(5, 150, 105)', fontWeight: 'bold' }}>{formatPrice(calculateTotal())}</span>
             </div>
-            
+
             <button
+              className='keralasellerscheckoutbtn'
               onClick={handlePlaceOrder}
               disabled={submitting || cartItems.length === 0}
               style={{
                 width: '100%',
                 padding: '16px',
-                backgroundColor: (submitting || cartItems.length === 0) ? '#ccc' : '#28a745',
+                backgroundColor:
+                  submitting || cartItems.length === 0 ? '#ccc' : 'rgb(16, 185, 129)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
-                fontSize: '1.1rem',
+                fontSize: '16px',
                 fontWeight: 'bold',
-                cursor: (submitting || cartItems.length === 0) ? 'not-allowed' : 'pointer',
-                marginTop: '20px'
+                cursor: submitting || cartItems.length === 0 ? 'not-allowed' : 'pointer',
+                marginTop: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px', // space between icon and text
+                transition: 'background-color 0.3s ease'
               }}
             >
-              {submitting ? 'Processing...' : `Place Order (${formatPrice(calculateTotal())})`}
+              <CreditCard size={20} color="white" />
+              {submitting
+                ? 'Processing...'
+                : `Place Order (${formatPrice(calculateTotal())})`}
             </button>
+
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );

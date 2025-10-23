@@ -1,0 +1,60 @@
+
+@media (max-width: 767px){
+.keralasellerscheckoutlayout{
+    grid-template-columns: 1fr !important; 
+}
+
+}
+
+@media (max-width: 576px){
+.keralasellerscheckouttitle{
+    font-size: 16px !important;
+}
+.keralasellersckeckoutinputsize{
+    padding: 8px 14px !important;
+    font-size: 14px !important;
+}
+.keralasellerscheckoutpayment{
+    padding: 10px 16px !important;
+    font-size: 15px !important;
+}
+.keralasellerscheckoutbtn{
+    padding: 8px 14px !important;
+    font-size: 14px !important;
+    gap: 10px !important;
+}
+.keralasellerscheckoutstoreindicator{
+    padding: 5px 16px !important;
+}
+.keralasellerscheckoutitemname{
+    font-size: 18px !important;
+}
+}
+
+@media (max-width: 480px){
+.keralasellerscheckoutcontainer{
+    padding: 50px 20px 20px !important;
+}
+.keralasellerscheckouttitle{
+    font-size: 14px !important;
+}
+.keralasellerscheckoutstoreindicator{
+    padding: 0px 16px !important;
+}
+.keralasellersckeckoutinputsize{
+    padding: 7px 14px !important;
+    font-size: 13px !important;
+}
+.keralasellerscheckoutpayment{
+    padding: 9px 16px !important;
+    font-size: 13px !important;
+}
+.keralasellerscheckoutbtn{
+    padding: 7px 16px !important;
+    font-size: 13px !important;
+    gap: 10px !important;
+}
+.keralasellerscheckoutitemname{
+    font-size: 15px !important;
+}
+}
