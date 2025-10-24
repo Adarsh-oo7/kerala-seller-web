@@ -22,7 +22,9 @@ import {
     Filter,
     Globe,
     Home,
-    Store
+    Store,
+    Download,
+    XCircle
 } from 'lucide-react';
 
 // ✅ Enhanced API base URL handling with environment variables
@@ -39,6 +41,8 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/history/`;
+const INVOICE_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/invoice/`;
+const CANCEL_ORDER_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/cancel/`;
 
 export default function BuyerOrdersPage() {
     const [orders, setOrders] = useState([]);
@@ -49,6 +53,7 @@ export default function BuyerOrdersPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('newest');
     const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
+    const [cancellingOrderId, setCancellingOrderId] = useState(null);
     const router = useRouter();
 
     // ✅ Enhanced token handling - supports both Google login and regular login
@@ -128,6 +133,70 @@ export default function BuyerOrdersPage() {
             setIsLoading(false);
         }
     }, [getAuthHeaders, router, getCurrentStoreInfo]);
+
+    // ✅ NEW: Download Invoice Handler
+    const handleDownloadInvoice = async (orderId) => {
+        const headers = getAuthHeaders();
+        if (!headers) return;
+
+        try {
+            const response = await axios.get(INVOICE_API_URL(orderId), {
+                headers,
+                responseType: 'blob',
+                timeout: 20000
+            });
+            
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `invoice-${orderId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Invoice download failed', err);
+            alert(err.response?.data?.message || 'Failed to download invoice. Please try again.');
+        }
+    };
+
+    // ✅ NEW: Cancel Order Handler
+    const handleCancelOrder = async (orderId, paymentMethod) => {
+        // Confirm cancellation
+        const confirmMessage = paymentMethod === 'COD' 
+            ? 'Are you sure you want to cancel this COD order?' 
+            : 'Are you sure you want to cancel this order? Refund will be processed within 5-7 business days.';
+        
+        if (!window.confirm(confirmMessage)) {
+            return;
+        }
+
+        const headers = getAuthHeaders();
+        if (!headers) return;
+
+        setCancellingOrderId(orderId);
+
+        try {
+            const response = await axios.post(
+                CANCEL_ORDER_API_URL(orderId),
+                {},
+                {
+                    headers,
+                    timeout: 15000
+                }
+            );
+
+            // Success - refresh orders
+            alert(response.data?.message || 'Order cancelled successfully!');
+            await fetchOrders(); // Refresh the list
+        } catch (err) {
+            console.error('Order cancellation failed', err);
+            alert(err.response?.data?.message || 'Failed to cancel order. Please try again or contact support.');
+        } finally {
+            setCancellingOrderId(null);
+        }
+    };
 
     useEffect(() => {
         fetchOrders();
@@ -226,6 +295,11 @@ export default function BuyerOrdersPage() {
         return '/profile';
     };
 
+    // ✅ Helper: Check if order can be cancelled
+    const canCancelOrder = (order) => {
+        return order.status?.toUpperCase() === 'PENDING';
+    };
+
     if (isLoading) {
         return (
             <div style={styles.pagecontainer}>
@@ -266,30 +340,6 @@ export default function BuyerOrdersPage() {
         <div style={styles.pagecontainer}>
             <Header />
             <div style={styles.container}>
-                {/* <div style={styles.header}>
-                    <Link href={getBackUrl()} style={styles.backLink}>
-                        <ArrowLeft size={20} />
-                        <span>
-                            {currentStoreInfo.isInStore ? 'Back to Store' : 'Back to Profile'}
-                        </span>
-                    </Link>
-                    <div style={styles.titleSection}>
-                        <h1 style={styles.title}>
-                            <Package size={28} />
-                            {currentStoreInfo.isInStore ? 'Store Orders' : 'My Orders'}
-                        </h1>
-                        <p style={styles.subtitle}>
-                            {currentStoreInfo.isInStore
-                                ? 'Orders from this store only'
-                                : 'Track and manage all your orders'
-                            }
-                        </p>
-                    </div>
-                    <button onClick={fetchOrders} style={styles.refreshButton}>
-                        <RefreshCw size={18} />
-                    </button>
-                </div> */}
-
                 {/* ✅ Show store context indicator */}
                 {currentStoreInfo.isInStore && (
                     <div style={styles.storeIndicator}>
@@ -297,56 +347,6 @@ export default function BuyerOrdersPage() {
                         <span>Viewing orders from Store: {currentStoreInfo.storeId}</span>
                     </div>
                 )}
-
-                {/* <div style={styles.filtersSection}> */}
-                {/* Search Box */}
-                {/* <div style={styles.searchBox}>
-                        <Search size={18} style={styles.searchIcon} />
-                        <input
-                            type="text"
-                            placeholder={`Search by Order ID, Product name${currentStoreInfo.isInStore ? '...' : ', Store name...'}`}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            style={styles.searchInput}
-                        />
-                    </div> */}
-
-                {/* Filter Tabs */}
-                {/* <div style={styles.filterTabs}>
-                        {['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'].map(status => (
-                            <button
-                                key={status}
-                                onClick={() => setStatusFilter(status)}
-                                style={{
-                                    ...styles.filterTab,
-                                    ...(statusFilter === status ? styles.activeFilterTab : {})
-                                }}
-                            >
-                                {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
-                                {statusCounts[status] && (
-                                    <span style={styles.filterCount}>
-                                        ({statusCounts[status]})
-                                    </span>
-                                )}
-                            </button>
-                        ))}
-                    </div> */}
-
-                {/* Sort Options */}
-                {/* <div style={styles.sortSection}>
-                        <label style={styles.sortLabel}>Sort by:</label>
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            style={styles.sortSelect}
-                        >
-                            <option value="newest">Newest First</option>
-                            <option value="oldest">Oldest First</option>
-                            <option value="amount_high">Amount (High to Low)</option>
-                            <option value="amount_low">Amount (Low to High)</option>
-                        </select>
-                    </div> */}
-                {/* </div> */}
 
                 {filteredOrders.length === 0 ? (
                     <div style={styles.emptyState}>
@@ -400,7 +400,6 @@ export default function BuyerOrdersPage() {
                                 <div key={order.id} style={styles.card}>
                                     <div style={styles.cardHeader}>
                                         <div style={styles.orderInfo}>
-                                            {/* <h3 style={styles.orderId}>Order #{order.id}</h3> */}
                                             <div style={styles.orderMeta}>
                                                 <Calendar size={14} />
                                                 <span>Placed on {formatDate(order.created_at)}</span>
@@ -408,15 +407,7 @@ export default function BuyerOrdersPage() {
                                                     at {formatTime(order.created_at)}
                                                 </span>
                                             </div>
-                                            {/* ✅ Show store name if not in store context */}
-                                            {/* {!currentStoreInfo.isInStore && order.store_name && (
-                                                <div style={styles.storeInfo}>
-                                                    <span style={styles.storeLabel}>From:</span>
-                                                    <span style={styles.storeName}>{order.store_name}</span>
-                                                </div>
-                                            )} */}
                                         </div>
-
 
                                         <div style={styles.statusSection}>
                                             <span style={styles.statusLabel}>Status:</span>
@@ -435,6 +426,11 @@ export default function BuyerOrdersPage() {
                                             <strong style={styles.total}>
                                                 ₹{parseFloat(order.total_amount).toFixed(2)}
                                             </strong>
+                                            {order.payment_method && (
+                                                <span style={styles.paymentMethod}>
+                                                    {order.payment_method}
+                                                </span>
+                                            )}
                                         </div>
 
                                         {order.items && order.items.length > 0 && (
@@ -492,10 +488,41 @@ export default function BuyerOrdersPage() {
                                                 <Eye size={16} />
                                                 View Details
                                             </Link>
+                                            
+                                            {/* ✅ NEW: Cancel Button for PENDING orders */}
+                                            {canCancelOrder(order) && (
+                                                <button
+                                                    onClick={() => handleCancelOrder(order.id, order.payment_method)}
+                                                    disabled={cancellingOrderId === order.id}
+                                                    style={{
+                                                        ...styles.cancelButton,
+                                                        ...(cancellingOrderId === order.id ? styles.disabledButton : {})
+                                                    }}
+                                                    title="Cancel this order"
+                                                >
+                                                    {cancellingOrderId === order.id ? (
+                                                        <>
+                                                            <div style={styles.smallSpinner}></div>
+                                                            Cancelling...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <XCircle size={16} />
+                                                            Cancel Order
+                                                        </>
+                                                    )}
+                                                </button>
+                                            )}
+
+                                            {/* ✅ UPDATED: Invoice Download for DELIVERED orders */}
                                             {order.status?.toLowerCase() === 'delivered' && (
-                                                <button style={styles.reorderButton}>
-                                                    <RefreshCw size={16} />
-                                                    Reorder
+                                                <button
+                                                    onClick={() => handleDownloadInvoice(order.id)}
+                                                    style={styles.invoiceButton}
+                                                    title="Download invoice (PDF)"
+                                                >
+                                                    <Download size={16} />
+                                                    Download Invoice
                                                 </button>
                                             )}
                                         </div>
@@ -597,6 +624,16 @@ const styles = {
         animation: 'spin 1s linear infinite'
     },
 
+    // ✅ NEW: Small spinner for button loading state
+    smallSpinner: {
+        width: '14px',
+        height: '14px',
+        border: '2px solid #ffffff',
+        borderTop: '2px solid transparent',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite'
+    },
+
     errorContainer: {
         display: 'flex',
         flexDirection: 'column',
@@ -642,168 +679,6 @@ const styles = {
         fontWeight: '500'
     },
 
-
-
-    header: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '32px',
-        flexWrap: 'wrap',
-        gap: '16px'
-    },
-
-    backLink: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        textDecoration: 'none',
-        color: '#3b82f6',
-        fontSize: '16px',
-        fontWeight: '500',
-        padding: '8px 12px',
-        borderRadius: '6px',
-        backgroundColor: '#eff6ff',
-        transition: 'all 0.2s'
-    },
-
-    titleSection: {
-        textAlign: 'center',
-        flex: 1
-    },
-
-    title: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '12px',
-        fontSize: '2rem',
-        fontWeight: '700',
-        color: '#1f2937',
-        margin: '0 0 8px 0'
-    },
-
-    subtitle: {
-        color: '#6b7280',
-        fontSize: '16px',
-        margin: 0
-    },
-
-    refreshButton: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '40px',
-        height: '40px',
-        backgroundColor: '#f3f4f6',
-        border: '1px solid #d1d5db',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        color: '#6b7280',
-        transition: 'all 0.2s'
-    },
-
-    // Filters Section
-    filtersSection: {
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        border: '1px solid #e5e7eb'
-    },
-
-    searchBox: {
-        position: 'relative',
-        marginBottom: '20px'
-    },
-
-    searchIcon: {
-        position: 'absolute',
-        left: '16px',
-        top: '50%',
-        transform: 'translateY(-50%)',
-        color: '#6b7280',
-        zIndex: 1
-    },
-
-    searchInput: {
-        width: '100%',
-        padding: '12px 16px 12px 48px',
-        border: '2px solid #e5e7eb',
-        borderRadius: '12px',
-        fontSize: '16px',
-        outline: 'none',
-        transition: 'border-color 0.2s',
-        boxSizing: 'border-box'
-    },
-
-    filterTabs: {
-        display: 'flex',
-        gap: '8px',
-        flexWrap: 'wrap',
-        marginBottom: '16px'
-    },
-
-    filterTab: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        padding: '10px 16px',
-        backgroundColor: '#f8fafc',
-        border: '2px solid #e5e7eb',
-        borderRadius: '20px',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: '500',
-        color: '#374151',
-        transition: 'all 0.2s'
-    },
-
-    activeFilterTab: {
-        backgroundColor: '#3b82f6',
-        borderColor: '#3b82f6',
-        color: 'white'
-    },
-
-    filterCount: {
-        fontSize: '12px',
-        opacity: 0.8
-    },
-
-    sortSection: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        paddingTop: '16px',
-        borderTop: '1px solid #f3f4f6'
-    },
-
-    sortLabel: {
-        fontSize: '14px',
-        fontWeight: '500',
-        color: '#374151'
-    },
-
-    sortSelect: {
-        padding: '8px 12px',
-        border: '1px solid #d1d5db',
-        borderRadius: '6px',
-        fontSize: '14px',
-        backgroundColor: 'white',
-        color: '#374151'
-    },
-
-    // Empty State
-    emptyState: {
-        textAlign: 'center',
-        padding: '80px 40px',
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        border: '2px dashed #d1d5db',
-        color: '#6b7280'
-    },
-
     clearFiltersButton: {
         padding: '10px 20px',
         backgroundColor: '#3b82f6',
@@ -814,6 +689,15 @@ const styles = {
         fontSize: '14px',
         fontWeight: '500',
         marginTop: '16px'
+    },
+
+    emptyState: {
+        textAlign: 'center',
+        padding: '80px 40px',
+        backgroundColor: 'white',
+        borderRadius: '16px',
+        border: '2px dashed #d1d5db',
+        color: '#6b7280'
     },
 
     emptyActions: {
@@ -857,8 +741,9 @@ const styles = {
         gap: '1rem',
         width: '100%',
     },
+    
     card: {
-        width: '100%',          // ✅ Make card full width
+        width: '100%',
         boxSizing: 'border-box',
         padding: '1rem',
         borderRadius: '8px',
@@ -903,13 +788,26 @@ const styles = {
     },
 
     orderAmount: {
-        textAlign: 'right'
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '16px'
     },
 
     total: {
         fontSize: '20px',
         fontWeight: '700',
         color: '#059669'
+    },
+
+    // ✅ NEW: Payment method badge
+    paymentMethod: {
+        fontSize: '12px',
+        fontWeight: '600',
+        padding: '4px 8px',
+        borderRadius: '6px',
+        backgroundColor: '#f3f4f6',
+        color: '#374151'
     },
 
     cardBody: {
@@ -919,8 +817,7 @@ const styles = {
     statusSection: {
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        marginBottom: '16px'
+        gap: '8px'
     },
 
     statusLabel: {
@@ -1039,10 +936,29 @@ const styles = {
         borderRadius: '8px',
         fontSize: '14px',
         fontWeight: '500',
+        transition: 'all 0.2s',
+        border: 'none',
+        cursor: 'pointer'
+    },
+
+    // ✅ NEW: Cancel button style
+    cancelButton: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '10px 16px',
+        backgroundColor: '#ef4444',
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: '500',
         transition: 'all 0.2s'
     },
 
-    reorderButton: {
+    // ✅ RENAMED from reorderButton: Invoice download button style
+    invoiceButton: {
         display: 'inline-flex',
         alignItems: 'center',
         gap: '6px',
@@ -1055,6 +971,13 @@ const styles = {
         fontSize: '14px',
         fontWeight: '500',
         transition: 'all 0.2s'
+    },
+
+    // ✅ NEW: Disabled button state
+    disabledButton: {
+        opacity: 0.6,
+        cursor: 'not-allowed',
+        pointerEvents: 'none'
     },
 
     // Results Summary

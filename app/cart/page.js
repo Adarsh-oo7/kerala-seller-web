@@ -24,6 +24,29 @@ export default function CartPage() {
     const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
     const calculateTotal = (items) => items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
+    // ✅ HANDLE QUANTITY UPDATE WITH STOCK VALIDATION
+    const handleQuantityChange = (sellerPhone, itemId, newQuantity, availableStock) => {
+        // ✅ Prevent going below 1
+        if (newQuantity < 1) {
+            alert('Quantity cannot be less than 1');
+            return;
+        }
+
+        // ✅ CHECK STOCK LIMIT
+        if (newQuantity > availableStock) {
+            alert(`Only ${availableStock} ${availableStock === 1 ? 'item' : 'items'} available in stock!`);
+            return;
+        }
+
+        // ✅ Update if valid
+        updateQuantity(sellerPhone, itemId, newQuantity);
+    };
+
+    // ✅ GET MAX STOCK (use online_stock or total_stock)
+    const getMaxStock = (item) => {
+        return item.online_stock || item.total_stock || 10; // Default to 10 if not available
+    };
+
     if (loading) {
         return (
             <div>
@@ -73,7 +96,6 @@ export default function CartPage() {
                             return (
                                 <div key={sellerPhone} style={{
                                     backgroundColor: '#FDFFF0',
-                                    // border:'1px solid #1a4845',
                                     borderRadius: '12px',
                                     marginBottom: '24px',
                                     padding: '20px'
@@ -96,69 +118,82 @@ export default function CartPage() {
                                         </button>
                                     </div>
 
-                                    {items.map(item => (
-                                        <div key={item.id} className="keralasellerscartitem">
-                                            <img
-                                            className='keralasellerscartimage'
-                                                src={item.main_image_url || item.image_url || '/placeholder.svg'}
-                                                alt={item.name}
-                                                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }}
-                                            />
+                                    {items.map(item => {
+                                        const maxStock = getMaxStock(item);
+                                        const isAtMax = item.quantity >= maxStock;
+                                        
+                                        return (
+                                            <div key={item.id} className="keralasellerscartitem">
+                                                <img
+                                                className='keralasellerscartimage'
+                                                    src={item.main_image_url || item.image_url || '/placeholder.svg'}
+                                                    alt={item.name}
+                                                    style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }}
+                                                />
 
-                                            <div className="keralasellerscartitem-details">
-                                                <div>
-                                                    <h4 className='keralasellerscartitemname' style={{ margin: '0 0 8px 0' }}>{item.name}</h4>
-                                                    <p className="keralasellerscartitem-priceeach" style={{ margin: '0', color: '#666' }}>
-                                                        {formatPrice(item.price)} each
-                                                    </p>
-                                                </div>
-
-                                                <div className="keralasellerscartitem-qty-price">
-                                                    <div className="keralasellerscartitem-total">
-                                                        <strong>{formatPrice(item.price * item.quantity)}</strong>
-                                                    </div>
-                                                    <div className="keralasellerscartitem-quantity">
-                                                        <button
-                                                            className='keralasellerscartqntyicon'
-                                                            style={{
-                                                                width: '32px', height: '32px',
-                                                                border: '1px solid #afafafff',
-                                                                background: '#FDFFF0',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer'
-                                                            }}
-                                                            onClick={() => updateQuantity(sellerPhone, item.id, item.quantity - 1)}
-                                                            disabled={item.quantity <= 1}
-                                                        >-</button>
-                                                        <span>{item.quantity}</span>
-                                                        <button
-                                                            className='keralasellerscartqntyicon'
-                                                            style={{
-                                                                width: '32px', height: '32px',
-                                                                border: '1px solid #afafafff',
-                                                                background: '#FDFFF0',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer'
-                                                            }}
-                                                            onClick={() => updateQuantity(sellerPhone, item.id, item.quantity + 1)}
-                                                        >+</button>
+                                                <div className="keralasellerscartitem-details">
+                                                    <div>
+                                                        <h4 className='keralasellerscartitemname' style={{ margin: '0 0 8px 0' }}>{item.name}</h4>
+                                                        <p className="keralasellerscartitem-priceeach" style={{ margin: '0', color: '#666' }}>
+                                                            {formatPrice(item.price)} each
+                                                        </p>
+                                                        {/* ✅ SHOW STOCK INFO */}
+                                                        <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: maxStock <= 5 ? '#dc3545' : '#28a745' }}>
+                                                            {maxStock <= 5 
+                                                                ? `Only ${maxStock} left in stock!`
+                                                                : `${maxStock} available`
+                                                            }
+                                                        </p>
                                                     </div>
 
-
+                                                    <div className="keralasellerscartitem-qty-price">
+                                                        <div className="keralasellerscartitem-total">
+                                                            <strong>{formatPrice(item.price * item.quantity)}</strong>
+                                                        </div>
+                                                        <div className="keralasellerscartitem-quantity">
+                                                            <button
+                                                                className='keralasellerscartqntyicon'
+                                                                style={{
+                                                                    width: '32px', height: '32px',
+                                                                    border: '1px solid #afafafff',
+                                                                    background: '#FDFFF0',
+                                                                    borderRadius: '4px',
+                                                                    cursor: item.quantity <= 1 ? 'not-allowed' : 'pointer',
+                                                                    opacity: item.quantity <= 1 ? 0.5 : 1
+                                                                }}
+                                                                onClick={() => handleQuantityChange(sellerPhone, item.id, item.quantity - 1, maxStock)}
+                                                                disabled={item.quantity <= 1}
+                                                            >-</button>
+                                                            <span>{item.quantity}</span>
+                                                            {/* ✅ DISABLE + BUTTON AT MAX STOCK */}
+                                                            <button
+                                                                className='keralasellerscartqntyicon'
+                                                                style={{
+                                                                    width: '32px', height: '32px',
+                                                                    border: '1px solid #afafafff',
+                                                                    background: '#FDFFF0',
+                                                                    borderRadius: '4px',
+                                                                    cursor: isAtMax ? 'not-allowed' : 'pointer',
+                                                                    opacity: isAtMax ? 0.5 : 1
+                                                                }}
+                                                                onClick={() => handleQuantityChange(sellerPhone, item.id, item.quantity + 1, maxStock)}
+                                                                disabled={isAtMax}
+                                                                title={isAtMax ? 'Maximum stock reached' : 'Increase quantity'}
+                                                            >+</button>
+                                                        </div>
+                                                    </div>
                                                 </div>
 
+                                                <button
+                                                    onClick={() => removeFromCart(sellerPhone, item.id)}
+                                                    style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer', padding: '8px' }}
+                                                    aria-label="Remove item"
+                                                >
+                                                    <Trash2 size={20} />
+                                                </button>
                                             </div>
-
-                                            <button
-                                                onClick={() => removeFromCart(sellerPhone, item.id)}
-                                                style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer', padding: '8px' }}
-                                                aria-label="Remove item"
-                                            >
-                                                <Trash2 size={20} />
-                                            </button>
-                                        </div>
-
-                                    ))}
+                                        );
+                                    })}
 
                                     <div style={{
                                         display: 'flex',
@@ -167,7 +202,6 @@ export default function CartPage() {
                                         marginTop: '20px',
                                         paddingTop: '20px',
                                         borderTop: '1px solid #eee',
-
                                     }}>
                                         <strong className='keralasellerscartstore' style={{ fontSize: '1.2rem', }}>
                                             Total: {formatPrice(total)}
@@ -186,7 +220,6 @@ export default function CartPage() {
                                                 fontWeight: 'bold'
                                             }}
                                         >
-
                                             Checkout
                                         </button>
                                     </div>
