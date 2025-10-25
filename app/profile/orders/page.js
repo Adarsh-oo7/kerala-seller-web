@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
+import '../../../styles/Keralasellersprofileorder.css'
 import Link from 'next/link';
 import {
     Package,
@@ -24,7 +25,10 @@ import {
     Home,
     Store,
     Download,
-    XCircle
+    XCircle,
+    CreditCard,
+    MapPin,
+    User,
 } from 'lucide-react';
 
 // ✅ Enhanced API base URL handling with environment variables
@@ -55,6 +59,19 @@ export default function BuyerOrdersPage() {
     const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
     const [cancellingOrderId, setCancellingOrderId] = useState(null);
     const router = useRouter();
+    const [showOrderDetails, setShowOrderDetails] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+
+    const openOrderDetails = (order) => {
+        setSelectedOrder(order);
+        setShowOrderDetails(true);
+    };
+
+    const closeOrderDetails = () => {
+        setShowOrderDetails(false);
+        setSelectedOrder(null);
+    };
+
 
     // ✅ Enhanced token handling - supports both Google login and regular login
     const getAuthHeaders = useCallback(() => {
@@ -145,7 +162,7 @@ export default function BuyerOrdersPage() {
                 responseType: 'blob',
                 timeout: 20000
             });
-            
+
             const blob = new Blob([response.data], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -164,10 +181,10 @@ export default function BuyerOrdersPage() {
     // ✅ NEW: Cancel Order Handler
     const handleCancelOrder = async (orderId, paymentMethod) => {
         // Confirm cancellation
-        const confirmMessage = paymentMethod === 'COD' 
-            ? 'Are you sure you want to cancel this COD order?' 
+        const confirmMessage = paymentMethod === 'COD'
+            ? 'Are you sure you want to cancel this COD order?'
             : 'Are you sure you want to cancel this order? Refund will be processed within 5-7 business days.';
-        
+
         if (!window.confirm(confirmMessage)) {
             return;
         }
@@ -247,11 +264,11 @@ export default function BuyerOrdersPage() {
 
     const getStatusStyle = (status) => {
         const statusStyles = {
-            'PENDING': { backgroundColor: '#fef3c7', color: '#92400e', icon: Clock },
-            'PROCESSING': { backgroundColor: '#dbeafe', color: '#1e40af', icon: Package },
-            'SHIPPED': { backgroundColor: '#d1fae5', color: '#065f46', icon: Truck },
-            'DELIVERED': { backgroundColor: '#d1fae5', color: '#065f46', icon: CheckCircle },
-            'CANCELLED': { backgroundColor: '#fee2e2', color: '#991b1b', icon: X },
+            'PENDING': { color: '#f59e0b', icon: Clock },
+            'PROCESSING': { color: '#3b82f6', icon: Package },
+            'SHIPPED': { color: '#065f46', icon: Truck },
+            'DELIVERED': { color: '#065f46', icon: CheckCircle },
+            'CANCELLED': { color: '#ef4444', icon: XCircle },
         };
         return statusStyles[status?.toUpperCase()] || statusStyles.PENDING;
     };
@@ -265,6 +282,8 @@ export default function BuyerOrdersPage() {
         }, {});
         return counts;
     };
+
+    const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
 
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
@@ -339,6 +358,9 @@ export default function BuyerOrdersPage() {
     return (
         <div style={styles.pagecontainer}>
             <Header />
+
+            <h2 className='keralasellersprofileordertitle' style={styles.pageTitle}>YOUR ORDERS</h2>
+
             <div style={styles.container}>
                 {/* ✅ Show store context indicator */}
                 {currentStoreInfo.isInStore && (
@@ -398,65 +420,44 @@ export default function BuyerOrdersPage() {
 
                             return (
                                 <div key={order.id} style={styles.card}>
-                                    <div style={styles.cardHeader}>
-                                        <div style={styles.orderInfo}>
-                                            <div style={styles.orderMeta}>
-                                                <Calendar size={14} />
-                                                <span>Placed on {formatDate(order.created_at)}</span>
-                                                <span style={styles.orderTime}>
-                                                    at {formatTime(order.created_at)}
-                                                </span>
-                                            </div>
-                                        </div>
 
-                                        <div style={styles.statusSection}>
-                                            <span style={styles.statusLabel}>Status:</span>
-                                            <span style={{
-                                                ...styles.statusBadge,
-                                                ...statusStyle
-                                            }}>
-                                                <StatusIcon size={14} />
-                                                {order.status}
-                                            </span>
-                                        </div>
-                                    </div>
 
-                                    <div style={styles.cardBody}>
-                                        <div style={styles.orderAmount}>
-                                            <strong style={styles.total}>
-                                                ₹{parseFloat(order.total_amount).toFixed(2)}
-                                            </strong>
-                                            {order.payment_method && (
-                                                <span style={styles.paymentMethod}>
-                                                    {order.payment_method}
-                                                </span>
+                                    <div className='keralasellersprofileordercardbody' style={styles.cardBody}>
+                                        <div className='keralasellersprofileordercardbodygap' style={styles.itemsAndStatus}>
+                                            {order.items && order.items.length > 0 && (
+                                                <div style={styles.itemsSection}>
+                                                    <h4 className='keralasellersprofileorderitemname' style={styles.itemsHeader}>
+                                                        Items ({order.items.length}):
+                                                    </h4>
+                                                    <ul style={styles.itemList}>
+                                                        {order.items.slice(0, 3).map((item, index) => (
+                                                            <li key={item.id || index} style={styles.itemListItem}>
+                                                                <span className='keralasellersprofileorderitemdetails' style={styles.itemQuantity}>
+                                                                    {item.quantity} x                                                                     {item.product?.name || item.product_name || 'Item'}
+                                                                    {item.product?.name || item.product_name || 'Item'}
+                                                                </span>
+                                                            </li>
+                                                        ))}
+                                                        {order.items.length > 3 && (
+                                                            <li style={styles.moreItems}>
+                                                                ...and {order.items.length - 3} more items
+                                                            </li>
+                                                        )}
+                                                    </ul>
+                                                </div>
                                             )}
-                                        </div>
 
-                                        {order.items && order.items.length > 0 && (
-                                            <div style={styles.itemsSection}>
-                                                <h4 style={styles.itemsHeader}>
-                                                    Items ({order.items.length}):
-                                                </h4>
-                                                <ul style={styles.itemList}>
-                                                    {order.items.slice(0, 3).map((item, index) => (
-                                                        <li key={item.id || index} style={styles.itemListItem}>
-                                                            <span style={styles.itemQuantity}>
-                                                                {item.quantity}x
-                                                            </span>
-                                                            <span style={styles.itemName}>
-                                                                {item.product?.name || item.product_name || 'Item'}
-                                                            </span>
-                                                        </li>
-                                                    ))}
-                                                    {order.items.length > 3 && (
-                                                        <li style={styles.moreItems}>
-                                                            ...and {order.items.length - 3} more items
-                                                        </li>
-                                                    )}
-                                                </ul>
+                                            {/* ✅ Status moved to the right */}
+                                            <div style={styles.statusSectionBody}>
+                                                <span className='keralasellersprofileorderstatustext' style={{
+                                                    ...styles.statusBadge,
+                                                    ...statusStyle
+                                                }}>
+                                                    <StatusIcon className='keralasellersprofileordericonsize' size={20} />
+                                                    {order.status}
+                                                </span>
                                             </div>
-                                        )}
+                                        </div>
 
                                         {/* Shipping Info */}
                                         {(order.shipping_provider || order.tracking_id) && (
@@ -479,19 +480,32 @@ export default function BuyerOrdersPage() {
                                         )}
                                     </div>
 
-                                    <div style={styles.cardFooter}>
-                                        <div style={styles.cardActions}>
-                                            <Link
-                                                href={`/profile/orders/${order.id}`}
+
+                                    <div className='keralasellersprofileordercardbody' style={styles.cardFooter}>
+
+                                        <div style={styles.footerLeft}>
+                                            <span className='keralasellersprofileordertotalprice' style={styles.totalLabel}>Total:</span>
+                                            <strong className='keralasellersprofileordertotalprice' style={styles.totalFooter}>
+                                                ₹{parseFloat(order.total_amount).toFixed(2)}
+                                            </strong>
+                                        </div>
+
+
+                                        <div className='keralasellersorder-actions' style={styles.cardActions}>
+
+                                            <button
+                                                className='keralasellersprofileorderactionbtn'
+                                                onClick={() => openOrderDetails(order)}
                                                 style={styles.viewButton}
                                             >
-                                                <Eye size={16} />
                                                 View Details
-                                            </Link>
-                                            
+                                            </button>
+
+
                                             {/* ✅ NEW: Cancel Button for PENDING orders */}
                                             {canCancelOrder(order) && (
                                                 <button
+                                                    className='keralasellersprofileorderactionbtn'
                                                     onClick={() => handleCancelOrder(order.id, order.payment_method)}
                                                     disabled={cancellingOrderId === order.id}
                                                     style={{
@@ -517,12 +531,13 @@ export default function BuyerOrdersPage() {
                                             {/* ✅ UPDATED: Invoice Download for DELIVERED orders */}
                                             {order.status?.toLowerCase() === 'delivered' && (
                                                 <button
+                                                    className='keralasellersprofileorderactionbtn'
                                                     onClick={() => handleDownloadInvoice(order.id)}
                                                     style={styles.invoiceButton}
                                                     title="Download invoice (PDF)"
                                                 >
                                                     <Download size={16} />
-                                                    Download Invoice
+                                                    Invoice
                                                 </button>
                                             )}
                                         </div>
@@ -532,6 +547,194 @@ export default function BuyerOrdersPage() {
                         })}
                     </div>
                 )}
+
+                {/* ✅ Order Details Modal */}
+                {showOrderDetails && selectedOrder && (
+                    <div style={styles.modalOverlay} onClick={closeOrderDetails}>
+                        <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                            {/* 🔹 Header */}
+                            <div style={styles.modalHeader}>
+                                <h2 style={styles.modalTitle}>Order Details #{selectedOrder.id}</h2>
+                                <button style={styles.closeButton} onClick={closeOrderDetails}>
+                                    <X color="white" size={24} />
+                                </button>
+                            </div>
+
+                            {/* 🔹 Body */}
+                            <div style={styles.modalBody}>
+                                {/* 🔸 Order Status */}
+                                <div style={styles.detailSection}>
+                                    <h3 style={styles.sectionTitle}>Order Status</h3>
+                                    <div style={styles.statusDetail}>
+                                        {(() => {
+                                            const { icon: StatusIcon, color } = getStatusStyle(selectedOrder.status);
+                                            return (
+                                                <>
+                                                    <StatusIcon color={color} size={18} style={{ marginRight: 6 }} />
+                                                    <span
+                                                        style={{
+                                                            fontSize: '16px',
+                                                            fontWeight: 600,
+                                                            color,
+                                                            textTransform: 'capitalize'
+                                                        }}
+                                                    >
+                                                        {selectedOrder.status || 'Pending'}
+                                                    </span>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+
+                                {/* 🔸 Order Information */}
+                                <div style={styles.detailSection}>
+                                    <h3 style={styles.sectionTitle}>Order Information</h3>
+                                    <div style={styles.infoGrid}>
+                                        <div style={styles.infoItem}>
+                                            <Calendar size={16} />
+                                            <div>
+                                                <div style={styles.infoLabel}>Order Date</div>
+                                                <div style={styles.infoValue}>
+                                                    {formatDate(selectedOrder.created_at)} at {formatTime(selectedOrder.created_at)}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={styles.infoItem}>
+                                            <CreditCard size={16} />
+                                            <div>
+                                                <div style={styles.infoLabel}>Payment Method</div>
+                                                <div style={styles.infoValue}>
+                                                    {selectedOrder.payment_method === 'COD'
+                                                        ? 'Cash on Delivery'
+                                                        : selectedOrder.payment_method === 'ONLINE'
+                                                            ? 'Online Payment'
+                                                            : selectedOrder.payment_method || 'COD'}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {selectedOrder.customer_name && (
+                                            <div style={styles.infoItem}>
+                                                <User size={16} />
+                                                <div>
+                                                    <div style={styles.infoLabel}>Customer</div>
+                                                    <div style={styles.infoValue}>{selectedOrder.customer_name}</div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {selectedOrder.phone && (
+                                            <div style={styles.infoItem}>
+                                                <Phone size={16} />
+                                                <div>
+                                                    <div style={styles.infoLabel}>Phone</div>
+                                                    <div style={styles.infoValue}>{selectedOrder.phone}</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* 🔸 Order Items */}
+                                <div style={styles.detailSection}>
+                                    <h3 style={styles.sectionTitle}>Order Items</h3>
+                                    <div style={styles.itemsList}>
+                                        {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                                            selectedOrder.items.map((item) => (
+                                                <div key={item.id} style={styles.modalOrderItem}>
+                                                    <div style={styles.modalItemInfo}>
+                                                        <div style={styles.modalItemName}>
+                                                            {item.product?.name || item.name || 'Product'}
+                                                        </div>
+                                                        <div style={styles.modalItemPrice}>
+                                                            {formatPrice(item.price)} × {item.quantity}
+                                                        </div>
+                                                        {item.product?.description && (
+                                                            <div style={styles.modalItemDesc}>
+                                                                {item.product.description}
+                                                            </div>
+                                                        )}
+
+
+                                                    </div>
+                                                    <div style={styles.modalItemTotal}>
+                                                        {formatPrice(item.price * item.quantity)}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div style={styles.noItemsModal}>
+                                                No items information available
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* 🔸 Delivery Address */}
+                                {selectedOrder.shipping_address && (
+                                    <div style={styles.detailSection}>
+                                        <h3 style={styles.sectionTitle}>Delivery Address</h3>
+                                        <div style={styles.addressBox}>
+                                            <MapPin size={16} />
+                                            <div style={styles.addressText}>{selectedOrder.shipping_address}</div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 🔸 Cancel Reason */}
+                                {selectedOrder.status?.toLowerCase() === 'cancelled' && selectedOrder.cancel_reason && (
+                                    <div style={styles.detailSection}>
+                                        <h3 style={styles.sectionTitle}>Cancellation Reason</h3>
+                                        <div style={styles.cancelReasonBox}>
+                                            <AlertOctagon size={16} />
+                                            <div style={styles.cancelReasonText}>{selectedOrder.cancel_reason}</div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 🔸 Total */}
+                                <div style={styles.detailSection}>
+                                    <div style={styles.totalSection}>
+                                        <div style={styles.totalLabel}>Total</div>
+                                        <div style={styles.totalAmount}>
+                                            {formatPrice(selectedOrder.total_amount)}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 🔹 Footer */}
+                            <div style={styles.modalFooter}>
+                                
+
+                                {/* ✅ Download Invoice */}
+                                <button
+                                    style={styles.invoiceButton}
+                                    onClick={() => handleDownloadInvoice(selectedOrder.id)}
+                                >
+                                    Download Invoice
+                                </button>
+
+                                {/* ✅ Cancel Order */}
+                                {canCancelOrder(selectedOrder) && (
+                                    <button
+                                        style={styles.cancelModalButton}
+                                        onClick={() => {
+                                            closeOrderDetails();
+                                            handleCancelOrder(selectedOrder.id, selectedOrder.payment_method);
+                                        }}
+                                        disabled={cancellingOrderId === selectedOrder.id}
+                                    >
+                                        {cancellingOrderId === selectedOrder.id ? 'Cancelling...' : 'Cancel Order'}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
 
                 {/* Results Summary */}
                 {filteredOrders.length > 0 && (
@@ -622,6 +825,13 @@ const styles = {
         borderTop: '3px solid #3b82f6',
         borderRadius: '50%',
         animation: 'spin 1s linear infinite'
+    },
+    pageTitle: {
+        textAlign: 'center',
+        fontSize: '28px',
+        fontWeight: '700',
+        color: '#1f2937',
+        marginTop: '50px'
     },
 
     // ✅ NEW: Small spinner for button loading state
@@ -721,6 +931,7 @@ const styles = {
         fontWeight: '500'
     },
 
+
     shopButton: {
         display: 'inline-flex',
         alignItems: 'center',
@@ -733,6 +944,21 @@ const styles = {
         fontSize: '16px',
         fontWeight: '500'
     },
+    itemsAndStatus: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        gap: '24px',
+        flexWrap: 'wrap' // ensures responsiveness
+    },
+
+    statusSectionBody: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        minWidth: '150px',
+        justifyContent: 'flex-end'
+    },
 
     // Order List
     orderList: {
@@ -741,24 +967,18 @@ const styles = {
         gap: '1rem',
         width: '100%',
     },
-    
+
     card: {
         width: '100%',
         boxSizing: 'border-box',
         padding: '1rem',
         borderRadius: '8px',
-        background: '#fff',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        background: '#FDFFF0',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
     },
 
-    cardHeader: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        padding: '20px 24px',
-        borderBottom: '1px solid #f3f4f6',
-        backgroundColor: '#f8fafc'
-    },
+
 
     orderInfo: {
         display: 'flex',
@@ -811,7 +1031,7 @@ const styles = {
     },
 
     cardBody: {
-        padding: '20px 24px'
+        padding: '12px 24px'
     },
 
     statusSection: {
@@ -830,9 +1050,9 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
-        padding: '6px 12px',
-        borderRadius: '20px',
-        fontSize: '12px',
+        // padding: '6px 12px',
+        // borderRadius: '20px',
+        fontSize: '14px',
         fontWeight: '600',
         textTransform: 'uppercase',
         letterSpacing: '0.5px'
@@ -845,7 +1065,7 @@ const styles = {
     itemsHeader: {
         fontSize: '16px',
         fontWeight: '600',
-        color: '#1f2937',
+        color: '#1a4845 ',
         margin: '0 0 8px 0'
     },
 
@@ -863,12 +1083,12 @@ const styles = {
         alignItems: 'center',
         gap: '8px',
         fontSize: '14px',
-        color: '#374151'
+        color: ' #1a4845'
     },
 
     itemQuantity: {
-        fontWeight: '600',
-        color: '#3b82f6',
+        fontWeight: '500',
+        color: 'rgb(107, 114, 128) ',
         minWidth: '30px'
     },
 
@@ -912,10 +1132,30 @@ const styles = {
         fontSize: '13px'
     },
 
+    footerLeft: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px'
+    },
+
+    totalFooter: {
+        fontSize: '17px',
+        fontWeight: '600',
+        color: '#1a4845'
+    },
+
     cardFooter: {
         padding: '16px 24px',
-        borderTop: '1px solid #f3f4f6',
-        backgroundColor: '#f8fafc'
+        borderTop: '1px solid #e5e7eb',
+        backgroundColor: '#FDFFF0',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    },
+    totalLabel: {
+        fontSize: '17px',
+        fontWeight: '600',
+        color: '#1a4845'
     },
 
     cardActions: {
@@ -929,11 +1169,11 @@ const styles = {
         display: 'inline-flex',
         alignItems: 'center',
         gap: '6px',
-        padding: '10px 16px',
-        backgroundColor: '#3b82f6',
+        padding: '8px 16px',
+        backgroundColor: 'rgb(5, 150, 105)',
         color: 'white',
         textDecoration: 'none',
-        borderRadius: '8px',
+        borderRadius: '6px',
         fontSize: '14px',
         fontWeight: '500',
         transition: 'all 0.2s',
@@ -946,11 +1186,11 @@ const styles = {
         display: 'inline-flex',
         alignItems: 'center',
         gap: '6px',
-        padding: '10px 16px',
+        padding: '8px 16px',
         backgroundColor: '#ef4444',
         color: 'white',
         border: 'none',
-        borderRadius: '8px',
+        borderRadius: '6px',
         cursor: 'pointer',
         fontSize: '14px',
         fontWeight: '500',
@@ -963,7 +1203,7 @@ const styles = {
         alignItems: 'center',
         gap: '6px',
         padding: '10px 16px',
-        backgroundColor: '#10b981',
+        backgroundColor: '#868686ff',
         color: 'white',
         border: 'none',
         borderRadius: '8px',
@@ -987,5 +1227,192 @@ const styles = {
         padding: '16px',
         color: '#6b7280',
         fontSize: '14px'
-    }
+    },
+
+    // Modal Styles
+    modalOverlay: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '20px',
+        overflowY: 'auto', // ✅ allow scroll if modal too tall
+    },
+
+    modalContent: {
+        borderRadius: '16px',
+        maxWidth: '600px',
+        width: '100%',
+        maxHeight: '90vh',
+        display: 'flex', // ✅ enable body+footer flex layout
+        flexDirection: 'column',
+        overflow: 'hidden',
+        backgroundColor: 'rgba(49, 47, 47, 0.2)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        color: 'white',
+    },
+    cancelModalContent: {
+        borderRadius: '16px', maxWidth: '500px',
+        width: '100%', maxHeight: '90vh', overflow: 'hidden',
+        backgroundColor: 'rgba(49, 47, 47, 0.2)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        color: 'white',
+    },
+
+    // ✅ Review Modal Content
+    reviewModalContent: {
+        backgroundColor: 'white', borderRadius: '16px', maxWidth: '500px',
+        width: '100%', maxHeight: '90vh', overflow: 'hidden',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+    },
+
+    modalHeader: {
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '24px', borderBottom: '1px solid #e5e7eb'
+    },
+    modalTitle: {
+        fontSize: '20px', fontWeight: '700', color: 'white', margin: 0,
+        display: 'flex', alignItems: 'center'
+    },
+    closeButton: {
+        background: 'none', border: 'none', cursor: 'pointer',
+        color: '#6b7280', padding: '8px', borderRadius: '8px',
+        transition: 'all 0.2s'
+    },
+    modalBody: {
+        flex: 1, // ✅ allow it to grow & scroll inside modal
+        padding: '24px',
+        overflowY: 'auto',
+        maxHeight: 'calc(90vh - 140px)', // ✅ adjusted to leave room for footer
+        boxSizing: 'border-box',
+    },
+
+    detailSection: {
+        marginBottom: '24px'
+    },
+    sectionTitle: {
+        fontSize: '16px', fontWeight: '600', color: '#1a4845',
+        marginBottom: '12px', margin: '0 0 12px 0'
+    },
+    statusDetail: {
+        display: 'flex', alignItems: 'center', gap: '12px',
+        backgroundColor: 'transparent', padding: '12px', borderRadius: '8px',
+        border: '1px solid rgba(255, 255, 255, 0.38)',
+        color: 'white',
+    },
+    infoGrid: {
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '16px'
+    },
+    infoItem: {
+        display: 'flex', alignItems: 'flex-start', gap: '12px',
+        padding: '12px', borderRadius: '8px', backgroundColor: 'transparent',
+        border: '1px solid rgba(255, 255, 255, 0.38)',
+        color: '#1a4845',
+    },
+    infoLabel: {
+        fontSize: '12px', color: '#1a4845', fontWeight: '500',
+        textTransform: 'uppercase', letterSpacing: '0.05em'
+    },
+    infoValue: {
+        fontSize: '14px', color: '#6b7280', fontWeight: '500', marginTop: '2px'
+    },
+    itemsList: {
+        display: 'flex', flexDirection: 'column', gap: '12px'
+    },
+    modalOrderItem: {
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+        padding: '16px', backgroundColor: 'transparent',
+        border: '1px solid rgba(255, 255, 255, 0.38)',
+        color: 'white', borderRadius: '8px'
+    },
+    modalItemInfo: {
+        flex: 1
+    },
+    modalItemName: {
+        fontSize: '16px', fontWeight: '600', color: '#1a4845', marginBottom: '4px'
+    },
+    modalItemPrice: {
+        fontSize: '14px', color: '#6b7280', marginBottom: '6px'
+    },
+    modalItemDesc: {
+        fontSize: '12px', color: '#6b7280', lineHeight: '1.4', marginBottom: '8px'
+    },
+
+    // ✅ Product Review in Modal
+    modalProductReview: {
+        marginTop: '8px'
+    },
+
+    modalItemTotal: {
+        fontSize: '16px', fontWeight: '700', color: '#1a4845'
+    },
+    noItemsModal: {
+        textAlign: 'center', padding: '20px', color: '#9ca3af',
+        fontStyle: 'italic'
+    },
+    addressBox: {
+        display: 'flex', alignItems: 'center', gap: '12px',
+        padding: '16px', backgroundColor: 'transparent',
+        border: '1px solid rgba(255, 255, 255, 0.38)',
+        color: '#1a4845', borderRadius: '8px',
+    },
+    addressText: {
+        fontSize: '14px', color: '#1a4845', lineHeight: '1.5'
+    },
+    cancelReasonBox: {
+        display: 'flex', alignItems: 'flex-start', gap: '12px',
+        padding: '16px', backgroundColor: '#fef2f2', borderRadius: '8px',
+        border: '1px solid #fecaca'
+    },
+    cancelReasonText: {
+        fontSize: '14px', color: '#dc2626', lineHeight: '1.5'
+    },
+    totalSection: {
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '16px', backgroundColor: 'transparent',
+        border: '1px solid rgba(255, 255, 255, 0.38)',
+        color: 'white', borderRadius: '8px',
+    },
+    totalLabel: {
+        fontSize: '16px', fontWeight: '600', color: '#1a4845'
+    },
+    totalAmount: {
+        fontSize: '20px', fontWeight: '700', color: '#1a4845'
+    },
+    modalFooter: {
+        display: 'flex',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '16px 24px',
+        borderTop: '1px solid #e5e7eb',
+        backgroundColor: 'rgba(14, 69, 30, 0.145)',
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 1,
+    },
+    closeModalButton: {
+        padding: '10px 20px', backgroundColor: '#6b7280', color: 'white',
+        border: 'none', borderRadius: '8px', cursor: 'pointer',
+        fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
+    },
+    cancelModalButton: {
+        padding: '10px 20px', backgroundColor: '#ef4444', color: 'white',
+        border: 'none', borderRadius: '8px', cursor: 'pointer',
+        fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
+    },
+
 };

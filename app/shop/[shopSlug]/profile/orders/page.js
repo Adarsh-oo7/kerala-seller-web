@@ -133,11 +133,10 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
   };
 
   return (
-    <div style={styles.modalOverlay} onClick={handleOverlayClick}>
+    <div style={styles.reviewModalOverlay} onClick={handleOverlayClick}>
       <div style={styles.reviewModalContent} onClick={(e) => e.stopPropagation()}>
         <div style={styles.modalHeader}>
           <h2 style={styles.modalTitle}>
-            <Star size={24} style={{ marginRight: '8px' }} />
             Review Product: {productName}
           </h2>
           <button style={styles.closeButton} onClick={onClose}>
@@ -145,29 +144,29 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
           </button>
         </div>
 
-        <div style={styles.modalBody}>
-          <div style={styles.reviewFormDescription}>
+        <div style={styles.reviewModalBody}>
+          <div style={styles.reviewModalFormDescription}>
             Share your experience with this product to help other customers make informed decisions.
           </div>
 
           {error && (
-            <div style={styles.errorMessage}>
+            <div style={styles.reviewModalErrorMessage}>
               <AlertTriangle size={16} />
               <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div style={styles.successMessage}>
+            <div style={styles.reviewModalSuccessMessage}>
               <Check size={16} />
               <span>{success}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit}>
-            <div style={styles.detailSection}>
-              <h3 style={styles.sectionTitle}>Your Rating:</h3>
-              <div style={styles.starRatingInput}>
+            <div style={styles.reviewModalDetailSection}>
+              <h3 style={styles.reviewModalSectionTitle}>Your Rating:</h3>
+              <div style={styles.reviewModalStarRatingInput}>
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
@@ -177,32 +176,32 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
                     onMouseLeave={() => setHoverRating(0)}
                     color={(hoverRating || rating) >= star ? "#fbbf24" : "#d1d5db"}
                     fill={(hoverRating || rating) >= star ? "#fbbf24" : "none"}
-                    style={styles.ratingStarButton}
+                    style={styles.reviewModalRatingStarButton}
                   />
                 ))}
               </div>
-              <div style={styles.ratingDescription}>
+              <div style={styles.reviewModalRatingDescription}>
                 {getRatingDescription(hoverRating || rating)}
               </div>
             </div>
 
-            <div style={styles.detailSection}>
-              <h3 style={styles.sectionTitle}>Your Review:</h3>
+            <div style={styles.reviewModalDetailSection}>
+              <h3 style={styles.reviewModalSectionTitle}>Your Review:</h3>
               <textarea
                 value={comment}
                 onChange={e => setComment(e.target.value)}
                 placeholder="Share your experience with this product. What did you like or dislike about it? How was the quality, delivery, and overall experience?"
-                style={styles.reviewTextarea}
+                style={styles.reviewModalTextarea}
                 rows={5}
                 maxLength={1000}
                 disabled={isSubmitting}
               />
-              <div style={styles.charCountContainer}>
-                <small style={styles.characterCount}>
+              <div style={styles.reviewModalCharCountContainer}>
+                <small style={styles.reviewModalCharacterCount}>
                   {comment.length}/1000 characters (minimum 10 required)
                 </small>
                 {comment.length >= 10 && (
-                  <span style={styles.validIndicator}>
+                  <span style={styles.reviewModalValidIndicator}>
                     <Check size={14} />
                     Ready to submit
                   </span>
@@ -212,9 +211,9 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
           </form>
         </div>
 
-        <div style={styles.modalFooter}>
+        <div style={styles.reviewModalFooter}>
           <button
-            style={styles.closeModalButton}
+            style={styles.reviewModalCloseButton}
             onClick={onClose}
             disabled={isSubmitting}
           >
@@ -224,18 +223,18 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
             onClick={handleSubmit}
             disabled={isSubmitting || comment.trim().length < 10}
             style={{
-              ...styles.submitReviewButton,
-              ...(isSubmitting || comment.trim().length < 10 ? styles.disabledButton : {})
+              ...styles.reviewModalSubmitButton,
+              ...(isSubmitting || comment.trim().length < 10 ? styles.reviewModalDisabledButton : {})
             }}
           >
             {isSubmitting ? (
-              <span style={styles.buttonContent}>
+              <span style={styles.reviewModalButtonContent}>
                 <RefreshCw size={16} className="spinning" />
                 Submitting Review...
               </span>
             ) : (
-              <span style={styles.buttonContent}>
-                <Star size={16} />
+              <span style={styles.reviewModalButtonContent}>
+                <Star size={16} color='yellow' />
                 Submit Review
               </span>
             )}
@@ -243,6 +242,7 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
         </div>
       </div>
     </div>
+
   );
 }
 
@@ -324,10 +324,11 @@ function ProductReviewButton({ product, onReviewSubmitted }) {
   return (
     <>
       <button
+        className='profileorderactionbtn'
         style={styles.reviewProductButton}
         onClick={handleReviewClick}
       >
-        <Star size={16} />
+        <Star className='profileordericonsize' size={16} />
         Review Product
       </button>
 
@@ -949,15 +950,7 @@ export default function ShopOrdersPage() {
                                 {item.product.description}
                               </div>
                             )}
-                            {/* ✅ Product Review in Modal for delivered orders */}
-                            {selectedOrder.status?.toLowerCase() === 'delivered' && item.product && (
-                              <div style={styles.modalProductReview}>
-                                <ProductReviewButton
-                                  product={item.product}
-                                  onReviewSubmitted={handleReviewSubmitted}
-                                />
-                              </div>
-                            )}
+
                           </div>
                           <div style={styles.modalItemTotal}>
                             {formatPrice(item.price * item.quantity)}
@@ -1319,12 +1312,7 @@ const styles = {
     color: 'white',
   },
 
-  // ✅ Review Modal Content
-  reviewModalContent: {
-    backgroundColor: 'white', borderRadius: '16px', maxWidth: '500px',
-    width: '100%', maxHeight: '90vh', overflow: 'hidden',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-  },
+
 
   modalHeader: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -1466,11 +1454,11 @@ const styles = {
   // Cancel Modal Specific Styles
   cancelWarning: {
     backgroundColor: '#fef2f2', border: '1px solid #fecaca',
-    borderRadius: '8px', padding: '16px', marginBottom: '24px',color: "#1a4845",
+    borderRadius: '8px', padding: '16px', marginBottom: '24px', color: "#1a4845",
   },
   reasonsList: {
     display: 'flex', flexDirection: 'column', gap: '12px',
-    backgroundColor: 'transparent', padding: '16px', borderRadius: '8px',color:"#1a4845",
+    backgroundColor: 'transparent', padding: '16px', borderRadius: '8px', color: "#1a4845",
   },
   reasonOption: {
     display: 'flex', alignItems: 'center', gap: '12px',
@@ -1481,7 +1469,7 @@ const styles = {
     width: '16px', height: '16px', cursor: 'pointer'
   },
   reasonLabel: {
-    fontSize: '14px', color:"#1a4845", cursor: 'pointer'
+    fontSize: '14px', color: "#1a4845", cursor: 'pointer'
   },
   customReasonSection: {
     marginTop: '16px'
@@ -1504,7 +1492,7 @@ const styles = {
   },
   summaryRow: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '8px 0', borderBottom: '1px solid #e5e7eb',color: "#1a4845",
+    padding: '8px 0', borderBottom: '1px solid #e5e7eb', color: "#1a4845",
   },
   summaryAmount: {
     fontWeight: '600', color: '#1a4845'
@@ -1577,5 +1565,191 @@ const styles = {
 
   disabledButton: {
     backgroundColor: '#9ca3af', cursor: 'not-allowed'
-  }
+  },
+
+  reviewModalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+    overflowY: 'auto',
+    padding: '10px', // reduce padding for smaller screens
+    boxSizing: 'border-box', // important to prevent overflow
+  },
+
+  reviewModalContent: {
+    borderRadius: '16px',
+    width: '100%',
+    maxWidth: '600px',
+    maxHeight: '90vh',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    backgroundColor: 'rgba(49, 47, 47, 0.2)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    color: 'white',
+    boxSizing: 'border-box',  // ✅ important for padding + width
+    margin: '0 5px',           // ✅ prevent tiny overflow on mobile
+  },
+
+
+  // Modal header
+  modalHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '16px 20px',
+    borderBottom: '1px solid #e5e7eb',
+  },
+
+  closeButton: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 4,
+  },
+
+  // Modal body
+  reviewModalBody: {
+    padding: '16px 20px',
+    overflowY: 'auto',
+  },
+
+  // Description text
+  reviewModalFormDescription: {
+    fontSize: '14px',
+    color: '#374151',
+    marginBottom: '16px',
+  },
+
+  // Error / Success messages
+  reviewModalErrorMessage: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: '#fee2e2',
+    color: '#b91c1c',
+    padding: '10px',
+    borderRadius: '6px',
+    marginBottom: '12px',
+    fontSize: '14px',
+  },
+  reviewModalSuccessMessage: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: '#d1fae5',
+    color: '#065f46',
+    padding: '10px',
+    borderRadius: '6px',
+    marginBottom: '12px',
+    fontSize: '14px',
+  },
+
+  // Sections
+  reviewModalDetailSection: {
+    marginBottom: '20px',
+  },
+  reviewModalSectionTitle: {
+    color: "#065f46",
+    fontSize: '16px',
+    fontWeight: '600',
+    marginBottom: '8px',
+  },
+
+  // Star rating
+  reviewModalStarRatingInput: {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '8px',
+  },
+  reviewModalRatingStarButton: {
+    cursor: 'pointer',
+    transition: 'transform 0.2s',
+  },
+  reviewModalRatingDescription: {
+    fontSize: '14px',
+    color: '#374151',
+  },
+
+  // Textarea
+  reviewModalTextarea: {
+    width: '100%',
+    padding: '10px',
+    fontSize: '14px',
+    borderRadius: '6px',
+    border: '1px solid #d1d5db',
+    resize: 'vertical',
+    fontFamily: 'inherit',
+    marginBottom: '8px',
+    boxSizing: 'border-box',
+  },
+
+  reviewModalCharCountContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontSize: '12px',
+    color: '#6b7280',
+  },
+  reviewModalCharacterCount: {
+    fontSize: '12px',
+    color: '#6b7280',
+  },
+  reviewModalValidIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    color: '#10b981',
+    fontWeight: '500',
+    fontSize: '12px',
+  },
+
+  // Modal footer
+  reviewModalFooter: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '12px',
+    padding: '16px 20px',
+    borderTop: '1px solid #e5e7eb',
+  },
+  reviewModalCloseButton: {
+    padding: '8px 16px',
+    backgroundColor: '#ed3838ff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: '500',
+  },
+  reviewModalSubmitButton: {
+    padding: '8px 16px',
+    backgroundColor: '#2ec121ff',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: '500',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+  },
+  reviewModalDisabledButton: {
+    backgroundColor: '#c3b8fbff',
+    cursor: 'not-allowed',
+  },
+  reviewModalButtonContent: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+  },
 };

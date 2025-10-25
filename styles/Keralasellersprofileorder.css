@@ -1,0 +1,94 @@
+/*   */
+
+@media (max-width: 576px) {
+    .keralasellersprofileordericonsize {
+        width: 17px !important;
+        height: 17px !important;
+    }
+
+    .keralasellersprofileorderstatustext {
+        font-size: 14px !important;
+    }
+
+    .keralasellersprofileorderactionbtn {
+        padding: 6px 14px !important;
+        font-size: 13px !important;
+    }
+
+    .keralasellersprofileordercardbody {
+        padding: 12px 10px !important;
+    }
+
+    .keralasellersprofileordertitle {
+        font-size: 22px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .keralasellersprofileordericonsize {
+        width: 15px !important;
+        height: 15px !important;
+    }
+
+    .keralasellersprofileorderstatustext {
+        font-size: 12px !important;
+    }
+
+    .keralasellersprofileorderactionbtn {
+        padding: 6px 8px !important;
+        font-size: 11px !important;
+        justify-content: center !important;
+    }
+
+    .keralasellersprofileorderitemname {
+        font-size: 13px !important;
+    }
+
+    .keralasellersprofileorderitemdetails {
+        font-size: 13px !important;
+    }
+
+
+    .keralasellersprofileordertotalprice {
+        font-size: 15px !important;
+    }
+
+
+    .keralasellersprofileordercardbody {
+        padding: 12px 10px !important;
+    }
+    .keralasellersprofileordertitle {
+        font-size: 18px !important;
+    }
+}
+
+@media (max-width: 400px) {
+    .keralasellersorder-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .keralasellersorder-actions button {
+        width: 100%;
+    }
+
+    .keralasellersprofileordercardbody {
+        padding: 12px 5px !important;
+    }
+
+    .keralasellersprofileordercardbodygap {
+        gap: 0px !important;
+    }
+
+    .keralasellersprofileorderactionbtn {
+
+        justify-content: center !important;
+    }
+    .keralasellersprofileordertitle {
+        font-size: 16px !important;
+    }
+    
+    .keralasellersprofileordertotalprice {
+        font-size: 15px !important;
+    }
+}
