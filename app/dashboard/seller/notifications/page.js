@@ -11,10 +11,8 @@ import {
   IndianRupee, 
   ShoppingCart, 
   Clock, 
-  Filter,
   RefreshCw,
-  Trash2,
-  MoreVertical
+  ExternalLink
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
@@ -30,7 +28,7 @@ export default function NotificationsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const router = useRouter();
 
-  // ✅ FIXED: Changed Token to Bearer authentication
+  // ✅ Authentication headers
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
@@ -40,6 +38,7 @@ export default function NotificationsPage() {
     return { 'Authorization': `Bearer ${token}` };
   }, [router]);
 
+  // ✅ Fetch notifications from API
   const fetchNotifications = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -62,7 +61,6 @@ export default function NotificationsPage() {
         setError('Session expired. Please log in again.');
         setTimeout(() => router.push('/login/seller'), 2000);
       } else if (error.response?.status === 404) {
-        // Handle case where notifications API might not exist yet
         setError('Notifications service not available.');
         setNotifications([]);
         setFilteredNotifications([]);
@@ -74,7 +72,7 @@ export default function NotificationsPage() {
     }
   }, [getAuthHeaders, router]);
 
-  // Apply filter whenever filter changes
+  // Apply filter
   useEffect(() => {
     let filtered = [...notifications];
     
@@ -86,7 +84,6 @@ export default function NotificationsPage() {
         filtered = filtered.filter(n => n.is_read);
         break;
       default:
-        // 'all' - no filtering needed
         break;
     }
     
@@ -97,7 +94,32 @@ export default function NotificationsPage() {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  const handleMarkAsRead = async (notificationId) => {
+  // ✅ NEW: Handle notification click with navigation
+  const handleNotificationClick = async (notification) => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
+    // Mark as read first
+    if (!notification.is_read) {
+      try {
+        await axios.patch(`${NOTIFICATIONS_API}${notification.id}/mark-as-read/`, {}, { headers });
+        setNotifications(prev => 
+          prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n)
+        );
+      } catch (error) {
+        console.error('Failed to mark as read:', error);
+      }
+    }
+
+    // Navigate to the link if it exists
+    if (notification.link) {
+      router.push(notification.link);
+    }
+  };
+
+  // Mark single notification as read
+  const handleMarkAsRead = async (notificationId, event) => {
+    event.stopPropagation(); // Prevent triggering notification click
     const headers = getAuthHeaders();
     if (!headers) return;
 
@@ -105,8 +127,6 @@ export default function NotificationsPage() {
     
     try {
       await axios.patch(`${NOTIFICATIONS_API}${notificationId}/mark-as-read/`, {}, { headers });
-      
-      // Update the state locally for instant UI update
       setNotifications(prev => 
         prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
       );
@@ -124,6 +144,7 @@ export default function NotificationsPage() {
     }
   };
 
+  // Mark all as read
   const handleMarkAllAsRead = async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -134,14 +155,12 @@ export default function NotificationsPage() {
     setIsProcessing(true);
     
     try {
-      // Mark all unread notifications as read
       await Promise.all(
         unreadNotifications.map(notification =>
           axios.patch(`${NOTIFICATIONS_API}${notification.id}/mark-as-read/`, {}, { headers })
         )
       );
       
-      // Update all notifications as read
       setNotifications(prev => 
         prev.map(n => ({ ...n, is_read: true }))
       );
@@ -159,20 +178,24 @@ export default function NotificationsPage() {
     }
   };
 
+  // Get appropriate icon based on message content
   const getNotificationIcon = (message) => {
     const lowercaseMessage = message.toLowerCase();
     
     if (lowercaseMessage.includes('order')) {
       return <ShoppingCart size={20} color="#3b82f6" />;
-    } else if (lowercaseMessage.includes('payment') || lowercaseMessage.includes('payout')) {
+    } else if (lowercaseMessage.includes('payment') || lowercaseMessage.includes('payout') || lowercaseMessage.includes('₹')) {
       return <IndianRupee size={20} color="#059669" />;
     } else if (lowercaseMessage.includes('product') || lowercaseMessage.includes('stock')) {
       return <Package size={20} color="#8b5cf6" />;
+    } else if (lowercaseMessage.includes('shipped') || lowercaseMessage.includes('delivery')) {
+      return <Package size={20} color="#f59e0b" />;
     } else {
       return <Bell size={20} color="#6b7280" />;
     }
   };
 
+  // Format timestamp
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -320,9 +343,11 @@ export default function NotificationsPage() {
           filteredNotifications.map(notification => (
             <div 
               key={notification.id} 
+              onClick={() => handleNotificationClick(notification)}
               style={{
                 ...styles.notificationCard, 
-                ...(notification.is_read ? styles.readCard : styles.unreadCard)
+                ...(notification.is_read ? styles.readCard : styles.unreadCard),
+                ...(notification.link ? styles.clickableCard : {})
               }}
             >
               <div style={styles.notificationIcon}>
@@ -333,6 +358,17 @@ export default function NotificationsPage() {
               <div style={styles.notificationContent}>
                 <p style={styles.notificationMessage}>
                   {notification.message}
+                  {notification.link && (
+                    <ExternalLink 
+                      size={14} 
+                      style={{ 
+                        marginLeft: '8px', 
+                        display: 'inline', 
+                        verticalAlign: 'middle',
+                        opacity: 0.6
+                      }} 
+                    />
+                  )}
                 </p>
                 <div style={styles.notificationMeta}>
                   <Clock size={12} />
@@ -343,7 +379,7 @@ export default function NotificationsPage() {
               <div style={styles.notificationActions}>
                 {!notification.is_read && (
                   <button 
-                    onClick={() => handleMarkAsRead(notification.id)} 
+                    onClick={(e) => handleMarkAsRead(notification.id, e)} 
                     style={styles.markReadButton}
                     disabled={isProcessing}
                     title="Mark as read"
@@ -367,11 +403,6 @@ export default function NotificationsPage() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.6; }
         }
       `}</style>
     </div>
@@ -556,6 +587,10 @@ const styles = {
     backgroundColor: 'white',
     transition: 'all 0.2s ease',
     position: 'relative'
+  },
+  
+  clickableCard: {
+    cursor: 'pointer',
   },
   
   unreadCard: {
