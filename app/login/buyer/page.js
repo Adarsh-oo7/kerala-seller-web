@@ -1,12 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import "../../../styles/BuyerLogin.css";
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
+import Image from 'next/image';
+const BagImage = '/assets/images/bag.png';
+const StoreImage = '/assets/images/store.png';
+const TrolleyImage = '/assets/images/trolley.png';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import {
     ArrowLeft,
@@ -254,6 +258,97 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
     );
 }
 
+const FloatingIcons = ({ totalIcons = 12 }) => {
+    const containerRef = useRef(null);
+    const iconRefs = useRef([]);
+    const iconSources = [BagImage, StoreImage, TrolleyImage];
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        // Random properties
+        const speeds = Array.from({ length: totalIcons }, () => ({
+            x: (Math.random() - 0.5) * 2,
+            y: (Math.random() - 0.5) * 2,
+        }));
+
+        const positions = Array.from({ length: totalIcons }, () => ({
+            x: Math.random() * (container.clientWidth - 40),
+            y: Math.random() * (container.clientHeight - 40),
+        }));
+
+        const sizes = Array.from({ length: totalIcons }, () => 25 + Math.random() * 25);
+
+        const animate = () => {
+            const rect = container.getBoundingClientRect();
+
+            iconRefs.current.forEach((icon, i) => {
+                if (!icon) return;
+                const size = sizes[i];
+                const pos = positions[i];
+                const speed = speeds[i];
+
+                pos.x += speed.x;
+                pos.y += speed.y;
+
+                // Bounce horizontally
+                if (pos.x <= 0 || pos.x + size >= rect.width) speed.x *= -1;
+                // Bounce vertically
+                if (pos.y <= 0 || pos.y + size >= rect.height) speed.y *= -1;
+
+                icon.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+            });
+
+            requestAnimationFrame(animate);
+        };
+
+        animate();
+    }, [totalIcons]);
+
+    return (
+        <div
+            ref={containerRef}
+            className="floating-icons-container"
+            style={{
+                position: "absolute",
+                inset: 0,
+                overflow: "hidden",
+                zIndex: -1,
+                pointerEvents: "none",
+            }}
+        >
+            {Array.from({ length: totalIcons }).map((_, i) => {
+                const img = iconSources[i % iconSources.length];
+                const size = 25 + Math.random() * 25;
+                const opacity = 0.1 + Math.random() * 0.2;
+
+                return (
+                    <Image
+                        key={i}
+                        src={img}
+                        alt="Floating icon"
+                        width={size}
+                        height={size}
+                        ref={(el) => (iconRefs.current[i] = el)}
+                        className="floating-icon"
+                        style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            opacity,
+                            transform: `translate(${Math.random() * 200}px, ${Math.random() * 200}px)`,
+                            transition: "transform 0s",
+                        }}
+                    />
+                );
+            })}
+        </div>
+    );
+};
+
+
+
 // ✅ Enhanced LoginContent with store awareness
 function LoginContent() {
     const router = useRouter();
@@ -361,20 +456,7 @@ function LoginContent() {
         alert('Google login failed. Please try again or use email login.');
     };
 
-    // ✅ Store-aware back navigation
-    // const handleBackClick = () => {
-    //     const redirectTo = searchParams.get('redirect');
 
-    //     if (redirectTo) {
-    //         router.push(decodeURIComponent(redirectTo));
-    //     } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
-    //         router.push(`/store/${currentStoreInfo.storeId}`);
-    //     } else if (window.history.length > 1) {
-    //         router.back();
-    //     } else {
-    //         router.push('/');
-    //     }
-    // };
 
     // ✅ Store-aware links
     const getForgotPasswordLink = () => {
@@ -395,7 +477,7 @@ function LoginContent() {
 
     return (
         <div style={styles.pageContainer}>
-        <Header/>
+            <Header />
             {/* <header style={styles.header}>
                 <div style={styles.headerContainer}>
                     <button onClick={handleBackClick} style={styles.backButton}>
@@ -461,6 +543,8 @@ function LoginContent() {
                         </div>
                     </div>
 
+                    <FloatingIcons totalIcons={8} />                
+
                     <div style={styles.footerLinks}>
                         <Link href={getForgotPasswordLink()} style={styles.link}>
                             Forgot Password?
@@ -480,7 +564,7 @@ function LoginContent() {
                     </div>
                 </div>
             </div>
-            <Footer/>
+            <Footer />
         </div>
     );
 }
@@ -560,6 +644,7 @@ export default function BuyerLoginPage() {
     );
 }
 
+
 // ✅ Enhanced styles with new components
 const styles = {
     pageContainer: {
@@ -628,11 +713,9 @@ const styles = {
 
 
     card: {
-        backgroundImage: 'url("/assets/images/Shoppagebanner.png")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
+
         position: 'relative',
+        overflow: 'hidden',
         backgroundAttachment: 'fixed',
         marginTop: '50px',
         padding: '40px',
@@ -640,14 +723,16 @@ const styles = {
         boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
         width: '90%',
         maxWidth: '400px',
-        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        backgroundColor: 'rgba(137, 172, 120, 0.45)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
         color: '#fff',
         textAlign: 'center',
-        zIndex: 2,
+        zIndex: 0,
         transition: 'all 0.3s ease',
     },
+
+
 
     cardHeader: {
         textAlign: 'center',
@@ -940,6 +1025,11 @@ if (typeof document !== 'undefined') {
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        @keyframes float {
+            0% { transform: translate(0, 0); }
+            50% { transform: translate(5px, 10px); } /* or translateY(10px) */
+            100% { transform: translate(0, 0); }
         }
         
         @media (max-width: 640px) {
