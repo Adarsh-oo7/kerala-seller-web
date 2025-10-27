@@ -353,7 +353,7 @@ export default function RegisterSellerPage() {
                                     Your Full Name
                                 </label> */}
                                 <div style={styles.inputWrapper}>
-                                    <User className='sellerregistericons'  size={18} style={styles.inputIcon} />
+                                    <User className='sellerregistericons' size={18} style={styles.inputIcon} />
                                     <input
                                         className='sellerregisterinput'
                                         type="text"
@@ -767,7 +767,7 @@ const styles = {
 
     input: {
         width: '100%',
-        padding: '14px 16px',
+        padding: '14px 14px 14px 48px',
         border: '1px solid #d1d5db',
         borderRadius: '8px',
         fontSize: '1rem',
@@ -799,7 +799,7 @@ const styles = {
     },
 
     countryCode: {
-        padding: '14px 12px',
+        padding: '14px 8px',
         backgroundColor: '#FDFFF0',
         borderRight: '1px solid #d1d5db',
         fontSize: '1rem',
@@ -809,7 +809,7 @@ const styles = {
 
     phoneInput: {
         width: '100%',
-        padding: '14px 16px',
+        padding: '14px 14px 14px 8px',
         border: 'none',
         fontSize: '1rem',
         backgroundColor: '#FDFFF0',
@@ -824,7 +824,7 @@ const styles = {
 
     passwordInput: {
         width: '100%',
-        padding: '14px 48px 14px 16px',
+        padding: '14px 14px 14px 48px',
         border: '1px solid #d1d5db',
         borderRadius: '8px',
         fontSize: '1rem',
