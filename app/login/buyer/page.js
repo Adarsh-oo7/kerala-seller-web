@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import "../../../styles/BuyerLogin.css";
-
+import Header from '../../../components/common/Header';
+import Footer from '../../../components/common/Footer';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import {
     ArrowLeft,
@@ -394,6 +395,7 @@ function LoginContent() {
 
     return (
         <div style={styles.pageContainer}>
+        <Header/>
             {/* <header style={styles.header}>
                 <div style={styles.headerContainer}>
                     <button onClick={handleBackClick} style={styles.backButton}>
@@ -478,6 +480,7 @@ function LoginContent() {
                     </div>
                 </div>
             </div>
+            <Footer/>
         </div>
     );
 }

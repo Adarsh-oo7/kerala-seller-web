@@ -6,16 +6,18 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
-import { 
-  User, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Shield, 
-  ArrowLeft, 
-  CheckCircle, 
-  AlertCircle 
+import "../../../styles/RegisterBuyer.css";
+
+import {
+    User,
+    Mail,
+    Lock,
+    Eye,
+    EyeOff,
+    Shield,
+    ArrowLeft,
+    CheckCircle,
+    AlertCircle
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
@@ -25,11 +27,11 @@ const REGISTER_API = `${API_BASE_URL}/user/buyer/register/`;
 
 export default function BuyerRegisterPage() {
     const [step, setStep] = useState(1); // 1 for details, 2 for OTP
-    const [formData, setFormData] = useState({ 
-        email: '', 
-        full_name: '', 
-        password: '', 
-        password2: '' 
+    const [formData, setFormData] = useState({
+        email: '',
+        full_name: '',
+        password: '',
+        password2: ''
     });
     const [otp, setOtp] = useState('');
     const [error, setError] = useState('');
@@ -37,7 +39,7 @@ export default function BuyerRegisterPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [validationErrors, setValidationErrors] = useState({});
-    
+
     const router = useRouter();
 
     const validateEmail = (email) => {
@@ -51,31 +53,31 @@ export default function BuyerRegisterPage() {
 
     const validateForm = () => {
         const errors = {};
-        
+
         if (!formData.full_name.trim()) {
             errors.full_name = 'Full name is required';
         } else if (formData.full_name.trim().length < 2) {
             errors.full_name = 'Name must be at least 2 characters';
         }
-        
+
         if (!formData.email.trim()) {
             errors.email = 'Email is required';
         } else if (!validateEmail(formData.email)) {
             errors.email = 'Please enter a valid email address';
         }
-        
+
         if (!formData.password) {
             errors.password = 'Password is required';
         } else if (!validatePassword(formData.password)) {
             errors.password = 'Password must be at least 8 characters';
         }
-        
+
         if (!formData.password2) {
             errors.password2 = 'Please confirm your password';
         } else if (formData.password !== formData.password2) {
             errors.password2 = 'Passwords do not match';
         }
-        
+
         setValidationErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -83,7 +85,7 @@ export default function BuyerRegisterPage() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
-        
+
         // Clear validation error for this field
         if (validationErrors[name]) {
             setValidationErrors(prev => ({
@@ -91,7 +93,7 @@ export default function BuyerRegisterPage() {
                 [name]: ''
             }));
         }
-        
+
         // Clear general error
         if (error) setError('');
     };
@@ -99,67 +101,67 @@ export default function BuyerRegisterPage() {
     const handleSendOtp = async (e) => {
         e.preventDefault();
         setError('');
-        
+
         if (!validateForm()) {
             setError('Please fix the errors above');
             return;
         }
-        
+
         setIsLoading(true);
-        
+
         try {
-            await axios.post(SEND_OTP_API, { 
+            await axios.post(SEND_OTP_API, {
                 email: formData.email.trim(),
                 full_name: formData.full_name.trim()
             });
             setStep(2); // Move to the OTP step
         } catch (err) {
             console.error('OTP send error:', err);
-            const errorMessage = err.response?.data?.error || 
-                               err.response?.data?.message ||
-                               err.response?.data?.email?.[0] ||
-                               'Failed to send OTP. Please try again.';
+            const errorMessage = err.response?.data?.error ||
+                err.response?.data?.message ||
+                err.response?.data?.email?.[0] ||
+                'Failed to send OTP. Please try again.';
             setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
     };
-    
+
     const handleRegister = async (e) => {
         e.preventDefault();
         setError('');
-        
+
         if (!otp || otp.length !== 6) {
             setError('Please enter a valid 6-digit OTP');
             return;
         }
-        
+
         setIsLoading(true);
-        const finalData = { 
-            ...formData, 
+        const finalData = {
+            ...formData,
             full_name: formData.full_name.trim(),
             email: formData.email.trim(),
             otp: otp.trim()
         };
-        
+
         try {
             const response = await axios.post(REGISTER_API, finalData);
-            
+
             // Store token and redirect
             localStorage.setItem('buyerAccessToken', response.data.token);
-            
+
             // Show success message briefly before redirect
             setError('');
             setTimeout(() => {
                 router.push('/profile');
             }, 1000);
-            
+
         } catch (err) {
             console.error('Registration error:', err);
-            const errorMessage = err.response?.data?.otp?.[0] || 
-                               err.response?.data?.error ||
-                               err.response?.data?.message ||
-                               'Registration failed. Please check your OTP and try again.';
+            const errorMessage = err.response?.data?.otp?.[0] ||
+                err.response?.data?.error ||
+                err.response?.data?.message ||
+                'Registration failed. Please check your OTP and try again.';
             setError(errorMessage);
         } finally {
             setIsLoading(false);
@@ -169,9 +171,9 @@ export default function BuyerRegisterPage() {
     const handleResendOtp = async () => {
         setError('');
         setIsLoading(true);
-        
+
         try {
-            await axios.post(SEND_OTP_API, { 
+            await axios.post(SEND_OTP_API, {
                 email: formData.email.trim(),
                 full_name: formData.full_name.trim()
             });
@@ -196,13 +198,13 @@ export default function BuyerRegisterPage() {
                 <div style={styles.card}>
                     {/* Header */}
                     <div style={styles.header}>
-                        <div style={styles.iconContainer}>
-                            <User size={32} color="#3b82f6" />
+                        <div className='buyerregistericoncontainer' style={styles.iconContainer}>
+                            <User className='buyerregistericonsize' size={32} color="#1a4845" />
                         </div>
-                        <h1 style={styles.title}>Create Your Account</h1>
-                        <p style={styles.subtitle}>
-                            {step === 1 
-                                ? "Join Kerala Sellers and start shopping from local stores" 
+                        <h1 className='buyerregistercardtitle' style={styles.title}>Create Your Account</h1>
+                        <p className='buyerregistercardsubtitle' style={styles.subtitle}>
+                            {step === 1
+                                ? "Join Kerala Sellers and start shopping from local stores"
                                 : "We've sent a verification code to your email"}
                         </p>
                     </div>
@@ -210,7 +212,7 @@ export default function BuyerRegisterPage() {
                     {/* Progress Indicator */}
                     <div style={styles.progressContainer}>
                         <div style={styles.progressBar}>
-                            <div 
+                            <div
                                 style={{
                                     ...styles.progressFill,
                                     width: step === 1 ? '50%' : '100%'
@@ -226,72 +228,74 @@ export default function BuyerRegisterPage() {
                         /* Step 1: Personal Details */
                         <form onSubmit={handleSendOtp} style={styles.form}>
                             <div style={styles.inputGroup}>
-                                <label style={styles.label}>
-                                    <User size={16} />
-                                    Full Name
-                                </label>
-                                <input 
-                                    type="text" 
-                                    name="full_name" 
-                                    value={formData.full_name}
-                                    onChange={handleChange} 
-                                    placeholder="Enter your full name" 
-                                    required 
-                                    style={{
-                                        ...styles.input,
-                                        ...(validationErrors.full_name ? styles.inputError : {})
-                                    }}
-                                    disabled={isLoading}
-                                />
+                                <div style={styles.inputWrapper}>
+                                    <User size={18} style={styles.inputIcon} />
+                                    <input
+                                        type="text"
+                                        name="full_name"
+                                        value={formData.full_name}
+                                        onChange={handleChange}
+                                        placeholder="Enter your full name"
+                                        required
+                                        style={{
+                                            ...styles.input,
+                                            ...(validationErrors.full_name ? styles.inputError : {})
+                                        }}
+                                        className='buyerregisterinput'
+                                        disabled={isLoading}
+                                    />
+                                </div>
                                 {validationErrors.full_name && (
                                     <span style={styles.errorText}>{validationErrors.full_name}</span>
                                 )}
                             </div>
 
                             <div style={styles.inputGroup}>
-                                <label style={styles.label}>
-                                    <Mail size={16} />
-                                    Email Address
-                                </label>
-                                <input 
-                                    type="email" 
-                                    name="email" 
-                                    value={formData.email}
-                                    onChange={handleChange} 
-                                    placeholder="Enter your email address" 
-                                    required 
-                                    style={{
-                                        ...styles.input,
-                                        ...(validationErrors.email ? styles.inputError : {})
-                                    }}
-                                    disabled={isLoading}
-                                />
+                                <div style={styles.inputWrapper}>
+                                    <Mail size={18} style={styles.inputIcon} />
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        placeholder="Enter your email address"
+                                        required
+                                        style={{
+                                            ...styles.input,
+                                            ...(validationErrors.email ? styles.inputError : {})
+                                        }}
+                                        className='buyerregisterinput'
+                                        disabled={isLoading}
+                                    />
+                                </div>
                                 {validationErrors.email && (
                                     <span style={styles.errorText}>{validationErrors.email}</span>
                                 )}
                             </div>
 
                             <div style={styles.inputGroup}>
-                                <label style={styles.label}>
-                                    <Lock size={16} />
-                                    Password
-                                </label>
+
                                 <div style={styles.passwordContainer}>
-                                    <input 
+                                    {/* <div style={styles.inputWrapper}> */}
+                                    <Lock size={18} style={styles.inputIcon} />
+                                    <input
                                         type={showPassword ? "text" : "password"}
-                                        name="password" 
+                                        name="password"
                                         value={formData.password}
-                                        onChange={handleChange} 
-                                        placeholder="Create a strong password (min 8 characters)" 
-                                        required 
+                                        onChange={handleChange}
+                                        placeholder="Enter password "
+                                        required
                                         style={{
                                             ...styles.passwordInput,
                                             ...(validationErrors.password ? styles.inputError : {})
                                         }}
+                                        className='buyerregisterpasswordinput'
                                         disabled={isLoading}
                                     />
+                                    {/* </div> */}
                                     <button
                                         type="button"
+                                        className='buyerregistereye'
                                         onClick={() => setShowPassword(!showPassword)}
                                         style={styles.eyeButton}
                                         disabled={isLoading}
@@ -305,26 +309,28 @@ export default function BuyerRegisterPage() {
                             </div>
 
                             <div style={styles.inputGroup}>
-                                <label style={styles.label}>
-                                    <Lock size={16} />
-                                    Confirm Password
-                                </label>
+
                                 <div style={styles.passwordContainer}>
-                                    <input 
+                                    {/* <div style={styles.inputWrapper}> */}
+                                    <Lock size={18} style={styles.inputIcon} />
+                                    <input
                                         type={showConfirmPassword ? "text" : "password"}
-                                        name="password2" 
+                                        name="password2"
                                         value={formData.password2}
-                                        onChange={handleChange} 
-                                        placeholder="Confirm your password" 
-                                        required 
+                                        onChange={handleChange}
+                                        placeholder="Confirm password"
+                                        required
                                         style={{
                                             ...styles.passwordInput,
                                             ...(validationErrors.password2 ? styles.inputError : {})
                                         }}
+                                        className='buyerregisterpasswordinput'
                                         disabled={isLoading}
                                     />
+                                    {/* </div> */}
                                     <button
                                         type="button"
+                                        className='buyerregistereye'
                                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                         style={styles.eyeButton}
                                         disabled={isLoading}
@@ -337,8 +343,9 @@ export default function BuyerRegisterPage() {
                                 )}
                             </div>
 
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
+                                className='buyerregistersigninbtn'
                                 style={{
                                     ...styles.button,
                                     ...(isLoading ? styles.buttonLoading : {})
@@ -362,12 +369,12 @@ export default function BuyerRegisterPage() {
                         /* Step 2: OTP Verification */
                         <form onSubmit={handleRegister} style={styles.form}>
                             <div style={styles.otpInfo}>
-                                <Mail size={20} />
-                                <div>
+                                <Mail size={20} color='#1a4845' />
+                                <div style={styles.otpDetails}>
                                     <p style={styles.otpText}>
                                         Verification code sent to:
                                     </p>
-                                    <strong>{formData.email}</strong>
+                                    <strong style={styles.otpemail}>{formData.email}</strong>
                                 </div>
                             </div>
 
@@ -376,12 +383,13 @@ export default function BuyerRegisterPage() {
                                     <Shield size={16} />
                                     Verification Code
                                 </label>
-                                <input 
-                                    type="text" 
-                                    value={otp} 
+                                <input
+                                    type="text"
+                                    className='buyerregisterverificationinput'
+                                    value={otp}
                                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                    placeholder="Enter 6-digit OTP" 
-                                    required 
+                                    placeholder="Enter 6-digit OTP"
+                                    required
                                     style={{
                                         ...styles.input,
                                         ...styles.otpInput
@@ -401,8 +409,9 @@ export default function BuyerRegisterPage() {
                                 </div>
                             </div>
 
-                            <button 
-                                type="submit" 
+                            <button
+                                className='buyerregistersigninbtn'
+                                type="submit"
                                 style={{
                                     ...styles.button,
                                     ...(isLoading ? styles.buttonLoading : {})
@@ -423,6 +432,7 @@ export default function BuyerRegisterPage() {
                             </button>
 
                             <button
+                            className='buyerregisterbacktodetailbtn'
                                 type="button"
                                 onClick={handleBackToStep1}
                                 style={styles.backButton}
@@ -476,62 +486,74 @@ export default function BuyerRegisterPage() {
 const styles = {
     pageContainer: {
         minHeight: '100vh',
-        backgroundColor: '#f8fafc'
+        backgroundColor: '#FDFFF0'
+
     },
-    
-    container: { 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '80vh', 
-        padding: '20px' 
+
+    container: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '80vh',
+        padding: '20px'
     },
-    
-    card: { 
-        backgroundColor: 'white', 
-        padding: '32px', 
-        borderRadius: '16px', 
-        boxShadow: '0 4px 20px rgba(0,0,0,0.1)', 
-        width: '100%',
-        maxWidth: '450px',
-        border: '1px solid #e5e7eb',
-        animation: 'fadeIn 0.6s ease-out'
+
+    card: {
+        backgroundImage: 'url("/assets/images/Shoppagebanner.png")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        position: 'relative',
+        backgroundAttachment: 'fixed',
+        marginTop: '50px',
+        padding: '40px',
+        borderRadius: '16px',
+        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
+        width: '90%',
+        maxWidth: '400px',
+        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        color: '#fff',
+        textAlign: 'center',
+        zIndex: 2,
+        transition: 'all 0.3s ease',
     },
-    
+
     header: {
         textAlign: 'center',
         marginBottom: '32px'
     },
-    
+
     iconContainer: {
         width: '64px',
         height: '64px',
-        backgroundColor: '#eff6ff',
+        backgroundColor: '#FDFFF0',
         borderRadius: '50%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         margin: '0 auto 16px auto'
     },
-    
+
     title: {
         fontSize: '1.5rem',
         fontWeight: '700',
         color: '#1f2937',
         marginBottom: '8px'
     },
-    
+
     subtitle: {
         fontSize: '0.95rem',
         color: '#6b7280',
         lineHeight: '1.5',
         margin: 0
     },
-    
+
     progressContainer: {
         marginBottom: '24px'
     },
-    
+
     progressBar: {
         width: '100%',
         height: '4px',
@@ -540,31 +562,42 @@ const styles = {
         overflow: 'hidden',
         marginBottom: '8px'
     },
-    
+
     progressFill: {
         height: '100%',
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#1a4845',
         borderRadius: '2px',
         transition: 'width 0.3s ease'
     },
-    
+
     stepIndicator: {
         fontSize: '0.875rem',
         color: '#6b7280',
         textAlign: 'center'
     },
-    
+
     form: {
         display: 'flex',
         flexDirection: 'column',
         gap: '20px'
     },
-    
+
     inputGroup: {
         display: 'flex',
         flexDirection: 'column'
     },
-    
+    inputWrapper: {
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center'
+    },
+    inputIcon: {
+        position: 'absolute',
+        left: '16px',
+        color: '#6b7280',
+        zIndex: 1
+    },
+
     label: {
         display: 'flex',
         alignItems: 'center',
@@ -574,61 +607,63 @@ const styles = {
         color: '#374151',
         marginBottom: '8px'
     },
-    
-    input: { 
-        width: '100%', 
-        padding: '14px 16px', 
-        border: '1px solid #d1d5db', 
-        borderRadius: '8px', 
-        fontSize: '1rem',
-        backgroundColor: '#ffffff',
-        transition: 'all 0.2s ease',
+
+    input: {
+        width: '100%',
+        padding: '14px 16px 14px 48px',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
         boxSizing: 'border-box',
+        fontSize: '15px',
+        backgroundColor: '#FDFFF0',
+        transition: 'all 0.2s ease',
         outline: 'none'
     },
-    
+
+    passwordInput: {
+        width: '100%',
+        padding: '14px 48px 14px 48px',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
+        boxSizing: 'border-box',
+        fontSize: '15px',
+        backgroundColor: '#FDFFF0',
+        transition: 'all 0.2s ease',
+        outline: 'none'
+    },
+
     passwordContainer: {
         position: 'relative',
         display: 'flex',
         alignItems: 'center'
     },
-    
-    passwordInput: {
-        width: '100%', 
-        padding: '14px 48px 14px 16px', 
-        border: '1px solid #d1d5db', 
-        borderRadius: '8px', 
-        fontSize: '1rem',
-        backgroundColor: '#ffffff',
-        transition: 'all 0.2s ease',
-        boxSizing: 'border-box',
-        outline: 'none'
-    },
-    
+
+
+
     eyeButton: {
         position: 'absolute',
         right: '12px',
         background: 'none',
         border: 'none',
         cursor: 'pointer',
-        color: '#6b7280',
+        color: '#1a4845',
         padding: '4px',
         borderRadius: '4px'
     },
-    
+
     inputError: {
         borderColor: '#ef4444'
     },
-    
+
     errorText: {
         color: '#ef4444',
         fontSize: '0.875rem',
         marginTop: '6px'
     },
-    
+
     otpInfo: {
         display: 'flex',
-        alignItems: 'center',
+        justifyContent: "center",
         gap: '12px',
         padding: '16px',
         backgroundColor: '#f8fafc',
@@ -636,44 +671,55 @@ const styles = {
         marginBottom: '16px',
         border: '1px solid #e2e8f0'
     },
-    
+
+    otpDetails: {
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center' // centers the text vertically with the icon
+    },
+
     otpText: {
         margin: '0 0 4px 0',
-        fontSize: '0.9rem',
-        color: '#6b7280'
+        fontSize: '14px',
+        color: '#1a4845'
     },
-    
+    otpemail: {
+        margin: '0 0 4px 0',
+        fontSize: '0.9rem',
+        color: '#1a4845'
+    },
+
+
     otpInput: {
         textAlign: 'center',
         letterSpacing: '0.5em',
         fontSize: '1.2rem',
         fontWeight: '600'
     },
-    
+
     otpActions: {
         display: 'flex',
         justifyContent: 'flex-end',
         marginTop: '8px'
     },
-    
+
     resendButton: {
         background: 'none',
         border: 'none',
         color: '#3b82f6',
         cursor: 'pointer',
-        fontSize: '0.875rem',
-        textDecoration: 'underline',
+        fontSize: '0.85rem',
         padding: '4px 0'
     },
-    
-    button: { 
-        width: '100%', 
-        padding: '16px 24px', 
-        border: 'none', 
-        borderRadius: '8px', 
-        backgroundColor: '#3b82f6', 
-        color: 'white', 
-        cursor: 'pointer', 
+
+    button: {
+        width: '100%',
+        padding: '16px 24px',
+        border: 'none',
+        borderRadius: '8px',
+        backgroundColor: '#1a4845',
+        color: 'white',
+        cursor: 'pointer',
         fontSize: '1rem',
         fontWeight: '600',
         transition: 'all 0.2s ease',
@@ -682,18 +728,18 @@ const styles = {
         justifyContent: 'center',
         minHeight: '52px'
     },
-    
+
     buttonLoading: {
         backgroundColor: '#9ca3af',
         cursor: 'not-allowed'
     },
-    
+
     buttonContent: {
         display: 'flex',
         alignItems: 'center',
         gap: '8px'
     },
-    
+
     spinner: {
         width: '16px',
         height: '16px',
@@ -702,7 +748,7 @@ const styles = {
         borderRadius: '50%',
         animation: 'spin 1s linear infinite'
     },
-    
+
     backButton: {
         display: 'flex',
         alignItems: 'center',
@@ -718,7 +764,7 @@ const styles = {
         fontSize: '0.9rem',
         marginTop: '8px'
     },
-    
+
     errorContainer: {
         display: 'flex',
         alignItems: 'center',
@@ -731,15 +777,15 @@ const styles = {
         fontSize: '0.9rem',
         marginTop: '16px'
     },
-    
-    footerLinks: { 
+
+    footerLinks: {
         marginTop: '24px',
         textAlign: 'center',
-        fontSize: '0.9rem'
+        fontSize: '14px'
     },
-    
-    link: { 
-        color: '#3b82f6', 
+
+    link: {
+        color: '#3b82f6',
         textDecoration: 'none',
         fontWeight: '500'
     }

@@ -4,30 +4,34 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  Store, 
-  User, 
-  Mail, 
-  Phone, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Shield, 
-  ArrowLeft, 
-  CheckCircle, 
-  AlertCircle 
+import Header from '../../../components/common/Header';
+import Footer from '../../../components/common/Footer';
+import "../../../styles/Registerseller.css";
+
+import {
+    Store,
+    User,
+    Mail,
+    Phone,
+    Lock,
+    Eye,
+    EyeOff,
+    Shield,
+    ArrowLeft,
+    CheckCircle,
+    AlertCircle
 } from 'lucide-react';
 
 // ✅ Enhanced API configuration
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
-  if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:8000';
-  }
-  return 'https://keralaseller-backend.onrender.com';
+    const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+    if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+        return envUrl.trim();
+    }
+    if (process.env.NODE_ENV === 'development') {
+        return 'http://localhost:8000';
+    }
+    return 'https://keralaseller-backend.onrender.com';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -70,50 +74,50 @@ export default function RegisterSellerPage() {
 
     const validateForm = () => {
         const errors = {};
-        
+
         if (!formData.name.trim()) {
             errors.name = 'Full name is required';
         } else if (formData.name.trim().length < 2) {
             errors.name = 'Name must be at least 2 characters';
         }
-        
+
         if (!formData.shop_name.trim()) {
             errors.shop_name = 'Shop name is required';
         } else if (formData.shop_name.trim().length < 2) {
             errors.shop_name = 'Shop name must be at least 2 characters';
         }
-        
+
         if (!formData.email.trim()) {
             errors.email = 'Email is required';
         } else if (!validateEmail(formData.email)) {
             errors.email = 'Please enter a valid email address';
         }
-        
+
         if (!formData.phone.trim()) {
             errors.phone = 'Phone number is required';
         } else if (!validatePhone(formData.phone)) {
             errors.phone = 'Please enter a valid 10-digit phone number (6-9xxxxxxxxx)';
         }
-        
+
         if (!formData.password) {
             errors.password = 'Password is required';
         } else if (!validatePassword(formData.password)) {
             errors.password = 'Password must be at least 8 characters';
         }
-        
+
         if (!formData.confirmPassword) {
             errors.confirmPassword = 'Please confirm your password';
         } else if (formData.password !== formData.confirmPassword) {
             errors.confirmPassword = 'Passwords do not match';
         }
-        
+
         setValidationErrors(errors);
         return Object.keys(errors).length === 0;
     };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        
+
         // Format phone number to remove non-digits
         if (name === 'phone') {
             const formattedValue = value.replace(/\D/g, '').slice(0, 10);
@@ -121,7 +125,7 @@ export default function RegisterSellerPage() {
         } else {
             setFormData({ ...formData, [name]: value });
         }
-        
+
         // Clear validation error for this field
         if (validationErrors[name]) {
             setValidationErrors(prev => ({
@@ -129,7 +133,7 @@ export default function RegisterSellerPage() {
                 [name]: ''
             }));
         }
-        
+
         // Clear general error
         if (error) setError('');
     };
@@ -137,18 +141,18 @@ export default function RegisterSellerPage() {
     const handleSendOtp = async (e) => {
         e.preventDefault();
         setError('');
-        
+
         if (!validateForm()) {
             setError('Please fix the errors above');
             return;
         }
-        
+
         setIsLoading(true);
-        
+
         try {
             console.log('🔍 Sending OTP for phone:', formData.phone);
-            
-            const response = await axios.post(SEND_OTP_API, { 
+
+            const response = await axios.post(SEND_OTP_API, {
                 phone: formData.phone.trim()
             }, {
                 timeout: 15000,
@@ -156,28 +160,28 @@ export default function RegisterSellerPage() {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             console.log('✅ OTP sent successfully');
             setStep(2);
-            
+
         } catch (err) {
             console.error('❌ OTP send error:', err);
             console.error('❌ Error response:', err.response?.data);
-            
+
             let errorMessage = 'Failed to send OTP. Please try again.';
-            
+
             if (err.response?.data?.error) {
                 errorMessage = err.response.data.error;
             } else if (err.response?.data?.phone) {
-                errorMessage = Array.isArray(err.response.data.phone) 
-                    ? err.response.data.phone[0] 
+                errorMessage = Array.isArray(err.response.data.phone)
+                    ? err.response.data.phone[0]
                     : err.response.data.phone;
             } else if (err.response?.status === 400) {
                 errorMessage = 'Invalid phone number format. Please check and try again.';
             } else if (err.code === 'ECONNABORTED') {
                 errorMessage = 'Request timed out. Please check your connection and try again.';
             }
-            
+
             setError(errorMessage);
         } finally {
             setIsLoading(false);
@@ -188,14 +192,14 @@ export default function RegisterSellerPage() {
     const handleCompleteRegistration = async (e) => {
         e.preventDefault();
         setError('');
-        
+
         if (!formData.otp || formData.otp.length !== 6) {
             setError('Please enter a valid 6-digit OTP');
             return;
         }
-        
+
         setIsLoading(true);
-        
+
         try {
             // ✅ FIXED: Send exact fields that backend serializer expects
             const registrationData = {
@@ -207,7 +211,7 @@ export default function RegisterSellerPage() {
                 confirmPassword: formData.confirmPassword, // ✅ Include this field
                 otp: formData.otp.trim(),
             };
-            
+
             console.log('🔍 Sending registration data:', {
                 ...registrationData,
                 password: '***hidden***',
@@ -220,23 +224,23 @@ export default function RegisterSellerPage() {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             console.log('✅ Registration successful:', response.data);
-            
+
             // Show success message and redirect
             setError(''); // Clear any errors
             setTimeout(() => {
                 router.push('/login/seller?message=Registration successful! Please log in with your credentials.');
             }, 1500);
-            
+
         } catch (err) {
             console.error('❌ Registration error:', err);
             console.error('❌ Error response:', err.response?.data);
-            
+
             // ✅ Enhanced error handling for backend constraint errors
             const errorData = err.response?.data;
             let errorMessage = 'Registration failed. Please try again.';
-            
+
             if (errorData?.error) {
                 if (errorData.error.includes('seller account already exists')) {
                     errorMessage = 'A seller account with this phone number already exists. Please try logging in instead.';
@@ -266,7 +270,7 @@ export default function RegisterSellerPage() {
             } else if (err.code === 'ECONNABORTED') {
                 errorMessage = 'Request timed out. Please check your connection and try again.';
             }
-            
+
             setError(errorMessage);
         } finally {
             setIsLoading(false);
@@ -276,9 +280,9 @@ export default function RegisterSellerPage() {
     const handleResendOtp = async () => {
         setError('');
         setIsLoading(true);
-        
+
         try {
-            await axios.post(SEND_OTP_API, { 
+            await axios.post(SEND_OTP_API, {
                 phone: formData.phone.trim()
             }, {
                 timeout: 10000,
@@ -286,12 +290,12 @@ export default function RegisterSellerPage() {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             setError(''); // Clear error first, then show success
             setTimeout(() => {
                 setError('OTP has been resent to your phone');
             }, 100);
-            
+
         } catch (err) {
             console.error('❌ Resend OTP error:', err);
             setError('Failed to resend OTP. Please try again.');
@@ -308,17 +312,19 @@ export default function RegisterSellerPage() {
 
     return (
         <div style={styles.pageContainer}>
+            <Header />
+
             <div style={styles.container}>
                 <div style={styles.card}>
                     {/* Header */}
                     <div style={styles.header}>
-                        <div style={styles.iconContainer}>
-                            <Store size={32} color="#3b82f6" />
+                        <div className='sellerregistericoncontainer' style={styles.iconContainer}>
+                            <Store className='sellerregistericonsize' size={32} color="#1a4845" />
                         </div>
-                        <h1 style={styles.title}>Create Seller Account</h1>
-                        <p style={styles.subtitle}>
-                            {step === 1 
-                                ? "Join Kerala Sellers and start selling your products online" 
+                        <h1 className='sellerregistercardtitle' style={styles.title}>Create Seller Account</h1>
+                        <p className='sellerregistercardsubtitle' style={styles.subtitle}>
+                            {step === 1
+                                ? "Join Kerala Sellers and start selling your products online"
                                 : "We've sent a verification code to your phone"}
                         </p>
                     </div>
@@ -326,7 +332,7 @@ export default function RegisterSellerPage() {
                     {/* Progress Indicator */}
                     <div style={styles.progressContainer}>
                         <div style={styles.progressBar}>
-                            <div 
+                            <div
                                 style={{
                                     ...styles.progressFill,
                                     width: step === 1 ? '50%' : '100%'
@@ -342,88 +348,101 @@ export default function RegisterSellerPage() {
                         /* Step 1: Business Details */
                         <form onSubmit={handleSendOtp} style={styles.form}>
                             <div style={styles.inputGroup}>
-                                <label style={styles.label}>
+                                {/* <label style={styles.label}>
                                     <User size={16} />
                                     Your Full Name
-                                </label>
-                                <input 
-                                    type="text" 
-                                    name="name" 
-                                    value={formData.name}
-                                    onChange={handleChange} 
-                                    placeholder="Enter your full name" 
-                                    required 
-                                    style={{
-                                        ...styles.input,
-                                        ...(validationErrors.name ? styles.inputError : {})
-                                    }}
-                                    disabled={isLoading}
-                                />
+                                </label> */}
+                                <div style={styles.inputWrapper}>
+                                    <User className='sellerregistericons'  size={18} style={styles.inputIcon} />
+                                    <input
+                                        className='sellerregisterinput'
+                                        type="text"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        placeholder="Enter your full name"
+                                        required
+                                        style={{
+                                            ...styles.input,
+                                            ...(validationErrors.name ? styles.inputError : {})
+                                        }}
+                                        disabled={isLoading}
+                                    />
+                                </div>
                                 {validationErrors.name && (
                                     <span style={styles.errorText}>{validationErrors.name}</span>
                                 )}
                             </div>
 
                             <div style={styles.inputGroup}>
-                                <label style={styles.label}>
+                                {/* <label style={styles.label}>
                                     <Store size={16} />
                                     Shop Name
-                                </label>
-                                <input 
-                                    type="text" 
-                                    name="shop_name" 
-                                    value={formData.shop_name}
-                                    onChange={handleChange} 
-                                    placeholder="Enter your shop/business name" 
-                                    required 
-                                    style={{
-                                        ...styles.input,
-                                        ...(validationErrors.shop_name ? styles.inputError : {})
-                                    }}
-                                    disabled={isLoading}
-                                />
+                                </label> */}
+                                <div style={styles.inputWrapper}>
+                                    <Store className='sellerregistericons' size={18} style={styles.inputIcon} />
+                                    <input
+                                        className='sellerregisterinput'
+                                        type="text"
+                                        name="shop_name"
+                                        value={formData.shop_name}
+                                        onChange={handleChange}
+                                        placeholder="Enter your shop/business name"
+                                        required
+                                        style={{
+                                            ...styles.input,
+                                            ...(validationErrors.shop_name ? styles.inputError : {})
+                                        }}
+                                        disabled={isLoading}
+                                    />
+                                </div>
                                 {validationErrors.shop_name && (
                                     <span style={styles.errorText}>{validationErrors.shop_name}</span>
                                 )}
                             </div>
 
                             <div style={styles.inputGroup}>
-                                <label style={styles.label}>
+                                {/* <label style={styles.label}>
                                     <Mail size={16} />
                                     Email Address
-                                </label>
-                                <input 
-                                    type="email" 
-                                    name="email" 
-                                    value={formData.email}
-                                    onChange={handleChange} 
-                                    placeholder="Enter your email address" 
-                                    required 
-                                    style={{
-                                        ...styles.input,
-                                        ...(validationErrors.email ? styles.inputError : {})
-                                    }}
-                                    disabled={isLoading}
-                                />
+                                </label> */}
+                                <div style={styles.inputWrapper}>
+                                    <Mail className='sellerregistericons' size={18} style={styles.inputIcon} />
+                                    <input
+                                        className='sellerregisterinput'
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        placeholder="Enter your email address"
+                                        required
+                                        style={{
+                                            ...styles.input,
+                                            ...(validationErrors.email ? styles.inputError : {})
+                                        }}
+                                        disabled={isLoading}
+                                    />
+                                </div>
                                 {validationErrors.email && (
                                     <span style={styles.errorText}>{validationErrors.email}</span>
                                 )}
                             </div>
 
                             <div style={styles.inputGroup}>
-                                <label style={styles.label}>
+                                {/* <label style={styles.label}>
                                     <Phone size={16} />
                                     Phone Number
-                                </label>
+                                </label> */}
                                 <div style={styles.phoneInputContainer}>
-                                    <span style={styles.countryCode}>+91</span>
-                                    <input 
-                                        type="tel" 
-                                        name="phone" 
+                                    <span className='sellerregistercountryocde' style={styles.countryCode}>+91</span>
+                                    <input
+                                        type="tel"
+                                        name="phone"
                                         value={formData.phone}
-                                        onChange={handleChange} 
-                                        placeholder="Enter 10-digit phone number" 
-                                        required 
+                                        onChange={handleChange}
+                                        placeholder="Enter 10-digit phone number"
+                                        required
+                                        className='sellerregistertelinput'
                                         style={{
                                             ...styles.phoneInput,
                                             ...(validationErrors.phone ? styles.inputError : {})
@@ -438,18 +457,20 @@ export default function RegisterSellerPage() {
                             </div>
 
                             <div style={styles.inputGroup}>
-                                <label style={styles.label}>
+                                {/* <label style={styles.label}>
                                     <Lock size={16} />
                                     Password
-                                </label>
+                                </label> */}
                                 <div style={styles.passwordContainer}>
-                                    <input 
+                                    <Lock className='sellerregistericons' size={18} style={styles.inputIcon} />
+                                    <input
                                         type={showPassword ? "text" : "password"}
-                                        name="password" 
+                                        name="password"
                                         value={formData.password}
-                                        onChange={handleChange} 
-                                        placeholder="Create a strong password (min 8 characters)" 
-                                        required 
+                                        onChange={handleChange}
+                                        placeholder="Create a strong password"
+                                        required
+                                        className='sellerregisterpasswordinput'
                                         style={{
                                             ...styles.passwordInput,
                                             ...(validationErrors.password ? styles.inputError : {})
@@ -458,6 +479,7 @@ export default function RegisterSellerPage() {
                                     />
                                     <button
                                         type="button"
+                                        className='sellerregistereye'
                                         onClick={() => setShowPassword(!showPassword)}
                                         style={styles.eyeButton}
                                         disabled={isLoading}
@@ -471,18 +493,20 @@ export default function RegisterSellerPage() {
                             </div>
 
                             <div style={styles.inputGroup}>
-                                <label style={styles.label}>
+                                {/* <label style={styles.label}>
                                     <Lock size={16} />
                                     Confirm Password
-                                </label>
+                                </label> */}
                                 <div style={styles.passwordContainer}>
-                                    <input 
+                                    <Lock className='sellerregistericons' size={18} style={styles.inputIcon} />
+                                    <input
                                         type={showConfirmPassword ? "text" : "password"}
-                                        name="confirmPassword" 
+                                        name="confirmPassword"
                                         value={formData.confirmPassword}
-                                        onChange={handleChange} 
-                                        placeholder="Confirm your password" 
-                                        required 
+                                        onChange={handleChange}
+                                        placeholder="Confirm your password"
+                                        required
+                                        className='sellerregisterpasswordinput'
                                         style={{
                                             ...styles.passwordInput,
                                             ...(validationErrors.confirmPassword ? styles.inputError : {})
@@ -491,6 +515,7 @@ export default function RegisterSellerPage() {
                                     />
                                     <button
                                         type="button"
+                                        className='sellerregistereye'
                                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                         style={styles.eyeButton}
                                         disabled={isLoading}
@@ -503,8 +528,9 @@ export default function RegisterSellerPage() {
                                 )}
                             </div>
 
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
+                                className='sellerregistersigninbtn'
                                 style={{
                                     ...styles.button,
                                     ...(isLoading ? styles.buttonLoading : {})
@@ -542,16 +568,16 @@ export default function RegisterSellerPage() {
                                     <Shield size={16} />
                                     Verification Code
                                 </label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     name="otp"
-                                    value={formData.otp} 
+                                    value={formData.otp}
                                     onChange={(e) => setFormData(prev => ({
                                         ...prev,
                                         otp: e.target.value.replace(/\D/g, '').slice(0, 6)
                                     }))}
-                                    placeholder="Enter 6-digit OTP" 
-                                    required 
+                                    placeholder="Enter 6-digit OTP"
+                                    required
                                     style={{
                                         ...styles.input,
                                         ...styles.otpInput
@@ -571,8 +597,8 @@ export default function RegisterSellerPage() {
                                 </div>
                             </div>
 
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 style={{
                                     ...styles.button,
                                     ...(isLoading ? styles.buttonLoading : {})
@@ -620,19 +646,8 @@ export default function RegisterSellerPage() {
                     </div>
                 </div>
             </div>
+            <Footer />
 
-            {/* CSS Animations */}
-            <style jsx>{`
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-                
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-            `}</style>
         </div>
     );
 }
@@ -640,62 +655,73 @@ export default function RegisterSellerPage() {
 const styles = {
     pageContainer: {
         minHeight: '100vh',
-        backgroundColor: '#f8fafc'
+        backgroundColor: '#FDFFF0'
     },
-    
-    container: { 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '100vh', 
-        padding: '20px' 
+
+    container: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        padding: '20px'
     },
-    
-    card: { 
-        backgroundColor: 'white', 
-        padding: '32px', 
-        borderRadius: '16px', 
-        boxShadow: '0 4px 20px rgba(0,0,0,0.1)', 
-        width: '100%',
-        maxWidth: '500px',
-        border: '1px solid #e5e7eb',
-        animation: 'fadeIn 0.6s ease-out'
+
+    card: {
+        backgroundImage: 'url("/assets/images/T Shirts (1400 x 400 px) (7423 x 2810 px).jpg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        position: 'relative',
+        backgroundAttachment: 'fixed',
+        marginTop: '50px',
+        padding: '40px',
+        borderRadius: '16px',
+        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
+        width: '90%',
+        maxWidth: '480px',
+        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        color: '#fff',
+        textAlign: 'center',
+        zIndex: 2,
+        transition: 'all 0.3s ease',
     },
-    
+
     header: {
         textAlign: 'center',
         marginBottom: '32px'
     },
-    
+
     iconContainer: {
         width: '64px',
         height: '64px',
-        backgroundColor: '#eff6ff',
+        backgroundColor: '#FDFFF0',
         borderRadius: '50%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         margin: '0 auto 16px auto'
     },
-    
+
     title: {
         fontSize: '1.5rem',
         fontWeight: '700',
-        color: '#1f2937',
+        color: '#1a4845',
         marginBottom: '8px'
     },
-    
+
     subtitle: {
         fontSize: '0.95rem',
         color: '#6b7280',
         lineHeight: '1.5',
         margin: 0
     },
-    
+
     progressContainer: {
         marginBottom: '24px'
     },
-    
+
     progressBar: {
         width: '100%',
         height: '4px',
@@ -704,31 +730,31 @@ const styles = {
         overflow: 'hidden',
         marginBottom: '8px'
     },
-    
+
     progressFill: {
         height: '100%',
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#1a4845',
         borderRadius: '2px',
         transition: 'width 0.3s ease'
     },
-    
+
     stepIndicator: {
         fontSize: '0.875rem',
         color: '#6b7280',
         textAlign: 'center'
     },
-    
+
     form: {
         display: 'flex',
         flexDirection: 'column',
         gap: '20px'
     },
-    
+
     inputGroup: {
         display: 'flex',
         flexDirection: 'column'
     },
-    
+
     label: {
         display: 'flex',
         alignItems: 'center',
@@ -738,32 +764,43 @@ const styles = {
         color: '#374151',
         marginBottom: '8px'
     },
-    
-    input: { 
-        width: '100%', 
-        padding: '14px 16px', 
-        border: '1px solid #d1d5db', 
-        borderRadius: '8px', 
+
+    input: {
+        width: '100%',
+        padding: '14px 16px',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
         fontSize: '1rem',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#FDFFF0',
         transition: 'all 0.2s ease',
         boxSizing: 'border-box',
         outline: 'none'
     },
-    
+    inputWrapper: {
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center'
+    },
+    inputIcon: {
+        position: 'absolute',
+        left: '16px',
+        color: '#6b7280',
+        zIndex: 1
+    },
+
     // ✅ Enhanced phone input styling
     phoneInputContainer: {
         display: 'flex',
         alignItems: 'center',
         border: '1px solid #d1d5db',
         borderRadius: '8px',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#FDFFF0',
         overflow: 'hidden'
     },
 
     countryCode: {
         padding: '14px 12px',
-        backgroundColor: '#f9fafb',
+        backgroundColor: '#FDFFF0',
         borderRight: '1px solid #d1d5db',
         fontSize: '1rem',
         color: '#374151',
@@ -775,28 +812,28 @@ const styles = {
         padding: '14px 16px',
         border: 'none',
         fontSize: '1rem',
-        backgroundColor: 'transparent',
+        backgroundColor: '#FDFFF0',
         outline: 'none'
     },
-    
+
     passwordContainer: {
         position: 'relative',
         display: 'flex',
         alignItems: 'center'
     },
-    
+
     passwordInput: {
-        width: '100%', 
-        padding: '14px 48px 14px 16px', 
-        border: '1px solid #d1d5db', 
-        borderRadius: '8px', 
+        width: '100%',
+        padding: '14px 48px 14px 16px',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
         fontSize: '1rem',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#FDFFF0',
         transition: 'all 0.2s ease',
         boxSizing: 'border-box',
         outline: 'none'
     },
-    
+
     eyeButton: {
         position: 'absolute',
         right: '12px',
@@ -807,17 +844,17 @@ const styles = {
         padding: '4px',
         borderRadius: '4px'
     },
-    
+
     inputError: {
         borderColor: '#ef4444'
     },
-    
+
     errorText: {
         color: '#ef4444',
         fontSize: '0.875rem',
         marginTop: '6px'
     },
-    
+
     otpInfo: {
         display: 'flex',
         alignItems: 'center',
@@ -828,26 +865,26 @@ const styles = {
         marginBottom: '16px',
         border: '1px solid #e2e8f0'
     },
-    
+
     otpText: {
         margin: '0 0 4px 0',
         fontSize: '0.9rem',
         color: '#6b7280'
     },
-    
+
     otpInput: {
         textAlign: 'center',
         letterSpacing: '0.5em',
         fontSize: '1.2rem',
         fontWeight: '600'
     },
-    
+
     otpActions: {
         display: 'flex',
         justifyContent: 'flex-end',
         marginTop: '8px'
     },
-    
+
     resendButton: {
         background: 'none',
         border: 'none',
@@ -857,15 +894,15 @@ const styles = {
         textDecoration: 'underline',
         padding: '4px 0'
     },
-    
-    button: { 
-        width: '100%', 
-        padding: '16px 24px', 
-        border: 'none', 
-        borderRadius: '8px', 
-        backgroundColor: '#3b82f6', 
-        color: 'white', 
-        cursor: 'pointer', 
+
+    button: {
+        width: '100%',
+        padding: '16px 24px',
+        border: 'none',
+        borderRadius: '8px',
+        backgroundColor: '#1a4845',
+        color: 'white',
+        cursor: 'pointer',
         fontSize: '1rem',
         fontWeight: '600',
         transition: 'all 0.2s ease',
@@ -874,18 +911,18 @@ const styles = {
         justifyContent: 'center',
         minHeight: '52px'
     },
-    
+
     buttonLoading: {
         backgroundColor: '#9ca3af',
         cursor: 'not-allowed'
     },
-    
+
     buttonContent: {
         display: 'flex',
         alignItems: 'center',
         gap: '8px'
     },
-    
+
     spinner: {
         width: '16px',
         height: '16px',
@@ -894,7 +931,7 @@ const styles = {
         borderRadius: '50%',
         animation: 'spin 1s linear infinite'
     },
-    
+
     backButton: {
         display: 'flex',
         alignItems: 'center',
@@ -910,7 +947,7 @@ const styles = {
         fontSize: '0.9rem',
         marginTop: '8px'
     },
-    
+
     errorContainer: {
         display: 'flex',
         alignItems: 'center',
@@ -923,15 +960,15 @@ const styles = {
         fontSize: '0.9rem',
         marginTop: '16px'
     },
-    
-    footerLinks: { 
+
+    footerLinks: {
         marginTop: '24px',
         textAlign: 'center',
         fontSize: '0.9rem'
     },
-    
-    link: { 
-        color: '#3b82f6', 
+
+    link: {
+        color: '#3b82f6',
         textDecoration: 'none',
         fontWeight: '500'
     }

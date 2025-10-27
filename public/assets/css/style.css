@@ -1514,6 +1514,8 @@ body {
     /* gray-500 */
     border-top: 1px solid #e5e7eb;
     /* light gray border */
+    background-color: #FDFFF0;
+
 }
 
 .footer-left {
@@ -2085,7 +2087,7 @@ body {
         overflow-x: hidden;
     } */
 
-    /* .mobile-category-item {
+/* .mobile-category-item {
         flex: 0 0 auto;
     } */
 
@@ -2236,5 +2238,3 @@ body {
 }
 
 /*/// /////////////////////////////////////////////////end of Skeleton//////////////////////////////////////////////////////////////////////////////// */
-
-

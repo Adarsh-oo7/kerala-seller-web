@@ -6,14 +6,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
-import { 
-  Mail, 
-  Lock, 
-  KeyRound, 
-  ArrowLeft, 
-  AlertCircle, 
-  CheckCircle, 
-  Eye, 
+import "../../../styles/RegisterBuyer.css";
+
+import {
+  Mail,
+  Lock,
+  KeyRound,
+  ArrowLeft,
+  AlertCircle,
+  CheckCircle,
+  Eye,
   EyeOff,
   Globe,
   RefreshCw,
@@ -36,10 +38,10 @@ const API_BASE_URL = getApiBaseUrl();
 const SEND_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/send-otp/`;
 const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/verify/`;
 
-console.log('🌐 Forgot Password API URLs configured:', { 
-  API_BASE_URL, 
-  SEND_RESET_OTP_API, 
-  VERIFY_RESET_OTP_API 
+console.log('🌐 Forgot Password API URLs configured:', {
+  API_BASE_URL,
+  SEND_RESET_OTP_API,
+  VERIFY_RESET_OTP_API
 });
 
 // ✅ Loading fallback component
@@ -72,7 +74,7 @@ function LoadingFallback() {
           fontWeight: '500'
         }}>Loading forgot password page...</p>
       </div>
-      
+
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -99,7 +101,7 @@ function ForgotPasswordContent() {
   const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
   const [otpSentTime, setOtpSentTime] = useState(null);
   const [resendCooldown, setResendCooldown] = useState(0);
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -143,14 +145,14 @@ function ForgotPasswordContent() {
 
   const getPasswordStrength = (password) => {
     if (password.length < 8) return { level: 0, text: 'Too short' };
-    
+
     let score = 0;
     if (password.length >= 8) score++;
     if (/[a-z]/.test(password)) score++;
     if (/[A-Z]/.test(password)) score++;
     if (/[0-9]/.test(password)) score++;
     if (/[^A-Za-z0-9]/.test(password)) score++;
-    
+
     if (score <= 2) return { level: 1, text: 'Weak' };
     if (score <= 3) return { level: 2, text: 'Medium' };
     return { level: 3, text: 'Strong' };
@@ -169,40 +171,40 @@ function ForgotPasswordContent() {
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setErrors({});
-    
+
     if (!email.trim()) {
       setErrors({ email: 'Email is required' });
       return;
     }
-    
+
     if (!validateEmail(email.trim())) {
       setErrors({ email: 'Please enter a valid email address' });
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
       console.log('📧 Sending OTP to:', email.trim());
-      
-      const response = await axios.post(SEND_RESET_OTP_API, { 
-        email: email.trim().toLowerCase() 
+
+      const response = await axios.post(SEND_RESET_OTP_API, {
+        email: email.trim().toLowerCase()
       }, {
         timeout: 15000
       });
-      
+
       console.log('✅ OTP sent successfully:', response.data);
-      
+
       setOtpSentTime(new Date());
       setResendCooldown(60); // 60 second cooldown
       showMessage(`An OTP has been sent to ${email.trim()}. Please check your inbox and spam folder.`, 'success');
       setStep(2);
-      
+
     } catch (err) {
       console.error('❌ OTP send error:', err);
-      
+
       let errorMessage = 'Could not send OTP. Please try again.';
-      
+
       if (err.response?.status === 404) {
         errorMessage = 'No account found with this email address. Please check your email or create a new account.';
       } else if (err.response?.status === 429) {
@@ -210,12 +212,12 @@ function ForgotPasswordContent() {
       } else if (err.code === 'ECONNABORTED') {
         errorMessage = 'Request timed out. Please check your connection and try again.';
       } else if (err.response?.data) {
-        errorMessage = err.response.data.error || 
-                     err.response.data.message || 
-                     err.response.data.detail || 
-                     errorMessage;
+        errorMessage = err.response.data.error ||
+          err.response.data.message ||
+          err.response.data.detail ||
+          errorMessage;
       }
-      
+
       showMessage(errorMessage, 'error');
     } finally {
       setIsLoading(false);
@@ -226,49 +228,49 @@ function ForgotPasswordContent() {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setErrors({});
-    
+
     const newErrors = {};
-    
+
     if (!otp.trim()) {
       newErrors.otp = 'OTP is required';
     } else if (otp.trim().length !== 6) {
       newErrors.otp = 'OTP must be exactly 6 digits';
     }
-    
+
     if (!password) {
       newErrors.password = 'Password is required';
     } else if (!validatePassword(password)) {
       newErrors.password = 'Password must be at least 8 characters long';
     }
-    
+
     if (!confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (password !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
       console.log('🔐 Resetting password for:', email.trim());
-      
-      const response = await axios.post(VERIFY_RESET_OTP_API, { 
-        email: email.trim().toLowerCase(), 
-        otp: otp.trim(), 
+
+      const response = await axios.post(VERIFY_RESET_OTP_API, {
+        email: email.trim().toLowerCase(),
+        otp: otp.trim(),
         password: password
       }, {
         timeout: 15000
       });
-      
+
       console.log('✅ Password reset successful:', response.data);
-      
+
       showMessage('Password has been reset successfully! Redirecting to login...', 'success');
-      
+
       // ✅ Store-aware redirect
       setTimeout(() => {
         const redirectUrl = searchParams.get('redirect');
@@ -278,12 +280,12 @@ function ForgotPasswordContent() {
           router.push(`/login/buyer${redirectUrl ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`);
         }
       }, 2500);
-      
+
     } catch (err) {
       console.error('❌ Password reset error:', err);
-      
+
       let errorMessage = 'Failed to reset password. Please try again.';
-      
+
       if (err.response?.status === 400) {
         errorMessage = 'Invalid or expired OTP. Please request a new OTP.';
       } else if (err.response?.status === 429) {
@@ -291,12 +293,12 @@ function ForgotPasswordContent() {
       } else if (err.code === 'ECONNABORTED') {
         errorMessage = 'Request timed out. Please try again.';
       } else if (err.response?.data) {
-        errorMessage = err.response.data.error || 
-                     err.response.data.message || 
-                     err.response.data.detail || 
-                     errorMessage;
+        errorMessage = err.response.data.error ||
+          err.response.data.message ||
+          err.response.data.detail ||
+          errorMessage;
       }
-      
+
       showMessage(errorMessage, 'error');
     } finally {
       setIsLoading(false);
@@ -306,22 +308,22 @@ function ForgotPasswordContent() {
   // ✅ Enhanced resend OTP with cooldown
   const handleResendOtp = async () => {
     if (resendCooldown > 0) return;
-    
+
     setIsLoading(true);
-    
+
     try {
       console.log('🔄 Resending OTP to:', email.trim());
-      
-      await axios.post(SEND_RESET_OTP_API, { 
-        email: email.trim().toLowerCase() 
+
+      await axios.post(SEND_RESET_OTP_API, {
+        email: email.trim().toLowerCase()
       }, {
         timeout: 15000
       });
-      
+
       setOtpSentTime(new Date());
       setResendCooldown(60);
       showMessage('OTP has been resent to your email. Please check your inbox.', 'success');
-      
+
     } catch (err) {
       console.error('❌ OTP resend error:', err);
       showMessage('Failed to resend OTP. Please try again later.', 'error');
@@ -344,7 +346,7 @@ function ForgotPasswordContent() {
   return (
     <div style={styles.pageContainer}>
       <Header />
-      
+
       <div style={styles.container}>
         <div style={styles.card}>
           {/* ✅ Store context indicator */}
@@ -357,13 +359,13 @@ function ForgotPasswordContent() {
 
           {/* Header */}
           <div style={styles.header}>
-            <div style={styles.iconContainer}>
-              <KeyRound size={32} color="#3b82f6" />
+            <div className='buyerregistericoncontainer' style={styles.iconContainer}>
+              <KeyRound className='buyerregistericonsize' size={32} color="#1a4845" />
             </div>
-            <h1 style={styles.title}>Reset Your Password</h1>
-            <p style={styles.subtitle}>
-              {step === 1 
-                ? "Enter your email to receive a secure password reset code" 
+            <h1 className='buyerregistercardtitle' style={styles.title}>Reset Your Password</h1>
+            <p className='buyerregistercardsubtitle' style={styles.subtitle}>
+              {step === 1
+                ? "Enter your email to receive a secure password reset code"
                 : "Enter the verification code and create a new secure password"
               }
             </p>
@@ -372,7 +374,7 @@ function ForgotPasswordContent() {
           {/* Progress Indicator */}
           <div style={styles.progressContainer}>
             <div style={styles.progressBar}>
-              <div 
+              <div
                 style={{
                   ...styles.progressFill,
                   width: step === 1 ? '50%' : '100%'
@@ -404,27 +406,27 @@ function ForgotPasswordContent() {
           {step === 1 && (
             <form onSubmit={handleSendOtp} style={styles.form}>
               <div style={styles.inputGroup}>
-                <label style={styles.label}>
-                  <Mail size={16} />
-                  Email Address
-                </label>
-                <input 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (errors.email) {
-                      setErrors(prev => ({ ...prev, email: '' }));
-                    }
-                  }}
-                  placeholder="Enter your registered email address" 
-                  style={{
-                    ...styles.input,
-                    ...(errors.email ? styles.inputError : {})
-                  }}
-                  disabled={isLoading}
-                  autoFocus
-                />
+                <div style={styles.inputWrapper}>
+                  <Mail size={18} style={styles.inputIcon} />
+                  <input
+                    className='buyerforgotpasswordinput'
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (errors.email) {
+                        setErrors(prev => ({ ...prev, email: '' }));
+                      }
+                    }}
+                    placeholder="Enter your registered email"
+                    style={{
+                      ...styles.input,
+                      ...(errors.email ? styles.inputError : {})
+                    }}
+                    disabled={isLoading}
+                    autoFocus
+                  />
+                </div>
                 {errors.email && (
                   <span style={styles.errorText}>{errors.email}</span>
                 )}
@@ -432,9 +434,10 @@ function ForgotPasswordContent() {
                   We'll send a 6-digit verification code to this email
                 </div>
               </div>
-              
-              <button 
-                type="submit" 
+
+              <button
+                className='buyerregistersigninbtn'
+                type="submit"
                 style={{
                   ...styles.button,
                   ...(isLoading ? styles.buttonLoading : {})
@@ -469,9 +472,10 @@ function ForgotPasswordContent() {
                   <KeyRound size={16} />
                   Verification Code
                 </label>
-                <input 
-                  type="text" 
-                  value={otp} 
+                <input
+                  className='buyerregisterverificationinput'
+                  type="text"
+                  value={otp}
                   onChange={(e) => {
                     const value = e.target.value.replace(/\D/g, '').slice(0, 6);
                     setOtp(value);
@@ -479,7 +483,7 @@ function ForgotPasswordContent() {
                       setErrors(prev => ({ ...prev, otp: '' }));
                     }
                   }}
-                  placeholder="Enter 6-digit code" 
+                  placeholder="Enter 6-digit code"
                   style={{
                     ...styles.input,
                     ...(errors.otp ? styles.inputError : {}),
@@ -494,15 +498,15 @@ function ForgotPasswordContent() {
                 {errors.otp && (
                   <span style={styles.errorText}>{errors.otp}</span>
                 )}
-                
+
                 <div style={styles.resendContainer}>
                   {resendCooldown > 0 ? (
                     <span style={styles.cooldownText}>
                       Resend in {resendCooldown}s
                     </span>
                   ) : (
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={handleResendOtp}
                       style={styles.resendButton}
                       disabled={isLoading}
@@ -520,16 +524,17 @@ function ForgotPasswordContent() {
                   New Password
                 </label>
                 <div style={styles.passwordContainer}>
-                  <input 
+                  <input
+                    className='buyerforgotpasswordspet2input'
                     type={showPassword ? "text" : "password"}
-                    value={password} 
+                    value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
                       if (errors.password) {
                         setErrors(prev => ({ ...prev, password: '' }));
                       }
                     }}
-                    placeholder="Create a strong password (min 8 chars)" 
+                    placeholder="Create a strong password"
                     style={{
                       ...styles.passwordInput,
                       ...(errors.password ? styles.inputError : {})
@@ -537,6 +542,7 @@ function ForgotPasswordContent() {
                     disabled={isLoading}
                   />
                   <button
+                    className='buyerregistereye'
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     style={styles.eyeButton}
@@ -548,19 +554,19 @@ function ForgotPasswordContent() {
                 {errors.password && (
                   <span style={styles.errorText}>{errors.password}</span>
                 )}
-                
+
                 {/* ✅ Password strength indicator */}
                 {password && (
                   <div style={styles.passwordStrength}>
                     <div style={styles.strengthBar}>
-                      <div 
+                      <div
                         style={{
                           ...styles.strengthFill,
                           width: `${(passwordStrength?.level || 0) * 33.33}%`,
-                          backgroundColor: 
+                          backgroundColor:
                             passwordStrength?.level === 1 ? '#ef4444' :
-                            passwordStrength?.level === 2 ? '#f59e0b' :
-                            passwordStrength?.level === 3 ? '#10b981' : '#e5e7eb'
+                              passwordStrength?.level === 2 ? '#f59e0b' :
+                                passwordStrength?.level === 3 ? '#10b981' : '#e5e7eb'
                         }}
                       ></div>
                     </div>
@@ -577,16 +583,17 @@ function ForgotPasswordContent() {
                   Confirm New Password
                 </label>
                 <div style={styles.passwordContainer}>
-                  <input 
+                  <input
+                    className='buyerforgotpasswordspet2input'
                     type={showConfirmPassword ? "text" : "password"}
-                    value={confirmPassword} 
+                    value={confirmPassword}
                     onChange={(e) => {
                       setConfirmPassword(e.target.value);
                       if (errors.confirmPassword) {
                         setErrors(prev => ({ ...prev, confirmPassword: '' }));
                       }
                     }}
-                    placeholder="Confirm your new password" 
+                    placeholder="Confirm your new password"
                     style={{
                       ...styles.passwordInput,
                       ...(errors.confirmPassword ? styles.inputError : {})
@@ -594,6 +601,7 @@ function ForgotPasswordContent() {
                     disabled={isLoading}
                   />
                   <button
+                    className='buyerregistereye'
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     style={styles.eyeButton}
@@ -605,7 +613,7 @@ function ForgotPasswordContent() {
                 {errors.confirmPassword && (
                   <span style={styles.errorText}>{errors.confirmPassword}</span>
                 )}
-                
+
                 {/* ✅ Password match indicator */}
                 {confirmPassword && password && (
                   <div style={styles.passwordMatch}>
@@ -623,9 +631,10 @@ function ForgotPasswordContent() {
                   </div>
                 )}
               </div>
-              
-              <button 
-                type="submit" 
+
+              <button
+                className='buyerregistersigninbtn'
+                type="submit"
                 style={{
                   ...styles.button,
                   ...(isLoading ? styles.buttonLoading : {})
@@ -654,7 +663,7 @@ function ForgotPasswordContent() {
               Back to Login
             </Link>
             {step === 2 && (
-              <button 
+              <button
                 onClick={() => {
                   setStep(1);
                   setOtp('');
@@ -662,7 +671,7 @@ function ForgotPasswordContent() {
                   setConfirmPassword('');
                   setErrors({});
                   setMessage('');
-                }} 
+                }}
                 style={styles.changeEmailButton}
                 disabled={isLoading}
               >
@@ -707,26 +716,37 @@ export default function ForgotPasswordPage() {
 const styles = {
   pageContainer: {
     minHeight: '100vh',
-    backgroundColor: '#f9fafb'
+    backgroundColor: '#FDFFF0'
   },
-  
-  container: { 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    minHeight: '80vh', 
-    padding: '20px' 
+
+  container: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '80vh',
+    padding: '20px'
   },
-  
-  card: { 
-    backgroundColor: 'white', 
-    padding: '32px', 
-    borderRadius: '16px', 
-    boxShadow: '0 4px 20px rgba(0,0,0,0.1)', 
-    width: '100%',
+
+  card: {
+    backgroundImage: 'url("/assets/images/Shoppagebanner.png")',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    position: 'relative',
+    backgroundAttachment: 'fixed',
+    marginTop: '50px',
+    padding: '40px',
+    borderRadius: '16px',
+    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
+    width: '90%',
     maxWidth: '480px',
-    border: '1px solid #e5e7eb',
-    animation: 'fadeIn 0.6s ease-out'
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    color: '#fff',
+    textAlign: 'center',
+    zIndex: 2,
+    transition: 'all 0.3s ease',
   },
 
   // ✅ Store context indicator
@@ -743,12 +763,12 @@ const styles = {
     fontWeight: '500',
     marginBottom: '20px'
   },
-  
+
   header: {
     textAlign: 'center',
     marginBottom: '32px'
   },
-  
+
   iconContainer: {
     width: '64px',
     height: '64px',
@@ -759,24 +779,24 @@ const styles = {
     justifyContent: 'center',
     margin: '0 auto 16px auto'
   },
-  
+
   title: {
     fontSize: '1.5rem',
     fontWeight: '700',
     color: '#1f2937',
     marginBottom: '8px'
   },
-  
+
   subtitle: {
     fontSize: '0.95rem',
     color: '#6b7280',
     lineHeight: '1.5'
   },
-  
+
   progressContainer: {
     marginBottom: '24px'
   },
-  
+
   progressBar: {
     width: '100%',
     height: '4px',
@@ -785,20 +805,20 @@ const styles = {
     overflow: 'hidden',
     marginBottom: '8px'
   },
-  
+
   progressFill: {
     height: '100%',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#1a4845',
     borderRadius: '2px',
     transition: 'width 0.3s ease'
   },
-  
+
   stepIndicator: {
     fontSize: '0.875rem',
     color: '#6b7280',
     textAlign: 'center'
   },
-  
+
   messageContainer: {
     display: 'flex',
     alignItems: 'center',
@@ -811,13 +831,13 @@ const styles = {
     border: '1px solid #d1d5db',
     color: '#374151'
   },
-  
+
   successMessage: {
     backgroundColor: '#ecfdf5',
     borderColor: '#10b981',
     color: '#065f46'
   },
-  
+
   errorMessage: {
     backgroundColor: '#fef2f2',
     borderColor: '#ef4444',
@@ -828,27 +848,28 @@ const styles = {
   emailDisplay: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: "center",
     gap: '8px',
     padding: '12px 16px',
     backgroundColor: '#f8fafc',
     border: '1px solid #e2e8f0',
     borderRadius: '8px',
     marginBottom: '20px',
-    fontSize: '0.9rem',
+    fontSize: '14px',
     color: '#475569'
   },
-  
+
   form: {
     display: 'flex',
     flexDirection: 'column',
     gap: '20px'
   },
-  
+
   inputGroup: {
     display: 'flex',
     flexDirection: 'column'
   },
-  
+
   label: {
     display: 'flex',
     alignItems: 'center',
@@ -858,16 +879,17 @@ const styles = {
     color: '#374151',
     marginBottom: '8px'
   },
-  
-  input: { 
-    width: '100%', 
-    padding: '14px 16px', 
-    border: '1px solid #d1d5db', 
-    borderRadius: '8px', 
-    fontSize: '1rem',
-    backgroundColor: '#ffffff',
-    transition: 'all 0.2s ease',
+
+
+  input: {
+    width: '100%',
+    padding: '14px 48px 14px 48px',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
     boxSizing: 'border-box',
+    fontSize: '15px',
+    backgroundColor: '#FDFFF0',
+    transition: 'all 0.2s ease',
     outline: 'none'
   },
 
@@ -876,25 +898,36 @@ const styles = {
     color: '#6b7280',
     marginTop: '6px'
   },
-  
+  inputWrapper: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center'
+  },
+  inputIcon: {
+    position: 'absolute',
+    left: '16px',
+    color: '#6b7280',
+    zIndex: 1
+  },
+
   passwordContainer: {
     position: 'relative',
     display: 'flex',
     alignItems: 'center'
   },
-  
+
   passwordInput: {
-    width: '100%', 
-    padding: '14px 48px 14px 16px', 
-    border: '1px solid #d1d5db', 
-    borderRadius: '8px', 
+    width: '100%',
+    padding: '14px 48px 14px 16px',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
     fontSize: '1rem',
     backgroundColor: '#ffffff',
     transition: 'all 0.2s ease',
     boxSizing: 'border-box',
     outline: 'none'
   },
-  
+
   eyeButton: {
     position: 'absolute',
     right: '12px',
@@ -905,11 +938,11 @@ const styles = {
     padding: '4px',
     borderRadius: '4px'
   },
-  
+
   inputError: {
     borderColor: '#ef4444'
   },
-  
+
   errorText: {
     color: '#ef4444',
     fontSize: '0.875rem',
@@ -927,7 +960,7 @@ const styles = {
     fontSize: '0.875rem',
     color: '#9ca3af'
   },
-  
+
   resendButton: {
     display: 'flex',
     alignItems: 'center',
@@ -936,9 +969,8 @@ const styles = {
     border: 'none',
     color: '#3b82f6',
     cursor: 'pointer',
-    fontSize: '0.875rem',
+    fontSize: '0.8rem',
     padding: '4px 0',
-    textDecoration: 'underline'
   },
 
   // ✅ Password strength indicator
@@ -986,15 +1018,15 @@ const styles = {
     fontSize: '0.8rem',
     color: '#dc2626'
   },
-  
-  button: { 
-    width: '100%', 
-    padding: '16px 24px', 
-    border: 'none', 
-    borderRadius: '8px', 
-    backgroundColor: '#3b82f6', 
-    color: 'white', 
-    cursor: 'pointer', 
+
+  button: {
+    width: '100%',
+    padding: '16px 24px',
+    border: 'none',
+    borderRadius: '8px',
+    backgroundColor: '#1a4845',
+    color: 'white',
+    cursor: 'pointer',
     fontSize: '1rem',
     fontWeight: '600',
     transition: 'all 0.2s ease',
@@ -1003,18 +1035,18 @@ const styles = {
     justifyContent: 'center',
     minHeight: '52px'
   },
-  
+
   buttonLoading: {
     backgroundColor: '#9ca3af',
     cursor: 'not-allowed'
   },
-  
+
   buttonContent: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px'
   },
-  
+
   spinner: {
     width: '16px',
     height: '16px',
@@ -1023,8 +1055,8 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
-  footerLinks: { 
+
+  footerLinks: {
     marginTop: '24px',
     display: 'flex',
     justifyContent: 'space-between',
@@ -1032,7 +1064,7 @@ const styles = {
     flexWrap: 'wrap',
     gap: '12px'
   },
-  
+
   backLink: {
     display: 'flex',
     alignItems: 'center',
@@ -1042,7 +1074,7 @@ const styles = {
     fontSize: '0.9rem',
     fontWeight: '500'
   },
-  
+
   changeEmailButton: {
     background: 'none',
     border: 'none',
