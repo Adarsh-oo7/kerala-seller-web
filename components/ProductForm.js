@@ -1076,9 +1076,28 @@ export default function ProductForm({ product, onClose, onSuccess }) {
   };
 
   const handleSubImagesUpload = (uploadedImages) => {
-    setSubImageUrls(uploadedImages);
-    setUploadingImages(false);
-  };
+  console.log('📸 Sub-images uploaded:', uploadedImages);
+  
+  // ✅ FIX: Append new images to existing ones
+  setSubImageUrls(prevUrls => {
+    // Combine existing + new images
+    const allImages = [...prevUrls, ...uploadedImages];
+    
+    // Remove duplicates based on URL
+    const uniqueImages = allImages.filter((img, index, self) =>
+      index === self.findIndex((t) => t.url === img.url)
+    );
+    
+    // Limit to maximum 4 sub-images
+    const limitedImages = uniqueImages.slice(0, 4);
+    
+    console.log(`📊 Total sub-images: ${limitedImages.length}/4`);
+    return limitedImages;
+  });
+  
+  setUploadingImages(false);
+};
+
 
   const handleAttributeChange = (attributeName, value) => {
     setDynamicAttributes(prev => ({ ...prev, [attributeName]: value }));
@@ -1392,7 +1411,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
             <CloudinaryImageUpload
               label="🖼️ Additional Images"
               multiple={true}
-              maxFiles={5}
+              maxFiles={4}
               type="sub"
               onUploadComplete={handleSubImagesUpload}
               onUploadStart={() => setUploadingImages(true)}
