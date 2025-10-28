@@ -713,7 +713,6 @@ const styles = {
 
 
     card: {
-
         position: 'relative',
         overflow: 'hidden',
         backgroundAttachment: 'fixed',

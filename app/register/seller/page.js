@@ -553,13 +553,13 @@ export default function RegisterSellerPage() {
                     ) : (
                         /* Step 2: OTP Verification */
                         <form onSubmit={handleCompleteRegistration} style={styles.form}>
-                            <div style={styles.otpInfo}>
-                                <Phone size={20} />
+                            <div className='regsellerotpinfo' style={styles.otpInfo}>
+                                <Phone size={20} color='#1a4845' />
                                 <div>
-                                    <p style={styles.otpText}>
+                                    <p className='regsellerotptext' style={styles.otpText}>
                                         Verification code sent to:
                                     </p>
-                                    <strong>+91 {formData.phone}</strong>
+                                    <strong  className='regsellerotptext' style={styles.otpPhone}>+91 {formData.phone}</strong>
                                 </div>
                             </div>
 
@@ -570,6 +570,7 @@ export default function RegisterSellerPage() {
                                 </label>
                                 <input
                                     type="text"
+                                    className='sellerregisterverificationinput'
                                     name="otp"
                                     value={formData.otp}
                                     onChange={(e) => setFormData(prev => ({
@@ -599,6 +600,7 @@ export default function RegisterSellerPage() {
 
                             <button
                                 type="submit"
+                                className='sellerregistersigninbtn'
                                 style={{
                                     ...styles.button,
                                     ...(isLoading ? styles.buttonLoading : {})
@@ -620,6 +622,7 @@ export default function RegisterSellerPage() {
 
                             <button
                                 type="button"
+                                className='sellerregisterbacktodetailbtn'
                                 onClick={handleBackToStep1}
                                 style={styles.backButton}
                                 disabled={isLoading}
@@ -871,6 +874,9 @@ const styles = {
         fontSize: '0.9rem',
         color: '#6b7280'
     },
+    otpPhone: {
+        color: '#1a4845'
+    },
 
     otpInput: {
         textAlign: 'center',
@@ -890,8 +896,7 @@ const styles = {
         border: 'none',
         color: '#3b82f6',
         cursor: 'pointer',
-        fontSize: '0.875rem',
-        textDecoration: 'underline',
+        fontSize: '13px',
         padding: '4px 0'
     },
 

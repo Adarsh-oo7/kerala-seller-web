@@ -816,7 +816,7 @@ function EnhancedSellerStorefrontPage() {
             </div>
           </div>
           {filteredProducts.length > 0 ? (
-            <div className={`products-container ${viewMode}`} style={styles.productsContainer}>
+            <div className={`shopslugproducts-container ${viewMode}`} style={styles.productsContainer}>
               {filteredProducts.map((product) => {
                 if (!product?.id) return null;
                 const isInWishlist = wishlistProducts.has(product.id);

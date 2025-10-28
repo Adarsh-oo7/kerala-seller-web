@@ -3,7 +3,7 @@
     height: 18px;
 }
 
-.products-container {
+.shopslugproducts-container {
     display: grid !important;
     gap: 16px !important;
     justify-content: center !important;
@@ -20,7 +20,7 @@
 
 
 @media (max-width: 992px) {
-    .products-container {
+    .shopslugproducts-container {
         gap: 12px !important;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
     }
@@ -49,7 +49,7 @@
         font-size: 16px !important;
     }
 
-    .products-container {
+    .shopslugproducts-container {
         gap: 10px !important;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
     }
@@ -82,9 +82,9 @@
         font-size: 16px !important;
     }
 
-    .products-container {
+    .shopslugproducts-container {
         gap: 10px !important;
-        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
     }
 
     .keralasellersemptyicon {
@@ -113,6 +113,11 @@
 
     .shopshopslugfiltercontainer {
         padding: '1px 20px' !important;
+    }
+
+      .shopslugproducts-container {
+        gap: 10px !important;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
     }
 }
 
@@ -154,9 +159,8 @@
         padding: 0px 0px !important;
     }
 
-    .products-container {
-        gap: 8px !important;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    .shopslugproducts-container {
+        grid-template-columns: repeat(2, 1fr) !important;
     }
 
     .keralasellersemptyicon {

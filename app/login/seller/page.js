@@ -1,17 +1,24 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
-import { 
-  Phone, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  User, 
-  ArrowLeft, 
-  AlertCircle, 
+import "../../../styles/SellerLogin.css";
+import Header from '../../../components/common/Header';
+import Footer from '../../../components/common/Footer';
+import Image from 'next/image';
+const BagImage = '/assets/images/bag.png';
+const StoreImage = '/assets/images/store.png';
+const TrolleyImage = '/assets/images/trolley.png';
+import {
+  Phone,
+  Lock,
+  Eye,
+  EyeOff,
+  User,
+  ArrowLeft,
+  AlertCircle,
   Store,
   Globe,
   Shield,
@@ -36,17 +43,106 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 const LOGIN_API_URL = `${API_BASE_URL}/user/login/`;
 
-console.log('🌐 Seller Login API URLs configured:', { 
-  API_BASE_URL, 
-  LOGIN_API_URL 
+console.log('🌐 Seller Login API URLs configured:', {
+  API_BASE_URL,
+  LOGIN_API_URL
 });
+
+const FloatingIcons = ({ totalIcons = 12 }) => {
+  const containerRef = useRef(null);
+  const iconRefs = useRef([]);
+  const iconSources = [BagImage, StoreImage, TrolleyImage];
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Random properties
+    const speeds = Array.from({ length: totalIcons }, () => ({
+      x: (Math.random() - 0.5) * 1,
+      y: (Math.random() - 0.5) * 1,
+    }));
+
+    const positions = Array.from({ length: totalIcons }, () => ({
+      x: Math.random() * (container.clientWidth - 40),
+      y: Math.random() * (container.clientHeight - 40),
+    }));
+
+    const sizes = Array.from({ length: totalIcons }, () => 25 + Math.random() * 10);
+
+    const animate = () => {
+      const rect = container.getBoundingClientRect();
+
+      iconRefs.current.forEach((icon, i) => {
+        if (!icon) return;
+        const size = sizes[i];
+        const pos = positions[i];
+        const speed = speeds[i];
+
+        pos.x += speed.x;
+        pos.y += speed.y;
+
+        // Bounce horizontally
+        if (pos.x <= 0 || pos.x + size >= rect.width) speed.x *= -1;
+        // Bounce vertically
+        if (pos.y <= 0 || pos.y + size >= rect.height) speed.y *= -1;
+
+        icon.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+      });
+
+      requestAnimationFrame(animate);
+    };
+
+    animate();
+  }, [totalIcons]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="floating-icons-container"
+      style={{
+        position: "absolute",
+        inset: 0,
+        overflow: "hidden",
+        zIndex: -1,
+        pointerEvents: "none",
+      }}
+    >
+      {Array.from({ length: totalIcons }).map((_, i) => {
+        const img = iconSources[i % iconSources.length];
+        const size = 25 + Math.random() * 25;
+        const opacity = 0.1 + Math.random() * 0.2;
+
+        return (
+          <Image
+            key={i}
+            src={img}
+            alt="Floating icon"
+            width={size}
+            height={size}
+            ref={(el) => (iconRefs.current[i] = el)}
+            className="floating-icon"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              opacity,
+              transform: `translate(${Math.random() * 200}px, ${Math.random() * 200}px)`,
+              transition: "transform 0s",
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+};
 
 // ✅ Enhanced LoginForm with better token handling
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect');
-  
+
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -85,7 +181,7 @@ function LoginForm() {
         }
 
         console.log('🔍 Checking existing seller token...');
-        
+
         // Verify token is still valid by making a quick API call
         const response = await axios.get(`${API_BASE_URL}/user/dashboard/`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -106,7 +202,7 @@ function LoginForm() {
         localStorage.removeItem('sellerInfo');
         localStorage.removeItem('userInfo');
       }
-      
+
       setIsCheckingAuth(false);
     };
 
@@ -135,17 +231,17 @@ function LoginForm() {
         setFieldErrors(prev => ({ ...prev, password: '' }));
       }
     }
-    
+
     // Clear general error when user starts typing
     if (error) setError('');
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     // Enhanced validation
     const newFieldErrors = {};
-    
+
     if (!phone.trim()) {
       newFieldErrors.phone = 'Phone number is required';
     } else if (!validatePhone(phone)) {
@@ -169,10 +265,10 @@ function LoginForm() {
 
     try {
       console.log('🔍 Attempting seller login with phone:', phone);
-      
+
       // ✅ FIXED: Send clean phone number and proper headers
-      const response = await axios.post(LOGIN_API_URL, { 
-        phone: phone.trim(), 
+      const response = await axios.post(LOGIN_API_URL, {
+        phone: phone.trim(),
         password: password,
         user_type: 'seller'
       }, {
@@ -181,43 +277,43 @@ function LoginForm() {
           'Content-Type': 'application/json'  // ✅ Ensure proper content type
         }
       });
-      
+
       console.log('✅ Login response received:', response.data);
-      
+
       // ✅ FIXED: Better token handling
-      const token = response.data.access_token || 
-                   response.data.token || 
-                   response.data.access;
-      
+      const token = response.data.access_token ||
+        response.data.token ||
+        response.data.access;
+
       if (!token) {
         throw new Error('No access token received from server');
       }
-      
+
       const { seller, debug_info } = response.data;
-      
+
       console.log('✅ Login successful for:', debug_info?.admin_user_email || seller?.email || phone);
-      
+
       // ✅ CRITICAL: Clear any existing invalid tokens first
       localStorage.removeItem('accessToken');
       localStorage.removeItem('access_token');
       localStorage.removeItem('sellerInfo');
       localStorage.removeItem('userInfo');
-      
+
       // Store new tokens
       localStorage.setItem('accessToken', token);
       localStorage.setItem('access_token', token);
-      
+
       if (seller) {
         localStorage.setItem('sellerInfo', JSON.stringify(seller));
         localStorage.setItem('userInfo', JSON.stringify(seller));
       }
-      
+
       if (rememberMe) {
         localStorage.setItem('rememberSeller', 'true');
       }
-      
+
       console.log('✅ Token stored, redirecting to dashboard...');
-      
+
       // ✅ FIXED: Use window.location for hard redirect to prevent loops
       setTimeout(() => {
         if (redirect) {
@@ -228,24 +324,24 @@ function LoginForm() {
           window.location.href = '/dashboard/seller';
         }
       }, 500); // Longer delay to ensure token is stored
-      
+
     } catch (err) {
       console.error('❌ Login error:', err);
       console.error('❌ Error response:', err.response?.data);
-      
+
       let errorMessage = 'Login failed. Please check your credentials.';
-      
+
       if (err.response?.status === 400) {
         // ✅ FIXED: Handle specific 400 error messages from backend
         if (err.response.data?.error) {
           errorMessage = err.response.data.error;
         } else if (err.response.data?.phone) {
-          errorMessage = Array.isArray(err.response.data.phone) 
-            ? err.response.data.phone[0] 
+          errorMessage = Array.isArray(err.response.data.phone)
+            ? err.response.data.phone[0]
             : err.response.data.phone;
         } else if (err.response.data?.password) {
-          errorMessage = Array.isArray(err.response.data.password) 
-            ? err.response.data.password[0] 
+          errorMessage = Array.isArray(err.response.data.password)
+            ? err.response.data.password[0]
             : err.response.data.password;
         } else {
           errorMessage = 'Invalid request. Please check your phone number and password format.';
@@ -259,14 +355,14 @@ function LoginForm() {
       } else if (err.code === 'ECONNABORTED') {
         errorMessage = 'Request timed out. Please check your connection and try again.';
       } else if (err.response?.data) {
-        errorMessage = err.response.data.error || 
-                     err.response.data.detail || 
-                     err.response.data.message || 
-                     errorMessage;
+        errorMessage = err.response.data.error ||
+          err.response.data.detail ||
+          err.response.data.message ||
+          errorMessage;
       } else if (!navigator.onLine) {
         errorMessage = 'No internet connection. Please check your network and try again.';
       }
-      
+
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -326,14 +422,14 @@ function LoginForm() {
 
       {/* Header */}
       <div style={styles.header}>
-        <div style={styles.iconContainer}>
-          <Store size={32} color="#3b82f6" />
+        <div className='sellerloginiconcontainer' style={styles.iconContainer}>
+          <Store className='sellerloginiconsize' size={32} color="#3b82f6" />
         </div>
-        <h1 style={styles.title}>
+        <h1 className='sellerlogincardtitle' style={styles.title}>
           {currentStoreInfo.isInStore ? 'Store Owner Login' : 'Seller Login'}
         </h1>
-        <p style={styles.subtitle}>
-          {currentStoreInfo.isInStore 
+        <p className='sellerlogincardsubtitle' style={styles.subtitle}>
+          {currentStoreInfo.isInStore
             ? 'Sign in to manage your store and access seller features'
             : 'Welcome back! Sign in to manage your store and products.'
           }
@@ -343,15 +439,13 @@ function LoginForm() {
       {/* Login Form */}
       <form onSubmit={handleLogin} style={styles.form}>
         <div style={styles.inputGroup}>
-          <label style={styles.label}>
-            <Phone size={16} />
-            Phone Number
-          </label>
+
           <div style={styles.phoneInputContainer}>
-            <span style={styles.countryCode}>+91</span>
+            <span className='sellerlogincountrycode' style={styles.countryCode}>+91</span>
             <input
               type="tel"
-              placeholder="Enter 10-digit phone number"
+              className='sellerlogininput'
+              placeholder="Enter phone number"
               value={phone}
               onChange={(e) => handleFieldChange('phone', e.target.value)}
               style={{
@@ -370,13 +464,12 @@ function LoginForm() {
         </div>
 
         <div style={styles.inputGroup}>
-          <label style={styles.label}>
-            <Lock size={16} />
-            Password
-          </label>
+
           <div style={styles.passwordContainer}>
+            <Lock size={18} style={styles.inputIcon} />
             <input
               type={showPassword ? "text" : "password"}
+              className='sellerloginpasswordinput'
               placeholder="Enter your password"
               value={password}
               onChange={(e) => handleFieldChange('password', e.target.value)}
@@ -389,6 +482,7 @@ function LoginForm() {
             />
             <button
               type="button"
+              className='sellerlogineye'
               onClick={() => setShowPassword(!showPassword)}
               style={styles.eyeButton}
               disabled={loading}
@@ -427,6 +521,7 @@ function LoginForm() {
         {/* Login Button */}
         <button
           type="submit"
+          className='sellerloginsigninbtn'
           disabled={loading || !phone || !password}
           style={{
             ...styles.button,
@@ -459,8 +554,10 @@ function LoginForm() {
         </div>
       </div>
 
+      <FloatingIcons totalIcons={8} />
+
       {/* Footer Links */}
-      <div style={styles.footerLinks}>
+      <div className='sellerloginfooterlinks' style={styles.footerLinks}>
         <Link href={getForgotPasswordLink()} style={styles.link}>
           Forgot Password?
         </Link>
@@ -489,6 +586,7 @@ function LoginForm() {
   );
 }
 
+
 // ✅ Enhanced Loading component
 function LoginLoading() {
   return (
@@ -502,83 +600,18 @@ function LoginLoading() {
   );
 }
 
-// ✅ Enhanced Features component
-function FeaturesSection() {
-  const features = [
-    {
-      icon: <TrendingUp size={20} color="#059669" />,
-      title: "Zero Commission",
-      description: "Keep 100% of your sales revenue"
-    },
-    {
-      icon: <Users size={20} color="#3b82f6" />,
-      title: "Reach More Customers", 
-      description: "Connect with buyers across Kerala"
-    },
-    {
-      icon: <Shield size={20} color="#f59e0b" />,
-      title: "Secure Payments",
-      description: "Safe and reliable payment processing"
-    },
-    {
-      icon: <Zap size={20} color="#8b5cf6" />,
-      title: "Easy Management",
-      description: "Simple tools to manage your store"
-    }
-  ];
-
-  return (
-    <div style={styles.featuresSection}>
-      <h3 style={styles.featuresTitle}>Why Choose Kerala Sellers?</h3>
-      <div style={styles.featuresGrid}>
-        {features.map((feature, index) => (
-          <div key={index} style={styles.featureCard}>
-            <div style={styles.featureIcon}>
-              {feature.icon}
-            </div>
-            <div style={styles.featureContent}>
-              <h4 style={styles.featureTitle}>{feature.title}</h4>
-              <p style={styles.featureDescription}>{feature.description}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      {/* ✅ Success stats */}
-      <div style={styles.statsSection}>
-        <h4 style={styles.statsTitle}>Join Successful Sellers</h4>
-        <div style={styles.statsGrid}>
-          <div style={styles.statItem}>
-            <span style={styles.statNumber}>1000+</span>
-            <span style={styles.statLabel}>Active Sellers</span>
-          </div>
-          <div style={styles.statItem}>
-            <span style={styles.statNumber}>15K+</span>
-            <span style={styles.statLabel}>Products Listed</span>
-          </div>
-          <div style={styles.statItem}>
-            <span style={styles.statNumber}>0%</span>
-            <span style={styles.statLabel}>Commission</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ✅ Enhanced main component
 export default function LoginSellerPage() {
   return (
     <div style={styles.pageContainer}>
+      <Header />
       <div style={styles.container}>
         <Suspense fallback={<LoginLoading />}>
           <LoginForm />
         </Suspense>
-
-        {/* Enhanced Features Section */}
-        <FeaturesSection />
       </div>
-
+      <Footer />
       {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
@@ -620,26 +653,33 @@ const styles = {
     minHeight: '100vh',
     backgroundColor: '#f9fafb'
   },
-  
-  container: { 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'flex-start', 
-    minHeight: '100vh', 
-    padding: '40px 20px',
-    gap: '60px',
-    flexWrap: 'wrap'
+
+  container: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 'calc(100vh - 170px)', // ✅ UPDATE: Account for SHeader
+    padding: '20px',
+    backgroundColor: '#FDFFF0'
   },
-  
-  card: { 
-    backgroundColor: 'white', 
-    padding: '32px', 
-    borderRadius: '16px', 
-    boxShadow: '0 4px 20px rgba(0,0,0,0.1)', 
-    width: '100%',
-    maxWidth: '420px',
-    border: '1px solid #e5e7eb',
-    animation: 'fadeIn 0.6s ease-out'
+
+  card: {
+    position: 'relative',
+    overflow: 'hidden',
+    backgroundAttachment: 'fixed',
+    marginTop: '50px',
+    padding: '40px',
+    borderRadius: '16px',
+    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
+    width: '90%',
+    maxWidth: '400px',
+    backgroundColor: 'rgba(137, 172, 120, 0.45)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    color: '#fff',
+    textAlign: 'center',
+    zIndex: 0,
+    transition: 'all 0.3s ease',
   },
 
   // Store notice
@@ -655,7 +695,7 @@ const styles = {
     color: '#1e40af',
     marginBottom: '20px'
   },
-  
+
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -670,12 +710,12 @@ const styles = {
     color: '#9ca3af',
     margin: 0
   },
-  
+
   header: {
     textAlign: 'center',
     marginBottom: '32px'
   },
-  
+
   iconContainer: {
     width: '64px',
     height: '64px',
@@ -686,31 +726,31 @@ const styles = {
     justifyContent: 'center',
     margin: '0 auto 16px auto'
   },
-  
+
   title: {
     fontSize: '1.5rem',
     fontWeight: '700',
     color: '#1f2937',
     marginBottom: '8px'
   },
-  
-  subtitle: { 
-    color: '#6b7280', 
+
+  subtitle: {
+    color: '#6b7280',
     fontSize: '0.95rem',
     lineHeight: '1.5'
   },
-  
+
   form: {
     display: 'flex',
     flexDirection: 'column',
     gap: '20px'
   },
-  
-  inputGroup: { 
+
+  inputGroup: {
     display: 'flex',
     flexDirection: 'column'
   },
-  
+
   label: {
     display: 'flex',
     alignItems: 'center',
@@ -748,37 +788,44 @@ const styles = {
     backgroundColor: 'transparent',
     outline: 'none'
   },
-  
-  input: { 
-    width: '100%', 
-    padding: '14px 16px', 
-    border: '1px solid #d1d5db', 
-    borderRadius: '8px', 
+
+  input: {
+    width: '100%',
+    padding: '14px 16px',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
     fontSize: '1rem',
     backgroundColor: '#ffffff',
     transition: 'all 0.2s ease',
     boxSizing: 'border-box',
     outline: 'none'
   },
-  
+
   passwordContainer: {
     position: 'relative',
     display: 'flex',
     alignItems: 'center'
   },
-  
+
+  inputIcon: {
+    position: 'absolute',
+    left: '16px',
+    color: '#6b7280',
+    zIndex: 1
+  },
+
   passwordInput: {
-    width: '100%', 
-    padding: '14px 48px 14px 16px', 
-    border: '1px solid #d1d5db', 
-    borderRadius: '8px', 
+    width: '100%',
+    padding: '14px 48px 14px 70px',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
     fontSize: '1rem',
     backgroundColor: '#ffffff',
     transition: 'all 0.2s ease',
     boxSizing: 'border-box',
     outline: 'none'
   },
-  
+
   eyeButton: {
     position: 'absolute',
     right: '12px',
@@ -789,7 +836,7 @@ const styles = {
     padding: '4px',
     borderRadius: '4px'
   },
-  
+
   inputError: {
     borderColor: '#ef4444'
   },
@@ -799,13 +846,13 @@ const styles = {
     fontSize: '0.8rem',
     marginTop: '4px'
   },
-  
+
   checkboxContainer: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px'
   },
-  
+
   checkboxLabel: {
     display: 'flex',
     alignItems: 'center',
@@ -814,13 +861,13 @@ const styles = {
     color: '#374151',
     cursor: 'pointer'
   },
-  
+
   checkbox: {
     width: '16px',
     height: '16px',
     accentColor: '#3b82f6'
   },
-  
+
   errorContainer: {
     display: 'flex',
     alignItems: 'center',
@@ -832,15 +879,15 @@ const styles = {
     color: '#991b1b',
     fontSize: '0.9rem'
   },
-  
-  button: { 
-    width: '100%', 
-    padding: '16px 24px', 
-    border: 'none', 
-    borderRadius: '8px', 
-    backgroundColor: '#3b82f6', 
-    color: 'white', 
-    cursor: 'pointer', 
+
+  button: {
+    width: '100%',
+    padding: '16px 24px',
+    border: 'none',
+    borderRadius: '8px',
+    backgroundColor: '#1a4845',
+    color: 'white',
+    cursor: 'pointer',
     fontSize: '1rem',
     fontWeight: '600',
     transition: 'all 0.2s ease',
@@ -849,18 +896,18 @@ const styles = {
     justifyContent: 'center',
     minHeight: '52px'
   },
-  
+
   buttonLoading: {
     backgroundColor: '#9ca3af',
     cursor: 'not-allowed'
   },
-  
+
   buttonContent: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px'
   },
-  
+
   spinner: {
     width: '16px',
     height: '16px',
@@ -888,33 +935,33 @@ const styles = {
     color: '#059669',
     fontWeight: '500'
   },
-  
-  footerLinks: { 
+
+  footerLinks: {
     marginTop: '24px',
-    display: 'flex', 
+    display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     fontSize: '0.9rem',
     gap: '12px'
   },
-  
-  link: { 
-    color: '#3b82f6', 
+
+  link: {
+    color: '#3b82f6',
     textDecoration: 'none',
     fontWeight: '500'
   },
-  
+
   divider: {
     color: '#d1d5db'
   },
-  
+
   backSection: {
     marginTop: '20px',
     textAlign: 'center',
     paddingTop: '16px',
     borderTop: '1px solid #e5e7eb'
   },
-  
+
   backLink: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -953,13 +1000,13 @@ const styles = {
     fontWeight: '500',
     transition: 'background-color 0.2s'
   },
-  
+
   // Enhanced features section
   featuresSection: {
     maxWidth: '400px',
     animation: 'slideIn 0.8s ease-out'
   },
-  
+
   featuresTitle: {
     fontSize: '1.5rem',
     fontWeight: '700',

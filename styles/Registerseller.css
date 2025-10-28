@@ -1,3 +1,5 @@
+
+
 @media (max-width: 576px) {
     .sellerregistericoncontainer {
         width: 55px !important;
@@ -29,6 +31,7 @@
         min-height: 44px !important;
         font-size: 15px !important;
     }
+
 }
 
 @media (max-width: 480px) {
@@ -91,4 +94,20 @@
         font-size: 13px !important;
     }
 
+    .sellerregisterverificationinput {
+        font-size: 13px !important;
+        padding: 10px 5px 10px 5px !important;
+        letter-spacing: 4px !important;
+    }
+
+    .sellerregisterbacktodetailbtn {
+        font-size: 13px !important;
+    }
+    .regsellerotptext{
+        font-size: 14px !important;
+    }
+    .regsellerotpinfo{
+        gap: 7px !important;
+        padding: 11px !important;
+    }
 }
