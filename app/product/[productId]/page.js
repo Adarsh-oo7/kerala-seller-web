@@ -35,23 +35,30 @@ const getAuthHeaders = () => {
     return token ? { 'Authorization': `Bearer ${token}` } : null;
 };
 
-// ✅ SMART: Get best image URL with Cloudinary support
+// ✅ FIXED: Cloudinary gets HIGHEST priority
 const getBestImageUrl = (product, imageType = 'main', size = 'default') => {
     if (!product) return 'https://placehold.co/400x400?text=No+Image';
 
-    // Priority order for different image types
+    // ✅ Priority 1: CLOUDINARY URL FIRST (regardless of imageType)
+    if (product.cloudinary_url) {
+        console.log('✅ Using Cloudinary URL:', product.cloudinary_url);
+        return product.cloudinary_url;
+    }
+
+    // ✅ Priority 2: Size-specific URLs
     const imageUrls = {
-        thumbnail: product.thumbnail_url || product.main_image_url || product.cloudinary_url,
-        large: product.large_image_url || product.main_image_url || product.cloudinary_url,
-        main: product.main_image_url || product.cloudinary_url
+        thumbnail: product.thumbnail_url || product.main_image_url,
+        large: product.large_image_url || product.main_image_url,
+        main: product.main_image_url
     };
 
     let imageUrl = imageUrls[imageType] || product.main_image_url;
 
     if (!imageUrl) return 'https://placehold.co/400x400?text=No+Image';
 
-    // If it's already a Cloudinary URL, return as is
+    // ✅ If it's already a Cloudinary URL, return as is
     if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
+        console.log('✅ Using Cloudinary URL from imageUrl:', imageUrl);
         return imageUrl;
     }
 
@@ -67,6 +74,7 @@ const getBestImageUrl = (product, imageType = 'main', size = 'default') => {
     return imageUrl.startsWith('/') ? `${API_BASE_URL}${imageUrl}` : imageUrl;
 };
 
+
 // ✅ Enhanced Image Gallery Component with Mobile Square Support
 function ProductImageGallery({ product }) {
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -74,20 +82,22 @@ function ProductImageGallery({ product }) {
     const [imageLoaded, setImageLoaded] = useState(false);
 
     // Combine main image and sub-images
-    const allImages = [
-        {
-            url: getBestImageUrl(product, 'main'),
-            thumbnail: getBestImageUrl(product, 'thumbnail'),
-            large: getBestImageUrl(product, 'large'),
-            alt: product.name
-        },
-        ...(product.sub_images || []).map((subImage, index) => ({
-            url: subImage.image_url || subImage.thumbnail_url || getBestImageUrl({ main_image_url: subImage.image }),
-            thumbnail: subImage.thumbnail_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
-            large: subImage.large_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
-            alt: `${product.name} - Image ${index + 2}`
-        }))
-    ];
+    // ✅ FIXED: Combine main image and sub-images with Cloudinary priority
+const allImages = [
+    {
+        url: product.cloudinary_url || getBestImageUrl(product, 'main'),
+        thumbnail: product.cloudinary_url || getBestImageUrl(product, 'thumbnail'),
+        large: product.cloudinary_url || getBestImageUrl(product, 'large'),
+        alt: product.name
+    },
+    ...(product.sub_images || []).map((subImage, index) => ({
+        url: subImage.cloudinary_image_url || subImage.image_url || subImage.thumbnail_url || getBestImageUrl({ main_image_url: subImage.image }),
+        thumbnail: subImage.cloudinary_image_url || subImage.thumbnail_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
+        large: subImage.cloudinary_image_url || subImage.large_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
+        alt: `${product.name} - Image ${index + 2}`
+    }))
+];
+
 
     const handlePrevious = () => {
         setSelectedImageIndex((prev) =>

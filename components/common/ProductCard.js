@@ -34,7 +34,7 @@ export default function ProductCard({
   storeName,
   modelName,
   sellerPhone,
-  // ✅ NEW: Enhanced image props from enhanced serializers
+  // ✅ Enhanced image props from enhanced serializers
   thumbnailUrl,
   largeImageUrl,
   cloudinaryUrl,
@@ -51,7 +51,7 @@ export default function ProductCard({
   const [wishlistState, setWishlistState] = useState(isWishlisted)
   const [localWishlistLoading, setLocalWishlistLoading] = useState(false)
 
-  // ✅ FIXED: Sync with parent state properly
+  // ✅ Sync with parent state
   useEffect(() => {
     setWishlistState(isWishlisted)
   }, [isWishlisted])
@@ -68,34 +68,25 @@ export default function ProductCard({
     }, 2000)
   }
 
-  // ✅ SIMPLIFIED: Just call parent handler, don't duplicate logic
+  // ✅ Wishlist handler
   const handleWishlistToggle = async (e) => {
     e.preventDefault()
     e.stopPropagation()
 
-    console.log('🔍 ProductCard wishlist button clicked for product:', id);
-
-    // Prevent multiple clicks
     if (isWishlistLoading || localWishlistLoading) {
-      console.log('⏳ Wishlist operation already in progress for product:', id)
       return
     }
 
-    // ✅ SIMPLIFIED: Just call parent handler
     if (onToggleWishlist) {
-      console.log('📞 Calling parent wishlist handler for product:', id);
       await onToggleWishlist(id);
-    } else {
-      console.warn('⚠️ No onToggleWishlist handler provided to ProductCard');
     }
   }
 
-  // ✅ Enhanced add to cart handler
+  // ✅ FIXED: Enhanced add to cart with Cloudinary URL priority
   const handleAddToCart = async (e) => {
     e.preventDefault()
     e.stopPropagation()
 
-    // Use enhanced stock checking
     const stockCheck = canBePurchasedOnline !== undefined ? canBePurchasedOnline : (onlineStock > 0)
 
     if (!stockCheck) {
@@ -110,25 +101,25 @@ export default function ProductCard({
           name: title,
           price: parseFloat(price) || 0,
           mrp: mrp ? parseFloat(mrp) : null,
-          // ✅ ENHANCED: Use best available image URL
-          main_image_url: getBestImageUrl(),
-          image_url: getBestImageUrl(),
-          thumbnail_url: thumbnailUrl || getBestImageUrl('thumbnail'),
+          // ✅ FIXED: Cloudinary URL gets HIGHEST priority
+          main_image_url: cloudinaryUrl || getBestImageUrl(),
+          image_url: cloudinaryUrl || getBestImageUrl(),
+          thumbnail_url: thumbnailUrl || cloudinaryUrl || getBestImageUrl('thumbnail'),
           online_stock: onlineStock,
           seller_phone: sellerPhone,
           store: storeName ? { name: storeName } : null,
           model_name: modelName,
           average_rating: rating,
           review_count: reviewCount,
-          // ✅ NEW: Enhanced product data
           has_discount: hasDiscount,
           discount_percentage: discountPercentage,
           is_in_stock: isInStock,
           can_be_purchased_online: canBePurchasedOnline,
-          image_metadata: imageMetadata
+          image_metadata: imageMetadata,
+          cloudinary_url: cloudinaryUrl // ✅ Include for future use
         }
 
-        console.log('🛒 Adding to cart:', productData)
+        console.log('🛒 Adding to cart with Cloudinary URL:', productData)
         await onAddToCart(e, productData)
       }
     } catch (error) {
@@ -146,14 +137,12 @@ export default function ProductCard({
     }).format(numPrice)
   }
 
-  // ✅ ENHANCED: Use API-provided discount or calculate fallback
+  // ✅ Use API-provided discount
   const getDiscountPercentage = () => {
-    // Use API-provided discount percentage if available
     if (discountPercentage !== undefined && discountPercentage > 0) {
       return Math.round(discountPercentage)
     }
 
-    // Fallback to manual calculation
     const numPrice = parseFloat(price) || 0
     const numMrp = parseFloat(mrp) || 0
 
@@ -163,7 +152,7 @@ export default function ProductCard({
     return null
   }
 
-  // ✅ Enhanced product URL with store context awareness
+  // ✅ Enhanced product URL
   const getProductUrl = () => {
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname
@@ -180,10 +169,14 @@ export default function ProductCard({
     return `/product/${id}`
   }
 
-  // ✅ SMART: Get best available image URL with multiple fallbacks
+  // ✅ FIXED: Cloudinary gets HIGHEST priority
   const getBestImageUrl = (size = 'default') => {
-    // Priority order: Cloudinary optimized > thumbnailUrl > primaryImage > placeholder
+    // ✅ Priority 1: Cloudinary URL (FASTEST CDN)
+    if (cloudinaryUrl) {
+      return cloudinaryUrl
+    }
 
+    // ✅ Priority 2: Size-specific optimized images
     if (size === 'thumbnail' && thumbnailUrl) {
       return thumbnailUrl
     }
@@ -192,15 +185,17 @@ export default function ProductCard({
       return largeImageUrl
     }
 
-    // For default size, prefer optimized URLs
+    // ✅ Priority 3: Default size - prefer thumbnailUrl
     if (thumbnailUrl && size === 'default') {
       return thumbnailUrl
     }
 
+    // ✅ Priority 4: Fallback to primaryImage
     if (primaryImage) {
       return getImageUrl(primaryImage)
     }
 
+    // ✅ Priority 5: Final fallback
     return "/placeholder.svg"
   }
 
@@ -208,7 +203,7 @@ export default function ProductCard({
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return "/placeholder.svg"
 
-    // ✅ CLOUDINARY: If it's already a Cloudinary URL, use it directly
+    // ✅ CLOUDINARY: Direct use if Cloudinary URL
     if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
       return imageUrl
     }
@@ -231,17 +226,17 @@ export default function ProductCard({
     return imageUrl || "/placeholder.svg"
   }
 
-  // ✅ ENHANCED: Smart image error handling with multiple fallbacks
+  // ✅ ENHANCED: Smart image error handling with Cloudinary priority
   const handleImageError = (e) => {
     if (imageError) return // Prevent infinite loop
 
     setImageError(true)
 
-    // Try fallback URLs in order
+    // ✅ Try fallback URLs with Cloudinary FIRST
     const fallbacks = [
+      cloudinaryUrl, // ✅ Cloudinary gets highest priority
       primaryImage && getImageUrl(primaryImage),
       thumbnailUrl,
-      cloudinaryUrl,
       "/placeholder.svg"
     ].filter(Boolean)
 
@@ -264,7 +259,7 @@ export default function ProductCard({
     }
   }
 
-  // ✅ ENHANCED: Determine stock status
+  // ✅ Determine stock status
   const getStockStatus = () => {
     if (canBePurchasedOnline === false) return 'unavailable'
     if (isInStock === false || onlineStock === 0) return 'out-of-stock'
@@ -287,7 +282,7 @@ export default function ProductCard({
         onTouchEnd={handleTouchEnd}
       >
         <div className="image-container">
-          {/* ✅ ENHANCED: Stock badges */}
+          {/* Stock badges */}
           {stockStatus === 'out-of-stock' && (
             <div className="stock-badge out-of-stock">
               Out of Stock
@@ -301,7 +296,7 @@ export default function ProductCard({
             </div>
           )}
 
-          {/* ✅ ENHANCED: Use API-provided discount */}
+          {/* Discount badge */}
           {discount && (
             <div className="discount-badge">
               {discount}% OFF
@@ -314,13 +309,14 @@ export default function ProductCard({
             </div>
           )}
 
-          {/* ✅ ENHANCED: Optimized badge for Cloudinary images */}
-          {imageMetadata?.optimized && (
-            <div className="optimized-badge" title="Fast loading optimized image">
-              ⚡
+          {/* ✅ Optimized badge for Cloudinary images */}
+          {cloudinaryUrl && (
+            <div className="optimized-badge" title="Fast loading Cloudinary image">
+              ☁️
             </div>
           )}
 
+          {/* Wishlist button */}
           <div className="wishlist show">
             <button
               className={`wishlist-btn ${wishlistState ? "wish-active" : ""} ${isWishlistCurrentlyLoading ? "loading" : ""}`}
@@ -343,6 +339,7 @@ export default function ProductCard({
             </button>
           </div>
 
+          {/* Product image */}
           <Link href={getProductUrl()} className="image-link">
             <div className="image-wrapper">
               <img
@@ -355,7 +352,6 @@ export default function ProductCard({
                 }}
                 onError={handleImageError}
                 loading="lazy"
-                // ✅ ENHANCED: Add responsive image attributes
                 sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
               />
 
@@ -365,7 +361,7 @@ export default function ProductCard({
                 </div>
               )}
 
-              {/* ✅ NEW: Hover effect with large image */}
+              {/* Hover effect with large image */}
               {isHovered && largeImageUrl && largeImageUrl !== getBestImageUrl() && (
                 <img
                   src={largeImageUrl}
@@ -377,19 +373,19 @@ export default function ProductCard({
             </div>
           </Link>
 
+          {/* Rating overlay */}
           <div style={styles.ratingOverlay}>
             <div style={styles.ratingLeft}>
               {[1].map((star) => (
                 <Star
                   key={star}
                   className="star"
-                  fill={rating && star <= Math.floor(rating) ? "#FFC107" : "none"} // filled if rated
-                  stroke="#FFC107" // always outline
+                  fill={rating && star <= Math.floor(rating) ? "#FFC107" : "none"}
+                  stroke="#FFC107"
                   size={12}
                 />
               ))}
 
-              {/* Show rating number only if rating exists */}
               {rating > 0 && (
                 <span style={styles.ratingLeftText}>({rating.toFixed(1)})</span>
               )}
@@ -399,13 +395,9 @@ export default function ProductCard({
               {reviewCount > 0 ? `${reviewCount} reviews` : 'No reviews'}
             </span>
           </div>
-
-
-
-
-
         </div>
 
+        {/* Product info */}
         <div className="product-info">
           <div className="product-left">
             <h3 className="product-title">
@@ -424,7 +416,6 @@ export default function ProductCard({
                 {mrp && parseFloat(mrp) > parseFloat(price) && (
                   <>
                     <span className="original-price">{formatPrice(mrp)}</span>
-                    {/* <span className="savings">Save {formatPrice(parseFloat(mrp) - parseFloat(price))}</span> */}
                   </>
                 )}
               </div>
@@ -450,25 +441,12 @@ export default function ProductCard({
             </div>
           </div>
         </div>
-
-        {/* ✅ NEW: Debug info in development */}
-        {/* {process.env.NODE_ENV === 'development' && imageMetadata && (
-          <div className="debug-info" style={{ fontSize: '10px', opacity: 0.5, position: 'absolute', bottom: 0, right: 0, background: 'rgba(0,0,0,0.8)', color: 'white', padding: '2px' }}>
-            {imageMetadata.optimized ? '⚡' : '📁'} 
-            {imageMetadata.has_cloudinary ? 'C' : 'L'}
-            {imageMetadata.sub_images_count > 0 && ` +${imageMetadata.sub_images_count}`}
-          </div>
-        )} */}
       </div>
     </>
   )
 }
 
-
 const styles = {
-
-
-  // ✅ Rating overlay (existing) - on image
   ratingOverlay: {
     position: "absolute",
     bottom: "0px",
