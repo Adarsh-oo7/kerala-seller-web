@@ -3,14 +3,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { 
-  Bell, 
-  CheckCircle, 
-  AlertCircle, 
-  Package, 
-  IndianRupee, 
-  ShoppingCart, 
-  Clock, 
+import '../../../../styles/DashboardNotification.css'
+import {
+  Bell,
+  CheckCircle,
+  AlertCircle,
+  Package,
+  IndianRupee,
+  ShoppingCart,
+  Clock,
   RefreshCw,
   ExternalLink
 } from 'lucide-react';
@@ -42,17 +43,17 @@ export default function NotificationsPage() {
   const fetchNotifications = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
-    
+
     setIsLoading(true);
     setError('');
-    
+
     try {
       console.log('Fetching notifications from:', NOTIFICATIONS_API);
       const response = await axios.get(NOTIFICATIONS_API, { headers });
-      
+
       const notificationData = response.data.results || response.data || [];
       console.log('Notifications fetched:', notificationData.length);
-      
+
       setNotifications(notificationData);
       setFilteredNotifications(notificationData);
     } catch (error) {
@@ -75,7 +76,7 @@ export default function NotificationsPage() {
   // Apply filter
   useEffect(() => {
     let filtered = [...notifications];
-    
+
     switch (filter) {
       case 'unread':
         filtered = filtered.filter(n => !n.is_read);
@@ -86,7 +87,7 @@ export default function NotificationsPage() {
       default:
         break;
     }
-    
+
     setFilteredNotifications(filtered);
   }, [notifications, filter]);
 
@@ -103,7 +104,7 @@ export default function NotificationsPage() {
     if (!notification.is_read) {
       try {
         await axios.patch(`${NOTIFICATIONS_API}${notification.id}/mark-as-read/`, {}, { headers });
-        setNotifications(prev => 
+        setNotifications(prev =>
           prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n)
         );
       } catch (error) {
@@ -124,10 +125,10 @@ export default function NotificationsPage() {
     if (!headers) return;
 
     setIsProcessing(true);
-    
+
     try {
       await axios.patch(`${NOTIFICATIONS_API}${notificationId}/mark-as-read/`, {}, { headers });
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
       );
     } catch (error) {
@@ -153,15 +154,15 @@ export default function NotificationsPage() {
     if (unreadNotifications.length === 0) return;
 
     setIsProcessing(true);
-    
+
     try {
       await Promise.all(
         unreadNotifications.map(notification =>
           axios.patch(`${NOTIFICATIONS_API}${notification.id}/mark-as-read/`, {}, { headers })
         )
       );
-      
-      setNotifications(prev => 
+
+      setNotifications(prev =>
         prev.map(n => ({ ...n, is_read: true }))
       );
     } catch (error) {
@@ -181,15 +182,15 @@ export default function NotificationsPage() {
   // Get appropriate icon based on message content
   const getNotificationIcon = (message) => {
     const lowercaseMessage = message.toLowerCase();
-    
+
     if (lowercaseMessage.includes('order')) {
-      return <ShoppingCart size={20} color="#3b82f6" />;
+      return <ShoppingCart className='dashboardnotificationcarticon' size={20} color="#3b82f6" />;
     } else if (lowercaseMessage.includes('payment') || lowercaseMessage.includes('payout') || lowercaseMessage.includes('₹')) {
-      return <IndianRupee size={20} color="#059669" />;
+      return <IndianRupee className='dashboardnotificationcarticon' size={20} color="#059669" />;
     } else if (lowercaseMessage.includes('product') || lowercaseMessage.includes('stock')) {
-      return <Package size={20} color="#8b5cf6" />;
+      return <Package className='dashboardnotificationcarticon' size={20} color="#8b5cf6" />;
     } else if (lowercaseMessage.includes('shipped') || lowercaseMessage.includes('delivery')) {
-      return <Package size={20} color="#f59e0b" />;
+      return <Package className='dashboardnotificationcarticon' size={20} color="#f59e0b" />;
     } else {
       return <Bell size={20} color="#6b7280" />;
     }
@@ -245,34 +246,35 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div style={styles.pageContainer}>
+    <div className='dashboardnotificationpagecontainer' style={styles.pageContainer}>
       {/* Header */}
-      <div style={styles.header}>
+      <div className='dashboardnotificationheader' style={styles.header}>
         <div>
-          <h1 style={styles.pageTitle}>
-            <Bell size={28} />
+          <h1 className='dashboardnotificationtitle' style={styles.pageTitle}>
+            <Bell className='dashboardnotificationbellicon' />
             Notifications
             {getUnreadCount() > 0 && (
               <span style={styles.unreadBadge}>{getUnreadCount()}</span>
             )}
           </h1>
-          <p style={styles.pageSubtitle}>
+          <p className='dashboardnotificationsubtitle' style={styles.pageSubtitle}>
             Stay updated with your store activities and important updates
           </p>
         </div>
         <div style={styles.headerActions}>
           {getUnreadCount() > 0 && (
-            <button 
-              onClick={handleMarkAllAsRead} 
+            <button
+              className='dashboardnotificationbarbtn'
+              onClick={handleMarkAllAsRead}
               style={styles.markAllButton}
               disabled={isProcessing}
             >
-              <CheckCircle size={18} />
+              <CheckCircle className='dashboardnotificationmarkicon' />
               Mark All Read
             </button>
           )}
-          <button onClick={fetchNotifications} style={styles.refreshButton}>
-            <RefreshCw size={18} />
+          <button className='dashboardnotificationbarbtn' onClick={fetchNotifications} style={styles.refreshButton}>
+            <RefreshCw className='dashboardnotificationmarkicon' />
             Refresh
           </button>
         </div>
@@ -289,7 +291,8 @@ export default function NotificationsPage() {
       {/* Filters */}
       <div style={styles.filtersContainer}>
         <div style={styles.filterTabs}>
-          <button 
+          <button
+            className='dashboardnotificationreadbtn'
             onClick={() => setFilter('all')}
             style={{
               ...styles.filterTab,
@@ -298,7 +301,8 @@ export default function NotificationsPage() {
           >
             All ({notifications.length})
           </button>
-          <button 
+          <button
+            className='dashboardnotificationreadbtn'
             onClick={() => setFilter('unread')}
             style={{
               ...styles.filterTab,
@@ -307,7 +311,8 @@ export default function NotificationsPage() {
           >
             Unread ({getUnreadCount()})
           </button>
-          <button 
+          <button
+            className='dashboardnotificationreadbtn'
             onClick={() => setFilter('read')}
             style={{
               ...styles.filterTab,
@@ -325,48 +330,49 @@ export default function NotificationsPage() {
           <div style={styles.emptyState}>
             <Bell size={48} />
             <h3>
-              {filter === 'unread' 
-                ? 'No unread notifications' 
-                : filter === 'read' 
-                ? 'No read notifications'
-                : 'No notifications yet'}
+              {filter === 'unread'
+                ? 'No unread notifications'
+                : filter === 'read'
+                  ? 'No read notifications'
+                  : 'No notifications yet'}
             </h3>
             <p>
-              {filter === 'unread' 
+              {filter === 'unread'
                 ? 'All caught up! You have no new notifications.'
                 : filter === 'read'
-                ? 'No notifications have been read yet.'
-                : 'New notifications will appear here when customers place orders or interact with your store.'}
+                  ? 'No notifications have been read yet.'
+                  : 'New notifications will appear here when customers place orders or interact with your store.'}
             </p>
           </div>
         ) : (
           filteredNotifications.map(notification => (
-            <div 
-              key={notification.id} 
+            <div
+            className='dashboardnotificationcardpadding'
+              key={notification.id}
               onClick={() => handleNotificationClick(notification)}
               style={{
-                ...styles.notificationCard, 
+                ...styles.notificationCard,
                 ...(notification.is_read ? styles.readCard : styles.unreadCard),
                 ...(notification.link ? styles.clickableCard : {})
               }}
             >
-              <div style={styles.notificationIcon}>
+              <div className='dashboardnotificationcarticoncontainer'  style={styles.notificationIcon}>
                 {getNotificationIcon(notification.message)}
                 {!notification.is_read && <div style={styles.unreadDot}></div>}
               </div>
-              
+
               <div style={styles.notificationContent}>
-                <p style={styles.notificationMessage}>
+                <p className='dashboardnotificationmessage' style={styles.notificationMessage}>
                   {notification.message}
                   {notification.link && (
-                    <ExternalLink 
-                      size={14} 
-                      style={{ 
-                        marginLeft: '8px', 
-                        display: 'inline', 
+                    <ExternalLink
+                      size={14}
+                      style={{
+                        marginLeft: '8px',
+                        display: 'inline',
                         verticalAlign: 'middle',
                         opacity: 0.6
-                      }} 
+                      }}
                     />
                   )}
                 </p>
@@ -375,16 +381,16 @@ export default function NotificationsPage() {
                   <span>{formatTime(notification.created_at)}</span>
                 </div>
               </div>
-              
-              <div style={styles.notificationActions}>
+
+              <div className='dashboardnotificationcheckcircle' style={styles.notificationActions}>
                 {!notification.is_read && (
-                  <button 
-                    onClick={(e) => handleMarkAsRead(notification.id, e)} 
+                  <button
+                    onClick={(e) => handleMarkAsRead(notification.id, e)}
                     style={styles.markReadButton}
                     disabled={isProcessing}
                     title="Mark as read"
                   >
-                    <CheckCircle size={16} />
+                    <CheckCircle  size={16} />
                   </button>
                 )}
               </div>
@@ -416,7 +422,7 @@ const styles = {
     margin: '0 auto',
     animation: 'fadeIn 0.6s ease-out'
   },
-  
+
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -425,7 +431,7 @@ const styles = {
     minHeight: '400px',
     gap: '20px'
   },
-  
+
   spinner: {
     width: '32px',
     height: '32px',
@@ -434,7 +440,7 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
+
   errorContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -445,7 +451,7 @@ const styles = {
     textAlign: 'center',
     color: '#ef4444'
   },
-  
+
   retryButton: {
     display: 'flex',
     alignItems: 'center',
@@ -459,7 +465,7 @@ const styles = {
     fontSize: '16px',
     fontWeight: '500'
   },
-  
+
   header: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -468,7 +474,7 @@ const styles = {
     flexWrap: 'wrap',
     gap: '16px'
   },
-  
+
   pageTitle: {
     fontSize: '2rem',
     fontWeight: '700',
@@ -478,7 +484,7 @@ const styles = {
     alignItems: 'center',
     gap: '12px'
   },
-  
+
   unreadBadge: {
     backgroundColor: '#ef4444',
     color: 'white',
@@ -489,18 +495,18 @@ const styles = {
     minWidth: '20px',
     textAlign: 'center'
   },
-  
+
   pageSubtitle: {
     fontSize: '1rem',
     color: '#6b7280',
     margin: 0
   },
-  
+
   headerActions: {
     display: 'flex',
     gap: '12px'
   },
-  
+
   markAllButton: {
     display: 'flex',
     alignItems: 'center',
@@ -514,7 +520,7 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500'
   },
-  
+
   refreshButton: {
     display: 'flex',
     alignItems: 'center',
@@ -528,7 +534,7 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500'
   },
-  
+
   errorMessage: {
     display: 'flex',
     alignItems: 'center',
@@ -540,19 +546,19 @@ const styles = {
     color: '#991b1b',
     marginBottom: '20px'
   },
-  
+
   filtersContainer: {
     marginBottom: '24px'
   },
-  
+
   filterTabs: {
     display: 'flex',
     gap: '4px',
-    backgroundColor: '#f3f4f6',
+    backgroundColor: 'rgb(62, 117, 114)',
     borderRadius: '8px',
     padding: '4px'
   },
-  
+
   filterTab: {
     padding: '10px 16px',
     backgroundColor: 'transparent',
@@ -561,22 +567,22 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500',
-    color: '#6b7280',
+    color: 'white',
     transition: 'all 0.2s'
   },
-  
+
   activeFilterTab: {
     backgroundColor: 'white',
     color: '#1f2937',
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
-  
+
   notificationList: {
     display: 'flex',
     flexDirection: 'column',
     gap: '12px'
   },
-  
+
   notificationCard: {
     display: 'flex',
     alignItems: 'flex-start',
@@ -588,20 +594,20 @@ const styles = {
     transition: 'all 0.2s ease',
     position: 'relative'
   },
-  
+
   clickableCard: {
     cursor: 'pointer',
   },
-  
+
   unreadCard: {
     backgroundColor: '#fefce8',
     borderColor: '#facc15'
   },
-  
+
   readCard: {
     opacity: 0.8
   },
-  
+
   notificationIcon: {
     position: 'relative',
     display: 'flex',
@@ -613,7 +619,7 @@ const styles = {
     borderRadius: '50%',
     flexShrink: 0
   },
-  
+
   unreadDot: {
     position: 'absolute',
     top: '2px',
@@ -624,12 +630,12 @@ const styles = {
     borderRadius: '50%',
     border: '2px solid white'
   },
-  
+
   notificationContent: {
     flex: 1,
     minWidth: 0
   },
-  
+
   notificationMessage: {
     fontSize: '15px',
     fontWeight: '500',
@@ -637,7 +643,7 @@ const styles = {
     margin: '0 0 8px 0',
     lineHeight: '1.5'
   },
-  
+
   notificationMeta: {
     display: 'flex',
     alignItems: 'center',
@@ -645,12 +651,12 @@ const styles = {
     fontSize: '13px',
     color: '#6b7280'
   },
-  
+
   notificationActions: {
     display: 'flex',
     gap: '8px'
   },
-  
+
   markReadButton: {
     display: 'flex',
     alignItems: 'center',
@@ -664,7 +670,7 @@ const styles = {
     color: '#059669',
     transition: 'all 0.2s'
   },
-  
+
   emptyState: {
     display: 'flex',
     flexDirection: 'column',

@@ -1,0 +1,135 @@
+.dashboardnotificationbellicon {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+.dashboardnotificationmarkicon {
+    width: 18px !important;
+    height: 18px !important;
+}
+
+@media (max-width: 1200px) {
+    .dashboardnotificationtitle {
+        font-size: 30px !important;
+    }
+
+    .dashboardnotificationsubtitle {
+        font-size: 15px !important;
+    }
+
+    .dashboardnotificationbarbtn {
+        padding: 7px 11px !important;
+        height: 33px !important;
+        font-size: 13px !important;
+    }
+}
+
+@media (max-width: 991px) {
+    .dashboardnotificationheader {
+        display: grid !important;
+        justify-content: flex-start !important;
+        flex-wrap: wrap !important;
+    }
+
+    .dashboardnotificationtitle {
+        font-size: 28px !important;
+    }
+
+    .dashboardnotificationsubtitle {
+        font-size: 15px !important;
+    }
+
+    .dashboardnotificationbarbtn {
+        padding: 7px 11px !important;
+        height: 33px !important;
+        font-size: 13px !important;
+    }
+}
+
+@media (max-width: 767px) {
+
+    .dashboardnotificationtitle {
+        font-size: 28px !important;
+    }
+
+}
+
+@media (max-width: 576px) {
+    .dashboardnotificationtitle {
+        font-size: 24px !important;
+    }
+
+    .dashboardnotificationbellicon {
+        width: 25px !important;
+        height: 25px !important;
+    }
+
+    .dashboardnotificationbarbtn {
+        padding: 3px 9px !important;
+        height: 31px !important;
+        font-size: 12px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboardnotificationtitle {
+        font-size: 22px !important;
+    }
+
+    .dashboardnotificationbellicon {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    .dashboardnotificationsubtitle {
+        font-size: 14px !important;
+    }
+
+    .dashboardnotificationbarbtn {
+        padding: 3px 7px !important;
+        height: 26px !important;
+        font-size: 11px !important;
+    }
+
+    .dashboardnotificationmarkicon {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    .dashboardnotificationreadbtn {
+        padding: 5px 9px !important;
+        font-size: 12px !important;
+        border-radius: 5px;
+    }
+
+    .dashboardnotificationreadbtn+.dashboardnotificationreadbtn {
+        margin-left: 6px;
+    }
+
+    .dashboardnotificationcheckcircle {
+        display: none !important;
+    }
+
+    .dashboardnotificationmessage {
+        font-size: 13px !important;
+    }
+
+    .dashboardnotificationcarticon {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    .dashboardnotificationcarticoncontainer {
+        width: 30px !important;
+        height: 30px !important;
+    }
+
+    .dashboardnotificationcardpadding {
+        padding: 10px !important;
+        gap: 10px !important;
+    }
+
+    .dashboardnotificationpagecontainer {
+        padding: 10px !important;
+    }
+}
