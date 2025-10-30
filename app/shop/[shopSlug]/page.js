@@ -852,7 +852,7 @@ function EnhancedSellerStorefrontPage() {
                 className="clear-filters-button-enhanced"
                 style={styles.clearFiltersButtonEnhanced}
               >
-                <X size={16}  />
+                <X size={16} />
                 Clear All Filters
               </button>
             </div>
@@ -906,8 +906,10 @@ const styles = {
     flex: 1,
     maxWidth: '1200px',
     margin: '0 auto',
+    maxWidth: '100vw',
     padding: '20px 20px', // default padding
     boxSizing: 'border-box',
+    overflowX: 'hidden',
   },
 
   loadingContainer: {
@@ -973,7 +975,7 @@ const styles = {
     position: 'relative',
     width: '100%',
     overflow: 'hidden',
-    marginTop: '80px',
+    marginTop: '105px',
   },
   slidesWrapper: {
     position: 'relative',
@@ -1241,7 +1243,8 @@ const styles = {
     margin: '0 auto',
     padding: '10px 0',
     boxSizing: 'border-box',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+    overflowX: 'hidden',
   },
   emptyState: {
     display: 'flex',

@@ -7,15 +7,15 @@
     display: grid !important;
     gap: 16px !important;
     justify-content: center !important;
-    /* centers the grid itself */
     justify-items: center !important;
-    /* centers each card inside its column */
     margin: 0 auto !important;
     padding: 10px 0 !important;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
     box-sizing: border-box !important;
     max-width: 1200px !important;
     width: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
 }
 
 
@@ -55,7 +55,7 @@
     }
 
     .banner-slider-container {
-        margin-top: 100px !important;
+        margin-top: 110px !important;
     }
 }
 
@@ -115,7 +115,7 @@
         padding: '1px 20px' !important;
     }
 
-      .shopslugproducts-container {
+    .shopslugproducts-container {
         gap: 10px !important;
         grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
     }
@@ -182,7 +182,7 @@
     }
 
     .banner-slider-container {
-        margin-top: 50px !important;
+        margin-top: 60px !important;
     }
 
     .shopshopslugfiltercontainer {

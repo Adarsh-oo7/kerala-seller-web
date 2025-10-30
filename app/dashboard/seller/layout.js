@@ -5,15 +5,17 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import axios from 'axios';
 import DashboardHeader from '../../../components/common/DashboardHeader';
-import { 
-  Home, 
-  Package, 
-  ShoppingCart, 
-  Bell, 
-  BarChart3, 
-  History, 
-  CreditCard, 
-  Settings, 
+import '../../../styles/DashboardSellerPage.css'
+
+import {
+  Home,
+  Package,
+  ShoppingCart,
+  Bell,
+  BarChart3,
+  History,
+  CreditCard,
+  Settings,
   Crown,
   Store,
   LogOut
@@ -32,7 +34,9 @@ export default function DashboardLayout({ children }) {
   const [error, setError] = useState('');
   const hasInitialized = useRef(false);
   const isLoggingOut = useRef(false); // ✅ CRITICAL: Prevent logout loops
-  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+
   const [notificationCounts, setNotificationCounts] = useState({
     orders: 0,
     notifications: 0
@@ -41,7 +45,7 @@ export default function DashboardLayout({ children }) {
   // ✅ FIXED: Better auth headers with validation
   const getAuthHeaders = useCallback(() => {
     if (isLoggingOut.current) return null; // Don't try to get headers if logging out
-    
+
     try {
       const token = localStorage.getItem('accessToken');
       if (!token || token === 'null' || token === 'undefined') {
@@ -58,16 +62,16 @@ export default function DashboardLayout({ children }) {
   // ✅ FIXED: Fetch notification counts with better error handling
   const fetchNotificationCounts = useCallback(async () => {
     if (isLoggingOut.current) return; // Don't fetch if logging out
-    
+
     const headers = getAuthHeaders();
     if (!headers) return;
 
     try {
-      const response = await axios.get(NOTIFICATIONS_API_URL, { 
+      const response = await axios.get(NOTIFICATIONS_API_URL, {
         headers,
         timeout: 8000 // 8 second timeout
       });
-      
+
       if (!isLoggingOut.current) { // Only update if not logging out
         setNotificationCounts(prev => ({
           ...prev,
@@ -84,7 +88,7 @@ export default function DashboardLayout({ children }) {
   // ✅ FIXED: Dashboard data fetching with proper cleanup
   const fetchDashboardData = useCallback(async () => {
     if (hasInitialized.current || isLoggingOut.current) return;
-    
+
     const headers = getAuthHeaders();
     if (!headers) {
       console.log('No auth headers, redirecting to login');
@@ -101,9 +105,9 @@ export default function DashboardLayout({ children }) {
 
     try {
       console.log('Fetching dashboard data...');
-      
+
       // Fetch profile data with timeout
-      const profileRes = await axios.get(PROFILE_API_URL, { 
+      const profileRes = await axios.get(PROFILE_API_URL, {
         headers,
         timeout: 12000 // 12 second timeout
       });
@@ -115,19 +119,19 @@ export default function DashboardLayout({ children }) {
 
       // Handle seller name from multiple possible response structures
       const name = profileRes.data.seller?.name ||
-                   profileRes.data.store_profile?.name ||
-                   profileRes.data.name ||
-                   'Seller';
-      
+        profileRes.data.store_profile?.name ||
+        profileRes.data.name ||
+        'Seller';
+
       setSellerName(name);
 
       // Try to fetch dashboard data (optional)
       try {
-        const dashRes = await axios.get(DASHBOARD_API_URL, { 
+        const dashRes = await axios.get(DASHBOARD_API_URL, {
           headers,
           timeout: 8000
         });
-        
+
         if (dashRes.data.analytics && !isLoggingOut.current) {
           setNotificationCounts({
             orders: dashRes.data.analytics.new_orders_count || 0,
@@ -144,18 +148,18 @@ export default function DashboardLayout({ children }) {
       }
 
       // Profile completion check
-      const isComplete = profileRes.data.is_profile_complete || 
-                         (profileRes.data.store_profile && profileRes.data.store_profile.is_profile_complete);
+      const isComplete = profileRes.data.is_profile_complete ||
+        (profileRes.data.store_profile && profileRes.data.store_profile.is_profile_complete);
       const isOnSettingsPage = pathname === '/dashboard/seller/settings';
-      
+
       if (!isComplete && !isOnSettingsPage && !isLoggingOut.current) {
         console.log('Profile incomplete, redirecting to settings');
         router.replace('/dashboard/seller/settings?setup=true');
       }
-      
+
     } catch (error) {
       console.error('Dashboard fetch error:', error);
-      
+
       if (error.response?.status === 401) {
         console.log('Authentication failed, logging out');
         handleLogout();
@@ -191,7 +195,7 @@ export default function DashboardLayout({ children }) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('sellerInfo');
       localStorage.removeItem('refreshToken');
-      
+
       // Clear component state
       setSellerName('');
       setNotificationCounts({ orders: 0, notifications: 0 });
@@ -199,12 +203,12 @@ export default function DashboardLayout({ children }) {
       setIsLoading(false);
 
       console.log('✅ Cleared all data, performing hard redirect...');
-      
+
       // Use window.location for hard redirect to break any React routing loops
       setTimeout(() => {
         window.location.href = '/login/seller';
       }, 100); // Small delay to ensure state is cleared
-      
+
     } catch (error) {
       console.error('Logout error:', error);
       // Emergency fallback
@@ -245,11 +249,26 @@ export default function DashboardLayout({ children }) {
   // ✅ NEW: Reset logout flag on component mount
   useEffect(() => {
     isLoggingOut.current = false;
-    
+
     return () => {
       // Don't reset on unmount if logging out
     };
   }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 767) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+
+    handleResize(); // Run on mount
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
 
   // Show loading only if not logging out
   if (isLoading && !isLoggingOut.current) {
@@ -314,38 +333,63 @@ export default function DashboardLayout({ children }) {
   return (
     <div style={styles.layoutContainer}>
       {/* Sidebar */}
-      <div style={styles.sidebar}>
-        <div style={styles.sidebarHeader}>
-          <div style={styles.logoContainer}>
-            <Store size={24} color="#3b82f6" />
-            <h2 style={styles.logoText}>Seller Panel</h2>
+      <div
+        className="dashboardcustom-sidebar"
+        style={{
+          ...styles.sidebar,
+          transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.3s ease',
+          position: window.innerWidth <= 767 ? 'fixed' : 'fixed',
+          left: 0,
+          top: 0,
+          height: '100%',
+          zIndex: 20,
+          scrollBehavior: 'smooth',
+        }}
+      >
+
+        <div className='dashboardlayoutsidebarheader' style={styles.sidebarHeader}>
+          <div className='dashboardlayoutlogocontainer' style={styles.logoContainer}>
+            <Store size={24} color="#ffd67dff" />
+            <h2 className='dashboardlayoutlogotext' style={styles.logoText}>Seller Panel</h2>
+            {/* ✅ Close Icon (only visible on mobile) */}
+            {window.innerWidth <= 767 && (
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                style={styles.closeButton}
+                aria-label="Close Sidebar"
+              >
+                ✕
+              </button>
+            )}
           </div>
           <p style={styles.welcomeMessage}>Welcome, {sellerName}</p>
         </div>
 
-        <nav style={styles.nav}>
-          <NavItem 
-            href="/dashboard/seller" 
-            name="Overview" 
+
+        <nav className='dashboardoverviewsidebarnav' style={styles.nav}>
+          <NavItem
+            href="/dashboard/seller"
+            name="Overview"
             pathname={pathname}
             icon={<Home size={18} />}
           />
-          <NavItem 
-            href="/dashboard/seller/billing" 
-            name="Local Billing" 
+          <NavItem
+            href="/dashboard/seller/billing"
+            name="Local Billing"
             pathname={pathname}
             icon={<CreditCard size={18} />}
           />
-          
+
           {navSections.map(section => (
             <div key={section.title} style={styles.navSection}>
               <h3 style={styles.sectionTitle}>{section.title}</h3>
               {section.items.map(item => (
-                <NavItem 
-                  key={item.name} 
-                  href={item.href} 
-                  name={item.name} 
-                  pathname={pathname} 
+                <NavItem
+                  key={item.name}
+                  href={item.href}
+                  name={item.name}
+                  pathname={pathname}
                   count={item.count}
                   icon={item.icon}
                 />
@@ -354,23 +398,23 @@ export default function DashboardLayout({ children }) {
           ))}
         </nav>
 
-        <div style={styles.sidebarFooter}>
+        <div className='dashboardoverviewsidebarnav' style={styles.sidebarFooter}>
           <h3 style={styles.sectionTitle}>ACCOUNT</h3>
-          <NavItem 
-            href="/dashboard/seller/settings" 
-            name="Settings" 
+          <NavItem
+            href="/dashboard/seller/settings"
+            name="Settings"
             pathname={pathname}
             icon={<Settings size={18} />}
           />
-          <NavItem 
-            href="/dashboard/seller/subscription" 
-            name="Subscription" 
+          <NavItem
+            href="/dashboard/seller/subscription"
+            name="Subscription"
             pathname={pathname}
             icon={<Crown size={18} />}
           />
-          
-          <button 
-            onClick={handleLogout} 
+
+          <button
+            onClick={handleLogout}
             style={styles.logoutButton}
             disabled={isLoggingOut.current} // ✅ Prevent multiple clicks
           >
@@ -380,10 +424,36 @@ export default function DashboardLayout({ children }) {
         </div>
       </div>
 
+      {window.innerWidth <= 767 && isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0,0,0,0.3)',
+            zIndex: 10,
+          }}
+        />
+      )}
+
+
+
       {/* Main Content */}
-      <div style={styles.mainContentWrapper}>
-        <DashboardHeader 
-          sellerName={sellerName} 
+      <div
+      className='dashboardlayoutmaincontwrap'
+        style={{
+          ...styles.mainContentWrapper,
+          marginLeft: window.innerWidth < 767 ? 0 : '230px',
+          transition: 'margin-left 0.3s ease',
+          width: '100%',
+        }}
+      >
+        <DashboardHeader
+          onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+          sellerName={sellerName}
           notificationCount={notificationCounts.notifications}
           onNotificationUpdate={fetchNotificationCounts}
         />
@@ -407,45 +477,59 @@ export default function DashboardLayout({ children }) {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
         }
+          .dashboardcustom-sidebar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .dashboardcustom-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .dashboardcustom-sidebar::-webkit-scrollbar-thumb {
+    background-color: #5ebdb0ff;
+    border-radius: 10px;
+  }
+  .dashboardcustom-sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: #ffd97a;
+  }
       `}</style>
     </div>
   );
 }
 
 function NavItem({ href, name, pathname, count = 0, icon }) {
-    const isActive = href === '/dashboard/seller' ? pathname === href : pathname.startsWith(href);
-    
-    return (
-        <Link 
-          href={href} 
-          style={{
-            ...styles.navLink, 
-            ...(isActive ? styles.activeLink : {})
-          }}
-        >
-          <div style={styles.navItemContent}>
-            {icon}
-            <span>{name}</span>
-          </div>
-          {count > 0 && (
-            <span style={{
-              ...styles.indicator,
-              animation: count > 0 ? 'pulse 2s infinite' : 'none'
-            }}>
-              {count > 99 ? '99+' : count}
-            </span>
-          )}
-        </Link>
-    );
+  const isActive = href === '/dashboard/seller' ? pathname === href : pathname.startsWith(href);
+
+  return (
+    <Link
+    className='dashboardlayoutnavlink'
+      href={href}
+      style={{
+        ...styles.navLink,
+        ...(isActive ? styles.activeLink : {})
+      }}
+    >
+      <div style={styles.navItemContent}>
+        {icon}
+        <span>{name}</span>
+      </div>
+      {count > 0 && (
+        <span style={{
+          ...styles.indicator,
+          animation: count > 0 ? 'pulse 2s infinite' : 'none'
+        }}>
+          {count > 99 ? '99+' : count}
+        </span>
+      )}
+    </Link>
+  );
 }
 
 const styles = {
-  layoutContainer: { 
-    display: 'flex', 
+  layoutContainer: {
+    display: 'flex',
     minHeight: '100vh',
-    backgroundColor: '#f8fafc'
+    backgroundColor: '#FDFFF0'
   },
-  
+
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -455,7 +539,7 @@ const styles = {
     gap: '20px',
     backgroundColor: '#f8fafc'
   },
-  
+
   spinner: {
     width: '32px',
     height: '32px',
@@ -464,7 +548,7 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
+
   errorContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -485,7 +569,7 @@ const styles = {
     flexWrap: 'wrap',
     justifyContent: 'center'
   },
-  
+
   retryButton: {
     padding: '12px 24px',
     backgroundColor: '#3b82f6',
@@ -508,112 +592,113 @@ const styles = {
     fontSize: '16px',
     fontWeight: '500'
   },
-  
-  sidebar: { 
-    width: '280px', 
-    background: 'white', 
-    padding: '0', 
-    borderRight: '1px solid #e5e7eb', 
-    display: 'flex', 
+
+  sidebar: {
+    width: '250px',
+    background: '#175E54',
+    padding: '0',
+    borderRight: '1px solid #e5e7eb',
+    display: 'flex',
     flexDirection: 'column',
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
     position: 'fixed',
     height: '100vh',
     overflowY: 'auto'
   },
-  
+
   sidebarHeader: {
     padding: '24px 20px',
     borderBottom: '1px solid #e5e7eb'
   },
-  
+
   logoContainer: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
     marginBottom: '8px'
   },
-  
+
   logoText: {
     margin: 0,
     fontSize: '18px',
     fontWeight: '700',
-    color: '#1f2937'
+    color: 'white'
   },
-  
-  welcomeMessage: { 
-    margin: 0, 
-    color: '#6b7280',
-    fontSize: '14px'
+
+  welcomeMessage: {
+    margin: 0,
+    color: '#9ca3af',
+    fontSize: '14px',
+    marginLeft: '35px'
   },
-  
-  nav: { 
-    display: 'flex', 
-    flexDirection: 'column', 
+
+  nav: {
+    display: 'flex',
+    flexDirection: 'column',
     gap: '4px',
     padding: '16px 12px',
     flex: 1
   },
-  
+
   navSection: {
     marginTop: '24px'
   },
-  
-  sectionTitle: { 
-    fontSize: '11px', 
-    color: '#9ca3af', 
-    textTransform: 'uppercase', 
-    letterSpacing: '1px', 
-    marginBottom: '12px', 
+
+  sectionTitle: {
+    fontSize: '11px',
+    color: '#9ca3af',
+    textTransform: 'uppercase',
+    letterSpacing: '1px',
+    marginBottom: '12px',
     padding: '0 12px',
     fontWeight: '600'
   },
-  
-  navLink: { 
-    textDecoration: 'none', 
-    color: '#6b7280', 
-    padding: '12px 16px', 
-    borderRadius: '8px', 
-    display: 'flex', 
-    justifyContent: 'space-between', 
+
+  navLink: {
+    textDecoration: 'none',
+    color: 'white',
+    padding: '12px 16px',
+    borderRadius: '8px',
+    display: 'flex',
+    justifyContent: 'space-between',
     alignItems: 'center',
     transition: 'all 0.2s ease',
     margin: '2px 0'
   },
-  
-  activeLink: { 
-    backgroundColor: '#eff6ff', 
-    color: '#3b82f6',
+
+  activeLink: {
+    backgroundColor: '#ffd67dff',
+    color: 'black',
     fontWeight: '600',
-    borderLeft: '3px solid #3b82f6'
+    borderLeft: '3px solid #ffd67dff'
   },
-  
+
   navItemContent: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px'
   },
-  
-  indicator: { 
-    backgroundColor: '#ef4444', 
-    color: 'white', 
-    borderRadius: '10px', 
+
+  indicator: {
+    backgroundColor: '#ef4444',
+    color: 'white',
+    borderRadius: '10px',
     minWidth: '20px',
-    height: '20px', 
+    height: '20px',
     fontSize: '11px',
     fontWeight: '600',
-    display: 'flex', 
-    alignItems: 'center', 
+    display: 'flex',
+    alignItems: 'center',
     justifyContent: 'center',
     padding: '0 6px'
   },
-  
+
   sidebarFooter: {
     padding: '16px 12px 24px 12px',
     borderTop: '1px solid #e5e7eb',
     marginTop: 'auto'
   },
-  
+
   logoutButton: {
     display: 'flex',
     alignItems: 'center',
@@ -630,20 +715,32 @@ const styles = {
     transition: 'all 0.2s ease',
     marginTop: '8px'
   },
-  
-  mainContentWrapper: { 
-    flex: 1, 
-    display: 'flex', 
+
+  mainContentWrapper: {
+    flex: 1,
+    display: 'flex',
     flexDirection: 'column',
     marginLeft: '280px',
     overflow: 'hidden'
   },
-  
-  mainContent: { 
-    flex: 1, 
-    padding: '24px', 
-    backgroundColor: '#f8fafc', 
+
+  mainContent: {
+    flex: 1,
+    padding: '24px',
+    backgroundColor: '#FDFFF0',
     overflowY: 'auto',
     animation: 'fadeIn 0.6s ease-out'
+  },
+  closeButton: {
+    background: 'none',
+    border: 'none',
+    color: '#F8C862',
+    fontSize: '22px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '4px 8px',
+    marginLeft: 'auto'
   },
 };

@@ -2,10 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Menu } from 'lucide-react';
+import '../../styles/DashboardSellerPage.css'
 
-export default function DashboardHeader({ sellerName }) {
+export default function DashboardHeader({ sellerName, onToggleSidebar }) {
   const router = useRouter();
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile view
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 767);
+    };
+
+    handleResize(); // run initially
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
@@ -14,9 +27,19 @@ export default function DashboardHeader({ sellerName }) {
 
   return (
     <header style={styles.header}>
-      <div>
-        {/* You can add a search bar or other header elements here later */}
-      </div>
+      {/* ✅ Hamburger button (mobile only) */}
+      {isMobile && (
+        <button
+          onClick={onToggleSidebar}
+          style={styles.menuButton}
+          aria-label="Toggle sidebar"
+        >
+          <Menu size={22} />
+        </button>
+      )}
+
+      <div style={styles.spacer}></div>
+
       <div style={styles.userMenu}>
         <User size={18} style={{ marginRight: '8px' }} />
         <span>{sellerName || 'Seller'}</span>
@@ -31,23 +54,36 @@ export default function DashboardHeader({ sellerName }) {
 const styles = {
   header: {
     display: 'flex',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'center',
     padding: '15px 20px',
-    backgroundColor: '#fff',
+    backgroundColor: '#175E54',
     borderBottom: '1px solid #e9ecef',
-    marginBottom: '20px',
+    color: 'white',
+    position: 'sticky',
+    top: 0,
+    zIndex: 15,
+  },
+  menuButton: {
+    background: 'none',
+    border: 'none',
+    color: 'white',
+    cursor: 'pointer',
+    fontSize: '22px',
+  },
+  spacer: {
+    flex: 1,
   },
   userMenu: {
     display: 'flex',
     alignItems: 'center',
-    color: '#495057',
+    color: 'white',
   },
   logoutButton: {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
     marginLeft: '15px',
-    color: '#6c757d',
-  }
+    color: 'white',
+  },
 };

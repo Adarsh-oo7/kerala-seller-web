@@ -1,0 +1,396 @@
+.dashboardoverviewstaticon {
+    width: 24px !important;
+    height: 24px !important;
+}
+
+@media (max-width: 1200px) {
+    .dashboardoverviewwelcometitle {
+        font-size: 20px !important;
+    }
+
+    .dashboardoverviewavatar {
+        width: 65px !important;
+        height: 65px !important;
+    }
+
+    .dashboardoverviewquickaction {
+        padding: 8px 10px !important;
+    }
+
+    .dashboardoverviewrefreshbtn {
+        padding: 8px 10px !important;
+        font-size: 13px !important;
+    }
+
+    .dashboardcustom-sidebar {
+        width: 230px !important;
+    }
+
+    .dashboardoverviewcontainer {
+        padding: 0px 0px 24px 0px !important;
+    }
+
+    .dashboardoverviewstatcontainer {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+        gap: 12px !important;
+    }
+
+    .dashboardoverviewquickactiongrid {
+        display: grid !;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+        gap: 15px !important;
+    }
+}
+
+@media (max-width: 991px) {
+    .dashboardoverviewwelcometitle {
+        font-size: 18px !important;
+    }
+
+    .dashboardoverviewwelcomesubtitle {
+        font-size: 14px !important;
+    }
+
+    .dashboardoverviewheader {
+        padding: 15px 15px !important;
+    }
+
+    .dashboardoverviewavatar {
+        width: 60px !important;
+        height: 60px !important;
+    }
+
+    .dashboardoverviewquickaction {
+        padding: 7px 8px !important;
+        font-size: 14px !important;
+    }
+
+    .dashboardoverviewrefreshbtn {
+        padding: 7px 8px !important;
+        font-size: 13px !important;
+    }
+
+    .dashboardoverviewheaderaction {
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        justify-content: flex-end !important;
+        gap: 10px !important;
+    }
+
+    .dashboardoverviewquickaction,
+    .dashboardoverviewrefreshbtn {
+        width: auto !important;
+        /* 👈 Keeps width based on padding */
+        justify-content: center !important;
+    }
+
+    .dashboardcustom-sidebar {
+        width: 210px !important;
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+    }
+
+    .dashboardoverviewcontainer {
+        padding: 0px 0px 24px 0px !important;
+    }
+
+    .dashboardoverviewsidebarnav {
+        padding: 16px 8px !important;
+    }
+
+    .dashboardlayoutmaincontwrap {
+        margin-left: 210px !important;
+    }
+
+    .dashboardoverviewstattitle {
+        font-size: 13px !important;
+    }
+
+    .dashboardoverviewstatvalue {
+        font-size: 21px !important;
+    }
+
+    .dashboardoverviewstatcontainer {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+        gap: 12px !important;
+    }
+}
+
+
+@media (max-width: 768px) {
+    .dashboardoverviewwelcometitle {
+        font-size: 19px !important;
+    }
+
+    .dashboardoverviewavatar {
+        width: 60px !important;
+        height: 60px !important;
+    }
+
+    .dashboardoverviewquickaction {
+        padding: 7px 8px !important;
+    }
+
+    .dashboardoverviewrefreshbtn {
+        padding: 7px 8px !important;
+        font-size: 13px !important;
+    }
+
+    .dashboardcustom-sidebar {
+        width: 230px !important;
+
+    }
+
+    .dashboardoverviewcontainer {
+        padding: 0px 0px 24px 0px !important;
+    }
+
+    .dashboardoverviewsidebarnav {
+        padding: 16px 8px !important;
+    }
+
+    .dashboardlayoutmaincontwrap {
+        margin-left: 0px !important;
+        padding-left: 0 !important;
+    }
+
+    .dashboardoverviewstatcontainer {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+        gap: 12px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .dashboardoverviewwelcometitle {
+        font-size: 18px !important;
+    }
+
+    .dashboardoverviewwelcomesubtitle {
+        font-size: 13px !important;
+    }
+
+    .dashboardoverviewavatar {
+        width: 60px !important;
+        height: 60px !important;
+    }
+
+    .dashboardoverviewquickaction {
+        display: none !important;
+    }
+
+    .dashboardoverviewrefreshbtn {
+        display: none !important;
+    }
+
+    .dashboardcustom-sidebar {
+        width: 230px !important;
+    }
+
+    .dashboardoverviewcontainer {
+        padding: 0px 0px 24px 0px !important;
+    }
+
+    .dashboardoverviewsidebarnav {
+        padding: 16px 8px !important;
+    }
+
+    .dashboardlayoutmaincontwrap {
+        margin-left: 0px !important;
+        padding-left: 0 !important;
+    }
+
+    /* ////////sidebar////// */
+
+    .dashboardlayoutsidebarheader {
+        padding: 24px 15px !important;
+    }
+
+    .dashboardlayoutlogocontainer {
+        margin-bottom: 1px !important;
+    }
+
+    .dashboardlayoutlogotext {
+        font-size: 17px !important;
+    }
+
+    .dashboardlayoutnavlink {
+        font-size: 15px !important;
+    }
+
+    .dashboardoverviewstattitle {
+        font-size: 12px !important;
+    }
+
+    .dashboardoverviewstatvalue {
+        font-size: 18px !important;
+    }
+
+    .dashboardoverviewstatcontainer {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important;
+        gap: 12px !important;
+    }
+
+    .dashboardoverviewstaticon {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    .dashboardoverviewstaticoncontainer {
+        width: 46px !important;
+        height: 46px !important;
+    }
+
+    /* //////////card////// */
+    .dashboardoverviewcardtitle {
+        font-size: 17px !important;
+    }
+
+    .dashboardoverviewcarddesc {
+        font-size: 13px !important;
+    }
+
+    .dashboardoverviewstoreurl {
+        font-size: 13px !important;
+    }
+
+    .dashboardoverviewcopybtn {
+        font-size: 13px !important;
+        padding: 7px 13px !important;
+    }
+
+    .dashboardoverviewgridcontainer {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboardoverviewwelcometitle {
+        font-size: 17px !important;
+    }
+
+    .dashboardoverviewwelcomesubtitle {
+        font-size: 13px !important;
+    }
+
+    .dashboardoverviewavatar {
+        width: 55px !important;
+        height: 55px !important;
+    }
+
+    .dashboardoverviewquickaction {
+        display: none !important;
+    }
+
+    .dashboardoverviewrefreshbtn {
+        display: none !important;
+    }
+
+    .dashboardcustom-sidebar {
+        width: 220px !important;
+
+    }
+
+    .dashboardoverviewcontainer {
+        padding: 0px 0px 24px 0px !important;
+    }
+
+    .dashboardoverviewsidebarnav {
+        padding: 16px 8px !important;
+    }
+
+    .dashboardlayoutmaincontwrap {
+        margin-left: 0px !important;
+        padding-left: 0 !important;
+    }
+
+    .dashboardoverviewheader {
+        gap: 2px !important;
+    }
+
+    .dashboardoverviewwelcomesection {
+        gap: 2px !important;
+    }
+
+    /* ////////sidebar////// */
+
+    .dashboardlayoutsidebarheader {
+        padding: 24px 15px !important;
+    }
+
+    .dashboardlayoutlogocontainer {
+        margin-bottom: 1px !important;
+    }
+
+    .dashboardlayoutlogotext {
+        font-size: 17px !important;
+    }
+
+    .dashboardlayoutnavlink {
+        font-size: 15px !important;
+    }
+
+    .dashboardoverviewstattitle {
+        font-size: 11px !important;
+    }
+
+    .dashboardoverviewstatvalue {
+        font-size: 16px !important;
+    }
+
+    .dashboardoverviewstatcontainer {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+        gap: 6px !important;
+    }
+
+    .dashboardoverviewstaticon {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .dashboardoverviewstaticoncontainer {
+        width: 36px !important;
+        height: 36px !important;
+    }
+
+    /* //////////card////// */
+    .dashboardoverviewcardtitle {
+        font-size: 16px !important;
+    }
+
+    .dashboardoverviewcarddesc {
+        font-size: 12px !important;
+    }
+
+    .dashboardoverviewstoreurl {
+        font-size: 12px !important;
+        padding: 8px !important;
+    }
+
+    .dashboardoverviewcopybtn {
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+    }
+
+    .dashboardoverviewgridcontainer {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    }
+
+    .dashboardoverviewsectiontitle {
+        font-size: 16px !important;
+        justify-content: center;
+        display: flex !important;
+    }
+
+
+
+
+}
