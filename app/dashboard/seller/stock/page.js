@@ -101,7 +101,7 @@ export default function StockManagementPage() {
   const [confirmation, setConfirmation] = useState(null);
   const [isUpdatingStock, setIsUpdatingStock] = useState(null);
   const [error, setError] = useState('');
-  const [stockFilter, setStockFilter] = useState('all'); // all, low_stock, out_of_stock
+  const [stockFilter, setStockFilter] = useState('all'); // all, in_stock, low_stock, out_of_stock, overstocked
 
   const fetchData = useCallback(async () => {
     const token = localStorage.getItem('accessToken');
@@ -116,7 +116,6 @@ export default function StockManagementPage() {
       setError('');
       
       console.log('Fetching products from:', API_URL);
-      // ✅ FIXED: Changed Token to Bearer authentication
       const response = await axios.get(API_URL, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
@@ -130,7 +129,6 @@ export default function StockManagementPage() {
       console.error('Failed to fetch products:', error);
       if (error.response?.status === 401) {
         setError('Session expired. Please log in again.');
-        // Optionally redirect to login after a delay
         setTimeout(() => {
           window.location.href = '/login/seller';
         }, 2000);
@@ -142,7 +140,7 @@ export default function StockManagementPage() {
     }
   }, []);
 
-  // Apply search and filter
+  // ✅ FIXED: Apply search and filter
   useEffect(() => {
     let filtered = [...products];
 
@@ -155,8 +153,13 @@ export default function StockManagementPage() {
       );
     }
 
-    // Apply stock filter
+    // ✅ FIXED: Apply stock filter
     switch (stockFilter) {
+      case 'in_stock':
+        filtered = filtered.filter(product => 
+          product.online_stock > 5
+        );
+        break;
       case 'low_stock':
         filtered = filtered.filter(product => 
           product.online_stock > 0 && product.online_stock <= 5
@@ -164,16 +167,16 @@ export default function StockManagementPage() {
         break;
       case 'out_of_stock':
         filtered = filtered.filter(product => 
-          product.online_stock <= 0
+          !product.online_stock || product.online_stock === 0
         );
         break;
       case 'overstocked':
         filtered = filtered.filter(product => 
-          product.online_stock > product.total_stock
+          product.total_stock > 0 && product.online_stock > product.total_stock
         );
         break;
       default:
-        // 'all' - no additional filtering
+        // 'all' - no additional filtering, show ALL products
         break;
     }
 
@@ -208,7 +211,6 @@ export default function StockManagementPage() {
         };
 
         try {
-          // ✅ FIXED: Changed Token to Bearer authentication
           await axios.patch(`${API_URL}${productId}/update-stock/`, data, {
             headers: { Authorization: `Bearer ${token}` }
           });
@@ -227,7 +229,7 @@ export default function StockManagementPage() {
                                 'Could not update stock. Please try again.';
             setError(errorMessage);
           }
-          await fetchData(); // Refresh to show correct values
+          await fetchData();
         } finally {
           setConfirmation(null);
           setIsUpdatingStock(null);
@@ -235,7 +237,7 @@ export default function StockManagementPage() {
       },
       onCancel: () => {
         setConfirmation(null);
-        fetchData(); // Refresh to reset any input changes
+        fetchData();
       }
     });
   };
@@ -243,7 +245,7 @@ export default function StockManagementPage() {
   const getStockStatus = (product) => {
     const { online_stock, total_stock } = product;
     
-    if (online_stock <= 0) {
+    if (!online_stock || online_stock <= 0) {
       return { label: 'Out of Stock', color: '#ef4444', bgColor: '#fee2e2' };
     } else if (online_stock <= 5) {
       return { label: 'Low Stock', color: '#f59e0b', bgColor: '#fef3c7' };
@@ -254,12 +256,14 @@ export default function StockManagementPage() {
     }
   };
 
+  // ✅ FIXED: Get filter counts
   const getFilterCounts = () => {
     return {
       all: products.length,
+      in_stock: products.filter(p => p.online_stock > 5).length,
       low_stock: products.filter(p => p.online_stock > 0 && p.online_stock <= 5).length,
-      out_of_stock: products.filter(p => p.online_stock <= 0).length,
-      overstocked: products.filter(p => p.online_stock > p.total_stock).length
+      out_of_stock: products.filter(p => !p.online_stock || p.online_stock === 0).length,
+      overstocked: products.filter(p => p.total_stock > 0 && p.online_stock > p.total_stock).length
     };
   };
 
@@ -328,6 +332,7 @@ export default function StockManagementPage() {
           />
         </div>
         
+        {/* ✅ FIXED: Filter Tabs */}
         <div style={styles.filterTabs}>
           <button
             onClick={() => setStockFilter('all')}
@@ -336,7 +341,16 @@ export default function StockManagementPage() {
               ...(stockFilter === 'all' ? styles.activeFilterTab : {})
             }}
           >
-            All ({filterCounts.all})
+            All Products ({filterCounts.all})
+          </button>
+          <button
+            onClick={() => setStockFilter('in_stock')}
+            style={{
+              ...styles.filterTab,
+              ...(stockFilter === 'in_stock' ? styles.activeFilterTab : {})
+            }}
+          >
+            In Stock ({filterCounts.in_stock})
           </button>
           <button
             onClick={() => setStockFilter('low_stock')}
@@ -553,7 +567,7 @@ export default function StockManagementPage() {
   );
 }
 
-// ... (all styles remain exactly the same)
+// Styles
 const styles = {
   container: {
     padding: '24px',

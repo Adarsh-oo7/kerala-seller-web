@@ -96,27 +96,52 @@ export default function NotificationsPage() {
   }, [fetchNotifications]);
 
   // ✅ NEW: Handle notification click with navigation
-  const handleNotificationClick = async (notification) => {
-    const headers = getAuthHeaders();
-    if (!headers) return;
+// ✅ FIXED: Handle notification click with correct navigation
+const handleNotificationClick = async (notification) => {
+  const headers = getAuthHeaders();
+  if (!headers) return;
 
-    // Mark as read first
-    if (!notification.is_read) {
-      try {
-        await axios.patch(`${NOTIFICATIONS_API}${notification.id}/mark-as-read/`, {}, { headers });
-        setNotifications(prev =>
-          prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n)
-        );
-      } catch (error) {
-        console.error('Failed to mark as read:', error);
-      }
+  // Mark as read first
+  if (!notification.is_read) {
+    try {
+      await axios.patch(`${NOTIFICATIONS_API}${notification.id}/mark-as-read/`, {}, { headers });
+      setNotifications(prev =>
+        prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n)
+      );
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
     }
+  }
 
-    // Navigate to the link if it exists
-    if (notification.link) {
-      router.push(notification.link);
+  // ✅ FIXED: Navigate to the correct seller dashboard routes
+  if (notification.link) {
+    let correctLink = notification.link;
+    
+    // Fix /dashboard/orders → /dashboard/seller/orders
+    if (correctLink.startsWith('/dashboard/orders')) {
+      correctLink = correctLink.replace('/dashboard/orders', '/dashboard/seller/orders');
     }
-  };
+    // Fix /dashboard/stock → /dashboard/seller/stock
+    else if (correctLink.startsWith('/dashboard/stock')) {
+      correctLink = correctLink.replace('/dashboard/stock', '/dashboard/seller/stock');
+    }
+    // Fix /dashboard/products → /dashboard/seller/products
+    else if (correctLink.startsWith('/dashboard/products')) {
+      correctLink = correctLink.replace('/dashboard/products', '/dashboard/seller/products');
+    }
+    // Fix /dashboard/analytics → /dashboard/seller/analytics
+    else if (correctLink.startsWith('/dashboard/analytics')) {
+      correctLink = correctLink.replace('/dashboard/analytics', '/dashboard/seller/analytics');
+    }
+    // Fix any other /dashboard/* → /dashboard/seller/*
+    else if (correctLink.startsWith('/dashboard/') && !correctLink.startsWith('/dashboard/seller/')) {
+      correctLink = correctLink.replace('/dashboard/', '/dashboard/seller/');
+    }
+    
+    console.log('✅ Navigating to:', correctLink);
+    router.push(correctLink);
+  }
+};
 
   // Mark single notification as read
   const handleMarkAsRead = async (notificationId, event) => {

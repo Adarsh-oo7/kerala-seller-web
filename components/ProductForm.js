@@ -24,18 +24,16 @@ const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 const CLOUDINARY_CONFIG = {
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dnmbfeckd',
   upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'kerala_sellers_preset',
-  // ✅ Fallback presets if main one fails
   fallback_presets: ['ml_default', 'kerala_sellers_unsigned', 'unsigned_preset'],
-  // ✅ Proper URL construction
   getUploadUrl: function() {
     return `https://api.cloudinary.com/v1_1/${this.cloud_name}/image/upload`;
   }
 };
 
-// ✅ VALIDATION FUNCTIONS - Prevent negative numbers and validate properly
+// ✅ VALIDATION FUNCTIONS
 const validatePositiveNumber = (value, fieldName = 'Value') => {
   if (value === '' || value === null || value === undefined) {
-    return { isValid: true, error: null }; // Allow empty for optional fields
+    return { isValid: true, error: null };
   }
   
   const numValue = parseFloat(value);
@@ -72,15 +70,14 @@ const validatePositiveInteger = (value, fieldName = 'Value') => {
   return { isValid: true, error: null };
 };
 
-// ✅ FIXED: Enhanced Cloudinary Upload Function with multiple preset fallback
+// ✅ Enhanced Cloudinary Upload Function
 const uploadToCloudinary = async (file, options = {}) => {
   console.log('🔄 Starting Cloudinary upload for:', file.name);
   
-  // List of presets to try in order
   const presetsToTry = [
     CLOUDINARY_CONFIG.upload_preset,
     ...CLOUDINARY_CONFIG.fallback_presets
-  ].filter(Boolean); // Remove any undefined presets
+  ].filter(Boolean);
   
   let lastError = null;
   
@@ -92,11 +89,8 @@ const uploadToCloudinary = async (file, options = {}) => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('upload_preset', preset);
-      
-      // ✅ Proper folder structure
       formData.append('folder', `kerala-sellers/products/${options.type || 'images'}`);
       
-      // ✅ Add tags for organization
       const tags = ['kerala_sellers', options.type || 'product'];
       if (options.type === 'main') {
         tags.push('main_image');
@@ -104,20 +98,15 @@ const uploadToCloudinary = async (file, options = {}) => {
         tags.push('sub_image');
       }
       formData.append('tags', tags.join(','));
-      
-      // ✅ Add timestamp for uniqueness
       formData.append('timestamp', Math.floor(Date.now() / 1000));
-      
-      // ✅ Quality settings (allowed for unsigned uploads)
       formData.append('quality', 'auto:good');
       formData.append('fetch_format', 'auto');
       
-      // ✅ Use axios with proper configuration
       const response = await axios.post(CLOUDINARY_CONFIG.getUploadUrl(), formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 30000, // 30 seconds
+        timeout: 30000,
         onUploadProgress: (progressEvent) => {
           if (options.onProgress) {
             const percentCompleted = Math.round(
@@ -129,7 +118,6 @@ const uploadToCloudinary = async (file, options = {}) => {
       });
       
       console.log('✅ Upload successful with preset:', preset);
-      console.log('📄 Response data:', response.data);
       
       return {
         success: true,
@@ -148,13 +136,6 @@ const uploadToCloudinary = async (file, options = {}) => {
       console.error(`❌ Upload failed with preset ${preset}:`, error);
       lastError = error;
       
-      // Log detailed error information
-      if (error.response) {
-        console.error('Response status:', error.response.status);
-        console.error('Response data:', error.response.data);
-      }
-      
-      // If this isn't the last preset, continue to next one
       if (i < presetsToTry.length - 1) {
         console.log(`🔄 Trying next preset...`);
         continue;
@@ -162,7 +143,6 @@ const uploadToCloudinary = async (file, options = {}) => {
     }
   }
   
-  // All presets failed
   console.error('❌ All upload presets failed. Last error:', lastError);
   
   let errorMessage = 'Upload failed';
@@ -181,7 +161,7 @@ const uploadToCloudinary = async (file, options = {}) => {
   };
 };
 
-// ✅ Create Axios instance with proper configuration for hosted backend
+// ✅ Create Axios instance
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 20000,
@@ -191,7 +171,6 @@ const apiClient = axios.create({
   }
 });
 
-// ✅ Request interceptor with Bearer authentication
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
@@ -203,7 +182,6 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -215,7 +193,7 @@ apiClient.interceptors.response.use(
   }
 );
 
-// ✅ ENHANCED Cloudinary Image Upload Component
+// ✅ FIXED: Cloudinary Image Upload Component
 const CloudinaryImageUpload = ({ 
   label, 
   required = false, 
@@ -226,7 +204,8 @@ const CloudinaryImageUpload = ({
   maxFiles = 5,
   currentImages = [],
   type = 'main',
-  helpText = ''
+  helpText = '',
+  onRemoveImage // ✅ NEW: Callback for removing images
 }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
@@ -237,10 +216,11 @@ const CloudinaryImageUpload = ({
   useEffect(() => {
     if (currentImages.length > 0) {
       setPreviews(currentImages.map((img, index) => ({
-        id: index,
+        id: img.id || index, // ✅ Use database ID if available
         url: typeof img === 'string' ? img : img.url || img.image_url,
         public_id: typeof img === 'object' ? img.public_id : null,
-        isUploaded: true
+        isUploaded: true,
+        isFromDatabase: img.isFromDatabase || false // ✅ Track if from database
       })));
     }
   }, [currentImages]);
@@ -249,13 +229,11 @@ const CloudinaryImageUpload = ({
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
-    // ✅ Validate file count
     if (multiple && files.length > maxFiles) {
       setError(`Maximum ${maxFiles} images allowed`);
       return;
     }
 
-    // ✅ Validate file types and sizes
     const validFiles = [];
     const errors = [];
     
@@ -264,7 +242,7 @@ const CloudinaryImageUpload = ({
         errors.push(`${file.name}: Only image files are allowed`);
         continue;
       }
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      if (file.size > 10 * 1024 * 1024) {
         errors.push(`${file.name}: File too large (max 10MB)`);
         continue;
       }
@@ -282,9 +260,6 @@ const CloudinaryImageUpload = ({
     setUploading(true);
     onUploadStart && onUploadStart();
 
-    console.log(`🚀 Starting upload of ${validFiles.length} files to Cloudinary`);
-
-    // ✅ Create preview URLs immediately
     const newPreviews = validFiles.map((file, index) => ({
       id: Date.now() + index,
       url: URL.createObjectURL(file),
@@ -295,12 +270,9 @@ const CloudinaryImageUpload = ({
 
     setPreviews(multiple ? [...previews, ...newPreviews] : newPreviews);
 
-    // ✅ Upload files to Cloudinary with detailed logging
     try {
       const uploadPromises = validFiles.map(async (file, index) => {
         const previewId = Date.now() + index;
-        
-        console.log(`🔄 Uploading file ${index + 1}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
         
         const result = await uploadToCloudinary(file, {
           type: type,
@@ -311,7 +283,6 @@ const CloudinaryImageUpload = ({
             }));
             onUploadProgress && onUploadProgress(progress);
             
-            // Update preview progress
             setPreviews(currentPreviews => 
               currentPreviews.map(preview => 
                 preview.id === previewId 
@@ -321,8 +292,6 @@ const CloudinaryImageUpload = ({
             );
           }
         });
-
-        console.log(`📊 Upload result for ${file.name}:`, result.success ? '✅ Success' : '❌ Failed');
         
         return {
           ...result,
@@ -332,22 +301,14 @@ const CloudinaryImageUpload = ({
       });
 
       const uploadResults = await Promise.all(uploadPromises);
-      
-      // ✅ Separate successful and failed uploads
       const successfulUploads = uploadResults.filter(result => result.success);
       const failedUploads = uploadResults.filter(result => !result.success);
       
-      console.log(`📈 Upload summary: ${successfulUploads.length} successful, ${failedUploads.length} failed`);
-      
       if (failedUploads.length > 0) {
-        console.error('❌ Failed uploads:', failedUploads.map(f => f.error).join(', '));
         setError(`${failedUploads.length} upload(s) failed: ${failedUploads[0].error}`);
       }
 
       if (successfulUploads.length > 0) {
-        console.log('✅ Successful uploads:', successfulUploads.map(u => u.url));
-        
-        // ✅ Update previews with uploaded URLs
         setPreviews(prev => prev.map(preview => {
           const uploadResult = successfulUploads.find(result => result.previewId === preview.id);
           if (uploadResult) {
@@ -363,7 +324,6 @@ const CloudinaryImageUpload = ({
           return preview;
         }));
 
-        // ✅ Store upload results for form submission
         const uploadData = successfulUploads.map(result => ({
           url: result.url,
           public_id: result.public_id,
@@ -375,13 +335,8 @@ const CloudinaryImageUpload = ({
         }));
         
         setUploadResults(uploadData);
-        
-        // ✅ Call completion callback with proper data structure
         onUploadComplete && onUploadComplete(uploadData);
-        
-        console.log('🎉 Upload completed successfully, data sent to parent:', uploadData);
       } else {
-        // Remove failed uploads from previews
         setPreviews(prev => prev.filter(preview => preview.isUploaded));
         setError('All uploads failed. Please try again.');
       }
@@ -389,29 +344,27 @@ const CloudinaryImageUpload = ({
     } catch (error) {
       console.error('❌ Upload error:', error);
       setError('Upload failed. Please try again.');
-      
-      // Remove failed uploads from previews
       setPreviews(prev => prev.filter(preview => preview.isUploaded));
     } finally {
       setUploading(false);
       setUploadProgress({});
-      
-      // Clear file input
       e.target.value = '';
     }
   };
 
-  const removeImage = (previewId) => {
-    console.log('🗑️ Removing image with ID:', previewId);
+  // ✅ FIXED: Remove image function
+  const removeImage = async (previewId) => {
+    const imageToRemove = previews.find(p => p.id === previewId);
+    if (!imageToRemove) return;
     
+    // ✅ Call parent's removal handler if image is from database
+    if (imageToRemove.isFromDatabase && onRemoveImage) {
+      await onRemoveImage(imageToRemove.id);
+    }
+    
+    // Update local state
     setPreviews(prev => prev.filter(preview => preview.id !== previewId));
-    
-    // ✅ Update upload results and notify parent
-    const updatedResults = uploadResults.filter(result => {
-      const preview = previews.find(p => p.id === previewId);
-      return result.url !== preview?.url;
-    });
-    
+    const updatedResults = uploadResults.filter(result => result.public_id !== imageToRemove.public_id);
     setUploadResults(updatedResults);
     onUploadComplete && onUploadComplete(updatedResults);
   };
@@ -422,7 +375,6 @@ const CloudinaryImageUpload = ({
         {label} {required && '*'}
       </label>
       
-      {/* ✅ Enhanced error display */}
       {error && (
         <div style={styles.uploadError}>
           ⚠️ {error}
@@ -436,7 +388,6 @@ const CloudinaryImageUpload = ({
         </div>
       )}
 
-      {/* ✅ Upload Area with better visual feedback */}
       <div 
         style={{
           ...styles.uploadArea,
@@ -477,7 +428,6 @@ const CloudinaryImageUpload = ({
         </div>
       </div>
 
-      {/* ✅ Enhanced Image Previews */}
       {previews.length > 0 && (
         <div style={styles.previewContainer}>
           <div style={styles.previewHeader}>
@@ -571,890 +521,14 @@ const CloudinaryImageUpload = ({
         </div>
       )}
 
-      {/* ✅ Enhanced Help Text */}
       <small style={styles.helpText}>
         {helpText || (
           <span>
             📸 Images are automatically optimized and stored securely on Cloudinary
             {multiple && ` (${previews.filter(p => p.isUploaded).length}/${maxFiles} images)`}
-            <br />
-            🌟 Upload presets: {CLOUDINARY_CONFIG.upload_preset}
           </span>
         )}
       </small>
-      
-      {/* ✅ Debug info (only in development) */}
-      {process.env.NODE_ENV === 'development' && uploadResults.length > 0 && (
-        <details style={styles.debugInfo}>
-          <summary>🔍 Debug Info</summary>
-          <pre>{JSON.stringify(uploadResults, null, 2)}</pre>
-        </details>
-      )}
-    </div>
-  );
-};
-
-// ✅ COMPLETELY FIXED Category Selector Component
-const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesChange }) => {
-  const [allCategories, setAllCategories] = useState([]);
-  const [currentPath, setCurrentPath] = useState([]);
-  const [currentCategories, setCurrentCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  // Load all categories on mount
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  // ✅ FIXED: Update current categories when path changes
-  useEffect(() => {
-    if (allCategories.length > 0) {
-      updateCurrentCategories();
-    }
-  }, [currentPath, allCategories]);
-
-  // ✅ FIXED: Set selected category when selectedCategoryId is provided (for editing)
-  useEffect(() => {
-    if (selectedCategoryId && allCategories.length > 0) {
-      const category = allCategories.find(cat => cat.id === parseInt(selectedCategoryId));
-      if (category) {
-        setSelectedCategory(category);
-        // ✅ Build the path to this category
-        buildPathToCategory(category);
-      }
-    }
-  }, [selectedCategoryId, allCategories]);
-
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      console.log('🔄 Fetching categories from:', `${API_BASE_URL}/api/categories/`);
-      
-      const response = await apiClient.get('/api/categories/');
-      console.log('✅ Categories response:', response.data);
-      
-      const categories = response.data.results || response.data || [];
-      setAllCategories(categories);
-      
-      console.log(`📋 Loaded ${categories.length} categories:`, categories);
-      
-      // ✅ Initialize with root categories
-      const rootCategories = categories.filter(cat => !cat.parent);
-      console.log(`🌳 Found ${rootCategories.length} root categories:`, rootCategories);
-      setCurrentCategories(rootCategories);
-      
-    } catch (err) {
-      console.error('❌ Error fetching categories:', err);
-      setError(`Failed to load categories: ${err.response?.data?.message || err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ✅ NEW: Function to build path to a specific category (for editing mode)
-  const buildPathToCategory = (category) => {
-    const path = [];
-    let current = category;
-    
-    // Build path from child to root
-    while (current && current.parent) {
-      const parent = allCategories.find(cat => cat.id === current.parent);
-      if (parent) {
-        path.unshift(parent);
-        current = parent;
-      } else {
-        break;
-      }
-    }
-    
-    console.log('🛤️ Built path to category:', path.map(c => c.name));
-    setCurrentPath(path);
-  };
-
-  // ✅ FIXED: Update current categories based on current path
-  const updateCurrentCategories = () => {
-    let categories;
-    
-    if (currentPath.length === 0) {
-      // Show root categories
-      categories = allCategories.filter(cat => !cat.parent);
-      console.log('📂 Showing root categories:', categories.length);
-    } else {
-      // Show children of the last category in path
-      const parentId = currentPath[currentPath.length - 1].id;
-      categories = allCategories.filter(cat => cat.parent === parentId);
-      console.log(`📂 Showing children of ${currentPath[currentPath.length - 1].name}:`, categories.length);
-    }
-    
-    setCurrentCategories(categories);
-  };
-
-  // ✅ FIXED: Handle category click with proper navigation and selection
-  const handleCategoryClick = (category) => {
-    console.log('🖱️ Category clicked:', category.name, 'ID:', category.id);
-    
-    const hasChildren = allCategories.some(cat => cat.parent === category.id);
-    console.log('👶 Has children:', hasChildren);
-    
-    if (hasChildren) {
-      // ✅ Navigate deeper - add to path and clear selection
-      console.log('➡️ Navigating to category with children');
-      setCurrentPath([...currentPath, category]);
-      setSelectedCategory(null);
-      onCategorySelect(''); // Clear selection when navigating
-    } else {
-      // ✅ Select this category (leaf node)
-      console.log('✅ Selecting leaf category:', category.name);
-      setSelectedCategory(category);
-      onCategorySelect(category.id);
-      
-      // ✅ Handle category attributes
-      const newAttributes = {};
-      if (category.default_attributes && Array.isArray(category.default_attributes)) {
-        category.default_attributes.forEach(attr => {
-          if (typeof attr === 'object' && attr.name) {
-            newAttributes[attr.name] = '';
-          } else if (typeof attr === 'string') {
-            newAttributes[attr] = '';
-          }
-        });
-      }
-      console.log('🏷️ Category attributes:', newAttributes);
-      onAttributesChange(newAttributes);
-    }
-  };
-
-  // ✅ NEW: Handle back navigation
-  const handleBackClick = () => {
-    if (currentPath.length > 0) {
-      const newPath = currentPath.slice(0, -1);
-      console.log('⬅️ Going back, new path:', newPath.map(c => c.name));
-      setCurrentPath(newPath);
-      
-      // ✅ Clear selection when going back
-      if (selectedCategory) {
-        setSelectedCategory(null);
-        onCategorySelect('');
-        onAttributesChange({});
-      }
-    }
-  };
-
-  // ✅ NEW: Handle breadcrumb click
-  const handleBreadcrumbClick = (index) => {
-    const newPath = currentPath.slice(0, index + 1);
-    console.log('🍞 Breadcrumb clicked, new path:', newPath.map(c => c.name));
-    setCurrentPath(newPath);
-    
-    // Clear selection
-    if (selectedCategory) {
-      setSelectedCategory(null);
-      onCategorySelect('');
-      onAttributesChange({});
-    }
-  };
-
-  // ✅ Loading state
-  if (loading) {
-    return (
-      <div style={categoryStyles.container}>
-        <h3>🏷️ Select Product Category</h3>
-        <div style={categoryStyles.loadingContainer}>
-          <div style={categoryStyles.spinner}></div>
-          <p>Loading categories...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ✅ Error state
-  if (error) {
-    return (
-      <div style={categoryStyles.container}>
-        <h3>🏷️ Select Product Category</h3>
-        <div style={categoryStyles.errorContainer}>
-          <p>❌ {error}</p>
-          <button onClick={fetchCategories} style={categoryStyles.retryButton}>
-            🔄 Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={categoryStyles.container}>
-      <h3>🏷️ Select Product Category</h3>
-      
-      {/* ✅ Show selected category */}
-      {selectedCategory && (
-        <div style={categoryStyles.selectedCategory}>
-          ✅ Selected: {selectedCategory.name}
-          <button 
-            onClick={() => {
-              setSelectedCategory(null);
-              onCategorySelect('');
-              onAttributesChange({});
-            }}
-            style={categoryStyles.clearButton}
-          >
-            ✕
-          </button>
-        </div>
-      )}
-      
-      {/* ✅ Navigation breadcrumbs */}
-      {currentPath.length > 0 && (
-        <div style={categoryStyles.breadcrumbs}>
-          <button 
-            onClick={() => {
-              setCurrentPath([]);
-              setSelectedCategory(null);
-              onCategorySelect('');
-              onAttributesChange({});
-            }}
-            style={categoryStyles.breadcrumbButton}
-          >
-            🏠 Home
-          </button>
-          {currentPath.map((pathCategory, index) => (
-            <span key={pathCategory.id}>
-              <span style={categoryStyles.separator}> → </span>
-              <button 
-                onClick={() => handleBreadcrumbClick(index)}
-                style={categoryStyles.breadcrumbButton}
-              >
-                {pathCategory.name}
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-      
-      {/* ✅ Back button */}
-      {currentPath.length > 0 && (
-        <div style={categoryStyles.navigationButtons}>
-          <button 
-            onClick={handleBackClick}
-            style={categoryStyles.backButton}
-          >
-            ⬅️ Back
-          </button>
-        </div>
-      )}
-      
-      {/* ✅ Current level info */}
-      <div style={categoryStyles.levelInfo}>
-        {currentPath.length === 0 ? (
-          <span>📂 Browse Categories ({currentCategories.length})</span>
-        ) : (
-          <span>📂 {currentPath[currentPath.length - 1].name} → Subcategories ({currentCategories.length})</span>
-        )}
-      </div>
-      
-      {/* ✅ Categories grid */}
-      {currentCategories.length > 0 ? (
-        <div style={categoryStyles.categoriesGrid}>
-          {currentCategories.map(category => {
-            const hasChildren = allCategories.some(cat => cat.parent === category.id);
-            const isSelected = selectedCategory && selectedCategory.id === category.id;
-            
-            return (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => handleCategoryClick(category)}
-                style={{
-                  ...categoryStyles.categoryCard,
-                  ...(isSelected ? categoryStyles.selectedCard : {}),
-                  ...(hasChildren ? categoryStyles.folderCard : categoryStyles.fileCard)
-                }}
-              >
-                <div style={categoryStyles.categoryHeader}>
-                  <span style={categoryStyles.categoryIcon}>
-                    {hasChildren ? '📁' : '📄'}
-                  </span>
-                  <span style={categoryStyles.categoryName}>{category.name}</span>
-                </div>
-                {category.description && (
-                  <div style={categoryStyles.categoryDescription}>
-                    {category.description}
-                  </div>
-                )}
-                <div style={categoryStyles.categoryFooter}>
-                  {hasChildren ? (
-                    <span style={categoryStyles.childrenCount}>
-                      {allCategories.filter(cat => cat.parent === category.id).length} subcategories
-                    </span>
-                  ) : (
-                    <span style={categoryStyles.selectHint}>Click to select</span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <div style={categoryStyles.emptyState}>
-          <p>📭 No categories available at this level</p>
-          {currentPath.length > 0 && (
-            <button onClick={handleBackClick} style={categoryStyles.backButton}>
-              ⬅️ Go Back
-            </button>
-          )}
-        </div>
-      )}
-      
-      {/* ✅ Debug info (development only) */}
-      {process.env.NODE_ENV === 'development' && (
-        <details style={categoryStyles.debugInfo}>
-          <summary>🔍 Debug Info</summary>
-          <div>
-            <strong>Total Categories:</strong> {allCategories.length}<br />
-            <strong>Current Path:</strong> {currentPath.map(c => c.name).join(' → ') || 'Root'}<br />
-            <strong>Current Level:</strong> {currentCategories.length} categories<br />
-            <strong>Selected:</strong> {selectedCategory ? selectedCategory.name : 'None'}<br />
-            <strong>Selected ID:</strong> {selectedCategoryId || 'None'}
-          </div>
-        </details>
-      )}
-    </div>
-  );
-};
-
-// ✅ Smart Stock Input Component
-const SmartStockInput = ({ formData, setFormData }) => {
-  const [stockError, setStockError] = useState('');
-  
-  const handleTotalStockChange = (e) => {
-    let value = e.target.value.replace('-', '');
-    const validation = validatePositiveInteger(value, 'Total Stock');
-    if (validation.isValid) {
-      const newTotal = parseInt(value) || 0;
-      setFormData(prev => ({
-        ...prev,
-        total_stock: newTotal,
-        online_stock: prev.online_stock > newTotal ? newTotal : prev.online_stock
-      }));
-      setStockError('');
-    } else {
-      setStockError(validation.error);
-    }
-  };
-
-  const handleOnlineStockChange = (e) => {
-    let value = e.target.value.replace('-', '');
-    const validation = validatePositiveInteger(value, 'Online Stock');
-    if (validation.isValid) {
-      const newOnline = parseInt(value) || 0;
-      if (newOnline > formData.total_stock) {
-        setStockError('Online stock cannot be more than total stock');
-      } else {
-        setFormData(prev => ({ ...prev, online_stock: newOnline }));
-        setStockError('');
-      }
-    } else {
-      setStockError(validation.error);
-    }
-  };
-
-  return (
-    <div style={styles.stockContainer}>
-      <h3>📦 Stock Management</h3>
-      {stockError && <div style={styles.stockError}>⚠️ {stockError}</div>}
-      
-      <div style={styles.formRow}>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>📦 Total Stock *</label>
-          <input 
-            type="number" 
-            value={formData.total_stock} 
-            onChange={handleTotalStockChange}
-            required 
-            style={styles.input}
-            min="0"
-            step="1"
-          />
-        </div>
-        
-        <div style={styles.formGroup}>
-          <label style={styles.label}>🌐 Online Stock *</label>
-          <input 
-            type="number" 
-            value={formData.online_stock} 
-            onChange={handleOnlineStockChange}
-            required 
-            style={styles.input}
-            min="0"
-            max={formData.total_stock}
-            step="1"
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ✅ MAIN PRODUCT FORM WITH ENHANCED VALIDATION
-export default function ProductForm({ product, onClose, onSuccess }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    model_name: '',
-    description: '',
-    price: '',
-    mrp: '',
-    total_stock: 0,
-    online_stock: 0,
-    sale_type: 'BOTH',
-  });
-
-  const [mainImageUrl, setMainImageUrl] = useState('');
-  const [subImageUrls, setSubImageUrls] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [selectedCategoryId, setSelectedCategoryId] = useState('');
-  const [dynamicAttributes, setDynamicAttributes] = useState({});
-  const [uploadingImages, setUploadingImages] = useState(false);
-  const [priceError, setPriceError] = useState('');
-
-  useEffect(() => {
-    if (product) {
-      setFormData({
-        name: product.name || '',
-        model_name: product.model_name || '',
-        description: product.description || '',
-        price: product.price || '',
-        mrp: product.mrp || '',
-        total_stock: product.total_stock || 0,
-        online_stock: product.online_stock || 0,
-        sale_type: product.sale_type || 'BOTH',
-      });
-      setSelectedCategoryId(product.category);
-      setDynamicAttributes(product.attributes || {});
-      setMainImageUrl(product.main_image_url || product.cloudinary_image_url || '');
-      setSubImageUrls(product.sub_images?.map(img => ({
-        url: img.image_url || img.cloudinary_image_url || img.url,
-        public_id: img.public_id || img.cloudinary_public_id
-      })) || []);
-    }
-  }, [product]);
-
-  // ✅ Handle form changes with validation
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    
-    if (name === 'price' || name === 'mrp') {
-      let cleanValue = value.replace('-', '');
-      const validation = validatePositiveNumber(cleanValue, name === 'price' ? 'Selling Price' : 'MRP');
-      if (validation.isValid) {
-        setFormData(prev => ({ ...prev, [name]: cleanValue }));
-        setPriceError('');
-        
-        if (name === 'price' && formData.mrp && parseFloat(cleanValue) > parseFloat(formData.mrp)) {
-          setPriceError('Selling price cannot be higher than MRP');
-        } else if (name === 'mrp' && formData.price && parseFloat(formData.price) > parseFloat(cleanValue)) {
-          setPriceError('MRP cannot be lower than selling price');
-        }
-      } else if (cleanValue !== '') {
-        setPriceError(validation.error);
-      }
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
-  };
-
-  const handleMainImageUpload = (uploadedImages) => {
-    if (uploadedImages.length > 0) {
-      setMainImageUrl(uploadedImages[0].url);
-    } else {
-      setMainImageUrl('');
-    }
-    setUploadingImages(false);
-  };
-
-  const handleSubImagesUpload = (uploadedImages) => {
-  console.log('📸 Sub-images uploaded:', uploadedImages);
-  
-  // ✅ FIX: Append new images to existing ones
-  setSubImageUrls(prevUrls => {
-    // Combine existing + new images
-    const allImages = [...prevUrls, ...uploadedImages];
-    
-    // Remove duplicates based on URL
-    const uniqueImages = allImages.filter((img, index, self) =>
-      index === self.findIndex((t) => t.url === img.url)
-    );
-    
-    // Limit to maximum 4 sub-images
-    const limitedImages = uniqueImages.slice(0, 4);
-    
-    console.log(`📊 Total sub-images: ${limitedImages.length}/4`);
-    return limitedImages;
-  });
-  
-  setUploadingImages(false);
-};
-
-
-  const handleAttributeChange = (attributeName, value) => {
-    setDynamicAttributes(prev => ({ ...prev, [attributeName]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // ✅ Comprehensive validation
-    if (!mainImageUrl && !product) {
-      setError('Please upload a main product image');
-      return;
-    }
-    
-    if (uploadingImages) {
-      setError('Please wait for image uploads to complete');
-      return;
-    }
-
-    if (!selectedCategoryId) {
-      setError('Please select a product category');
-      return;
-    }
-
-    const priceValidation = validatePositiveNumber(formData.price, 'Selling Price');
-    if (!priceValidation.isValid) {
-      setError(priceValidation.error);
-      return;
-    }
-
-    if (formData.mrp) {
-      const mrpValidation = validatePositiveNumber(formData.mrp, 'MRP');
-      if (!mrpValidation.isValid) {
-        setError(mrpValidation.error);
-        return;
-      }
-
-      if (parseFloat(formData.price) > parseFloat(formData.mrp)) {
-        setError('Selling price cannot be higher than MRP');
-        return;
-      }
-    }
-
-    const totalStockValidation = validatePositiveInteger(formData.total_stock, 'Total Stock');
-    if (!totalStockValidation.isValid) {
-      setError(totalStockValidation.error);
-      return;
-    }
-
-    const onlineStockValidation = validatePositiveInteger(formData.online_stock, 'Online Stock');
-    if (!onlineStockValidation.isValid) {
-      setError(onlineStockValidation.error);
-      return;
-    }
-
-    if (formData.online_stock > formData.total_stock) {
-      setError('Online stock cannot be more than total stock');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError('');
-    
-    // ✅ Prepare submission data (JSON format since images are already on Cloudinary)
-    const submissionData = {
-      ...formData,
-      category: selectedCategoryId ? parseInt(selectedCategoryId) : null,
-      attributes: dynamicAttributes,
-      main_image_url: mainImageUrl,
-      sub_image_urls: subImageUrls.map(img => ({
-        url: img.url,
-        public_id: img.public_id
-      }))
-    };
-
-    console.log('🚀 Submitting product data:', submissionData);
-
-    const url = product 
-      ? `${PRODUCTS_API_URL}${product.id}/` 
-      : PRODUCTS_API_URL;
-    const method = product ? 'PATCH' : 'POST';
-
-    try {
-      const token = localStorage.getItem('accessToken');
-      const response = await axios({
-        method,
-        url,
-        data: submissionData,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000
-      });
-      
-      console.log('✅ Product saved successfully:', response.data);
-      onSuccess();
-    } catch (err) {
-      let errorMessage = 'Something went wrong. Please check your details and try again.';
-      
-      if (err.response?.status === 401) {
-        errorMessage = 'Your session has expired. Please log in again.';
-        setTimeout(() => {
-          localStorage.removeItem('accessToken');
-          window.location.href = '/login/seller';
-        }, 2000);
-      } else if (err.response?.data) {
-        if (typeof err.response.data === 'string') {
-          errorMessage = err.response.data;
-        } else if (err.response.data.detail) {
-          errorMessage = err.response.data.detail;
-        } else if (err.response.data.category) {
-          errorMessage = 'Please select a valid category';
-        } else if (err.response.data.main_image_url) {
-          errorMessage = 'Main image is required';
-        }
-      } else if (err.code === 'ECONNABORTED') {
-        errorMessage = 'Request is taking too long. Please check your internet connection and try again.';
-      }
-      
-      console.error('❌ Product save error:', err);
-      setError(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div style={styles.modalOverlay}>
-      <div style={styles.modalContent}>
-        <div style={styles.modalHeader}>
-          <h2 style={styles.modalTitle}>
-            {product ? '✏️ Edit Product' : '🆕 Add New Product'}
-          </h2>
-          <div style={styles.connectionStatus}>
-            ☁️ Images powered by Cloudinary | 🌐 API: {API_BASE_URL.replace('https://', '').replace('http://', '')}
-          </div>
-        </div>
-        
-        <form onSubmit={handleSubmit}>
-          {/* === BASIC PRODUCT INFORMATION === */}
-          <div style={styles.sectionContainer}>
-            <h3 style={styles.sectionTitle}>📝 Basic Product Information</h3>
-            
-            <div style={styles.formGroup}>
-              <label style={styles.label}>🏷️ Product Name *</label>
-              <input 
-                type="text" 
-                name="name" 
-                value={formData.name} 
-                onChange={handleChange} 
-                required 
-                style={styles.input}
-                placeholder="e.g., Premium Cotton T-Shirt, iPhone 13, Running Shoes..."
-              />
-              <small style={styles.helpText}>Give your product a clear, descriptive name</small>
-            </div>
-            
-            <div style={styles.formGroup}>
-              <label style={styles.label}>🔧 Model/Variation (Optional)</label>
-              <input 
-                type="text" 
-                name="model_name" 
-                value={formData.model_name} 
-                onChange={handleChange} 
-                style={styles.input} 
-                placeholder="e.g., Red XL, 128GB Black, Size 42..."
-              />
-              <small style={styles.helpText}>Specify color, size, model year, or any variations</small>
-            </div>
-            
-            <div style={styles.formGroup}>
-              <label style={styles.label}>📄 Product Description (Optional)</label>
-              <textarea 
-                name="description" 
-                value={formData.description} 
-                onChange={handleChange} 
-                style={styles.textArea}
-                placeholder="Describe your product: features, benefits, materials..."
-                rows="4"
-              />
-              <small style={styles.helpText}>Help customers understand why they should buy your product</small>
-            </div>
-          </div>
-
-          {/* === PRICING WITH VALIDATION === */}
-          <div style={styles.sectionContainer}>
-            <h3 style={styles.sectionTitle}>💰 Pricing Information</h3>
-            
-            {priceError && (
-              <div style={styles.priceError}>
-                ⚠️ {priceError}
-              </div>
-            )}
-            
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>💵 Your Selling Price (₹) *</label>
-                <input 
-                  type="number" 
-                  name="price" 
-                  value={formData.price} 
-                  onChange={handleChange} 
-                  required 
-                  style={styles.input} 
-                  step="0.01"
-                  min="0"
-                  placeholder="299.99"
-                  onKeyPress={(e) => {
-                    if (e.key === '-') e.preventDefault();
-                  }}
-                />
-                <small style={styles.helpText}>The price you want to charge customers</small>
-              </div>
-              
-              <div style={styles.formGroup}>
-                <label style={styles.label}>🏷️ MRP - Maximum Retail Price (₹)</label>
-                <input 
-                  type="number" 
-                  name="mrp" 
-                  value={formData.mrp} 
-                  onChange={handleChange} 
-                  style={styles.input} 
-                  step="0.01"
-                  min="0"
-                  placeholder="399.99"
-                  onKeyPress={(e) => {
-                    if (e.key === '-') e.preventDefault();
-                  }}
-                />
-                <small style={styles.helpText}>Original price (must be higher than or equal to selling price)</small>
-              </div>
-            </div>
-
-            {/* Show discount calculation */}
-            {formData.price && formData.mrp && parseFloat(formData.mrp) > parseFloat(formData.price) && (
-              <div style={styles.discountDisplay}>
-                🎉 Great! You're offering a discount of ₹{(parseFloat(formData.mrp) - parseFloat(formData.price)).toFixed(2)} 
-                ({Math.round(((parseFloat(formData.mrp) - parseFloat(formData.price)) / parseFloat(formData.mrp)) * 100)}% off)
-              </div>
-            )}
-          </div>
-
-          {/* === STOCK MANAGEMENT === */}
-          <SmartStockInput formData={formData} setFormData={setFormData} />
-          
-          {/* === SALES CHANNELS === */}
-          <div style={styles.sectionContainer}>
-            <h3 style={styles.sectionTitle}>🛍️ Where Do You Want to Sell?</h3>
-            <select 
-              name="sale_type" 
-              value={formData.sale_type} 
-              onChange={handleChange} 
-              style={styles.selectInput}
-            >
-              <option value="BOTH">🌐 Both Online & In-Store (Recommended)</option>
-              <option value="OFFLINE">🏪 Only In My Physical Store</option>
-              <option value="ONLINE">🌐 Only Online Sales</option>
-            </select>
-            <small style={styles.helpText}>Choose where customers can buy this product</small>
-          </div>
-
-          <hr style={styles.hr} />
-
-          {/* === CATEGORY SECTION === */}
-          <CategorySelector
-            selectedCategoryId={selectedCategoryId}
-            onCategorySelect={setSelectedCategoryId}
-            onAttributesChange={setDynamicAttributes}
-          />
-          
-          {/* Dynamic Attributes Section */}
-          {Object.keys(dynamicAttributes).length > 0 && (
-            <div style={styles.attributesSection}>
-              <h3 style={styles.sectionTitle}>🔧 Category-Specific Details</h3>
-              <div style={styles.attributesGrid}>
-                {Object.keys(dynamicAttributes).map(name => (
-                  <div key={name} style={styles.formGroup}>
-                    <label style={styles.label}>📝 {name}</label>
-                    <input 
-                      type="text" 
-                      value={dynamicAttributes[name] || ''} 
-                      onChange={e => handleAttributeChange(name, e.target.value)} 
-                      style={styles.input}
-                      placeholder={`Enter ${name.toLowerCase()}...`}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <hr style={styles.hr} />
-
-          {/* === CLOUDINARY IMAGE UPLOADS === */}
-          <div style={styles.sectionContainer}>
-            <h3 style={styles.sectionTitle}>☁️ Product Images (Cloudinary)</h3>
-            
-            {/* Main Image Upload */}
-            <CloudinaryImageUpload
-              label="📷 Main Product Image"
-              required={!product}
-              type="main"
-              onUploadComplete={handleMainImageUpload}
-              onUploadStart={() => setUploadingImages(true)}
-              currentImages={mainImageUrl ? [mainImageUrl] : []}
-              helpText="📸 This is the first image customers will see. Make it count!"
-            />
-
-            {/* Additional Images Upload */}
-            <CloudinaryImageUpload
-              label="🖼️ Additional Images"
-              multiple={true}
-              maxFiles={4}
-              type="sub"
-              onUploadComplete={handleSubImagesUpload}
-              onUploadStart={() => setUploadingImages(true)}
-              currentImages={subImageUrls}
-              helpText="📷 Add more angles, close-ups, or usage photos"
-            />
-          </div>
-          
-          {/* === ERROR DISPLAY === */}
-          {error && (
-            <div style={styles.errorAlert}>
-              <strong>⚠️ Oops! Something went wrong:</strong>
-              <br />
-              {error}
-            </div>
-          )}
-          
-          {/* === ACTION BUTTONS === */}
-          <div style={styles.buttonContainer}>
-            <button 
-              type="button" 
-              onClick={onClose} 
-              disabled={isSubmitting || uploadingImages} 
-              style={styles.buttonSecondary}
-            >
-              ❌ Cancel
-            </button>
-            <button 
-              type="submit" 
-              disabled={isSubmitting || uploadingImages || !selectedCategoryId || priceError} 
-              style={styles.buttonPrimary}
-            >
-              {isSubmitting ? (
-                <>⏳ {product ? 'Updating...' : 'Creating...'}</>
-              ) : uploadingImages ? (
-                <>☁️ Uploading Images...</>
-              ) : (
-                <>{product ? '✅ Update Product' : '🚀 Create Product'}</>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }
@@ -1566,8 +640,6 @@ const styles = {
     borderTop: '3px solid #f8f9fa', 
     margin: '32px 0' 
   },
-  
-  // Error message styles
   priceError: {
     backgroundColor: '#f8d7da',
     color: '#721c24',
@@ -1586,8 +658,6 @@ const styles = {
     border: '1px solid #f5c6cb',
     fontSize: '14px'
   },
-  
-  // Stock Management Styles
   stockContainer: {
     border: '2px solid #0d6efd', 
     borderRadius: '16px', 
@@ -1595,12 +665,9 @@ const styles = {
     marginBottom: '2rem', 
     backgroundColor: '#f0f8ff'
   },
-  
-  // Image Upload Styles
   imageUploadContainer: {
     marginBottom: '24px'
   },
-  
   uploadArea: {
     position: 'relative',
     border: '3px dashed #0d6efd',
@@ -1612,27 +679,22 @@ const styles = {
     transition: 'all 0.2s',
     marginBottom: '16px'
   },
-  
   uploadPrompt: {
     pointerEvents: 'none'
   },
-  
   uploadIcon: {
     fontSize: '48px',
     marginBottom: '12px'
   },
-  
   uploadingIcon: {
     fontSize: '32px',
     marginBottom: '8px'
   },
-  
   uploadHint: {
     fontSize: '12px',
     color: '#6c757d',
     marginTop: '8px'
   },
-  
   uploadError: {
     backgroundColor: '#f8d7da',
     color: '#721c24',
@@ -1644,7 +706,6 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center'
   },
-  
   errorCloseButton: {
     background: 'none',
     border: 'none',
@@ -1654,7 +715,6 @@ const styles = {
     fontWeight: 'bold',
     padding: '0 8px'
   },
-  
   fileInput: {
     position: 'absolute',
     top: 0,
@@ -1664,11 +724,9 @@ const styles = {
     opacity: 0,
     cursor: 'pointer'
   },
-  
   previewContainer: {
     marginTop: '16px'
   },
-  
   previewHeader: {
     fontSize: '14px',
     fontWeight: '600',
@@ -1676,32 +734,27 @@ const styles = {
     marginBottom: '12px',
     textAlign: 'center'
   },
-  
   previewGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
     gap: '12px'
   },
-  
   previewItem: {
     position: 'relative',
     borderRadius: '8px',
     overflow: 'hidden',
     border: '2px solid #28a745'
   },
-  
   previewImage: {
     width: '100%',
     height: '120px',
     objectFit: 'cover'
   },
-  
   singlePreview: {
     position: 'relative',
     display: 'inline-block',
     marginRight: '12px'
   },
-  
   mainPreviewImage: {
     width: '200px',
     height: '200px',
@@ -1709,7 +762,6 @@ const styles = {
     borderRadius: '12px',
     border: '3px solid #28a745'
   },
-  
   uploadOverlay: {
     position: 'absolute',
     top: 0,
@@ -1725,23 +777,19 @@ const styles = {
     fontWeight: '600',
     flexDirection: 'column'
   },
-  
   uploadProgress: {
     textAlign: 'center'
   },
-  
   progressSpinner: {
     fontSize: '20px',
     marginTop: '8px',
     animation: 'spin 1s linear infinite'
   },
-  
   imageActions: {
     position: 'absolute',
     top: '8px',
     right: '8px'
   },
-  
   removeButton: {
     backgroundColor: '#dc3545',
     color: 'white',
@@ -1752,7 +800,6 @@ const styles = {
     fontSize: '12px',
     fontWeight: '600'
   },
-  
   cloudinaryBadge: {
     position: 'absolute',
     bottom: '4px',
@@ -1766,17 +813,6 @@ const styles = {
     textAlign: 'center',
     fontWeight: '600'
   },
-  
-  debugInfo: {
-    marginTop: '16px',
-    padding: '12px',
-    backgroundColor: '#f8f9fa',
-    border: '1px solid #dee2e6',
-    borderRadius: '4px',
-    fontSize: '11px'
-  },
-  
-  // Other Styles
   attributesSection: { 
     border: '2px solid #0d6efd', 
     borderRadius: '16px', 
@@ -1842,7 +878,6 @@ const styles = {
   }
 };
 
-// ✅ Enhanced Category Styles with better navigation and visual feedback
 const categoryStyles = {
   container: {
     marginBottom: '1.5rem',
@@ -1851,8 +886,6 @@ const categoryStyles = {
     padding: '20px',
     backgroundColor: '#f8f9fa'
   },
-  
-  // Loading and Error States
   loadingContainer: {
     textAlign: 'center',
     padding: '40px 20px',
@@ -1861,7 +894,6 @@ const categoryStyles = {
     alignItems: 'center',
     gap: '16px'
   },
-  
   spinner: {
     width: '24px',
     height: '24px',
@@ -1870,7 +902,6 @@ const categoryStyles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
   errorContainer: {
     textAlign: 'center',
     padding: '20px',
@@ -1879,7 +910,6 @@ const categoryStyles = {
     borderRadius: '8px',
     color: '#721c24'
   },
-  
   retryButton: {
     marginTop: '12px',
     padding: '8px 16px',
@@ -1889,8 +919,6 @@ const categoryStyles = {
     borderRadius: '6px',
     cursor: 'pointer'
   },
-  
-  // Selected Category Display
   selectedCategory: {
     color: '#28a745',
     fontSize: '14px',
@@ -1904,7 +932,6 @@ const categoryStyles = {
     justifyContent: 'space-between',
     alignItems: 'center'
   },
-  
   clearButton: {
     background: 'none',
     border: 'none',
@@ -1915,8 +942,6 @@ const categoryStyles = {
     padding: '0 4px',
     marginLeft: '8px'
   },
-  
-  // Breadcrumb Navigation
   breadcrumbs: {
     marginBottom: '16px',
     padding: '12px',
@@ -1927,7 +952,6 @@ const categoryStyles = {
     alignItems: 'center',
     flexWrap: 'wrap'
   },
-  
   breadcrumbButton: {
     background: 'none',
     border: 'none',
@@ -1937,17 +961,13 @@ const categoryStyles = {
     fontSize: '14px',
     padding: '2px 4px'
   },
-  
   separator: {
     color: '#6c757d',
     margin: '0 4px'
   },
-  
-  // Navigation Buttons
   navigationButtons: {
     marginBottom: '16px'
   },
-  
   backButton: {
     padding: '8px 16px',
     backgroundColor: '#6c757d',
@@ -1957,8 +977,6 @@ const categoryStyles = {
     cursor: 'pointer',
     fontSize: '14px'
   },
-  
-  // Level Information
   levelInfo: {
     fontSize: '12px',
     color: '#6c757d',
@@ -1967,14 +985,11 @@ const categoryStyles = {
     textTransform: 'uppercase',
     letterSpacing: '0.5px'
   },
-  
-  // Categories Grid
   categoriesGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
     gap: '12px'
   },
-  
   categoryCard: {
     background: 'white',
     border: '2px solid #e9ecef',
@@ -1988,81 +1003,56 @@ const categoryStyles = {
     flexDirection: 'column',
     justifyContent: 'space-between'
   },
-  
-  // Card Types
   folderCard: {
     borderColor: '#ffc107',
     backgroundColor: '#fff8e1'
   },
-  
   fileCard: {
     borderColor: '#28a745',
     backgroundColor: '#f8fff8'
   },
-  
   selectedCard: {
     borderColor: '#0d6efd',
     backgroundColor: '#e3f2fd',
     transform: 'scale(1.02)',
     boxShadow: '0 4px 8px rgba(13, 110, 253, 0.2)'
   },
-  
-  // Card Content
   categoryHeader: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
     marginBottom: '8px'
   },
-  
   categoryIcon: {
     fontSize: '20px'
   },
-  
   categoryName: {
     fontSize: '16px',
     fontWeight: '600',
     color: '#333',
     lineHeight: '1.3'
   },
-  
   categoryDescription: {
     fontSize: '12px',
     color: '#6c757d',
     marginBottom: '8px',
     lineHeight: '1.4'
   },
-  
   categoryFooter: {
     fontSize: '11px',
     color: '#6c757d',
     textAlign: 'right'
   },
-  
   childrenCount: {
     fontStyle: 'italic'
   },
-  
   selectHint: {
     color: '#28a745',
     fontWeight: '500'
   },
-  
-  // Empty State
   emptyState: {
     textAlign: 'center',
     padding: '40px 20px',
-    color: '#6c757d'
-  },
-  
-  // Debug Information
-  debugInfo: {
-    marginTop: '16px',
-    padding: '12px',
-    backgroundColor: '#f8f9fa',
-    border: '1px solid #dee2e6',
-    borderRadius: '4px',
-    fontSize: '11px',
     color: '#6c757d'
   }
 };
@@ -2077,4 +1067,847 @@ if (typeof document !== 'undefined') {
     }
   `;
   document.head.appendChild(styleSheet);
+};
+
+// ✅ Category Selector Component (unchanged from original)
+const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesChange }) => {
+  const [allCategories, setAllCategories] = useState([]);
+  const [currentPath, setCurrentPath] = useState([]);
+  const [currentCategories, setCurrentCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    if (allCategories.length > 0) {
+      updateCurrentCategories();
+    }
+  }, [currentPath, allCategories]);
+
+  useEffect(() => {
+    if (selectedCategoryId && allCategories.length > 0) {
+      const category = allCategories.find(cat => cat.id === parseInt(selectedCategoryId));
+      if (category) {
+        setSelectedCategory(category);
+        buildPathToCategory(category);
+      }
+    }
+  }, [selectedCategoryId, allCategories]);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const response = await apiClient.get('/api/categories/');
+      const categories = response.data.results || response.data || [];
+      setAllCategories(categories);
+      
+      const rootCategories = categories.filter(cat => !cat.parent);
+      setCurrentCategories(rootCategories);
+      
+    } catch (err) {
+      console.error('❌ Error fetching categories:', err);
+      setError(`Failed to load categories: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buildPathToCategory = (category) => {
+    const path = [];
+    let current = category;
+    
+    while (current && current.parent) {
+      const parent = allCategories.find(cat => cat.id === current.parent);
+      if (parent) {
+        path.unshift(parent);
+        current = parent;
+      } else {
+        break;
+      }
+    }
+    
+    setCurrentPath(path);
+  };
+
+  const updateCurrentCategories = () => {
+    let categories;
+    
+    if (currentPath.length === 0) {
+      categories = allCategories.filter(cat => !cat.parent);
+    } else {
+      const parentId = currentPath[currentPath.length - 1].id;
+      categories = allCategories.filter(cat => cat.parent === parentId);
+    }
+    
+    setCurrentCategories(categories);
+  };
+
+  const handleCategoryClick = (category) => {
+    const hasChildren = allCategories.some(cat => cat.parent === category.id);
+    
+    if (hasChildren) {
+      setCurrentPath([...currentPath, category]);
+      setSelectedCategory(null);
+      onCategorySelect('');
+    } else {
+      setSelectedCategory(category);
+      onCategorySelect(category.id);
+      
+      const newAttributes = {};
+      if (category.default_attributes && Array.isArray(category.default_attributes)) {
+        category.default_attributes.forEach(attr => {
+          if (typeof attr === 'object' && attr.name) {
+            newAttributes[attr.name] = '';
+          } else if (typeof attr === 'string') {
+            newAttributes[attr] = '';
+          }
+        });
+      }
+      onAttributesChange(newAttributes);
+    }
+  };
+
+  const handleBackClick = () => {
+    if (currentPath.length > 0) {
+      const newPath = currentPath.slice(0, -1);
+      setCurrentPath(newPath);
+      
+      if (selectedCategory) {
+        setSelectedCategory(null);
+        onCategorySelect('');
+        onAttributesChange({});
+      }
+    }
+  };
+
+  const handleBreadcrumbClick = (index) => {
+    const newPath = currentPath.slice(0, index + 1);
+    setCurrentPath(newPath);
+    
+    if (selectedCategory) {
+      setSelectedCategory(null);
+      onCategorySelect('');
+      onAttributesChange({});
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={categoryStyles.container}>
+        <h3>🏷️ Select Product Category</h3>
+        <div style={categoryStyles.loadingContainer}>
+          <div style={categoryStyles.spinner}></div>
+          <p>Loading categories...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={categoryStyles.container}>
+        <h3>🏷️ Select Product Category</h3>
+        <div style={categoryStyles.errorContainer}>
+          <p>❌ {error}</p>
+          <button onClick={fetchCategories} style={categoryStyles.retryButton}>
+            🔄 Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={categoryStyles.container}>
+      <h3>🏷️ Select Product Category</h3>
+      
+      {selectedCategory && (
+        <div style={categoryStyles.selectedCategory}>
+          ✅ Selected: {selectedCategory.name}
+          <button 
+            onClick={() => {
+              setSelectedCategory(null);
+              onCategorySelect('');
+              onAttributesChange({});
+            }}
+            style={categoryStyles.clearButton}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {currentPath.length > 0 && (
+        <div style={categoryStyles.breadcrumbs}>
+          <button 
+            onClick={() => {
+              setCurrentPath([]);
+              setSelectedCategory(null);
+              onCategorySelect('');
+              onAttributesChange({});
+            }}
+            style={categoryStyles.breadcrumbButton}
+          >
+            🏠 Home
+          </button>
+          {currentPath.map((pathCategory, index) => (
+            <span key={pathCategory.id}>
+              <span style={categoryStyles.separator}> → </span>
+              <button 
+                onClick={() => handleBreadcrumbClick(index)}
+                style={categoryStyles.breadcrumbButton}
+              >
+                {pathCategory.name}
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      
+      {currentPath.length > 0 && (
+        <div style={categoryStyles.navigationButtons}>
+          <button 
+            onClick={handleBackClick}
+            style={categoryStyles.backButton}
+          >
+            ⬅️ Back
+          </button>
+        </div>
+      )}
+      
+      <div style={categoryStyles.levelInfo}>
+        {currentPath.length === 0 ? (
+          <span>📂 Browse Categories ({currentCategories.length})</span>
+        ) : (
+          <span>📂 {currentPath[currentPath.length - 1].name} → Subcategories ({currentCategories.length})</span>
+        )}
+      </div>
+      
+      {currentCategories.length > 0 ? (
+        <div style={categoryStyles.categoriesGrid}>
+          {currentCategories.map(category => {
+            const hasChildren = allCategories.some(cat => cat.parent === category.id);
+            const isSelected = selectedCategory && selectedCategory.id === category.id;
+            
+            return (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => handleCategoryClick(category)}
+                style={{
+                  ...categoryStyles.categoryCard,
+                  ...(isSelected ? categoryStyles.selectedCard : {}),
+                  ...(hasChildren ? categoryStyles.folderCard : categoryStyles.fileCard)
+                }}
+              >
+                <div style={categoryStyles.categoryHeader}>
+                  <span style={categoryStyles.categoryIcon}>
+                    {hasChildren ? '📁' : '📄'}
+                  </span>
+                  <span style={categoryStyles.categoryName}>{category.name}</span>
+                </div>
+                {category.description && (
+                  <div style={categoryStyles.categoryDescription}>
+                    {category.description}
+                  </div>
+                )}
+                <div style={categoryStyles.categoryFooter}>
+                  {hasChildren ? (
+                    <span style={categoryStyles.childrenCount}>
+                      {allCategories.filter(cat => cat.parent === category.id).length} subcategories
+                    </span>
+                  ) : (
+                    <span style={categoryStyles.selectHint}>Click to select</span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={categoryStyles.emptyState}>
+          <p>📭 No categories available at this level</p>
+          {currentPath.length > 0 && (
+            <button onClick={handleBackClick} style={categoryStyles.backButton}>
+              ⬅️ Go Back
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ✅ Smart Stock Input Component
+const SmartStockInput = ({ formData, setFormData }) => {
+  const [stockError, setStockError] = useState('');
+  
+  const handleTotalStockChange = (e) => {
+    let value = e.target.value.replace('-', '');
+    const validation = validatePositiveInteger(value, 'Total Stock');
+    if (validation.isValid) {
+      const newTotal = parseInt(value) || 0;
+      setFormData(prev => ({
+        ...prev,
+        total_stock: newTotal,
+        online_stock: prev.online_stock > newTotal ? newTotal : prev.online_stock
+      }));
+      setStockError('');
+    } else {
+      setStockError(validation.error);
+    }
+  };
+
+  const handleOnlineStockChange = (e) => {
+    let value = e.target.value.replace('-', '');
+    const validation = validatePositiveInteger(value, 'Online Stock');
+    if (validation.isValid) {
+      const newOnline = parseInt(value) || 0;
+      if (newOnline > formData.total_stock) {
+        setStockError('Online stock cannot be more than total stock');
+      } else {
+        setFormData(prev => ({ ...prev, online_stock: newOnline }));
+        setStockError('');
+      }
+    } else {
+      setStockError(validation.error);
+    }
+  };
+
+  return (
+    <div style={styles.stockContainer}>
+      <h3>📦 Stock Management</h3>
+      {stockError && <div style={styles.stockError}>⚠️ {stockError}</div>}
+      
+      <div style={styles.formRow}>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>📦 Total Stock *</label>
+          <input 
+            type="number" 
+            value={formData.total_stock} 
+            onChange={handleTotalStockChange}
+            required 
+            style={styles.input}
+            min="0"
+            step="1"
+          />
+        </div>
+        
+        <div style={styles.formGroup}>
+          <label style={styles.label}>🌐 Online Stock *</label>
+          <input 
+            type="number" 
+            value={formData.online_stock} 
+            onChange={handleOnlineStockChange}
+            required 
+            style={styles.input}
+            min="0"
+            max={formData.total_stock}
+            step="1"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ✅ MAIN PRODUCT FORM - FULLY FIXED
+export default function ProductForm({ product, onClose, onSuccess }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    model_name: '',
+    description: '',
+    price: '',
+    mrp: '',
+    total_stock: 0,
+    online_stock: 0,
+    sale_type: 'BOTH',
+  });
+
+  const [mainImageUrl, setMainImageUrl] = useState('');
+  const [subImageUrls, setSubImageUrls] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [dynamicAttributes, setDynamicAttributes] = useState({});
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [priceError, setPriceError] = useState('');
+
+  // ✅ FIXED: Load product data with proper sub-image structure
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        name: product.name || '',
+        model_name: product.model_name || '',
+        description: product.description || '',
+        price: product.price || '',
+        mrp: product.mrp || '',
+        total_stock: product.total_stock || 0,
+        online_stock: product.online_stock || 0,
+        sale_type: product.sale_type || 'BOTH',
+      });
+      setSelectedCategoryId(product.category);
+      setDynamicAttributes(product.attributes || {});
+      setMainImageUrl(product.main_image_url || product.cloudinary_image_url || '');
+      
+      // ✅ FIXED: Properly structure sub-images with database IDs
+      setSubImageUrls(product.sub_images?.map((img) => ({
+        id: img.id, // ✅ CRITICAL: Include database ID for deletion
+        url: img.cloudinary_image_url || img.image_url,
+        public_id: img.cloudinary_public_id || img.public_id,
+        isFromDatabase: true // ✅ CRITICAL: Mark as from database
+      })) || []);
+    }
+  }, [product]);
+
+  // ✅ FIXED: Handle deletion of sub-images from database with correct URL
+  const handleDeleteOldSubImage = async (subImageId) => {
+    if (!subImageId) return;
+    
+    console.log('🗑️ Deleting sub-image ID:', subImageId);
+    
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setError('Authentication required. Please log in again.');
+      return;
+    }
+
+    try {
+      // ✅ FIXED: Add /api/ prefix to match Django URL configuration
+      const response = await axios.delete(
+        `${API_BASE_URL}/api/products/sub-images/${subImageId}/delete/`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      console.log('✅ Sub-image deleted from database:', response.data);
+      
+      // Remove from local state
+      setSubImageUrls(prev => prev.filter(img => img.id !== subImageId));
+      setError('');
+
+    } catch (error) {
+      console.error('❌ Error deleting sub-image:', error);
+      const errorMessage = error.response?.data?.error || error.response?.data?.detail || 'Failed to delete image';
+      setError(errorMessage);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === 'price' || name === 'mrp') {
+      let cleanValue = value.replace('-', '');
+      const validation = validatePositiveNumber(cleanValue, name === 'price' ? 'Selling Price' : 'MRP');
+      if (validation.isValid) {
+        setFormData(prev => ({ ...prev, [name]: cleanValue }));
+        setPriceError('');
+        
+        if (name === 'price' && formData.mrp && parseFloat(cleanValue) > parseFloat(formData.mrp)) {
+          setPriceError('Selling price cannot be higher than MRP');
+        } else if (name === 'mrp' && formData.price && parseFloat(formData.price) > parseFloat(cleanValue)) {
+          setPriceError('MRP cannot be lower than selling price');
+        }
+      } else if (cleanValue !== '') {
+        setPriceError(validation.error);
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleMainImageUpload = (uploadedImages) => {
+    if (uploadedImages.length > 0) {
+      setMainImageUrl(uploadedImages[0].url);
+    } else {
+      setMainImageUrl('');
+    }
+    setUploadingImages(false);
+  };
+
+  // ✅ FIXED: Handle sub-image uploads properly
+  const handleSubImagesUpload = (uploadedImages) => {
+    console.log('📸 Sub-images uploaded:', uploadedImages);
+    
+    setSubImageUrls(prevUrls => {
+      // Combine existing database images + new Cloudinary uploads
+      const allImages = [...prevUrls, ...uploadedImages.map(img => ({
+        id: Date.now() + Math.random(), // Temporary ID for new uploads
+        url: img.url,
+        public_id: img.public_id,
+        isFromDatabase: false
+      }))];
+      
+      // Remove duplicates based on URL
+      const uniqueImages = allImages.filter((img, index, self) =>
+        index === self.findIndex((t) => t.url === img.url)
+      );
+      
+      // Limit to maximum 4 sub-images
+      const limitedImages = uniqueImages.slice(0, 4);
+      
+      console.log(`📊 Total sub-images: ${limitedImages.length}/4`);
+      return limitedImages;
+    });
+    
+    setUploadingImages(false);
+  };
+
+  const handleAttributeChange = (attributeName, value) => {
+    setDynamicAttributes(prev => ({ ...prev, [attributeName]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!mainImageUrl && !product) {
+      setError('Please upload a main product image');
+      return;
+    }
+    
+    if (uploadingImages) {
+      setError('Please wait for image uploads to complete');
+      return;
+    }
+
+    if (!selectedCategoryId) {
+      setError('Please select a product category');
+      return;
+    }
+
+    const priceValidation = validatePositiveNumber(formData.price, 'Selling Price');
+    if (!priceValidation.isValid) {
+      setError(priceValidation.error);
+      return;
+    }
+
+    if (formData.mrp) {
+      const mrpValidation = validatePositiveNumber(formData.mrp, 'MRP');
+      if (!mrpValidation.isValid) {
+        setError(mrpValidation.error);
+        return;
+      }
+
+      if (parseFloat(formData.price) > parseFloat(formData.mrp)) {
+        setError('Selling price cannot be higher than MRP');
+        return;
+      }
+    }
+
+    const totalStockValidation = validatePositiveInteger(formData.total_stock, 'Total Stock');
+    if (!totalStockValidation.isValid) {
+      setError(totalStockValidation.error);
+      return;
+    }
+
+    const onlineStockValidation = validatePositiveInteger(formData.online_stock, 'Online Stock');
+    if (!onlineStockValidation.isValid) {
+      setError(onlineStockValidation.error);
+      return;
+    }
+
+    if (formData.online_stock > formData.total_stock) {
+      setError('Online stock cannot be more than total stock');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError('');
+    
+    const submissionData = {
+      ...formData,
+      category: selectedCategoryId ? parseInt(selectedCategoryId) : null,
+      attributes: dynamicAttributes,
+      main_image_url: mainImageUrl,
+      sub_image_urls: subImageUrls.map(img => ({
+        url: img.url,
+        public_id: img.public_id
+      }))
+    };
+
+    console.log('🚀 Submitting product data:', submissionData);
+
+    const url = product 
+      ? `${PRODUCTS_API_URL}${product.id}/` 
+      : PRODUCTS_API_URL;
+    const method = product ? 'PATCH' : 'POST';
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await axios({
+        method,
+        url,
+        data: submissionData,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      });
+      
+      console.log('✅ Product saved successfully:', response.data);
+      onSuccess();
+    } catch (err) {
+      let errorMessage = 'Something went wrong. Please check your details and try again.';
+      
+      if (err.response?.status === 401) {
+        errorMessage = 'Your session has expired. Please log in again.';
+        setTimeout(() => {
+          localStorage.removeItem('accessToken');
+          window.location.href = '/login/seller';
+        }, 2000);
+      } else if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        } else if (err.response.data.detail) {
+          errorMessage = err.response.data.detail;
+        } else if (err.response.data.category) {
+          errorMessage = 'Please select a valid category';
+        } else if (err.response.data.main_image_url) {
+          errorMessage = 'Main image is required';
+        }
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Request is taking too long. Please check your internet connection and try again.';
+      }
+      
+      console.error('❌ Product save error:', err);
+      setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={styles.modalOverlay}>
+      <div style={styles.modalContent}>
+        <div style={styles.modalHeader}>
+          <h2 style={styles.modalTitle}>
+            {product ? '✏️ Edit Product' : '🆕 Add New Product'}
+          </h2>
+          <div style={styles.connectionStatus}>
+            ☁️ Images powered by Cloudinary | 🌐 API: {API_BASE_URL.replace('https://', '').replace('http://', '')}
+          </div>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+          {/* Basic Product Information */}
+          <div style={styles.sectionContainer}>
+            <h3 style={styles.sectionTitle}>📝 Basic Product Information</h3>
+            
+            <div style={styles.formGroup}>
+              <label style={styles.label}>🏷️ Product Name *</label>
+              <input 
+                type="text" 
+                name="name" 
+                value={formData.name} 
+                onChange={handleChange} 
+                required 
+                style={styles.input}
+                placeholder="e.g., Premium Cotton T-Shirt, iPhone 13, Running Shoes..."
+              />
+              <small style={styles.helpText}>Give your product a clear, descriptive name</small>
+            </div>
+            
+            <div style={styles.formGroup}>
+              <label style={styles.label}>🔧 Model/Variation (Optional)</label>
+              <input 
+                type="text" 
+                name="model_name" 
+                value={formData.model_name} 
+                onChange={handleChange} 
+                style={styles.input} 
+                placeholder="e.g., Red XL, 128GB Black, Size 42..."
+              />
+              <small style={styles.helpText}>Specify color, size, model year, or any variations</small>
+            </div>
+            
+            <div style={styles.formGroup}>
+              <label style={styles.label}>📄 Product Description (Optional)</label>
+              <textarea 
+                name="description" 
+                value={formData.description} 
+                onChange={handleChange} 
+                style={styles.textArea}
+                placeholder="Describe your product: features, benefits, materials..."
+                rows="4"
+              />
+              <small style={styles.helpText}>Help customers understand why they should buy your product</small>
+            </div>
+          </div>
+
+          {/* Pricing */}
+          <div style={styles.sectionContainer}>
+            <h3 style={styles.sectionTitle}>💰 Pricing Information</h3>
+            
+            {priceError && (
+              <div style={styles.priceError}>
+                ⚠️ {priceError}
+              </div>
+            )}
+            
+            <div style={styles.formRow}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>💵 Your Selling Price (₹) *</label>
+                <input 
+                  type="number" 
+                  name="price" 
+                  value={formData.price} 
+                  onChange={handleChange} 
+                  required 
+                  style={styles.input} 
+                  step="0.01"
+                  min="0"
+                  placeholder="299.99"
+                  onKeyPress={(e) => {
+                    if (e.key === '-') e.preventDefault();
+                  }}
+                />
+                <small style={styles.helpText}>The price you want to charge customers</small>
+              </div>
+              
+              <div style={styles.formGroup}>
+                <label style={styles.label}>🏷️ MRP - Maximum Retail Price (₹)</label>
+                <input 
+                  type="number" 
+                  name="mrp" 
+                  value={formData.mrp} 
+                  onChange={handleChange} 
+                  style={styles.input} 
+                  step="0.01"
+                  min="0"
+                  placeholder="399.99"
+                  onKeyPress={(e) => {
+                    if (e.key === '-') e.preventDefault();
+                  }}
+                />
+                <small style={styles.helpText}>Original price (must be higher than or equal to selling price)</small>
+              </div>
+            </div>
+
+            {formData.price && formData.mrp && parseFloat(formData.mrp) > parseFloat(formData.price) && (
+              <div style={styles.discountDisplay}>
+                🎉 Great! You're offering a discount of ₹{(parseFloat(formData.mrp) - parseFloat(formData.price)).toFixed(2)} 
+                ({Math.round(((parseFloat(formData.mrp) - parseFloat(formData.price)) / parseFloat(formData.mrp)) * 100)}% off)
+              </div>
+            )}
+          </div>
+
+          {/* Stock Management */}
+          <SmartStockInput formData={formData} setFormData={setFormData} />
+          
+          {/* Sales Channels */}
+          <div style={styles.sectionContainer}>
+            <h3 style={styles.sectionTitle}>🛍️ Where Do You Want to Sell?</h3>
+            <select 
+              name="sale_type" 
+              value={formData.sale_type} 
+              onChange={handleChange} 
+              style={styles.selectInput}
+            >
+              <option value="BOTH">🌐 Both Online & In-Store (Recommended)</option>
+              <option value="OFFLINE">🏪 Only In My Physical Store</option>
+              <option value="ONLINE">🌐 Only Online Sales</option>
+            </select>
+            <small style={styles.helpText}>Choose where customers can buy this product</small>
+          </div>
+
+          <hr style={styles.hr} />
+
+          {/* Category Section */}
+          <CategorySelector
+            selectedCategoryId={selectedCategoryId}
+            onCategorySelect={setSelectedCategoryId}
+            onAttributesChange={setDynamicAttributes}
+          />
+          
+          {/* Dynamic Attributes */}
+          {Object.keys(dynamicAttributes).length > 0 && (
+            <div style={styles.attributesSection}>
+              <h3 style={styles.sectionTitle}>🔧 Category-Specific Details</h3>
+              <div style={styles.attributesGrid}>
+                {Object.keys(dynamicAttributes).map(name => (
+                  <div key={name} style={styles.formGroup}>
+                    <label style={styles.label}>📝 {name}</label>
+                    <input 
+                      type="text" 
+                      value={dynamicAttributes[name] || ''} 
+                      onChange={e => handleAttributeChange(name, e.target.value)} 
+                      style={styles.input}
+                      placeholder={`Enter ${name.toLowerCase()}...`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <hr style={styles.hr} />
+
+          {/* ✅ FIXED: Image Uploads with proper delete handlers */}
+          <div style={styles.sectionContainer}>
+            <h3 style={styles.sectionTitle}>☁️ Product Images (Cloudinary)</h3>
+            
+            <CloudinaryImageUpload
+              label="📷 Main Product Image"
+              required={!product}
+              type="main"
+              onUploadComplete={handleMainImageUpload}
+              onUploadStart={() => setUploadingImages(true)}
+              currentImages={mainImageUrl ? [mainImageUrl] : []}
+              helpText="📸 This is the first image customers will see. Make it count!"
+            />
+
+            <CloudinaryImageUpload
+              label="🖼️ Additional Images"
+              multiple={true}
+              maxFiles={4}
+              type="sub"
+              onUploadComplete={handleSubImagesUpload}
+              onUploadStart={() => setUploadingImages(true)}
+              onRemoveImage={handleDeleteOldSubImage} // ✅ FIXED: Pass delete handler
+              currentImages={subImageUrls}
+              helpText="📷 Add more angles, close-ups, or usage photos (max 4 images)"
+            />
+          </div>
+          
+          {error && (
+            <div style={styles.errorAlert}>
+              <strong>⚠️ Oops! Something went wrong:</strong>
+              <br />
+              {error}
+            </div>
+          )}
+          
+          <div style={styles.buttonContainer}>
+            <button 
+              type="button" 
+              onClick={onClose} 
+              disabled={isSubmitting || uploadingImages} 
+              style={styles.buttonSecondary}
+            >
+              ❌ Cancel
+            </button>
+            <button 
+              type="submit" 
+              disabled={isSubmitting || uploadingImages || !selectedCategoryId || priceError} 
+              style={styles.buttonPrimary}
+            >
+              {isSubmitting ? (
+                <>⏳ {product ? 'Updating...' : 'Creating...'}</>
+              ) : uploadingImages ? (
+                <>☁️ Uploading Images...</>
+              ) : (
+                <>{product ? '✅ Update Product' : '🚀 Create Product'}</>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
