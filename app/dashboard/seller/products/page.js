@@ -3,12 +3,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import ProductForm from '../../../../components/ProductForm';
-import { 
-  Package, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  AlertCircle, 
+import '../../../../styles/DashboardProduct.css'
+import {
+  Package,
+  Plus,
+  Edit,
+  Trash2,
+  AlertCircle,
   RefreshCw,
   Search,
   Filter,
@@ -22,7 +23,7 @@ import {
   Upload,
   BarChart3,
   ShoppingCart,
-  DollarSign,
+  IndianRupee,
   Layers
 } from 'lucide-react';
 
@@ -46,7 +47,7 @@ export default function ProductsPage() {
 
   const fetchProducts = useCallback(async () => {
     const token = localStorage.getItem('accessToken');
-    
+
     if (!token) {
       setError('No access token found. Please login again.');
       setIsLoading(false);
@@ -58,17 +59,17 @@ export default function ProductsPage() {
 
     try {
       console.log('🔄 Fetching products from:', API_URL);
-      
+
       // ✅ FIXED: Use Bearer instead of Token
-      const response = await axios.get(API_URL, { 
-        headers: { 
+      const response = await axios.get(API_URL, {
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        } 
+        }
       });
 
       console.log('✅ API Response:', response.data);
-      
+
       // Handle different response structures
       let productsData = [];
       if (Array.isArray(response.data)) {
@@ -88,7 +89,7 @@ export default function ProductsPage() {
 
     } catch (error) {
       console.error('❌ Failed to fetch products:', error);
-      
+
       if (error.response) {
         setError(`Server error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`);
       } else if (error.request) {
@@ -118,22 +119,22 @@ export default function ProductsPage() {
     // Apply stock filter
     switch (filterType) {
       case 'low_stock':
-        filtered = filtered.filter(product => 
+        filtered = filtered.filter(product =>
           product.online_stock > 0 && product.online_stock <= 5
         );
         break;
       case 'out_of_stock':
-        filtered = filtered.filter(product => 
+        filtered = filtered.filter(product =>
           product.online_stock <= 0
         );
         break;
       case 'in_stock':
-        filtered = filtered.filter(product => 
+        filtered = filtered.filter(product =>
           product.online_stock > 5
         );
         break;
       case 'high_value':
-        filtered = filtered.filter(product => 
+        filtered = filtered.filter(product =>
           parseFloat(product.price || 0) > 1000
         );
         break;
@@ -145,7 +146,7 @@ export default function ProductsPage() {
     // Apply sorting
     filtered.sort((a, b) => {
       let aValue, bValue;
-      
+
       switch (sortBy) {
         case 'price':
           aValue = parseFloat(a.price || 0);
@@ -177,27 +178,44 @@ export default function ProductsPage() {
     fetchProducts();
   }, [fetchProducts]);
 
+  useEffect(() => {
+    // Function to handle auto-switching view
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setViewMode("grid"); // ✅ Auto switch to grid
+      } else {
+        setViewMode("table"); // ✅ Back to table on larger screens
+      }
+    };
+
+    // Run once on mount and whenever the window resizes
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const handleDelete = async (productId) => {
     if (!window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
 
     const token = localStorage.getItem('accessToken');
     setIsDeleting(productId);
-    
+
     try {
       await axios.delete(`${API_URL}${productId}/`, {
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
       });
-      
+
       console.log(`✅ Product ${productId} deleted successfully`);
       fetchProducts(); // Refresh the list after deleting
     } catch (error) {
       console.error('❌ Failed to delete product:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error ||
-                          error.message;
+      const errorMessage = error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message;
       alert(`Error deleting product: ${errorMessage}`);
     } finally {
       setIsDeleting(null);
@@ -213,7 +231,7 @@ export default function ProductsPage() {
     setIsModalOpen(false);
     setEditingProduct(null);
   };
-  
+
   const handleFormSubmit = () => {
     handleCloseModal();
     fetchProducts();
@@ -228,7 +246,7 @@ export default function ProductsPage() {
       setSortOrder('asc');
     }
   };
-  
+
   // Helper to display the sale type nicely
   const formatSaleType = (type) => {
     const types = {
@@ -301,18 +319,19 @@ export default function ProductsPage() {
   const filterCounts = getFilterCounts();
   const analytics = getAnalytics();
 
+
   // ✅ Enhanced Grid View Component
   const GridView = () => (
-    <div style={styles.gridContainer}>
+    <div className='dashboardproductgridcontainer' style={styles.gridContainer}>
       {filteredProducts.map(product => {
         const stockStatus = getStockStatus(product.online_stock);
-        
+
         return (
           <div key={product.id} style={styles.gridCard}>
             <div style={styles.cardImageContainer}>
-              <img 
-                src={product.image_url || product.main_image_url || 'https://via.placeholder.com/200x200/e9ecef/6c757d?text=No+Image'} 
-                alt={product.name} 
+              <img
+                src={product.image_url || product.main_image_url || 'https://via.placeholder.com/200x200/e9ecef/6c757d?text=No+Image'}
+                alt={product.name}
                 style={styles.cardImage}
                 onError={(e) => {
                   e.target.src = 'https://via.placeholder.com/200x200/e9ecef/6c757d?text=No+Image';
@@ -328,37 +347,37 @@ export default function ProductsPage() {
                 </span>
               </div>
             </div>
-            
+
             <div style={styles.cardContent}>
               <h3 style={styles.cardTitle}>{product.name || 'Unnamed Product'}</h3>
               {product.model_name && (
                 <p style={styles.cardModel}>Model: {product.model_name}</p>
               )}
-              
+
               <div style={styles.cardPriceContainer}>
                 <span style={styles.cardPrice}>₹{parseFloat(product.price || 0).toLocaleString('en-IN')}</span>
                 {product.mrp && parseFloat(product.mrp) > parseFloat(product.price) && (
                   <span style={styles.cardMrp}>₹{parseFloat(product.mrp).toLocaleString('en-IN')}</span>
                 )}
               </div>
-              
+
               <div style={styles.cardStock}>
                 <span>Stock: {product.online_stock || 0}</span>
                 <span style={styles.cardSaleType}>{formatSaleType(product.sale_type)}</span>
               </div>
             </div>
-            
+
             <div style={styles.cardActions}>
-              <button 
-                onClick={() => handleOpenModal(product)} 
+              <button
+                onClick={() => handleOpenModal(product)}
                 style={styles.cardButton}
                 title="Edit product"
               >
                 <Edit size={16} />
               </button>
-              <button 
-                onClick={() => handleDelete(product.id)} 
-                style={{...styles.cardButton, ...styles.cardButtonDanger}}
+              <button
+                onClick={() => handleDelete(product.id)}
+                style={{ ...styles.cardButton, ...styles.cardButtonDanger }}
                 disabled={isDeleting === product.id}
                 title="Delete product"
               >
@@ -376,18 +395,18 @@ export default function ProductsPage() {
   );
 
   return (
-    <div style={styles.container}>
+    <div className='dashboardproductpagecontainer' style={styles.container}>
       {/* ✅ Enhanced Header with Analytics */}
-      <div style={styles.header}>
+      <div className='dashboardproductheader' style={styles.header}>
         <div>
-          <h1 style={styles.h1}>
-            <Package size={28} />
+          <h1 className='dashboardproducttitle' style={styles.h1}>
+            <Package size={28} className='dashboardproductpackageicon' />
             My Products ({filteredProducts.length})
           </h1>
-          <p style={styles.subtitle}>Manage your product inventory and listings</p>
+          <p className='dashboardproductsubtitle' style={styles.subtitle}>Manage your product inventory and listings</p>
         </div>
         <div style={styles.headerActions}>
-          <button onClick={() => handleOpenModal()} style={styles.buttonPrimary}>
+          <button className='dashboardproductaddprodbtn' onClick={() => handleOpenModal()} style={styles.buttonPrimary}>
             <Plus size={18} />
             Add Product
           </button>
@@ -395,54 +414,55 @@ export default function ProductsPage() {
       </div>
 
       {/* ✅ Analytics Cards */}
-      <div style={styles.analyticsContainer}>
+      <div className='dashboardproductanalyticscontainer' style={styles.analyticsContainer}>
         <div style={styles.analyticsCard}>
-          <div style={styles.analyticsIcon}>
-            <Package size={20} />
+          <div className='dashboardproductanalyticsiconcontainer' style={styles.analyticsIcon}>
+            <Package size={24} className='dashboardproductanalyticsicon' />
           </div>
           <div>
-            <p style={styles.analyticsLabel}>Total Products</p>
-            <p style={styles.analyticsValue}>{analytics.totalProducts}</p>
+            <p className='dashboardproductanalyticslabel' style={styles.analyticsLabel}>Total Products</p>
+            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>{analytics.totalProducts}</p>
           </div>
         </div>
-        
+
         <div style={styles.analyticsCard}>
-          <div style={styles.analyticsIcon}>
-            <DollarSign size={20} />
+          <div className='dashboardproductanalyticsiconcontainer' style={styles.analyticsIcon}>
+            <IndianRupee size={24} className='dashboardproductanalyticsicon' />
           </div>
           <div>
-            <p style={styles.analyticsLabel}>Inventory Value</p>
-            <p style={styles.analyticsValue}>₹{analytics.totalValue.toLocaleString('en-IN')}</p>
+            <p className='dashboardproductanalyticslabel' style={styles.analyticsLabel}>Inventory Value</p>
+            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>₹{analytics.totalValue.toLocaleString('en-IN')}</p>
           </div>
         </div>
-        
-        <div style={styles.analyticsCard}>
-          <div style={styles.analyticsIcon}>
-            <BarChart3 size={20} />
+
+        <div className='dashboardproductanalyticscard' style={styles.analyticsCard}>
+          <div className='dashboardproductanalyticsiconcontainer' style={styles.analyticsIcon}>
+            <BarChart3 size={24} className='dashboardproductanalyticsicon' />
           </div>
           <div>
-            <p style={styles.analyticsLabel}>Average Price</p>
-            <p style={styles.analyticsValue}>₹{Math.round(analytics.averagePrice).toLocaleString('en-IN')}</p>
+            <p className='dashboardproductanalyticslabel' style={styles.analyticsLabel}>Average Price</p>
+            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>₹{Math.round(analytics.averagePrice).toLocaleString('en-IN')}</p>
           </div>
         </div>
-        
+
         <div style={styles.analyticsCard}>
-          <div style={styles.analyticsIcon}>
-            <AlertCircle size={20} />
+          <div className='dashboardproductanalyticsiconcontainer' style={styles.analyticsIcon}>
+            <AlertCircle size={24} className='dashboardproductanalyticsicon' />
           </div>
           <div>
-            <p style={styles.analyticsLabel}>Low Stock Items</p>
-            <p style={styles.analyticsValue}>{analytics.lowStockCount}</p>
+            <p className='dashboardproductanalyticslabel' style={styles.analyticsLabel}>Low Stock Items</p>
+            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>{analytics.lowStockCount}</p>
           </div>
         </div>
       </div>
 
       {/* ✅ Enhanced Search and Filters */}
       <div style={styles.filtersContainer}>
-        <div style={styles.searchAndSort}>
-          <div style={styles.searchContainer}>
+        <div className="dashboard-search-sort" style={styles.searchAndSort}>
+          <div className='dashboardproductsearchcontainer' style={styles.searchContainer}>
             <Search size={18} style={styles.searchIcon} />
             <input
+              className='dashboardproductsearchinputtext'
               type="text"
               placeholder="Search products by name, model, SKU, or description..."
               value={searchTerm}
@@ -450,249 +470,262 @@ export default function ProductsPage() {
               style={styles.searchInput}
             />
           </div>
-          
-          <div style={styles.sortContainer}>
-            <label style={styles.sortLabel}>Sort by:</label>
-            <select 
-              value={`${sortBy}-${sortOrder}`} 
-              onChange={(e) => {
-                const [field, order] = e.target.value.split('-');
-                setSortBy(field);
-                setSortOrder(order);
-              }}
-              style={styles.sortSelect}
-            >
-              <option value="name-asc">Name A-Z</option>
-              <option value="name-desc">Name Z-A</option>
-              <option value="price-asc">Price Low to High</option>
-              <option value="price-desc">Price High to Low</option>
-              <option value="stock-asc">Stock Low to High</option>
-              <option value="stock-desc">Stock High to Low</option>
-              <option value="created_at-desc">Newest First</option>
-              <option value="created_at-asc">Oldest First</option>
-            </select>
+          <div className="dashboard-sort-view-row">
+            <div style={styles.sortContainer}>
+              <select
+                className='dashboardproductsearchcontainer'
+                value={`${sortBy}-${sortOrder}`}
+                onChange={(e) => {
+                  const [field, order] = e.target.value.split('-');
+                  setSortBy(field);
+                  setSortOrder(order);
+                }}
+                style={styles.sortSelect}
+              >
+                <option value="name-asc">Name A-Z</option>
+                <option value="name-desc">Name Z-A</option>
+                <option value="price-asc">Price Low to High</option>
+                <option value="price-desc">Price High to Low</option>
+                <option value="stock-asc">Stock Low to High</option>
+                <option value="stock-desc">Stock High to Low</option>
+                <option value="created_at-desc">Newest First</option>
+                <option value="created_at-asc">Oldest First</option>
+              </select>
+            </div>
+
+            <div style={styles.viewToggle}>
+
+              <button
+                className='dashboardproducttogglebtn'
+                onClick={() => setViewMode('table')}
+                disabled={window.innerWidth < 768} // disable on small screens
+                style={{
+                  ...styles.viewButton,
+                  opacity: window.innerWidth < 768 ? 0.4 : 1, // fade when disabled
+                  cursor: window.innerWidth < 768 ? 'not-allowed' : 'pointer',
+                  ...(viewMode === 'table' ? styles.activeViewButton : {}),
+                }}
+              >
+                <List size={16} />
+              </button>
+
+              <button
+                onClick={() => setViewMode('grid')}
+                style={{
+                  ...styles.viewButton,
+                  ...(viewMode === 'grid' ? styles.activeViewButton : {})
+                }}
+              >
+                <Grid size={16} />
+              </button>
+            </div>
           </div>
-          
-          <div style={styles.viewToggle}>
-            <button
-              onClick={() => setViewMode('table')}
-              style={{
-                ...styles.viewButton,
-                ...(viewMode === 'table' ? styles.activeViewButton : {})
-              }}
-            >
-              <List size={16} />
-            </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              style={{
-                ...styles.viewButton,
-                ...(viewMode === 'grid' ? styles.activeViewButton : {})
-              }}
-            >
-              <Grid size={16} />
-            </button>
-          </div>
-        </div>
-        
-        <div style={styles.filterTabs}>
-          <button
-            onClick={() => setFilterType('all')}
-            style={{
-              ...styles.filterTab,
-              ...(filterType === 'all' ? styles.activeFilterTab : {})
-            }}
-          >
-            All ({filterCounts.all})
-          </button>
-          <button
-            onClick={() => setFilterType('in_stock')}
-            style={{
-              ...styles.filterTab,
-              ...(filterType === 'in_stock' ? styles.activeFilterTab : {})
-            }}
-          >
-            In Stock ({filterCounts.in_stock})
-          </button>
-          <button
-            onClick={() => setFilterType('low_stock')}
-            style={{
-              ...styles.filterTab,
-              ...(filterType === 'low_stock' ? styles.activeFilterTab : {})
-            }}
-          >
-            Low Stock ({filterCounts.low_stock})
-          </button>
-          <button
-            onClick={() => setFilterType('out_of_stock')}
-            style={{
-              ...styles.filterTab,
-              ...(filterType === 'out_of_stock' ? styles.activeFilterTab : {})
-            }}
-          >
-            Out of Stock ({filterCounts.out_of_stock})
-          </button>
-          <button
-            onClick={() => setFilterType('high_value')}
-            style={{
-              ...styles.filterTab,
-              ...(filterType === 'high_value' ? styles.activeFilterTab : {})
-            }}
-          >
-            High Value ({filterCounts.high_value})
-          </button>
         </div>
       </div>
 
-      {isModalOpen && (
-        <ProductForm
-          product={editingProduct}
-          onClose={handleCloseModal}
-          onSuccess={handleFormSubmit}
-        />
-      )}
+      <div className="filter-tabs" style={styles.filterTabs}>
+        <button
+          onClick={() => setFilterType('all')}
+          style={{
+            ...styles.filterTab,
+            ...(filterType === 'all' ? styles.activeFilterTab : {})
+          }}
+        >
+          All ({filterCounts.all})
+        </button>
+        <button
+          onClick={() => setFilterType('in_stock')}
+          style={{
+            ...styles.filterTab,
+            ...(filterType === 'in_stock' ? styles.activeFilterTab : {})
+          }}
+        >
+          In Stock ({filterCounts.in_stock})
+        </button>
+        <button
+          onClick={() => setFilterType('low_stock')}
+          style={{
+            ...styles.filterTab,
+            ...(filterType === 'low_stock' ? styles.activeFilterTab : {})
+          }}
+        >
+          Low Stock ({filterCounts.low_stock})
+        </button>
+        <button
+          onClick={() => setFilterType('out_of_stock')}
+          style={{
+            ...styles.filterTab,
+            ...(filterType === 'out_of_stock' ? styles.activeFilterTab : {})
+          }}
+        >
+          Out of Stock ({filterCounts.out_of_stock})
+        </button>
+        <button
+          onClick={() => setFilterType('high_value')}
+          style={{
+            ...styles.filterTab,
+            ...(filterType === 'high_value' ? styles.activeFilterTab : {})
+          }}
+        >
+          High Value ({filterCounts.high_value})
+        </button>
+      </div>
 
-      {filteredProducts.length > 0 ? (
-        viewMode === 'grid' ? <GridView /> : (
-          <div style={styles.tableContainer}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th} onClick={() => handleSort('name')}>
-                    Product {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th style={styles.th} onClick={() => handleSort('price')}>
-                    Price {sortBy === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th style={styles.th} onClick={() => handleSort('stock')}>
-                    Stock (Online/Total) {sortBy === 'stock' && (sortOrder === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Sale Type</th>
-                  <th style={styles.th}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map(product => {
-                  const stockStatus = getStockStatus(product.online_stock);
-                  
-                  return (
-                    <tr key={product.id} style={styles.tr}>
-                      <td style={styles.td}>
-                        <div style={styles.productInfo}>
-                          <img 
-                            src={product.image_url || product.main_image_url || 'https://via.placeholder.com/60x60/e9ecef/6c757d?text=No+Image'} 
-                            alt={product.name} 
-                            style={styles.image}
-                            onError={(e) => {
-                              e.target.src = 'https://via.placeholder.com/60x60/e9ecef/6c757d?text=No+Image';
-                            }}
-                          />
-                          <div style={styles.productDetails}>
-                            <strong style={styles.productName}>
-                              {product.name || 'Unnamed Product'}
-                            </strong>
-                            {product.model_name && (
-                              <small style={styles.modelName}>
-                                Model: {product.model_name}
-                              </small>
-                            )}
-                            {product.sku && (
-                              <small style={styles.sku}>SKU: {product.sku}</small>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.priceInfo}>
-                          <strong style={styles.price}>₹{parseFloat(product.price || 0).toLocaleString('en-IN')}</strong>
-                          {product.mrp && parseFloat(product.mrp) > parseFloat(product.price) && (
-                            <small style={styles.mrp}>₹{parseFloat(product.mrp).toLocaleString('en-IN')}</small>
-                          )}
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.stockInfo}>
-                          <span style={styles.stockNumbers}>
-                            {product.online_stock || 0} / {product.total_stock || 0}
-                          </span>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <span style={{
-                          ...styles.statusBadge,
-                          backgroundColor: stockStatus.bgColor,
-                          color: stockStatus.color
-                        }}>
-                          {stockStatus.label}
-                        </span>
-                      </td>
-                      <td style={styles.td}>
-                        <span style={styles.saleTypeBadge}>
-                          {formatSaleType(product.sale_type)}
-                        </span>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.actions}>
-                          <button 
-                            onClick={() => handleOpenModal(product)} 
-                            style={styles.buttonSecondary}
-                            title="Edit product"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button 
-                            onClick={() => handleDelete(product.id)} 
-                            style={styles.buttonDanger}
-                            disabled={isDeleting === product.id}
-                            title="Delete product"
-                          >
-                            {isDeleting === product.id ? (
-                              <div style={styles.smallSpinner}></div>
-                            ) : (
-                              <Trash2 size={14} />
-                            )}
-                          </button>
-                        </div>
-                      </td>
+      {
+        isModalOpen && (
+          <ProductForm
+            product={editingProduct}
+            onClose={handleCloseModal}
+            onSuccess={handleFormSubmit}
+          />
+        )
+      }
+
+      {
+        filteredProducts.length > 0 ? (
+          viewMode === 'grid' ? <GridView /> : (
+            <div style={styles.tableContainer}>
+              <div className="custom-scroll" style={styles.tableWrapper}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th} onClick={() => handleSort('name')}>
+                        Product {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th style={styles.th} onClick={() => handleSort('price')}>
+                        Price {sortBy === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th style={styles.th} onClick={() => handleSort('stock')}>
+                        Stock (Online/Total) {sortBy === 'stock' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th style={styles.th}>Status</th>
+                      <th style={styles.th}>Sale Type</th>
+                      <th style={styles.th}>Actions</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {filteredProducts.map(product => {
+                      const stockStatus = getStockStatus(product.online_stock);
+
+                      return (
+                        <tr key={product.id} style={styles.tr}>
+                          <td style={styles.td}>
+                            <div style={styles.productInfo}>
+                              <img
+                                src={product.image_url || product.main_image_url || 'https://via.placeholder.com/60x60/e9ecef/6c757d?text=No+Image'}
+                                alt={product.name}
+                                style={styles.image}
+                                onError={(e) => {
+                                  e.target.src = 'https://via.placeholder.com/60x60/e9ecef/6c757d?text=No+Image';
+                                }}
+                              />
+                              <div style={styles.productDetails}>
+                                <strong style={styles.productName}>
+                                  {product.name || 'Unnamed Product'}
+                                </strong>
+                                {product.model_name && (
+                                  <small style={styles.modelName}>
+                                    Model: {product.model_name}
+                                  </small>
+                                )}
+                                {product.sku && (
+                                  <small style={styles.sku}>SKU: {product.sku}</small>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td style={styles.td}>
+                            <div style={styles.priceInfo}>
+                              <strong style={styles.price}>₹{parseFloat(product.price || 0).toLocaleString('en-IN')}</strong>
+                              {product.mrp && parseFloat(product.mrp) > parseFloat(product.price) && (
+                                <small style={styles.mrp}>₹{parseFloat(product.mrp).toLocaleString('en-IN')}</small>
+                              )}
+                            </div>
+                          </td>
+                          <td style={styles.td}>
+                            <div style={styles.stockInfo}>
+                              <span style={styles.stockNumbers}>
+                                {product.online_stock || 0} / {product.total_stock || 0}
+                              </span>
+                            </div>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={{
+                              ...styles.statusBadge,
+                              backgroundColor: stockStatus.bgColor,
+                              color: stockStatus.color
+                            }}>
+                              {stockStatus.label}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={styles.saleTypeBadge}>
+                              {formatSaleType(product.sale_type)}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            <div style={styles.actions}>
+                              <button
+                                onClick={() => handleOpenModal(product)}
+                                style={styles.buttonSecondary}
+                                title="Edit product"
+                              >
+                                <Edit size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(product.id)}
+                                style={styles.buttonDanger}
+                                disabled={isDeleting === product.id}
+                                title="Delete product"
+                              >
+                                {isDeleting === product.id ? (
+                                  <div style={styles.smallSpinner}></div>
+                                ) : (
+                                  <Trash2 size={14} />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        ) : (
+          <div style={styles.emptyState}>
+            <Package size={64} />
+            <h3>
+              {searchTerm || filterType !== 'all'
+                ? 'No products match your filters'
+                : 'No Products Found'}
+            </h3>
+            <p>
+              {searchTerm || filterType !== 'all'
+                ? 'Try adjusting your search terms or filters to find products.'
+                : 'You haven\'t added any products to your store yet. Start by adding your first product!'}
+            </p>
+            {searchTerm || filterType !== 'all' ? (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterType('all');
+                }}
+                style={styles.buttonSecondary}
+              >
+                Clear Filters
+              </button>
+            ) : (
+              <button onClick={() => handleOpenModal()} style={styles.buttonPrimary}>
+                <Plus size={18} />
+                Add Your First Product
+              </button>
+            )}
           </div>
         )
-      ) : (
-        <div style={styles.emptyState}>
-          <Package size={64} />
-          <h3>
-            {searchTerm || filterType !== 'all' 
-              ? 'No products match your filters' 
-              : 'No Products Found'}
-          </h3>
-          <p>
-            {searchTerm || filterType !== 'all'
-              ? 'Try adjusting your search terms or filters to find products.'
-              : 'You haven\'t added any products to your store yet. Start by adding your first product!'}
-          </p>
-          {searchTerm || filterType !== 'all' ? (
-            <button 
-              onClick={() => {
-                setSearchTerm('');
-                setFilterType('all');
-              }} 
-              style={styles.buttonSecondary}
-            >
-              Clear Filters
-            </button>
-          ) : (
-            <button onClick={() => handleOpenModal()} style={styles.buttonPrimary}>
-              <Plus size={18} />
-              Add Your First Product
-            </button>
-          )}
-        </div>
-      )}
+      }
 
       {/* Add CSS animations */}
       <style jsx>{`
@@ -706,66 +739,45 @@ export default function ProductsPage() {
           to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ✅ Mobile Responsive */
-        @media (max-width: 768px) {
-          .search-and-sort {
-            flex-direction: column !important;
-            gap: 12px !important;
-          }
-          
-          .analytics-container {
-            grid-template-columns: 1fr 1fr !important;
-            gap: 12px !important;
-          }
-          
-          .filter-tabs {
-            flex-wrap: wrap !important;
-            gap: 6px !important;
-          }
-          
-          .table-container {
-            overflow-x: auto !important;
-          }
-          
-          .grid-container {
-            grid-template-columns: 1fr 1fr !important;
-            gap: 12px !important;
-          }
-          
-          .header {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 16px !important;
-          }
-        }
+        /* Target your tableWrapper scroll area */
+  .custom-scroll::-webkit-scrollbar {
+    height: 2px;   /* for horizontal scrollbar */
+    width: 2px;    /* for vertical scrollbar */
+  }
 
-        @media (max-width: 480px) {
-          .analytics-container {
-            grid-template-columns: 1fr !important;
-          }
-          
-          .grid-container {
-            grid-template-columns: 1fr !important;
-          }
-          
-          .search-input {
-            font-size: 16px !important; /* Prevent zoom on iOS */
-          }
-        }
+  .custom-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;  /* track background */
+    border-radius: 6px;
+  }
+
+  .custom-scroll::-webkit-scrollbar-thumb {
+    background: #f1f1f1;  /* thumb (scroll handle) color */
+    border-radius: 6px;
+  }
+
+  .custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: #f1f1f1;  /* darker on hover */
+  }
+
+  /* Firefox support */
+  .custom-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #175E54 #f1f1f1;
+  }
       `}</style>
-    </div>
+    </div >
   );
 }
 
 // ✅ Enhanced styles with better mobile support
 const styles = {
   container: {
-    padding: '24px',
+    padding: '0px 0px 0px 24px',
     maxWidth: '1400px',
     margin: '0 auto',
     animation: 'fadeIn 0.6s ease-out'
   },
-  
+
   // Loading State
   loadingContainer: {
     display: 'flex',
@@ -775,7 +787,7 @@ const styles = {
     minHeight: '400px',
     gap: '20px'
   },
-  
+
   spinner: {
     width: '32px',
     height: '32px',
@@ -784,7 +796,7 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
+
   smallSpinner: {
     width: '14px',
     height: '14px',
@@ -804,7 +816,7 @@ const styles = {
     margin: '20px',
     color: '#991b1b'
   },
-  
+
   errorText: {
     color: '#991b1b',
     marginBottom: '20px',
@@ -812,30 +824,30 @@ const styles = {
   },
 
   // Header
-  header: { 
-    display: 'flex', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: '32px',
     paddingBottom: '20px',
     borderBottom: '1px solid #e5e7eb',
     flexWrap: 'wrap',
     gap: '16px'
   },
-  
-  h1: { 
-    color: '#1f2937', 
-    fontSize: '2rem', 
+
+  h1: {
+    color: '#175E54',
+    fontSize: '29px',
     margin: '0 0 8px 0',
     fontWeight: '700',
     display: 'flex',
     alignItems: 'center',
     gap: '12px'
   },
-  
+
   subtitle: {
     color: '#6b7280',
-    fontSize: '1rem',
+    fontSize: '15px',
     margin: 0
   },
 
@@ -848,27 +860,28 @@ const styles = {
   // ✅ Analytics Cards
   analyticsContainer: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '16px',
-    marginBottom: '32px'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+    gap: '10px',
+    marginBottom: '50px'
   },
 
   analyticsCard: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
-    padding: '20px',
-    backgroundColor: 'white',
+    gap: '15px',
+    padding: '16px',
+    backgroundColor: '#FDFFF0',
     borderRadius: '12px',
-    border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    border: '1px solid rgba(42, 108, 72, 0.3)',
+    boxShadow: '0 4px 12px rgba(42, 108, 72, 0.3)',
+    transition: 'all 0.2s'
   },
 
   analyticsIcon: {
-    width: '40px',
-    height: '40px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
+    width: '56px',
+    height: '56px',
+    backgroundColor: 'rgba(255, 238, 175, 1)',
+    color: '#3e7572ff',
     borderRadius: '8px',
     display: 'flex',
     alignItems: 'center',
@@ -876,15 +889,15 @@ const styles = {
   },
 
   analyticsLabel: {
-    fontSize: '12px',
+    fontSize: '14px',
     color: '#6b7280',
-    margin: '0 0 4px 0',
+    margin: '0 0 8px 0',
     textTransform: 'uppercase',
     letterSpacing: '0.5px'
   },
 
   analyticsValue: {
-    fontSize: '20px',
+    fontSize: '24px',
     fontWeight: '700',
     color: '#1f2937',
     margin: 0
@@ -892,108 +905,92 @@ const styles = {
 
   // Filters
   filtersContainer: {
-    marginBottom: '24px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px'
+    width: "100%",
+    marginBottom: "20px",
   },
-
   searchAndSort: {
-    display: 'flex',
-    gap: '16px',
-    alignItems: 'center',
-    flexWrap: 'wrap'
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between", // spreads them across the row
+    gap: "20px",
+    width: "100%",
   },
-  
   searchContainer: {
-    position: 'relative',
-    flex: 1,
-    minWidth: '300px'
+    display: "flex",
+    alignItems: "center",
+    flex: 1, // searchbar takes remaining space
+    backgroundColor: '#FDFFF0',
+    borderRadius: "8px",
+    padding: "8px 6px",
+    maxWidth: "920px", // optional: limit width
+    border: '1px solid rgba(42, 108, 72, 0.3)',
   },
-  
   searchIcon: {
-    position: 'absolute',
-    left: '12px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    color: '#6b7280',
-    zIndex: 1
+    color: "#175E54",
+    marginRight: "8px",
   },
-  
   searchInput: {
-    width: '100%',
-    padding: '12px 12px 12px 40px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    fontSize: '14px',
-    outline: 'none',
-    transition: 'border-color 0.2s'
+    border: "none",
+    outline: "none",
+    backgroundColor: '#FDFFF0',
+    width: "100%",
+    fontSize: "14px",
   },
-
   sortContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
+    flexShrink: 0, // don't stretch
   },
-
-  sortLabel: {
-    fontSize: '14px',
-    color: '#374151',
-    fontWeight: '500'
-  },
-
   sortSelect: {
-    padding: '8px 12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-    backgroundColor: 'white',
-    outline: 'none'
-  },
-
-  viewToggle: {
-    display: 'flex',
-    backgroundColor: '#f3f4f6',
-    borderRadius: '8px',
-    padding: '2px'
-  },
-
-  viewButton: {
-    padding: '8px 12px',
-    backgroundColor: 'transparent',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
+    padding: "8px 6px",
+    width: '110px',
     color: '#6b7280',
-    transition: 'all 0.2s'
+    borderRadius: "8px",
+    border: '1px solid rgba(42, 108, 72, 0.3)',
+    outline: "none",
+    fontSize: "13px",
+    backgroundColor: "#FDFFF0",
+  },
+  viewToggle: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  viewButton: {
+    border: '1px solid rgba(42, 108, 72, 0.3)',
+    borderRadius: "6px",
+    padding: "6px 10px",
+    backgroundColor: "#FDFFF0",
+    cursor: "pointer",
+    transition: "0.2s",
+    display: "flex",
   },
 
   activeViewButton: {
-    backgroundColor: 'white',
-    color: '#3b82f6',
+    backgroundColor: '#FDFFF0',
+    color: '#175E54',
     boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
   },
-  
+
   filterTabs: {
     display: 'flex',
     gap: '8px',
-    flexWrap: 'wrap'
+    flexWrap: 'wrap',
+    marginBottom: '50px'
   },
-  
+
   filterTab: {
     padding: '8px 16px',
-    backgroundColor: 'white',
-    border: '1px solid #d1d5db',
+    backgroundColor: '#FDFFF0',
+    border: '1px solid #175E54',
     borderRadius: '20px',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500',
-    color: '#374151',
+    color: '#6b7280',
     transition: 'all 0.2s'
   },
-  
+
   activeFilterTab: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#175E54',
     borderColor: '#3b82f6',
     color: 'white'
   },
@@ -1001,12 +998,12 @@ const styles = {
   // ✅ Grid View Styles
   gridContainer: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
     gap: '20px'
   },
 
   gridCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     borderRadius: '12px',
     overflow: 'hidden',
     border: '1px solid #e5e7eb',
@@ -1016,7 +1013,7 @@ const styles = {
 
   cardImageContainer: {
     position: 'relative',
-    height: '200px',
+    height: '215px',
     overflow: 'hidden'
   },
 
@@ -1033,7 +1030,7 @@ const styles = {
   },
 
   cardContent: {
-    padding: '16px'
+    padding: '12px'
   },
 
   cardTitle: {
@@ -1087,7 +1084,7 @@ const styles = {
   },
 
   cardActions: {
-    padding: '12px 16px',
+    padding: '8px 12px',
     borderTop: '1px solid #f3f4f6',
     display: 'flex',
     gap: '8px'
@@ -1112,86 +1109,101 @@ const styles = {
   },
 
   // Buttons
-  buttonPrimary: { 
+  buttonPrimary: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '12px 20px', 
-    backgroundColor: '#3b82f6', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '8px', 
+    padding: '12px 20px',
+    backgroundColor: '#175E54',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
     cursor: 'pointer',
     fontWeight: '500',
     fontSize: '14px',
     transition: 'all 0.2s'
   },
-  
-  buttonSecondary: { 
+
+  buttonSecondary: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     width: '32px',
     height: '32px',
-    marginRight: '8px', 
-    backgroundColor: '#6b7280', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '6px', 
+    marginRight: '8px',
+    backgroundColor: '#6b7280',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
     cursor: 'pointer',
     transition: 'all 0.2s'
   },
-  
-  buttonDanger: { 
+
+  buttonDanger: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     width: '32px',
     height: '32px',
-    backgroundColor: '#ef4444', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '6px', 
+    backgroundColor: '#ef4444',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
     cursor: 'pointer',
     transition: 'all 0.2s'
   },
 
   // Table
+
+
   tableContainer: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb'
+    width: "100%",
+    marginTop: "20px",
+    marginBottom: "50px",
   },
-  
-  table: { 
-    width: '100%', 
-    borderCollapse: 'collapse'
+  tableWrapper: {
+    backgroundColor: '#FDFFF0',
+    width: "100%",
+    overflowX: "auto",  // ✅ Enables horizontal scroll
+    overflowY: "auto",  // ✅ Enables vertical scroll
+    maxHeight: "67vh",  // ✅ Limits height and adds vertical scroll if needed
+    borderRadius: "12px",
+    border: '1px solid #175E54',
   },
-  
-  th: { 
-    padding: '16px 12px', 
-    textAlign: 'left', 
-    backgroundColor: '#f8fafc',
-    fontWeight: '600',
-    color: '#374151',
-    fontSize: '12px',
-    textTransform: 'uppercase',
+
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    minWidth: "800px", // ✅ Ensures scroll when screen is smaller
+  },
+  th: {
+    position: "sticky",
+    top: 0,
+    backgroundColor: '#175E54',
+    textAlign: "left",
+    padding: "12px",
+    cursor: "pointer",
+    borderBottom: "1px solid #dee2e6",
+    fontWeight: "600",
+    whiteSpace: "nowrap",
+    userSelect: 'none',
     letterSpacing: '0.5px',
-    borderBottom: '1px solid #e5e7eb',
-    cursor: 'pointer',
-    userSelect: 'none'
+    textTransform: 'uppercase',
+    fontSize: '12px',
+    color: 'white',
+    zIndex: 2,
+    transition: "box-shadow 0.2s ease",
   },
-  
-  td: { 
-    borderBottom: '1px solid #f3f4f6', 
-    padding: '16px 12px', 
-    verticalAlign: 'middle'
-  },
-  
+
+
   tr: {
-    transition: 'background-color 0.2s'
+    borderBottom: "1px solid #f1f1f1",
+  },
+  td: {
+    padding: "12px",
+    verticalAlign: "middle",
+    borderTop: '1px solid #175E54',
+    whiteSpace: "nowrap", // ✅ Prevents long text wrapping (makes scroll work better)
   },
 
   // Product Info
@@ -1200,33 +1212,33 @@ const styles = {
     alignItems: 'center',
     gap: '12px'
   },
-  
-  image: { 
+
+  image: {
     width: '60px',
     height: '60px',
-    objectFit: 'cover', 
+    objectFit: 'cover',
     borderRadius: '8px',
     border: '1px solid #e5e7eb'
   },
-  
+
   productDetails: {
     display: 'flex',
     flexDirection: 'column',
     gap: '4px'
   },
-  
+
   productName: {
     fontSize: '14px',
     color: '#1f2937',
     lineHeight: '1.3',
     fontWeight: '600'
   },
-  
+
   modelName: {
     color: '#6b7280',
     fontSize: '12px'
   },
-  
+
   sku: {
     color: '#9ca3af',
     fontSize: '11px'
@@ -1238,13 +1250,13 @@ const styles = {
     flexDirection: 'column',
     gap: '2px'
   },
-  
+
   price: {
     fontSize: '14px',
     color: '#059669',
     fontWeight: '600'
   },
-  
+
   mrp: {
     color: '#6b7280',
     textDecoration: 'line-through',
@@ -1257,7 +1269,7 @@ const styles = {
     flexDirection: 'column',
     gap: '4px'
   },
-  
+
   stockNumbers: {
     fontWeight: '500',
     fontSize: '14px',
