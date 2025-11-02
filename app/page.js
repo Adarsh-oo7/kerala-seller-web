@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import axios from 'axios';
 import Link from 'next/link';
 import "../styles/Keralasellershomepage.css";
@@ -99,11 +99,44 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
+// ✅ NEW: Infinite scroll hook
+function useInfiniteScroll(callback, hasMore, isLoading) {
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollHeight = document.documentElement.scrollHeight;
+      const scrollTop = document.documentElement.scrollTop;
+      const clientHeight = window.innerHeight;
+      
+      const nearBottom = scrollHeight - scrollTop - clientHeight < 200;
+      
+      if (nearBottom && hasMore && !isLoading) {
+        console.log('📜 Near bottom - loading more products...');
+        callback();
+      }
+    };
+
+    let ticking = false;
+    const throttledHandleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', throttledHandleScroll);
+    return () => window.removeEventListener('scroll', throttledHandleScroll);
+  }, [callback, hasMore, isLoading]);
+}
+
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -146,7 +179,11 @@ export default function Home() {
   }, []);
 
   const fetchProducts = useCallback(async (page = 1, appliedFilters = filters) => {
-    setIsLoading(true);
+    if (page === 1) {
+      setIsLoading(true);
+    } else {
+      setIsLoadingMore(true);
+    }
     setError('');
 
     try {
@@ -215,7 +252,11 @@ export default function Home() {
         setFilteredProducts([]);
       }
     } finally {
-      setIsLoading(false);
+      if (page === 1) {
+        setIsLoading(false);
+      } else {
+        setIsLoadingMore(false);
+      }
     }
   }, [filters]);
 
@@ -440,6 +481,21 @@ export default function Home() {
     fetchProducts(1);
   }, [fetchCategories, fetchProducts]);
 
+  // ✅ NEW: Infinite scroll
+  const loadMoreProducts = useCallback(() => {
+    if (currentPage < totalPages && !isLoading && !isLoadingMore) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      fetchProducts(nextPage);
+    }
+  }, [currentPage, totalPages, isLoading, isLoadingMore, fetchProducts]);
+
+  useInfiniteScroll(
+    loadMoreProducts,
+    currentPage < totalPages,
+    isLoading || isLoadingMore
+  );
+
   // Handle search input changes
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -522,14 +578,6 @@ export default function Home() {
     }
   };
 
-  const loadMoreProducts = () => {
-    if (currentPage < totalPages && !isLoading) {
-      const nextPage = currentPage + 1;
-      setCurrentPage(nextPage);
-      fetchProducts(nextPage);
-    }
-  };
-
   // Retry function for error state
   const handleRetry = () => {
     setError('');
@@ -545,13 +593,11 @@ export default function Home() {
     }
   }, [showFilters]);
 
-
   // Dynamic styles based on media queries
   const dynamicStyles = {
     ...styles,
     productsGrid: {
       ...styles.productsGrid,
-
     },
     loadingGrid: {
       ...styles.loadingGrid,
@@ -602,9 +648,6 @@ export default function Home() {
         <div style={dynamicStyles.productsHeader}>
           <div style={dynamicStyles.headerLeft}>
             <h2 className='keralasellershomepagetitle' style={dynamicStyles.sectionTitle}>All Products</h2>
-            {/* <span style={dynamicStyles.productCount}>
-              {totalProducts} products found
-            </span> */}
             {searchTerm && (
               <span style={dynamicStyles.searchIndicator}>
                 for "{searchTerm}"
@@ -619,7 +662,6 @@ export default function Home() {
           <div style={dynamicStyles.headerRight}>
             <button
               className='keralasellershomepagefiltericoncontainer'
-
               onClick={() => setShowFilters(!showFilters)}
               style={dynamicStyles.filterToggle}
             >
@@ -643,16 +685,15 @@ export default function Home() {
           </div>
         )}
 
-        {/* Filters Section */}
         {/* Filter Sidebar Overlay */}
         {showFilters && (
           <div
             className="filter-sidebar-overlay"
-            onClick={() => setShowFilters(false)} // click outside closes
+            onClick={() => setShowFilters(false)}
           >
             <div
               className="filter-sidebar"
-              onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="filter-header">
                 <h3>Filters</h3>
@@ -672,7 +713,6 @@ export default function Home() {
           </div>
         )}
 
-
         {/* Products Grid */}
         {isLoading && currentPage === 1 ? (
           <div style={dynamicStyles.loadingGrid}>
@@ -690,10 +730,9 @@ export default function Home() {
                 style={{
                   justifyItems: "center",
                   flexWrap: 'wrap',
-                  justifyContent: 'center', // center all cards
-                  // gap: isMobile ? '10px' : isTablet ? '15px' : '20px',
+                  justifyContent: 'center',
                   maxWidth: '1200px',
-                  margin: '0 auto', // center the grid container
+                  margin: '0 auto',
                   padding: '10px 0',
                 }}
               >
@@ -701,7 +740,7 @@ export default function Home() {
                   <div
                     key={`product-${product.id}-${index}`}
                     data-product-id={product.id}
-                    style={{ flex: '1 0 210px', maxWidth: '220px' }} // controls min and max width
+                    style={{ flex: '1 0 210px', maxWidth: '220px' }}
                   >
                     <ProductCard
                       id={product.id}
@@ -768,16 +807,11 @@ export default function Home() {
               </div>
             )}
 
-            {/* Load More Button */}
-            {currentPage < totalPages && filteredProducts.length > 0 && (
-              <div style={dynamicStyles.loadMoreContainer}>
-                <button
-                  onClick={loadMoreProducts}
-                  disabled={isLoading}
-                  style={dynamicStyles.loadMoreButton}
-                >
-                  {isLoading ? 'Loading...' : 'Load More Products'}
-                </button>
+            {/* ✅ Loading indicator at bottom while loading more */}
+            {isLoadingMore && (
+              <div style={dynamicStyles.loadingIndicator}>
+                <div style={dynamicStyles.spinner}></div>
+                <span>Loading more products...</span>
               </div>
             )}
           </>
@@ -804,6 +838,11 @@ export default function Home() {
           100% { transform: scale(1); }
         }
 
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
         .wishlist-heart {
           transition: all 0.2s ease;
         }
@@ -815,8 +854,6 @@ export default function Home() {
         .wishlist-loading {
           animation: pulse 1s infinite;
         }
-
-  }
       `}</style>
     </div>
   );
@@ -924,15 +961,6 @@ const styles = {
     color: '#1e293b'
   },
 
-  productCount: {
-    fontSize: '14px',
-    color: '#6b7280',
-    backgroundColor: '#f3f4f6',
-    padding: '4px 8px',
-    borderRadius: '12px',
-    fontWeight: '500'
-  },
-
   searchIndicator: {
     fontSize: '14px',
     color: '#3b82f6',
@@ -971,8 +999,6 @@ const styles = {
     transition: 'background-color 0.2s'
   },
 
-
-
   errorContainer: {
     display: 'flex',
     alignItems: 'center',
@@ -996,35 +1022,13 @@ const styles = {
     marginTop: '8px'
   },
 
-
-
-
   loadingGrid: {
     display: 'grid',
-    // gridTemplateColumns and gap will be set dynamically
   },
 
   skeletonWrapper: {
     borderRadius: '8px',
     overflow: 'hidden'
-  },
-
-  loadMoreContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-    marginTop: '30px'
-  },
-
-  loadMoreButton: {
-    padding: '12px 30px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '16px',
-    fontWeight: '500',
-    transition: 'background-color 0.2s'
   },
 
   noProducts: {
@@ -1049,5 +1053,26 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500'
+  },
+
+  // ✅ NEW: Loading indicator styles
+  loadingIndicator: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '40px 20px',
+    color: '#6b7280',
+    fontSize: '14px',
+    fontWeight: '500'
+  },
+
+  spinner: {
+    width: '32px',
+    height: '32px',
+    border: '3px solid #f3f4f6',
+    borderTop: '3px solid #3b82f6',
+    borderRadius: '50%',
+    animation: 'spin 0.8s linear infinite'
   }
 };
