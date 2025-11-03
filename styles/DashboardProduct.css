@@ -103,6 +103,26 @@
         min-width: 90px !important;
         text-align: center !important;
     }
+
+    /* ///////modal////// */
+
+    .dashboardproductmodaltitle {
+        font-size: 22px !important;
+    }
+
+    .dashboardproductmodaltitleicon {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    .dashboardproductmodalsectiontitle {
+        font-size: 17px !important;
+    }
+
+    .dashboardproductmodalsectionlabel {
+        font-size: 14px !important;
+
+    }
 }
 
 @media(max-width: 576px) {
@@ -168,6 +188,93 @@
         text-align: center !important;
     }
 
+    .dashboardproductcardimgcontainer {
+        height: 130px !important;
+    }
+
+    .dashboardproductcardimgtitle {
+        font-size: 13px !important;
+    }
+
+    .dashboardproductcardimgprice {
+        font-size: 14px !important;
+    }
+
+    .dashboardproductcardimgbtn {
+        padding: 5px 6px !important;
+    }
+
+    /* ////////modal//////// */
+    .dashboardproductmodaltitle {
+        font-size: 20px !important;
+    }
+
+    .dashboardproductmodaltitleicon {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    .dashboardproductmodalsectiontitle {
+        font-size: 16px !important;
+    }
+
+    .dashboardproductmodalsectionlabel {
+        font-size: 12px !important;
+    }
+
+    .dashboardproductmodalpriceinputgap {
+        gap: 12px !important;
+    }
+
+    .dashboardproductmodalsectioncontainer {
+        padding: 13px !important;
+    }
+
+    .dashboardproductmodalselectinput {
+        font-size: 12px !important;
+        padding: 7px 13px !important;
+    }
+
+    .dashboardproductmodalcategoryname {
+        font-size: 13px !important;
+        font-weight: 500 !important;
+    }
+
+    .dashboardproductmodaluploadarea {
+        padding: 10px 14px !important;
+    }
+
+    .dashboardproductmodaluploadareaicon {
+        font-size: 38px !important;
+    }
+
+    .dashboardproductmodaluploadareatext {
+        font-size: 12px !important;
+    }
+
+    .dashboardproductmodaluploadareasubtext {
+        font-size: 11px !important;
+    }
+
+    .dashboardproductmodaluploadareapreviewimg {
+        height: 90px !important;
+    }
+
+    .dashboardproductmodaluploadareapreviewimggrid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .dashboardproductcreatebtn {
+        padding: 5px 10px !important;
+        font-size: 12px !important;
+    }
+
+    .dashboardproductcreatebtnicon {
+        width: 15px !important;
+        height: 15px !important;
+    }
 }
 
 @media(max-width: 480px) {
@@ -275,5 +382,111 @@
         /* allow flexible resizing */
         min-width: 90px !important;
         text-align: center !important;
+    }
+
+    .dashboardproductcardimgcontainer {
+        height: 130px !important;
+    }
+
+    .dashboardproductcardimgtitle {
+        font-size: 13px !important;
+    }
+
+    .dashboardproductcardimgprice {
+        font-size: 14px !important;
+    }
+
+    .dashboardproductcardimgbtn {
+        padding: 5px 6px !important;
+    }
+
+    .dashboardproductgridcontainer {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+        gap: 5px !important;
+    }
+
+    /* ////////modal//////// */
+    .dashboardproductmodaltitle {
+        font-size: 18px !important;
+    }
+
+    .dashboardproductmodaltitleicon {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .dashboardproductmodalsectiontitle {
+        font-size: 15px !important;
+    }
+
+    .dashboardproductmodalsectionlabel {
+        font-size: 12px !important;
+    }
+
+    .dashboardproductmodalpriceinputgap {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0px !important;
+    }
+
+    .dashboardproductmodalsectioncontainer {
+        padding: 13px !important;
+    }
+
+    .dashboardproductmodalselectinput {
+        font-size: 11px !important;
+        padding: 6px 0px !important;
+    }
+
+    .dashboardproductmodalcategoryname {
+        font-size: 11px !important;
+        font-weight: 500 !important;
+    }
+
+    .dashboardproductmodaluploadarea {
+        padding: 10px 14px !important;
+    }
+
+    .dashboardproductmodaluploadareaicon {
+        font-size: 28px !important;
+    }
+
+    .dashboardproductmodaluploadareatext {
+        font-size: 12px !important;
+    }
+
+    .dashboardproductmodaluploadareasubtext {
+        font-size: 11px !important;
+    }
+
+    .dashboardproductmodaluploadareapreviewimg {
+        height: 90px !important;
+    }
+
+    .dashboardproductmodaluploadareapreviewimggrid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .dashboardproductcreatebtn {
+        padding: 5px 10px !important;
+        font-size: 11px !important;
+        height: 28px !important;
+    }
+
+    .dashboardproductcreatebtnicon {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    .dashboardproductmodalcategoriesgrid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+        gap: 6px !important;
+    }
+    .dashboardproductmodaldiscountlabel{
+        font-size: 12px !important;
     }
 }

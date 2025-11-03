@@ -2,17 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Package2, Edit, Cloud, Box, Globe, Folder, File, ArrowLeft, CheckCircle, X, Home, Trash2, Loader2, CloudUpload, Rocket } from "lucide-react";
 
 // ✅ Enhanced environment variable handling for your hosted backend
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  
+
   if (envUrl && envUrl !== 'undefined') {
     return envUrl;
   }
-  
-  return process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:8000' 
+
+  return process.env.NODE_ENV === 'development'
+    ? 'http://localhost:8000'
     : 'https://keralaseller-backend.onrender.com';
 };
 
@@ -25,7 +26,7 @@ const CLOUDINARY_CONFIG = {
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dnmbfeckd',
   upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'kerala_sellers_preset',
   fallback_presets: ['ml_default', 'kerala_sellers_unsigned', 'unsigned_preset'],
-  getUploadUrl: function() {
+  getUploadUrl: function () {
     return `https://api.cloudinary.com/v1_1/${this.cloud_name}/image/upload`;
   }
 };
@@ -35,7 +36,7 @@ const validatePositiveNumber = (value, fieldName = 'Value') => {
   if (value === '' || value === null || value === undefined) {
     return { isValid: true, error: null };
   }
-  
+
   const numValue = parseFloat(value);
   if (isNaN(numValue)) {
     return { isValid: false, error: `${fieldName} must be a valid number` };
@@ -53,7 +54,7 @@ const validatePositiveInteger = (value, fieldName = 'Value') => {
   if (value === '' || value === null || value === undefined) {
     return { isValid: true, error: null };
   }
-  
+
   const numValue = parseInt(value);
   if (isNaN(numValue)) {
     return { isValid: false, error: `${fieldName} must be a valid number` };
@@ -73,24 +74,24 @@ const validatePositiveInteger = (value, fieldName = 'Value') => {
 // ✅ Enhanced Cloudinary Upload Function
 const uploadToCloudinary = async (file, options = {}) => {
   console.log('🔄 Starting Cloudinary upload for:', file.name);
-  
+
   const presetsToTry = [
     CLOUDINARY_CONFIG.upload_preset,
     ...CLOUDINARY_CONFIG.fallback_presets
   ].filter(Boolean);
-  
+
   let lastError = null;
-  
+
   for (let i = 0; i < presetsToTry.length; i++) {
     const preset = presetsToTry[i];
     console.log(`🔧 Trying preset ${i + 1}/${presetsToTry.length}: ${preset}`);
-    
+
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('upload_preset', preset);
       formData.append('folder', `kerala-sellers/products/${options.type || 'images'}`);
-      
+
       const tags = ['kerala_sellers', options.type || 'product'];
       if (options.type === 'main') {
         tags.push('main_image');
@@ -101,7 +102,7 @@ const uploadToCloudinary = async (file, options = {}) => {
       formData.append('timestamp', Math.floor(Date.now() / 1000));
       formData.append('quality', 'auto:good');
       formData.append('fetch_format', 'auto');
-      
+
       const response = await axios.post(CLOUDINARY_CONFIG.getUploadUrl(), formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -116,9 +117,9 @@ const uploadToCloudinary = async (file, options = {}) => {
           }
         },
       });
-      
+
       console.log('✅ Upload successful with preset:', preset);
-      
+
       return {
         success: true,
         url: response.data.secure_url,
@@ -131,20 +132,20 @@ const uploadToCloudinary = async (file, options = {}) => {
         preset_used: preset,
         tags: response.data.tags || []
       };
-      
+
     } catch (error) {
       console.error(`❌ Upload failed with preset ${preset}:`, error);
       lastError = error;
-      
+
       if (i < presetsToTry.length - 1) {
         console.log(`🔄 Trying next preset...`);
         continue;
       }
     }
   }
-  
+
   console.error('❌ All upload presets failed. Last error:', lastError);
-  
+
   let errorMessage = 'Upload failed';
   if (lastError?.response?.data?.error?.message) {
     errorMessage = lastError.response.data.error.message;
@@ -153,7 +154,7 @@ const uploadToCloudinary = async (file, options = {}) => {
   } else if (lastError?.message) {
     errorMessage = lastError.message;
   }
-  
+
   return {
     success: false,
     error: errorMessage,
@@ -194,11 +195,11 @@ apiClient.interceptors.response.use(
 );
 
 // ✅ FIXED: Cloudinary Image Upload Component
-const CloudinaryImageUpload = ({ 
-  label, 
-  required = false, 
-  multiple = false, 
-  onUploadComplete, 
+const CloudinaryImageUpload = ({
+  label,
+  required = false,
+  multiple = false,
+  onUploadComplete,
   onUploadStart,
   onUploadProgress,
   maxFiles = 5,
@@ -236,7 +237,7 @@ const CloudinaryImageUpload = ({
 
     const validFiles = [];
     const errors = [];
-    
+
     for (const file of files) {
       if (!file.type.startsWith('image/')) {
         errors.push(`${file.name}: Only image files are allowed`);
@@ -273,7 +274,7 @@ const CloudinaryImageUpload = ({
     try {
       const uploadPromises = validFiles.map(async (file, index) => {
         const previewId = Date.now() + index;
-        
+
         const result = await uploadToCloudinary(file, {
           type: type,
           onProgress: (progress) => {
@@ -282,17 +283,17 @@ const CloudinaryImageUpload = ({
               [previewId]: progress
             }));
             onUploadProgress && onUploadProgress(progress);
-            
-            setPreviews(currentPreviews => 
-              currentPreviews.map(preview => 
-                preview.id === previewId 
+
+            setPreviews(currentPreviews =>
+              currentPreviews.map(preview =>
+                preview.id === previewId
                   ? { ...preview, progress: progress }
                   : preview
               )
             );
           }
         });
-        
+
         return {
           ...result,
           previewId,
@@ -303,7 +304,7 @@ const CloudinaryImageUpload = ({
       const uploadResults = await Promise.all(uploadPromises);
       const successfulUploads = uploadResults.filter(result => result.success);
       const failedUploads = uploadResults.filter(result => !result.success);
-      
+
       if (failedUploads.length > 0) {
         setError(`${failedUploads.length} upload(s) failed: ${failedUploads[0].error}`);
       }
@@ -333,7 +334,7 @@ const CloudinaryImageUpload = ({
           format: result.format,
           preset_used: result.preset_used
         }));
-        
+
         setUploadResults(uploadData);
         onUploadComplete && onUploadComplete(uploadData);
       } else {
@@ -356,12 +357,12 @@ const CloudinaryImageUpload = ({
   const removeImage = async (previewId) => {
     const imageToRemove = previews.find(p => p.id === previewId);
     if (!imageToRemove) return;
-    
+
     // ✅ Call parent's removal handler if image is from database
     if (imageToRemove.isFromDatabase && onRemoveImage) {
       await onRemoveImage(imageToRemove.id);
     }
-    
+
     // Update local state
     setPreviews(prev => prev.filter(preview => preview.id !== previewId));
     const updatedResults = uploadResults.filter(result => result.public_id !== imageToRemove.public_id);
@@ -371,15 +372,15 @@ const CloudinaryImageUpload = ({
 
   return (
     <div style={styles.imageUploadContainer}>
-      <label style={styles.label}>
+      <label className='dashboardproductmodalsectionlabel' style={styles.label}>
         {label} {required && '*'}
       </label>
-      
+
       {error && (
         <div style={styles.uploadError}>
           ⚠️ {error}
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => setError('')}
             style={styles.errorCloseButton}
           >
@@ -388,7 +389,8 @@ const CloudinaryImageUpload = ({
         </div>
       )}
 
-      <div 
+      <div
+        className='dashboardproductmodaluploadarea'
         style={{
           ...styles.uploadArea,
           borderColor: error ? '#dc3545' : uploading ? '#28a745' : '#0d6efd',
@@ -404,21 +406,21 @@ const CloudinaryImageUpload = ({
           style={styles.fileInput}
           required={required && previews.filter(p => p.isUploaded).length === 0}
         />
-        
+
         <div style={styles.uploadPrompt}>
           {uploading ? (
             <div>
-              <div style={styles.uploadingIcon}>☁️⏳</div>
-              <div><strong>Uploading to Cloudinary...</strong></div>
-              <div style={{fontSize: '12px', color: '#666', marginTop: '4px'}}>
+              <div style={styles.uploadingIcon}>⏳</div>
+              <div ><strong className='dashboardproductmodaluploadareatext'>Uploading to Cloudinary...</strong></div>
+              <div className='dashboardproductmodaluploadareasubtext' style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
                 Please wait while we optimize and store your images
               </div>
             </div>
           ) : (
             <div>
-              <div style={styles.uploadIcon}>☁️📷</div>
-              <div><strong>Click to upload {multiple ? 'images' : 'image'}</strong></div>
-              <div style={styles.uploadHint}>
+              <div className='dashboardproductmodaluploadareaicon' style={styles.uploadIcon}>📷</div>
+              <div><strong className='dashboardproductmodaluploadareatext'>Click to upload {multiple ? 'images' : 'image'}</strong></div>
+              <div className='dashboardproductmodaluploadareasubtext' style={styles.uploadHint}>
                 Supports: JPG, PNG, GIF, WEBP (Max 10MB each)
                 <br />
                 ☁️ Powered by Cloudinary ({CLOUDINARY_CONFIG.cloud_name})
@@ -432,23 +434,24 @@ const CloudinaryImageUpload = ({
         <div style={styles.previewContainer}>
           <div style={styles.previewHeader}>
             <span>
-              {multiple 
+              {multiple
                 ? `${previews.filter(p => p.isUploaded).length} of ${previews.length} images uploaded`
                 : 'Image uploaded'
               }
             </span>
           </div>
-          
+
           {multiple ? (
-            <div style={styles.previewGrid}>
+            <div className='dashboardproductmodaluploadareapreviewimggrid' style={styles.previewGrid}>
               {previews.map((preview) => (
                 <div key={preview.id} style={styles.previewItem}>
                   <img
                     src={preview.url}
                     alt="Preview"
                     style={styles.previewImage}
+                    className='dashboardproductmodaluploadareapreviewimg'
                   />
-                  
+
                   {preview.uploading && (
                     <div style={styles.uploadOverlay}>
                       <div style={styles.uploadProgress}>
@@ -457,23 +460,26 @@ const CloudinaryImageUpload = ({
                       </div>
                     </div>
                   )}
-                  
+
                   {preview.isUploaded && (
                     <>
                       <div style={styles.imageActions}>
                         <button
                           type="button"
                           onClick={() => removeImage(preview.id)}
-                          style={styles.removeButton}
+                          style={{
+                            ...styles.removeButton,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px',
+                          }}
                           disabled={uploading}
                         >
-                          🗑️
+                          <Trash2 size={14} />
                         </button>
                       </div>
-                      
-                      <div style={styles.cloudinaryBadge}>
-                        ☁️ Cloudinary
-                      </div>
+
                     </>
                   )}
                 </div>
@@ -486,8 +492,9 @@ const CloudinaryImageUpload = ({
                   src={preview.url}
                   alt="Main product image"
                   style={styles.mainPreviewImage}
+                  className='dashboardproductmodaluploadareapreviewimg'
                 />
-                
+
                 {preview.uploading && (
                   <div style={styles.uploadOverlay}>
                     <div style={styles.uploadProgress}>
@@ -496,23 +503,27 @@ const CloudinaryImageUpload = ({
                     </div>
                   </div>
                 )}
-                
+
                 {preview.isUploaded && (
                   <>
                     <div style={styles.imageActions}>
+
                       <button
                         type="button"
                         onClick={() => removeImage(preview.id)}
-                        style={styles.removeButton}
+                        style={{
+                          ...styles.removeButton,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px',
+                        }}
                         disabled={uploading}
                       >
-                        🗑️ Remove
+                        <Trash2 size={14} />
                       </button>
                     </div>
-                    
-                    <div style={styles.cloudinaryBadge}>
-                      ☁️ Optimized by Cloudinary
-                    </div>
+
                   </>
                 )}
               </div>
@@ -535,15 +546,16 @@ const CloudinaryImageUpload = ({
 
 // ✅ COMPREHENSIVE STYLES
 const styles = {
-  modalOverlay: { 
-    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-    backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', 
-    justifyContent: 'center', alignItems: 'center', zIndex: 1000 
+  modalOverlay: {
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex',
+    justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem',
+    boxSizing: 'border-box',
   },
-  modalContent: { 
-    background: 'white', padding: '2rem', borderRadius: '16px', 
-    width: '900px', maxWidth: '95%', maxHeight: '90vh', overflowY: 'auto',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+  modalContent: {
+    background: '#FDFFF0', padding: '2rem', borderRadius: '16px',
+    width: '700px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.3)', boxSizing: 'border-box',
   },
   modalHeader: {
     marginBottom: '24px',
@@ -554,91 +566,90 @@ const styles = {
     margin: '0 0 8px 0',
     fontSize: '24px',
     fontWeight: '700',
-    color: '#333'
+    color: '#1a4845'
   },
   connectionStatus: {
     fontSize: '12px',
-    color: '#666',
-    backgroundColor: '#f8f9fa',
-    padding: '6px 12px',
-    borderRadius: '16px',
+    color: '#65bef2ff',
     display: 'inline-block'
   },
   sectionContainer: {
     marginBottom: '2rem',
     padding: '20px',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#FDFFF0',
     borderRadius: '12px',
-    border: '2px solid #e9ecef'
+    border: '1px solid #0d6efd',
   },
   sectionTitle: {
     margin: '0 0 16px 0',
     fontSize: '18px',
     fontWeight: '700',
-    color: '#333',
+    color: '#1a4845',
     display: 'flex',
     alignItems: 'center',
     gap: '8px'
   },
-  formGroup: { 
-    marginBottom: '1.5rem' 
+  formGroup: {
+    marginBottom: '1.5rem'
   },
-  formRow: { 
-    display: 'grid', 
-    gridTemplateColumns: '1fr 1fr', 
-    gap: '1.5rem', 
-    marginBottom: '1rem' 
+  formRow: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '1.5rem',
+    marginBottom: '1rem'
   },
-  input: { 
-    width: '100%', 
-    padding: '12px 16px', 
-    boxSizing: 'border-box', 
-    border: '2px solid #e9ecef', 
-    borderRadius: '8px', 
-    fontSize: '16px',
+  input: {
+    width: '100%',
+    padding: '12px 16px',
+    boxSizing: 'border-box',
+    border: '1px solid #1a4845',
+    borderRadius: '8px',
+    fontSize: '14px',
     transition: 'all 0.2s',
-    backgroundColor: 'white'
+    backgroundColor: '#FDFFF0'
   },
   selectInput: {
-    width: '100%', 
-    padding: '12px 16px', 
-    boxSizing: 'border-box', 
-    border: '2px solid #e9ecef', 
-    borderRadius: '8px', 
-    fontSize: '16px',
+    width: '100%',
+    padding: '12px 16px',
+    boxSizing: 'border-box',
+    border: '1px solid #1a4845',
+    borderRadius: '8px',
+    fontSize: '14px',
     transition: 'all 0.2s',
-    backgroundColor: 'white',
-    cursor: 'pointer'
+    backgroundColor: '#FDFFF0',
+    cursor: 'pointer',
+    color: '#6c757d'
+
   },
   textArea: {
-    width: '100%', 
-    padding: '12px 16px', 
-    boxSizing: 'border-box', 
-    border: '2px solid #e9ecef', 
-    borderRadius: '8px', 
-    fontSize: '16px',
-    resize: 'vertical', 
+    width: '100%',
+    padding: '12px 16px',
+    boxSizing: 'border-box',
+    border: '1px solid #1a4845',
+    borderRadius: '8px',
+    fontSize: '14px',
+    resize: 'vertical',
     minHeight: '100px',
-    backgroundColor: 'white'
+    backgroundColor: '#FDFFF0'
   },
   label: {
-    display: 'block', 
-    marginBottom: '6px', 
-    fontWeight: '600', 
-    fontSize: '16px', 
-    color: '#333'
+    display: 'block',
+    marginBottom: '6px',
+    fontWeight: '600',
+    fontSize: '16px',
+    color: '#6c757d'
   },
   helpText: {
-    fontSize: '13px', 
-    color: '#6c757d', 
-    marginTop: '4px', 
+    fontSize: '13px',
+    color: '#6c757d',
+    marginTop: '4px',
     display: 'block',
     lineHeight: '1.4'
   },
-  hr: { 
-    border: 'none', 
-    borderTop: '3px solid #f8f9fa', 
-    margin: '32px 0' 
+  hr: {
+    border: 'none',
+    borderTop: '3px solid #f8f9fa',
+    margin: '32px 0'
   },
   priceError: {
     backgroundColor: '#f8d7da',
@@ -659,18 +670,18 @@ const styles = {
     fontSize: '14px'
   },
   stockContainer: {
-    border: '2px solid #0d6efd', 
-    borderRadius: '16px', 
-    padding: '24px', 
-    marginBottom: '2rem', 
-    backgroundColor: '#f0f8ff'
+    border: '1px solid #0d6efd',
+    borderRadius: '16px',
+    padding: '24px',
+    marginBottom: '2rem',
+    backgroundColor: '#FDFFF0'
   },
   imageUploadContainer: {
     marginBottom: '24px'
   },
   uploadArea: {
     position: 'relative',
-    border: '3px dashed #0d6efd',
+    border: '1px dashed #0d6efd',
     borderRadius: '12px',
     padding: '40px 20px',
     textAlign: 'center',
@@ -736,14 +747,14 @@ const styles = {
   },
   previewGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
     gap: '12px'
   },
   previewItem: {
     position: 'relative',
     borderRadius: '8px',
     overflow: 'hidden',
-    border: '2px solid #28a745'
+    border: '1px solid #28a745',
   },
   previewImage: {
     width: '100%',
@@ -756,11 +767,11 @@ const styles = {
     marginRight: '12px'
   },
   mainPreviewImage: {
-    width: '200px',
-    height: '200px',
+    width: '100%',
+    height: '120px',
     objectFit: 'cover',
     borderRadius: '12px',
-    border: '3px solid #28a745'
+    border: '1px solid #28a745'
   },
   uploadOverlay: {
     position: 'absolute',
@@ -795,9 +806,9 @@ const styles = {
     color: 'white',
     border: 'none',
     borderRadius: '4px',
-    padding: '4px 8px',
+    padding: '4px 6px',
     cursor: 'pointer',
-    fontSize: '12px',
+    fontSize: '11px',
     fontWeight: '600'
   },
   cloudinaryBadge: {
@@ -813,12 +824,12 @@ const styles = {
     textAlign: 'center',
     fontWeight: '600'
   },
-  attributesSection: { 
-    border: '2px solid #0d6efd', 
-    borderRadius: '16px', 
-    padding: '20px', 
-    marginTop: '20px', 
-    backgroundColor: '#f0f8ff' 
+  attributesSection: {
+    border: '1px solid #0d6efd',
+    borderRadius: '16px',
+    padding: '20px',
+    marginTop: '20px',
+    backgroundColor: '#f0f8ff'
   },
   attributesGrid: {
     display: 'grid',
@@ -846,45 +857,52 @@ const styles = {
     borderRadius: '8px',
     lineHeight: '1.5'
   },
-  buttonContainer: { 
-    display: 'flex', 
-    justifyContent: 'flex-end', 
-    gap: '16px', 
-    marginTop: '32px', 
-    paddingTop: '20px', 
+  buttonContainer: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '16px',
+    marginTop: '32px',
+    paddingTop: '20px',
     borderTop: '2px solid #e9ecef'
   },
-  buttonPrimary: { 
-    padding: '14px 28px', 
-    backgroundColor: '#0d6efd', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '8px', 
-    cursor: 'pointer', 
-    fontSize: '16px',
-    fontWeight: '600', 
+  buttonPrimary: {
+    padding: '5px 18px',
+    height: '35px',
+    backgroundColor: '#448d52ff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '600',
     transition: 'all 0.2s'
   },
-  buttonSecondary: { 
-    padding: '14px 28px', 
-    backgroundColor: '#6c757d', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '8px', 
-    cursor: 'pointer', 
-    fontSize: '16px',
-    fontWeight: '600', 
-    transition: 'all 0.2s'
-  }
+  buttonSecondary: {
+    padding: '5px 18px',
+    height: '35px',
+    backgroundColor: '#9fa4a9ff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '600',
+    transition: 'all 0.2s ease',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+  },
+
 };
 
 const categoryStyles = {
   container: {
     marginBottom: '1.5rem',
-    border: '2px solid #e9ecef',
+    border: '1px solid #0d6efd',
     borderRadius: '12px',
     padding: '20px',
-    backgroundColor: '#f8f9fa'
+    backgroundColor: '#FDFFF0'
   },
   loadingContainer: {
     textAlign: 'center',
@@ -922,16 +940,17 @@ const categoryStyles = {
   selectedCategory: {
     color: '#28a745',
     fontSize: '14px',
-    fontWeight: '600',
+    fontWeight: '500',
     backgroundColor: '#d4edda',
     padding: '8px 12px',
-    borderRadius: '20px',
-    border: '2px solid #c3e6cb',
+    borderRadius: '8px',
+    border: '1px solid #c3e6cb',
     marginBottom: '16px',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center'
   },
+
   clearButton: {
     background: 'none',
     border: 'none',
@@ -957,7 +976,6 @@ const categoryStyles = {
     border: 'none',
     color: '#0d6efd',
     cursor: 'pointer',
-    textDecoration: 'underline',
     fontSize: '14px',
     padding: '2px 4px'
   },
@@ -969,13 +987,13 @@ const categoryStyles = {
     marginBottom: '16px'
   },
   backButton: {
-    padding: '8px 16px',
+    padding: '7px 6px',
     backgroundColor: '#6c757d',
     color: 'white',
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
-    fontSize: '14px'
+    fontSize: '12px'
   },
   levelInfo: {
     fontSize: '12px',
@@ -987,18 +1005,18 @@ const categoryStyles = {
   },
   categoriesGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
     gap: '12px'
   },
   categoryCard: {
     background: 'white',
     border: '2px solid #e9ecef',
     borderRadius: '8px',
-    padding: '16px',
+    padding: '5px',
     cursor: 'pointer',
     transition: 'all 0.2s',
     textAlign: 'left',
-    minHeight: '100px',
+    minHeight: '10px',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between'
@@ -1008,7 +1026,7 @@ const categoryStyles = {
     backgroundColor: '#fff8e1'
   },
   fileCard: {
-    borderColor: '#28a745',
+    borderColor: '#89f2a2ff',
     backgroundColor: '#f8fff8'
   },
   selectedCard: {
@@ -1027,7 +1045,7 @@ const categoryStyles = {
     fontSize: '20px'
   },
   categoryName: {
-    fontSize: '16px',
+    fontSize: '14px',
     fontWeight: '600',
     color: '#333',
     lineHeight: '1.3'
@@ -1102,14 +1120,14 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     try {
       setLoading(true);
       setError('');
-      
+
       const response = await apiClient.get('/api/categories/');
       const categories = response.data.results || response.data || [];
       setAllCategories(categories);
-      
+
       const rootCategories = categories.filter(cat => !cat.parent);
       setCurrentCategories(rootCategories);
-      
+
     } catch (err) {
       console.error('❌ Error fetching categories:', err);
       setError(`Failed to load categories: ${err.response?.data?.message || err.message}`);
@@ -1121,7 +1139,7 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
   const buildPathToCategory = (category) => {
     const path = [];
     let current = category;
-    
+
     while (current && current.parent) {
       const parent = allCategories.find(cat => cat.id === current.parent);
       if (parent) {
@@ -1131,26 +1149,26 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
         break;
       }
     }
-    
+
     setCurrentPath(path);
   };
 
   const updateCurrentCategories = () => {
     let categories;
-    
+
     if (currentPath.length === 0) {
       categories = allCategories.filter(cat => !cat.parent);
     } else {
       const parentId = currentPath[currentPath.length - 1].id;
       categories = allCategories.filter(cat => cat.parent === parentId);
     }
-    
+
     setCurrentCategories(categories);
   };
 
   const handleCategoryClick = (category) => {
     const hasChildren = allCategories.some(cat => cat.parent === category.id);
-    
+
     if (hasChildren) {
       setCurrentPath([...currentPath, category]);
       setSelectedCategory(null);
@@ -1158,7 +1176,7 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     } else {
       setSelectedCategory(category);
       onCategorySelect(category.id);
-      
+
       const newAttributes = {};
       if (category.default_attributes && Array.isArray(category.default_attributes)) {
         category.default_attributes.forEach(attr => {
@@ -1177,7 +1195,7 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
     if (currentPath.length > 0) {
       const newPath = currentPath.slice(0, -1);
       setCurrentPath(newPath);
-      
+
       if (selectedCategory) {
         setSelectedCategory(null);
         onCategorySelect('');
@@ -1189,7 +1207,7 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
   const handleBreadcrumbClick = (index) => {
     const newPath = currentPath.slice(0, index + 1);
     setCurrentPath(newPath);
-    
+
     if (selectedCategory) {
       setSelectedCategory(null);
       onCategorySelect('');
@@ -1200,7 +1218,7 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
   if (loading) {
     return (
       <div style={categoryStyles.container}>
-        <h3>🏷️ Select Product Category</h3>
+        <h3 className='dashboardproductmodalsectiontitle'>Select Product Category</h3>
         <div style={categoryStyles.loadingContainer}>
           <div style={categoryStyles.spinner}></div>
           <p>Loading categories...</p>
@@ -1211,143 +1229,156 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
 
   if (error) {
     return (
-      <div style={categoryStyles.container}>
-        <h3>🏷️ Select Product Category</h3>
-        <div style={categoryStyles.errorContainer}>
-          <p>❌ {error}</p>
-          <button onClick={fetchCategories} style={categoryStyles.retryButton}>
-            🔄 Retry
-          </button>
+      <div>
+        <h3 className='dashboardproductmodalsectiontitle'>Select Product Category</h3>
+        <div style={categoryStyles.container}>
+          <div style={categoryStyles.errorContainer}>
+            <p>❌ {error}</p>
+            <button onClick={fetchCategories} style={categoryStyles.retryButton}>
+              🔄 Retry
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={categoryStyles.container}>
-      <h3>🏷️ Select Product Category</h3>
-      
-      {selectedCategory && (
-        <div style={categoryStyles.selectedCategory}>
-          ✅ Selected: {selectedCategory.name}
-          <button 
-            onClick={() => {
-              setSelectedCategory(null);
-              onCategorySelect('');
-              onAttributesChange({});
-            }}
-            style={categoryStyles.clearButton}
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {currentPath.length > 0 && (
-        <div style={categoryStyles.breadcrumbs}>
-          <button 
-            onClick={() => {
-              setCurrentPath([]);
-              setSelectedCategory(null);
-              onCategorySelect('');
-              onAttributesChange({});
-            }}
-            style={categoryStyles.breadcrumbButton}
-          >
-            🏠 Home
-          </button>
-          {currentPath.map((pathCategory, index) => (
-            <span key={pathCategory.id}>
-              <span style={categoryStyles.separator}> → </span>
-              <button 
-                onClick={() => handleBreadcrumbClick(index)}
-                style={categoryStyles.breadcrumbButton}
-              >
-                {pathCategory.name}
-              </button>
+    <div>
+      <h3 className='dashboardproductmodalsectiontitle'>Select Product Category *</h3>
+      <div style={categoryStyles.container}>
+        {selectedCategory && (
+          <div style={categoryStyles.selectedCategory}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckCircle size={16} color="#28a745" /> Selected: {selectedCategory.name}
             </span>
-          ))}
-        </div>
-      )}
-      
-      {currentPath.length > 0 && (
-        <div style={categoryStyles.navigationButtons}>
-          <button 
-            onClick={handleBackClick}
-            style={categoryStyles.backButton}
-          >
-            ⬅️ Back
-          </button>
-        </div>
-      )}
-      
-      <div style={categoryStyles.levelInfo}>
-        {currentPath.length === 0 ? (
-          <span>📂 Browse Categories ({currentCategories.length})</span>
-        ) : (
-          <span>📂 {currentPath[currentPath.length - 1].name} → Subcategories ({currentCategories.length})</span>
-        )}
-      </div>
-      
-      {currentCategories.length > 0 ? (
-        <div style={categoryStyles.categoriesGrid}>
-          {currentCategories.map(category => {
-            const hasChildren = allCategories.some(cat => cat.parent === category.id);
-            const isSelected = selectedCategory && selectedCategory.id === category.id;
-            
-            return (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => handleCategoryClick(category)}
-                style={{
-                  ...categoryStyles.categoryCard,
-                  ...(isSelected ? categoryStyles.selectedCard : {}),
-                  ...(hasChildren ? categoryStyles.folderCard : categoryStyles.fileCard)
-                }}
-              >
-                <div style={categoryStyles.categoryHeader}>
-                  <span style={categoryStyles.categoryIcon}>
-                    {hasChildren ? '📁' : '📄'}
-                  </span>
-                  <span style={categoryStyles.categoryName}>{category.name}</span>
-                </div>
-                {category.description && (
-                  <div style={categoryStyles.categoryDescription}>
-                    {category.description}
-                  </div>
-                )}
-                <div style={categoryStyles.categoryFooter}>
-                  {hasChildren ? (
-                    <span style={categoryStyles.childrenCount}>
-                      {allCategories.filter(cat => cat.parent === category.id).length} subcategories
-                    </span>
-                  ) : (
-                    <span style={categoryStyles.selectHint}>Click to select</span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <div style={categoryStyles.emptyState}>
-          <p>📭 No categories available at this level</p>
-          {currentPath.length > 0 && (
-            <button onClick={handleBackClick} style={categoryStyles.backButton}>
-              ⬅️ Go Back
+            <button
+              onClick={() => {
+                setSelectedCategory(null);
+                onCategorySelect('');
+                onAttributesChange({});
+              }}
+              style={categoryStyles.clearButton}
+            >
+              <X size={14} />
             </button>
+          </div>
+        )}
+
+        {currentPath.length > 0 && (
+          <div style={categoryStyles.breadcrumbs}>
+            <button
+              onClick={() => {
+                setCurrentPath([]);
+                setSelectedCategory(null);
+                onCategorySelect('');
+                onAttributesChange({});
+              }}
+              style={{
+                ...categoryStyles.breadcrumbButton,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Home size={14} /> Home
+            </button>
+            {currentPath.map((pathCategory, index) => (
+              <span key={pathCategory.id}>
+                <span style={categoryStyles.separator}> → </span>
+                <button
+                  onClick={() => handleBreadcrumbClick(index)}
+                  style={categoryStyles.breadcrumbButton}
+                >
+                  {pathCategory.name}
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {currentPath.length > 0 && (
+          <div style={categoryStyles.navigationButtons}>
+            <button
+              onClick={handleBackClick}
+              style={{ ...categoryStyles.backButton, display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <ArrowLeft size={14} /> Go Back
+            </button>
+          </div>
+        )}
+
+        <div style={categoryStyles.levelInfo}>
+          {currentPath.length === 0 ? (
+            <span className='dashboardproductmodalsectionlabel'>📂 Browse Categories ({currentCategories.length})</span>
+          ) : (
+            <span>📂 {currentPath[currentPath.length - 1].name} → Subcategories ({currentCategories.length})</span>
           )}
         </div>
-      )}
-    </div>
+
+        {currentCategories.length > 0 ? (
+          <div className='dashboardproductmodalcategoriesgrid' style={categoryStyles.categoriesGrid}>
+            {currentCategories.map(category => {
+              const hasChildren = allCategories.some(cat => cat.parent === category.id);
+              const isSelected = selectedCategory && selectedCategory.id === category.id;
+
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => handleCategoryClick(category)}
+                  style={{
+                    ...categoryStyles.categoryCard,
+                    ...(isSelected ? categoryStyles.selectedCard : {}),
+                    ...(hasChildren ? categoryStyles.folderCard : categoryStyles.fileCard)
+                  }}
+                >
+                  <div style={categoryStyles.categoryHeader}>
+                    <span style={categoryStyles.categoryIcon}>
+                      {hasChildren ? <Folder size={14} color='#ffc107' /> : <File size={14} color='#2fa64bff' />}
+                    </span>
+                    <span className='dashboardproductmodalcategoryname' style={categoryStyles.categoryName}>{category.name}</span>
+                  </div>
+                  {category.description && (
+                    <div style={categoryStyles.categoryDescription}>
+                      {category.description}
+                    </div>
+                  )}
+                  <div style={categoryStyles.categoryFooter}>
+                    {hasChildren ? (
+                      <span style={categoryStyles.childrenCount}>
+                        {allCategories.filter(cat => cat.parent === category.id).length} subcategories
+                      </span>
+                    ) : (
+                      <span style={categoryStyles.selectHint}>Click to select</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={categoryStyles.emptyState}>
+            <p>📭 No categories available at this level</p>
+            {currentPath.length > 0 && (
+              <button
+                onClick={handleBackClick}
+                style={{ ...categoryStyles.backButton, display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <ArrowLeft size={16} /> Go Back
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div >
   );
 };
 
 // ✅ Smart Stock Input Component
 const SmartStockInput = ({ formData, setFormData }) => {
   const [stockError, setStockError] = useState('');
-  
+
   const handleTotalStockChange = (e) => {
     let value = e.target.value.replace('-', '');
     const validation = validatePositiveInteger(value, 'Total Stock');
@@ -1381,39 +1412,48 @@ const SmartStockInput = ({ formData, setFormData }) => {
   };
 
   return (
-    <div style={styles.stockContainer}>
-      <h3>📦 Stock Management</h3>
-      {stockError && <div style={styles.stockError}>⚠️ {stockError}</div>}
-      
-      <div style={styles.formRow}>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>📦 Total Stock *</label>
-          <input 
-            type="number" 
-            value={formData.total_stock} 
-            onChange={handleTotalStockChange}
-            required 
-            style={styles.input}
-            min="0"
-            step="1"
-          />
-        </div>
-        
-        <div style={styles.formGroup}>
-          <label style={styles.label}>🌐 Online Stock *</label>
-          <input 
-            type="number" 
-            value={formData.online_stock} 
-            onChange={handleOnlineStockChange}
-            required 
-            style={styles.input}
-            min="0"
-            max={formData.total_stock}
-            step="1"
-          />
+    <div className="">
+      <h3 className='dashboardproductmodalsectiontitle'>Stock Management *</h3>
+      <div className='dashboardproductmodalsectioncontainer' style={styles.stockContainer}>
+        {stockError && <div style={styles.stockError}>⚠️ {stockError}</div>}
+
+        <div style={styles.formRow}>
+          <div style={styles.formGroup}>
+            <label className='dashboardproductmodalsectionlabel' style={{ ...styles.label, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Box size={14} /> Total Stock
+            </label>
+            <input
+              type="number"
+              value={formData.total_stock}
+              onChange={handleTotalStockChange}
+              required
+              style={styles.input}
+              className='dashboardproductmodalselectinput'
+              min="0"
+              step="1"
+            />
+          </div>
+
+          <div style={styles.formGroup}>
+            <label className='dashboardproductmodalsectionlabel' style={{ ...styles.label, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Globe size={14} /> Online Stock
+            </label>
+            <input
+              type="number"
+              value={formData.online_stock}
+              onChange={handleOnlineStockChange}
+              required
+              style={styles.input}
+              className='dashboardproductmodalselectinput'
+              min="0"
+              max={formData.total_stock}
+              step="1"
+            />
+          </div>
         </div>
       </div>
     </div>
+
   );
 };
 
@@ -1455,7 +1495,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
       setSelectedCategoryId(product.category);
       setDynamicAttributes(product.attributes || {});
       setMainImageUrl(product.main_image_url || product.cloudinary_image_url || '');
-      
+
       // ✅ FIXED: Properly structure sub-images with database IDs
       setSubImageUrls(product.sub_images?.map((img) => ({
         id: img.id, // ✅ CRITICAL: Include database ID for deletion
@@ -1469,9 +1509,9 @@ export default function ProductForm({ product, onClose, onSuccess }) {
   // ✅ FIXED: Handle deletion of sub-images from database with correct URL
   const handleDeleteOldSubImage = async (subImageId) => {
     if (!subImageId) return;
-    
+
     console.log('🗑️ Deleting sub-image ID:', subImageId);
-    
+
     const token = localStorage.getItem('accessToken');
     if (!token) {
       setError('Authentication required. Please log in again.');
@@ -1486,7 +1526,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
       );
 
       console.log('✅ Sub-image deleted from database:', response.data);
-      
+
       // Remove from local state
       setSubImageUrls(prev => prev.filter(img => img.id !== subImageId));
       setError('');
@@ -1500,14 +1540,14 @@ export default function ProductForm({ product, onClose, onSuccess }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === 'price' || name === 'mrp') {
       let cleanValue = value.replace('-', '');
       const validation = validatePositiveNumber(cleanValue, name === 'price' ? 'Selling Price' : 'MRP');
       if (validation.isValid) {
         setFormData(prev => ({ ...prev, [name]: cleanValue }));
         setPriceError('');
-        
+
         if (name === 'price' && formData.mrp && parseFloat(cleanValue) > parseFloat(formData.mrp)) {
           setPriceError('Selling price cannot be higher than MRP');
         } else if (name === 'mrp' && formData.price && parseFloat(formData.price) > parseFloat(cleanValue)) {
@@ -1533,7 +1573,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
   // ✅ FIXED: Handle sub-image uploads properly
   const handleSubImagesUpload = (uploadedImages) => {
     console.log('📸 Sub-images uploaded:', uploadedImages);
-    
+
     setSubImageUrls(prevUrls => {
       // Combine existing database images + new Cloudinary uploads
       const allImages = [...prevUrls, ...uploadedImages.map(img => ({
@@ -1542,19 +1582,19 @@ export default function ProductForm({ product, onClose, onSuccess }) {
         public_id: img.public_id,
         isFromDatabase: false
       }))];
-      
+
       // Remove duplicates based on URL
       const uniqueImages = allImages.filter((img, index, self) =>
         index === self.findIndex((t) => t.url === img.url)
       );
-      
+
       // Limit to maximum 4 sub-images
       const limitedImages = uniqueImages.slice(0, 4);
-      
+
       console.log(`📊 Total sub-images: ${limitedImages.length}/4`);
       return limitedImages;
     });
-    
+
     setUploadingImages(false);
   };
 
@@ -1564,12 +1604,12 @@ export default function ProductForm({ product, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!mainImageUrl && !product) {
       setError('Please upload a main product image');
       return;
     }
-    
+
     if (uploadingImages) {
       setError('Please wait for image uploads to complete');
       return;
@@ -1618,7 +1658,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
 
     setIsSubmitting(true);
     setError('');
-    
+
     const submissionData = {
       ...formData,
       category: selectedCategoryId ? parseInt(selectedCategoryId) : null,
@@ -1632,8 +1672,8 @@ export default function ProductForm({ product, onClose, onSuccess }) {
 
     console.log('🚀 Submitting product data:', submissionData);
 
-    const url = product 
-      ? `${PRODUCTS_API_URL}${product.id}/` 
+    const url = product
+      ? `${PRODUCTS_API_URL}${product.id}/`
       : PRODUCTS_API_URL;
     const method = product ? 'PATCH' : 'POST';
 
@@ -1649,12 +1689,12 @@ export default function ProductForm({ product, onClose, onSuccess }) {
         },
         timeout: 30000
       });
-      
+
       console.log('✅ Product saved successfully:', response.data);
       onSuccess();
     } catch (err) {
       let errorMessage = 'Something went wrong. Please check your details and try again.';
-      
+
       if (err.response?.status === 401) {
         errorMessage = 'Your session has expired. Please log in again.';
         setTimeout(() => {
@@ -1674,7 +1714,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
       } else if (err.code === 'ECONNABORTED') {
         errorMessage = 'Request is taking too long. Please check your internet connection and try again.';
       }
-      
+
       console.error('❌ Product save error:', err);
       setError(errorMessage);
     } finally {
@@ -1686,53 +1726,64 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     <div style={styles.modalOverlay}>
       <div style={styles.modalContent}>
         <div style={styles.modalHeader}>
-          <h2 style={styles.modalTitle}>
-            {product ? '✏️ Edit Product' : '🆕 Add New Product'}
+          <h2 className='dashboardproductmodaltitle' style={{ ...styles.modalTitle, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {product ? (
+              <>
+                <Edit size={22} className='dashboardproductmodaltitleicon' /> Edit Product
+              </>
+            ) : (
+              <>
+                <Package2 size={22} className='dashboardproductmodaltitleicon' /> Add New Product
+              </>
+            )}
           </h2>
-          <div style={styles.connectionStatus}>
-            ☁️ Images powered by Cloudinary | 🌐 API: {API_BASE_URL.replace('https://', '').replace('http://', '')}
+          <div style={{ ...styles.connectionStatus, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Cloud size={14} /> Images powered by Cloudinary
           </div>
         </div>
-        
+
         <form onSubmit={handleSubmit}>
+
           {/* Basic Product Information */}
-          <div style={styles.sectionContainer}>
-            <h3 style={styles.sectionTitle}>📝 Basic Product Information</h3>
-            
+          <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Basic Product Information *</h3>
+          <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
             <div style={styles.formGroup}>
-              <label style={styles.label}>🏷️ Product Name *</label>
-              <input 
-                type="text" 
-                name="name" 
-                value={formData.name} 
-                onChange={handleChange} 
-                required 
+              <label className='dashboardproductmodalsectionlabel' style={styles.label}>Product Name</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
                 style={styles.input}
-                placeholder="e.g., Premium Cotton T-Shirt, iPhone 13, Running Shoes..."
+                className='dashboardproductmodalselectinput'
+                placeholder="eg, Cotton T-Shirt, iPhone 13, Shoes..."
               />
               <small style={styles.helpText}>Give your product a clear, descriptive name</small>
             </div>
-            
+
             <div style={styles.formGroup}>
-              <label style={styles.label}>🔧 Model/Variation (Optional)</label>
-              <input 
-                type="text" 
-                name="model_name" 
-                value={formData.model_name} 
-                onChange={handleChange} 
-                style={styles.input} 
+              <label className='dashboardproductmodalsectionlabel' style={styles.label}>Model/Variation</label>
+              <input
+                type="text"
+                name="model_name"
+                value={formData.model_name}
+                onChange={handleChange}
+                style={styles.input}
+                className='dashboardproductmodalselectinput'
                 placeholder="e.g., Red XL, 128GB Black, Size 42..."
               />
               <small style={styles.helpText}>Specify color, size, model year, or any variations</small>
             </div>
-            
+
             <div style={styles.formGroup}>
-              <label style={styles.label}>📄 Product Description (Optional)</label>
-              <textarea 
-                name="description" 
-                value={formData.description} 
-                onChange={handleChange} 
+              <label className='dashboardproductmodalsectionlabel' style={styles.label}>Product Description</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
                 style={styles.textArea}
+                className='dashboardproductmodalselectinput'
                 placeholder="Describe your product: features, benefits, materials..."
                 rows="4"
               />
@@ -1741,25 +1792,26 @@ export default function ProductForm({ product, onClose, onSuccess }) {
           </div>
 
           {/* Pricing */}
-          <div style={styles.sectionContainer}>
-            <h3 style={styles.sectionTitle}>💰 Pricing Information</h3>
-            
+          <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Pricing Information *</h3>
+          <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
+
             {priceError && (
               <div style={styles.priceError}>
                 ⚠️ {priceError}
               </div>
             )}
-            
-            <div style={styles.formRow}>
+
+            <div className='dashboardproductmodalpriceinputgap' style={styles.formRow}>
               <div style={styles.formGroup}>
-                <label style={styles.label}>💵 Your Selling Price (₹) *</label>
-                <input 
-                  type="number" 
-                  name="price" 
-                  value={formData.price} 
-                  onChange={handleChange} 
-                  required 
-                  style={styles.input} 
+                <label className='dashboardproductmodalsectionlabel' style={styles.label}>Your Selling Price (₹)</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  required
+                  style={styles.input}
+                  className='dashboardproductmodalselectinput'
                   step="0.01"
                   min="0"
                   placeholder="299.99"
@@ -1769,15 +1821,16 @@ export default function ProductForm({ product, onClose, onSuccess }) {
                 />
                 <small style={styles.helpText}>The price you want to charge customers</small>
               </div>
-              
+
               <div style={styles.formGroup}>
-                <label style={styles.label}>🏷️ MRP - Maximum Retail Price (₹)</label>
-                <input 
-                  type="number" 
-                  name="mrp" 
-                  value={formData.mrp} 
-                  onChange={handleChange} 
-                  style={styles.input} 
+                <label className='dashboardproductmodalsectionlabel' style={styles.label}>MRP - Maximum Retail Price (₹)</label>
+                <input
+                  type="number"
+                  name="mrp"
+                  value={formData.mrp}
+                  onChange={handleChange}
+                  style={styles.input}
+                  className='dashboardproductmodalselectinput'
                   step="0.01"
                   min="0"
                   placeholder="399.99"
@@ -1790,8 +1843,8 @@ export default function ProductForm({ product, onClose, onSuccess }) {
             </div>
 
             {formData.price && formData.mrp && parseFloat(formData.mrp) > parseFloat(formData.price) && (
-              <div style={styles.discountDisplay}>
-                🎉 Great! You're offering a discount of ₹{(parseFloat(formData.mrp) - parseFloat(formData.price)).toFixed(2)} 
+              <div className='dashboardproductmodaldiscountlabel' style={styles.discountDisplay}>
+                🎉 Great! You're offering a discount of ₹{(parseFloat(formData.mrp) - parseFloat(formData.price)).toFixed(2)}
                 ({Math.round(((parseFloat(formData.mrp) - parseFloat(formData.price)) / parseFloat(formData.mrp)) * 100)}% off)
               </div>
             )}
@@ -1799,19 +1852,23 @@ export default function ProductForm({ product, onClose, onSuccess }) {
 
           {/* Stock Management */}
           <SmartStockInput formData={formData} setFormData={setFormData} />
-          
+
           {/* Sales Channels */}
-          <div style={styles.sectionContainer}>
-            <h3 style={styles.sectionTitle}>🛍️ Where Do You Want to Sell?</h3>
-            <select 
-              name="sale_type" 
-              value={formData.sale_type} 
-              onChange={handleChange} 
+          <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Where Do You Want to Sell ?</h3>
+          <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
+            <select
+              name="sale_type"
+              value={formData.sale_type}
+              onChange={handleChange}
               style={styles.selectInput}
+              className='dashboardproductmodalselectinput'
             >
-              <option value="BOTH">🌐 Both Online & In-Store (Recommended)</option>
-              <option value="OFFLINE">🏪 Only In My Physical Store</option>
-              <option value="ONLINE">🌐 Only Online Sales</option>
+              <option className='dashboardproductmodalselectinput'
+                value="BOTH">🌐 Both Online & In-Store (Recommended)</option>
+              <option className='dashboardproductmodalselectinput'
+                value="OFFLINE">🏪 Only In My Physical Store</option>
+              <option className='dashboardproductmodalselectinput'
+                value="ONLINE">🌐 Only Online Sales</option>
             </select>
             <small style={styles.helpText}>Choose where customers can buy this product</small>
           </div>
@@ -1824,20 +1881,21 @@ export default function ProductForm({ product, onClose, onSuccess }) {
             onCategorySelect={setSelectedCategoryId}
             onAttributesChange={setDynamicAttributes}
           />
-          
+
           {/* Dynamic Attributes */}
           {Object.keys(dynamicAttributes).length > 0 && (
             <div style={styles.attributesSection}>
-              <h3 style={styles.sectionTitle}>🔧 Category-Specific Details</h3>
+              <h3 style={styles.sectionTitle}>Category-Specific Details</h3>
               <div style={styles.attributesGrid}>
                 {Object.keys(dynamicAttributes).map(name => (
                   <div key={name} style={styles.formGroup}>
                     <label style={styles.label}>📝 {name}</label>
-                    <input 
-                      type="text" 
-                      value={dynamicAttributes[name] || ''} 
-                      onChange={e => handleAttributeChange(name, e.target.value)} 
+                    <input
+                      type="text"
+                      value={dynamicAttributes[name] || ''}
+                      onChange={e => handleAttributeChange(name, e.target.value)}
                       style={styles.input}
+                      className='dashboardproductmodalselectinput'
                       placeholder={`Enter ${name.toLowerCase()}...`}
                     />
                   </div>
@@ -1849,11 +1907,12 @@ export default function ProductForm({ product, onClose, onSuccess }) {
           <hr style={styles.hr} />
 
           {/* ✅ FIXED: Image Uploads with proper delete handlers */}
-          <div style={styles.sectionContainer}>
-            <h3 style={styles.sectionTitle}>☁️ Product Images (Cloudinary)</h3>
-            
+          <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Product Images *</h3>
+
+          <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
+
             <CloudinaryImageUpload
-              label="📷 Main Product Image"
+              label="Main Product Image"
               required={!product}
               type="main"
               onUploadComplete={handleMainImageUpload}
@@ -1863,7 +1922,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
             />
 
             <CloudinaryImageUpload
-              label="🖼️ Additional Images"
+              label="Additional Images"
               multiple={true}
               maxFiles={4}
               type="sub"
@@ -1874,7 +1933,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
               helpText="📷 Add more angles, close-ups, or usage photos (max 4 images)"
             />
           </div>
-          
+
           {error && (
             <div style={styles.errorAlert}>
               <strong>⚠️ Oops! Something went wrong:</strong>
@@ -1882,27 +1941,48 @@ export default function ProductForm({ product, onClose, onSuccess }) {
               {error}
             </div>
           )}
-          
+
           <div style={styles.buttonContainer}>
-            <button 
-              type="button" 
-              onClick={onClose} 
-              disabled={isSubmitting || uploadingImages} 
-              style={styles.buttonSecondary}
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting || uploadingImages}
+              className='dashboardproductcreatebtn'
+              style={{
+                ...styles.buttonSecondary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+              }}
             >
-              ❌ Cancel
+              <X size={18} className='dashboardproductcreatebtnicon' color='white' /> Cancel
             </button>
-            <button 
-              type="submit" 
-              disabled={isSubmitting || uploadingImages || !selectedCategoryId || priceError} 
-              style={styles.buttonPrimary}
+            <button
+              type="submit"
+              disabled={isSubmitting || uploadingImages || !selectedCategoryId || priceError}
+              className='dashboardproductcreatebtn'
+              style={{
+                ...styles.buttonPrimary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+              }}
             >
               {isSubmitting ? (
-                <>⏳ {product ? 'Updating...' : 'Creating...'}</>
+                <>
+                  <Loader2 size={18} className="spin" /> {product ? 'Updating...' : 'Creating...'}
+                </>
               ) : uploadingImages ? (
-                <>☁️ Uploading Images...</>
+                <>
+                  <CloudUpload size={18} className='dashboardproductcreatebtnicon' /> Uploading Images...
+                </>
               ) : (
-                <>{product ? '✅ Update Product' : '🚀 Create Product'}</>
+                <>
+                  {product ? <CheckCircle size={18} className='dashboardproductcreatebtnicon' /> : <Rocket size={18} className='dashboardproductcreatebtnicon' />}
+                  {product ? 'Update Product' : 'Create Product'}
+                </>
               )}
             </button>
           </div>

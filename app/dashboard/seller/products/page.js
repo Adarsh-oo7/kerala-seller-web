@@ -328,7 +328,7 @@ export default function ProductsPage() {
 
         return (
           <div key={product.id} style={styles.gridCard}>
-            <div style={styles.cardImageContainer}>
+            <div className='dashboardproductcardimgcontainer' style={styles.cardImageContainer}>
               <img
                 src={product.image_url || product.main_image_url || 'https://via.placeholder.com/200x200/e9ecef/6c757d?text=No+Image'}
                 alt={product.name}
@@ -349,13 +349,13 @@ export default function ProductsPage() {
             </div>
 
             <div style={styles.cardContent}>
-              <h3 style={styles.cardTitle}>{product.name || 'Unnamed Product'}</h3>
+              <h3 className='dashboardproductcardimgtitle' style={styles.cardTitle}>{product.name || 'Unnamed Product'}</h3>
               {product.model_name && (
                 <p style={styles.cardModel}>Model: {product.model_name}</p>
               )}
 
               <div style={styles.cardPriceContainer}>
-                <span style={styles.cardPrice}>₹{parseFloat(product.price || 0).toLocaleString('en-IN')}</span>
+                <span className='dashboardproductcardimgprice' style={styles.cardPrice}>₹{parseFloat(product.price || 0).toLocaleString('en-IN')}</span>
                 {product.mrp && parseFloat(product.mrp) > parseFloat(product.price) && (
                   <span style={styles.cardMrp}>₹{parseFloat(product.mrp).toLocaleString('en-IN')}</span>
                 )}
@@ -369,6 +369,7 @@ export default function ProductsPage() {
 
             <div style={styles.cardActions}>
               <button
+                className='dashboardproductcardimgbtn'
                 onClick={() => handleOpenModal(product)}
                 style={styles.cardButton}
                 title="Edit product"
@@ -1004,95 +1005,95 @@ const styles = {
 
   gridCard: {
     backgroundColor: '#FDFFF0',
-    borderRadius: '12px',
+    borderRadius: '10px',
     overflow: 'hidden',
     border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    transition: 'all 0.2s'
+    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    transition: 'all 0.2s ease',
   },
 
   cardImageContainer: {
     position: 'relative',
-    height: '215px',
-    overflow: 'hidden'
+    height: '160px', // 🟢 reduced from 215px
+    overflow: 'hidden',
   },
 
   cardImage: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover'
+    objectFit: 'cover',
   },
 
   cardImageOverlay: {
     position: 'absolute',
-    top: '12px',
-    right: '12px'
+    top: '8px',
+    right: '8px',
   },
 
   cardContent: {
-    padding: '12px'
+    padding: '8px 10px', // 🟢 smaller padding
   },
 
   cardTitle: {
-    fontSize: '16px',
+    fontSize: '14px', // 🟢 reduced
     fontWeight: '600',
     color: '#1f2937',
-    margin: '0 0 8px 0',
-    lineHeight: '1.3'
+    margin: '0 0 6px 0',
+    lineHeight: '1.3',
   },
 
   cardModel: {
-    fontSize: '12px',
+    fontSize: '11px',
     color: '#6b7280',
-    margin: '0 0 12px 0'
+    margin: '0 0 8px 0',
   },
 
   cardPriceContainer: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    marginBottom: '12px'
+    gap: '6px',
+    marginBottom: '8px',
   },
 
   cardPrice: {
-    fontSize: '18px',
+    fontSize: '15px', // 🟢 smaller
     fontWeight: '700',
-    color: '#059669'
+    color: '#059669',
   },
 
   cardMrp: {
-    fontSize: '14px',
+    fontSize: '12px',
     color: '#9ca3af',
-    textDecoration: 'line-through'
+    textDecoration: 'line-through',
   },
 
   cardStock: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    fontSize: '12px',
-    color: '#6b7280'
+    fontSize: '11px',
+    color: '#6b7280',
   },
 
   cardSaleType: {
     padding: '2px 6px',
     backgroundColor: '#eff6ff',
     color: '#1e40af',
-    borderRadius: '8px',
-    fontSize: '10px',
-    fontWeight: '500'
+    borderRadius: '6px',
+    fontSize: '9px', // 🟢 reduced
+    fontWeight: '500',
   },
 
   cardActions: {
-    padding: '8px 12px',
+    padding: '6px 10px',
     borderTop: '1px solid #f3f4f6',
     display: 'flex',
-    gap: '8px'
+    gap: '6px',
   },
 
   cardButton: {
     flex: 1,
-    padding: '8px 12px',
+    padding: '6px 8px', // 🟢 smaller
     backgroundColor: '#6b7280',
     color: 'white',
     border: 'none',
@@ -1101,12 +1102,14 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'all 0.2s'
+    transition: 'all 0.2s ease',
+    fontSize: '12px',
   },
 
   cardButtonDanger: {
-    backgroundColor: '#ef4444'
+    backgroundColor: '#ef4444',
   },
+
 
   // Buttons
   buttonPrimary: {
