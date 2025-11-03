@@ -402,7 +402,7 @@
 
     .dashboardproductgridcontainer {
         display: grid !important;
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
         gap: 5px !important;
     }
 
@@ -436,7 +436,7 @@
 
     .dashboardproductmodalselectinput {
         font-size: 11px !important;
-        padding: 6px 0px !important;
+        padding: 6px 12px !important;
     }
 
     .dashboardproductmodalcategoryname {

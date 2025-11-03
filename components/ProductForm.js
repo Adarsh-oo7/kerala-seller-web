@@ -590,7 +590,8 @@ const styles = {
     gap: '8px'
   },
   formGroup: {
-    marginBottom: '1.5rem'
+    marginBottom: '1.5rem',
+    minWidth: '0',
   },
   formRow: {
     display: 'grid',
@@ -606,7 +607,7 @@ const styles = {
     borderRadius: '8px',
     fontSize: '14px',
     transition: 'all 0.2s',
-    backgroundColor: '#FDFFF0'
+    backgroundColor: '#FDFFF0',
   },
   selectInput: {
     width: '100%',
@@ -649,7 +650,7 @@ const styles = {
   hr: {
     border: 'none',
     borderTop: '3px solid #f8f9fa',
-    margin: '32px 0'
+    margin: '22px 0'
   },
   priceError: {
     backgroundColor: '#f8d7da',
@@ -829,12 +830,14 @@ const styles = {
     borderRadius: '16px',
     padding: '20px',
     marginTop: '20px',
-    backgroundColor: '#f0f8ff'
+    backgroundColor: '#FDFFF0'
   },
   attributesGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '16px'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   discountDisplay: {
     backgroundColor: '#d4edda',
@@ -1884,22 +1887,24 @@ export default function ProductForm({ product, onClose, onSuccess }) {
 
           {/* Dynamic Attributes */}
           {Object.keys(dynamicAttributes).length > 0 && (
-            <div style={styles.attributesSection}>
-              <h3 style={styles.sectionTitle}>Category-Specific Details</h3>
-              <div style={styles.attributesGrid}>
-                {Object.keys(dynamicAttributes).map(name => (
-                  <div key={name} style={styles.formGroup}>
-                    <label style={styles.label}>📝 {name}</label>
-                    <input
-                      type="text"
-                      value={dynamicAttributes[name] || ''}
-                      onChange={e => handleAttributeChange(name, e.target.value)}
-                      style={styles.input}
-                      className='dashboardproductmodalselectinput'
-                      placeholder={`Enter ${name.toLowerCase()}...`}
-                    />
-                  </div>
-                ))}
+            <div>
+              <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Category-Specific Details</h3>
+              <div className='dashboardproductmodalsectioncontainer' style={styles.attributesSection}>
+                <div style={styles.attributesGrid}>
+                  {Object.keys(dynamicAttributes).map(name => (
+                    <div key={name} style={styles.formGroup}>
+                      <label className='dashboardproductmodalsectionlabel' style={styles.label}>{name}</label>
+                      <input
+                        type="text"
+                        value={dynamicAttributes[name] || ''}
+                        onChange={e => handleAttributeChange(name, e.target.value)}
+                        style={styles.input}
+                        className='dashboardproductmodalselectinput'
+                        placeholder={`Enter ${name.toLowerCase()}...`}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
