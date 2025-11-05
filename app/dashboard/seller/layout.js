@@ -327,7 +327,19 @@ export default function DashboardLayout({ children }) {
         { name: 'Stock', href: '/dashboard/seller/stock', icon: <BarChart3 size={18} /> },
         { name: 'History', href: '/dashboard/seller/history', icon: <History size={18} /> },
       ]
-    }
+    },
+      {
+    title: 'PAYMENTS & EARNINGS',
+    items: [
+      { 
+        name: 'Payments', 
+        href: '/dashboard/seller/payments', 
+        icon: <CreditCard size={18} />,
+        description: '💰 View earnings & bank details'
+      },
+    ]
+  }
+
   ];
 
   return (
