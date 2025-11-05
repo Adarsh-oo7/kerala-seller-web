@@ -3,12 +3,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { 
-  History, 
-  Package, 
-  TrendingUp, 
-  TrendingDown, 
-  Calendar, 
+import {
+  History,
+  Package,
+  TrendingUp,
+  TrendingDown,
+  Calendar,
   Filter,
   Download,
   AlertCircle,
@@ -27,15 +27,15 @@ import {
 // ✅ Enhanced API Configuration
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  
+
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
     return envUrl.trim();
   }
-  
+
   if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:8000';
   }
-  
+
   return 'https://keralaseller-backend.onrender.com';
 };
 
@@ -56,9 +56,9 @@ export default function StockHistoryPage() {
 
   // ✅ Enhanced authentication check
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('accessToken') || 
-                 localStorage.getItem('buyerAccessToken') ||
-                 localStorage.getItem('access_token');
+    const token = localStorage.getItem('accessToken') ||
+      localStorage.getItem('buyerAccessToken') ||
+      localStorage.getItem('access_token');
     return token ? { Authorization: `Bearer ${token}` } : null;
   }, []);
 
@@ -129,10 +129,10 @@ export default function StockHistoryPage() {
     try {
       console.log('🔍 Fetching stock history from:', HISTORY_API_URL);
       const response = await axios.get(HISTORY_API_URL, { headers });
-      
+
       const historyData = response.data.results || response.data || [];
       console.log(`✅ Received ${historyData.length} stock history records`);
-      
+
       // Use real data if available, otherwise use mock data
       const dataToUse = historyData.length > 0 ? historyData : mockData;
       setHistory(dataToUse);
@@ -167,10 +167,10 @@ export default function StockHistoryPage() {
     // Filter by product name
     if (filters.product.trim()) {
       filtered = filtered.filter(item => {
-        const productName = item.product?.name || 
-                           item.product_name || 
-                           item.product || 
-                           'Unknown Product';
+        const productName = item.product?.name ||
+          item.product_name ||
+          item.product ||
+          'Unknown Product';
         return productName.toLowerCase().includes(filters.product.toLowerCase());
       });
     }
@@ -180,8 +180,8 @@ export default function StockHistoryPage() {
       const days = parseInt(filters.dateRange);
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days);
-      
-      filtered = filtered.filter(item => 
+
+      filtered = filtered.filter(item =>
         new Date(item.timestamp).getTime() >= cutoffDate.getTime()
       );
     }
@@ -253,18 +253,18 @@ export default function StockHistoryPage() {
   };
 
   const getProductName = (item) => {
-    return item.product?.name || 
-           item.product_name || 
-           item.product || 
-           'Unknown Product';
+    return item.product?.name ||
+      item.product_name ||
+      item.product ||
+      'Unknown Product';
   };
 
   const getUserName = (item) => {
     if (item.user) {
-      return item.user.full_name || 
-             item.user.email || 
-             item.user.name || 
-             'System User';
+      return item.user.full_name ||
+        item.user.email ||
+        item.user.name ||
+        'System User';
     }
     return 'System';
   };
@@ -274,10 +274,10 @@ export default function StockHistoryPage() {
     const stats = filteredHistory.reduce((acc, item) => {
       const totalChange = item.change_total || 0;
       const onlineChange = item.change_online || 0;
-      
+
       acc.totalMovement += Math.abs(totalChange);
       acc.onlineMovement += Math.abs(onlineChange);
-      
+
       if (totalChange > 0) {
         acc.stockIncreases++;
         acc.totalAdded += totalChange;
@@ -285,9 +285,9 @@ export default function StockHistoryPage() {
         acc.stockDecreases++;
         acc.totalSold += Math.abs(totalChange);
       }
-      
+
       acc.actionCounts[item.action] = (acc.actionCounts[item.action] || 0) + 1;
-      
+
       return acc;
     }, {
       totalMovement: 0,
@@ -298,7 +298,7 @@ export default function StockHistoryPage() {
       totalSold: 0,
       actionCounts: {}
     });
-    
+
     return stats;
   };
 
@@ -361,27 +361,28 @@ export default function StockHistoryPage() {
   return (
     <div style={styles.pageContainer}>
       {/* ✅ Enhanced Header */}
-      <div style={styles.header}>
+      <div className='dashboardproductheader' style={styles.header}>
         <div>
-          <h1 style={styles.pageTitle}>
-            <History size={28} />
+          <h1 className='dashboardproducttitle' style={styles.pageTitle}>
+            <History size={28} className='dashboardproductpackageicon' />
             Stock Movement History
           </h1>
-          <p style={styles.pageSubtitle}>
+          <p className='dashboardproductsubtitle' style={styles.pageSubtitle}>
             Track all inventory changes and stock movements for your Kerala store
           </p>
         </div>
         <div style={styles.headerActions}>
-          <button 
-            onClick={exportHistory} 
-            style={styles.exportButton} 
+          <button
+            onClick={exportHistory}
+            className='dashboardproductaddprodbtn'
+            style={styles.exportButton}
             disabled={filteredHistory.length === 0}
             title="Export to CSV"
           >
             <Download size={18} />
             Export CSV
           </button>
-          <button onClick={fetchHistory} style={styles.refreshButton} title="Refresh data">
+          <button className='dashboardproductaddprodbtn' onClick={fetchHistory} style={styles.refreshButton} title="Refresh data">
             <RefreshCw size={18} />
             Refresh
           </button>
@@ -390,41 +391,41 @@ export default function StockHistoryPage() {
 
       {/* ✅ Enhanced Statistics Cards */}
       {filteredHistory.length > 0 && (
-        <div style={styles.statsContainer}>
+        <div className='dashboardproductanalyticscontainer' style={styles.statsContainer}>
           <div style={styles.statCard}>
-            <div style={{...styles.statIcon, backgroundColor: '#ecfdf5'}}>
-              <TrendingUp size={20} color="#059669" />
+            <div className='dashboardproductanalyticsiconcontainer' style={{ ...styles.statIcon, }}>
+              <TrendingUp size={24} color="#059669" className='dashboardproductanalyticsicon' />
             </div>
             <div style={styles.statContent}>
-              <div style={styles.statValue}>{stats.totalAdded}</div>
-              <div style={styles.statLabel}>Items Added</div>
+              <div className='dashboardproductanalyticsvalue' style={styles.statValue}>{stats.totalAdded}</div>
+              <div className='dashboardproductanalyticslabel' style={styles.statLabel}>Items Added</div>
             </div>
           </div>
           <div style={styles.statCard}>
-            <div style={{...styles.statIcon, backgroundColor: '#fef2f2'}}>
-              <TrendingDown size={20} color="#dc2626" />
+            <div className='dashboardproductanalyticsiconcontainer' style={{ ...styles.statIcon, }}>
+              <TrendingDown size={24} color="#dc2626" className='dashboardproductanalyticsicon' />
             </div>
             <div style={styles.statContent}>
-              <div style={styles.statValue}>{stats.totalSold}</div>
-              <div style={styles.statLabel}>Items Sold</div>
+              <div className='dashboardproductanalyticsvalue' style={styles.statValue}>{stats.totalSold}</div>
+              <div className='dashboardproductanalyticslabel' style={styles.statLabel}>Items Sold</div>
             </div>
           </div>
           <div style={styles.statCard}>
-            <div style={{...styles.statIcon, backgroundColor: '#eff6ff'}}>
-              <Package size={20} color="#3b82f6" />
+            <div className='dashboardproductanalyticsiconcontainer' style={{ ...styles.statIcon, }}>
+              <Package size={24} color="#175E54" className='dashboardproductanalyticsicon' />
             </div>
             <div style={styles.statContent}>
-              <div style={styles.statValue}>{stats.totalMovement}</div>
-              <div style={styles.statLabel}>Total Movement</div>
+              <div className='dashboardproductanalyticsvalue' style={styles.statValue}>{stats.totalMovement}</div>
+              <div className='dashboardproductanalyticslabel' style={styles.statLabel}>Total Movement</div>
             </div>
           </div>
           <div style={styles.statCard}>
-            <div style={{...styles.statIcon, backgroundColor: '#f3e8ff'}}>
-              <FileText size={20} color="#8b5cf6" />
+            <div className='dashboardproductanalyticsiconcontainer' style={{ ...styles.statIcon, }}>
+              <FileText size={24} color="#8b5cf6" className='dashboardproductanalyticsicon' />
             </div>
             <div style={styles.statContent}>
-              <div style={styles.statValue}>{filteredHistory.length}</div>
-              <div style={styles.statLabel}>History Records</div>
+              <div className='dashboardproductanalyticsvalue' style={styles.statValue}>{filteredHistory.length}</div>
+              <div className='dashboardproductanalyticslabel' style={styles.statLabel}>History Records</div>
             </div>
           </div>
         </div>
@@ -441,8 +442,8 @@ export default function StockHistoryPage() {
             {filters.action !== 'all' && (
               <span style={styles.activeFilter}>
                 Action: {getActionLabel(filters.action)}
-                <button 
-                  onClick={() => setFilters({...filters, action: 'all'})}
+                <button
+                  onClick={() => setFilters({ ...filters, action: 'all' })}
                   style={styles.filterRemove}
                 >
                   ×
@@ -452,8 +453,8 @@ export default function StockHistoryPage() {
             {filters.product && (
               <span style={styles.activeFilter}>
                 Product: {filters.product}
-                <button 
-                  onClick={() => setFilters({...filters, product: ''})}
+                <button
+                  onClick={() => setFilters({ ...filters, product: '' })}
                   style={styles.filterRemove}
                 >
                   ×
@@ -463,8 +464,8 @@ export default function StockHistoryPage() {
             {filters.dateRange !== '30' && (
               <span style={styles.activeFilter}>
                 Date: {filters.dateRange === 'all' ? 'All time' : `Last ${filters.dateRange} days`}
-                <button 
-                  onClick={() => setFilters({...filters, dateRange: '30'})}
+                <button
+                  onClick={() => setFilters({ ...filters, dateRange: '30' })}
                   style={styles.filterRemove}
                 >
                   ×
@@ -473,13 +474,13 @@ export default function StockHistoryPage() {
             )}
           </div>
         </div>
-        
+
         <div style={styles.filtersGrid}>
           <div style={styles.filterGroup}>
             <label style={styles.filterLabel}>Action Type</label>
             <select
               value={filters.action}
-              onChange={(e) => setFilters({...filters, action: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, action: e.target.value })}
               style={styles.filterSelect}
             >
               <option value="all">All Actions</option>
@@ -494,7 +495,7 @@ export default function StockHistoryPage() {
             <label style={styles.filterLabel}>Date Range</label>
             <select
               value={filters.dateRange}
-              onChange={(e) => setFilters({...filters, dateRange: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
               style={styles.filterSelect}
             >
               <option value="1">Today</option>
@@ -513,12 +514,12 @@ export default function StockHistoryPage() {
                 type="text"
                 placeholder="Search by product name..."
                 value={filters.product}
-                onChange={(e) => setFilters({...filters, product: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, product: e.target.value })}
                 style={styles.searchInput}
               />
               {filters.product && (
-                <button 
-                  onClick={() => setFilters({...filters, product: ''})}
+                <button
+                  onClick={() => setFilters({ ...filters, product: '' })}
                   style={styles.searchClear}
                 >
                   ×
@@ -543,26 +544,35 @@ export default function StockHistoryPage() {
                 <thead>
                   <tr style={styles.thead}>
                     <th style={styles.th}>
-                      <Calendar size={16} />
-                      Date & Time
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Calendar size={16} />
+                        <span>Date & Time</span>
+                      </div>
                     </th>
                     <th style={styles.th}>
-                      <Package size={16} />
-                      Product
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Package size={16} />
+                        <span>Product</span>
+                      </div>
                     </th>
                     <th style={styles.th}>Action</th>
                     <th style={styles.th}>Total Stock</th>
                     <th style={styles.th}>Online Stock</th>
                     <th style={styles.th}>
-                      <User size={16} />
-                      User
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <User size={16} />
+                        <span>User</span>
+                      </div>
                     </th>
                     <th style={styles.th}>
-                      <FileText size={16} />
-                      Note
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <FileText size={16} />
+                        <span>Note</span>
+                      </div>
                     </th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {filteredHistory.map((log, index) => (
                     <tr key={log.id || index} style={styles.tableRow}>
@@ -572,9 +582,9 @@ export default function StockHistoryPage() {
                             {new Date(log.timestamp).toLocaleDateString('en-IN')}
                           </div>
                           <div style={styles.dateSecondary}>
-                            {new Date(log.timestamp).toLocaleTimeString('en-IN', { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
+                            {new Date(log.timestamp).toLocaleTimeString('en-IN', {
+                              hour: '2-digit',
+                              minute: '2-digit'
                             })}
                           </div>
                         </div>
@@ -684,11 +694,11 @@ const styles = {
     padding: '24px',
     maxWidth: '1400px',
     margin: '0 auto',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FDFFF0',
     minHeight: '100vh',
     animation: 'fadeIn 0.6s ease-out'
   },
-  
+
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -698,7 +708,7 @@ const styles = {
     gap: '20px',
     color: '#6b7280'
   },
-  
+
   spinner: {
     width: '32px',
     height: '32px',
@@ -707,7 +717,7 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
+
   errorContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -718,7 +728,7 @@ const styles = {
     textAlign: 'center',
     color: '#ef4444'
   },
-  
+
   retryButton: {
     display: 'flex',
     alignItems: 'center',
@@ -733,40 +743,42 @@ const styles = {
     fontWeight: '500',
     transition: 'all 0.2s'
   },
-  
+
   // Header
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '32px',
+    paddingBottom: '20px',
+    borderBottom: '1px solid #e5e7eb',
     flexWrap: 'wrap',
     gap: '16px'
   },
-  
+
   pageTitle: {
-    fontSize: '2rem',
-    fontWeight: '700',
-    color: '#1f2937',
+    color: '#175E54',
+    fontSize: '29px',
     margin: '0 0 8px 0',
+    fontWeight: '700',
     display: 'flex',
     alignItems: 'center',
     gap: '12px'
   },
-  
+
   pageSubtitle: {
-    fontSize: '1rem',
     color: '#6b7280',
+    fontSize: '15px',
     margin: 0,
     lineHeight: '1.5'
   },
-  
+
   headerActions: {
     display: 'flex',
     gap: '12px',
     alignItems: 'center'
   },
-  
+
   exportButton: {
     display: 'flex',
     alignItems: 'center',
@@ -781,7 +793,7 @@ const styles = {
     fontWeight: '500',
     transition: 'all 0.2s'
   },
-  
+
   refreshButton: {
     display: 'flex',
     alignItems: 'center',
@@ -800,27 +812,29 @@ const styles = {
   // Statistics
   statsContainer: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '20px',
-    marginBottom: '32px'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+    gap: '10px',
+    marginBottom: '50px'
   },
 
   statCard: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '24px',
-    border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
+    gap: '15px',
+    padding: '16px',
+    backgroundColor: '#FDFFF0',
+    borderRadius: '12px',
+    border: '1px solid rgba(42, 108, 72, 0.3)',
+    boxShadow: '0 4px 12px rgba(42, 108, 72, 0.3)',
     transition: 'all 0.2s'
   },
 
   statIcon: {
     width: '56px',
     height: '56px',
-    borderRadius: '12px',
+    backgroundColor: 'rgba(255, 238, 175, 1)',
+    color: '#3e7572ff',
+    borderRadius: '8px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center'
@@ -835,27 +849,27 @@ const styles = {
     fontSize: '24px',
     fontWeight: '700',
     color: '#1f2937',
-    lineHeight: '1.2'
+    margin: 0
   },
 
   statLabel: {
     fontSize: '14px',
     color: '#6b7280',
-    marginTop: '4px',
+    margin: '0 0 8px 0',
     textTransform: 'uppercase',
     letterSpacing: '0.5px'
   },
-  
+
   // Filters
   filtersContainer: {
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     borderRadius: '12px',
     padding: '24px',
     marginBottom: '24px',
-    border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    border: '1px solid #FDFFF0',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
   },
-  
+
   filtersHeader: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -864,14 +878,14 @@ const styles = {
     paddingBottom: '16px',
     borderBottom: '1px solid #e5e7eb'
   },
-  
+
   filtersTitle: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
     fontSize: '18px',
     fontWeight: '600',
-    color: '#1f2937',
+    color: '#175E54',
     margin: 0
   },
 
@@ -903,33 +917,34 @@ const styles = {
     padding: '0 2px',
     marginLeft: '2px'
   },
-  
+
   filtersGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
     gap: '20px'
   },
-  
+
   filterGroup: {
     display: 'flex',
     flexDirection: 'column'
   },
-  
+
   filterLabel: {
     fontSize: '14px',
     fontWeight: '500',
     color: '#374151',
     marginBottom: '8px'
   },
-  
+
   filterSelect: {
     padding: '12px 16px',
     border: '1px solid #d1d5db',
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
-    backgroundColor: 'white',
-    transition: 'border-color 0.2s'
+    backgroundColor: '#FDFFF0',
+    transition: 'border-color 0.2s',
+    color: '#6b7280'
   },
 
   searchContainer: {
@@ -950,8 +965,10 @@ const styles = {
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
-    width: '100%',
-    transition: 'border-color 0.2s'
+    width: '80%',
+    transition: 'border-color 0.2s',
+    backgroundColor: "#FDFFF0",
+
   },
 
   searchClear: {
@@ -966,72 +983,79 @@ const styles = {
     fontSize: '16px',
     fontWeight: 'bold'
   },
-  
+
   // Table
   tableContainer: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    width: "100%",
+    marginTop: "20px",
+    marginBottom: "50px",
+  },
+  tableWrapper: {
+    backgroundColor: '#FDFFF0',
+    width: "100%",
+    overflowX: "auto",  // ✅ Enables horizontal scroll
+    overflowY: "auto",  // ✅ Enables vertical scroll
+    maxHeight: "67vh",  // ✅ Limits height and adds vertical scroll if needed
+    borderRadius: "12px",
+    border: '1px solid #175E54',
   },
 
   tableHeader: {
     padding: '20px 24px',
     borderBottom: '1px solid #e5e7eb',
-    backgroundColor: '#f8fafc'
+    backgroundColor: '#FDFFF0'
   },
 
   tableTitle: {
     fontSize: '18px',
     fontWeight: '600',
-    color: '#1f2937',
+    color: '#175E54',
     margin: 0
   },
 
-  tableWrapper: {
-    overflowX: 'auto'
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    minWidth: "800px", // ✅ Ensures scroll when screen is smaller
   },
-  
-  table: { 
-    width: '100%', 
-    borderCollapse: 'collapse'
-  },
-  
-  thead: {
-    backgroundColor: '#f8fafc'
-  },
-  
-  th: { 
-    padding: '16px 20px',
-    textAlign: 'left', 
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#6b7280',
-    textTransform: 'uppercase',
+  th: {
+    position: "sticky",
+    top: 0,
+    backgroundColor: '#175E54',
+    textAlign: "left",
+    padding: "12px",
+    cursor: "pointer",
+    borderBottom: "1px solid #dee2e6",
+    fontWeight: "600",
+    whiteSpace: "nowrap",
+    userSelect: 'none',
     letterSpacing: '0.5px',
-    borderBottom: '1px solid #e5e7eb',
-    whiteSpace: 'nowrap'
+    textTransform: 'uppercase',
+    fontSize: '12px',
+    color: 'white',
+    zIndex: 2,
+    transition: "box-shadow 0.2s ease",
   },
-  
-  tableRow: {
-    borderBottom: '1px solid #f3f4f6',
-    transition: 'background-color 0.2s'
+
+  thead: {
+    backgroundColor: '#175E54'
   },
-  
-  td: { 
-    padding: '16px 20px',
-    fontSize: '14px',
-    verticalAlign: 'middle'
+
+
+  td: {
+    padding: "12px",
+    verticalAlign: "middle",
+    borderTop: '1px solid #175E54',
+    whiteSpace: "nowrap", // ✅ Prevents long text wrapping (makes scroll work better)
   },
-  
+
   // Table cell styles
   dateCell: {
     display: 'flex',
     flexDirection: 'column',
     gap: '2px'
   },
-  
+
   datePrimary: {
     fontSize: '14px',
     fontWeight: '500',
@@ -1042,7 +1066,7 @@ const styles = {
     fontSize: '12px',
     color: '#6b7280'
   },
-  
+
   productCell: {
     display: 'flex',
     alignItems: 'center',
@@ -1053,7 +1077,7 @@ const styles = {
     fontWeight: '500',
     color: '#1f2937'
   },
-  
+
   actionCell: {
     display: 'flex',
     alignItems: 'center',
@@ -1064,7 +1088,7 @@ const styles = {
   actionLabel: {
     fontSize: '14px'
   },
-  
+
   changeCell: {
     fontWeight: '600',
     fontSize: '15px',
@@ -1078,19 +1102,19 @@ const styles = {
     fontSize: '13px',
     color: '#6b7280'
   },
-  
+
   noteCell: {
     maxWidth: '250px',
     wordBreak: 'break-word',
     fontSize: '13px',
     color: '#374151'
   },
-  
+
   noNote: {
     color: '#9ca3af',
     fontStyle: 'italic'
   },
-  
+
   // Empty state
   emptyState: {
     display: 'flex',
@@ -1103,7 +1127,7 @@ const styles = {
     textAlign: 'center',
     padding: '60px 40px'
   },
-  
+
   clearFiltersButton: {
     padding: '12px 24px',
     backgroundColor: '#3b82f6',

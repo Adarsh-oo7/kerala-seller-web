@@ -431,7 +431,7 @@ export default function ShopPage() {
                         title={`Visit ${shop.name} - ${shop.products_count || 0} products available`}
                       >
                         <button className="viewShopButton">
-                          <Store size={16} />
+                          <Store size={16} className='shoppagevisitstoreicon' />
                           <span>Visit Store</span>
                           {(shop.products_count || shop.product_count) && (
                             <span className="productCount">
