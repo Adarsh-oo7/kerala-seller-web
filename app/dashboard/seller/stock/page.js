@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import QuickAddStockForm from '../../../../components/QuickAddStockForm';
 import Link from 'next/link';
+import '../../../../styles/DashboardStock.css'
 import { 
   Package, 
   Plus, 
@@ -286,22 +287,22 @@ export default function StockManagementPage() {
       )}
       
       {/* Header */}
-      <div style={styles.header}>
+      <div className='dashboardstockheader' style={styles.header}>
         <div>
-          <h1 style={styles.title}>
-            <Package size={28} />
+          <h1 className='dashboardstocktitle' style={styles.title}>
+            <Package size={28} className='dashboardstockpackageicon' />
             Stock Management
           </h1>
-          <p style={styles.subtitle}>
+          <p className='dashboardstocksubtitle' style={styles.subtitle}>
             Manage inventory levels and track stock changes for your store
           </p>
         </div>
         <div style={styles.headerActions}>
-          <Link href="/dashboard/seller/history" style={styles.buttonSecondary}>
+          <Link href="/dashboard/seller/history" className='dashboardstockhistorybtn' style={styles.buttonSecondary}>
             <History size={18} />
             View History
           </Link>
-          <button onClick={handleOpenModal} style={styles.buttonPrimary}>
+          <button className='dashboardstockaddbtn' onClick={handleOpenModal} style={styles.buttonPrimary}>
             <Plus size={18} />
             Quick Add Product
           </button>

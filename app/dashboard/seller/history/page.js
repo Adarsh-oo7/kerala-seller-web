@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import '../../../../styles/DashboardHistory.css'
+
 import {
   History,
   Package,
@@ -21,7 +23,7 @@ import {
   RotateCcw,
   ShoppingCart,
   Plus,
-  Minus
+  Minus, ChevronDown, X
 } from 'lucide-react';
 
 // ✅ Enhanced API Configuration
@@ -47,6 +49,8 @@ export default function StockHistoryPage() {
   const [filteredHistory, setFilteredHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedId, setExpandedId] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
   const [filters, setFilters] = useState({
     action: 'all',
     dateRange: '30',
@@ -335,6 +339,17 @@ export default function StockHistoryPage() {
     URL.revokeObjectURL(url);
   };
 
+  useEffect(() => {
+    const checkWidth = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkWidth(); // run once on mount
+    window.addEventListener('resize', checkWidth);
+
+    return () => window.removeEventListener('resize', checkWidth);
+  }, []);
+
   if (isLoading) {
     return (
       <div style={styles.loadingContainer}>
@@ -359,22 +374,22 @@ export default function StockHistoryPage() {
   }
 
   return (
-    <div style={styles.pageContainer}>
+    <div className='dashboardhistorypagecontainer' style={styles.pageContainer}>
       {/* ✅ Enhanced Header */}
-      <div className='dashboardproductheader' style={styles.header}>
+      <div className='dashboardHistoryheader' style={styles.header}>
         <div>
-          <h1 className='dashboardproducttitle' style={styles.pageTitle}>
-            <History size={28} className='dashboardproductpackageicon' />
+          <h1 className='dashboardhistorytitle' style={styles.pageTitle}>
+            <History size={28} className='dashboardhistorypackageicon' />
             Stock Movement History
           </h1>
-          <p className='dashboardproductsubtitle' style={styles.pageSubtitle}>
+          <p className='dashboardhistorysubtitle' style={styles.pageSubtitle}>
             Track all inventory changes and stock movements for your Kerala store
           </p>
         </div>
         <div style={styles.headerActions}>
           <button
             onClick={exportHistory}
-            className='dashboardproductaddprodbtn'
+            className='dashboardhistoryexportbtn'
             style={styles.exportButton}
             disabled={filteredHistory.length === 0}
             title="Export to CSV"
@@ -382,7 +397,7 @@ export default function StockHistoryPage() {
             <Download size={18} />
             Export CSV
           </button>
-          <button className='dashboardproductaddprodbtn' onClick={fetchHistory} style={styles.refreshButton} title="Refresh data">
+          <button className='dashboardhistoryexportbtn' onClick={fetchHistory} style={styles.refreshButton} title="Refresh data">
             <RefreshCw size={18} />
             Refresh
           </button>
@@ -391,41 +406,41 @@ export default function StockHistoryPage() {
 
       {/* ✅ Enhanced Statistics Cards */}
       {filteredHistory.length > 0 && (
-        <div className='dashboardproductanalyticscontainer' style={styles.statsContainer}>
+        <div className='dashboardhistorycontainer' style={styles.statsContainer}>
           <div style={styles.statCard}>
-            <div className='dashboardproductanalyticsiconcontainer' style={{ ...styles.statIcon, }}>
-              <TrendingUp size={24} color="#059669" className='dashboardproductanalyticsicon' />
+            <div className='dashboardhistoryiconcontainer' style={{ ...styles.statIcon, }}>
+              <TrendingUp size={24} color="#059669" className='dashboardhistoryicon' />
             </div>
             <div style={styles.statContent}>
-              <div className='dashboardproductanalyticsvalue' style={styles.statValue}>{stats.totalAdded}</div>
-              <div className='dashboardproductanalyticslabel' style={styles.statLabel}>Items Added</div>
+              <div className='dashboardhistoryvalue' style={styles.statValue}>{stats.totalAdded}</div>
+              <div className='dashboardhistorylabel' style={styles.statLabel}>Items Added</div>
             </div>
           </div>
           <div style={styles.statCard}>
-            <div className='dashboardproductanalyticsiconcontainer' style={{ ...styles.statIcon, }}>
-              <TrendingDown size={24} color="#dc2626" className='dashboardproductanalyticsicon' />
+            <div className='dashboardhistoryiconcontainer' style={{ ...styles.statIcon, }}>
+              <TrendingDown size={24} color="#dc2626" className='dashboardhistoryicon' />
             </div>
             <div style={styles.statContent}>
-              <div className='dashboardproductanalyticsvalue' style={styles.statValue}>{stats.totalSold}</div>
-              <div className='dashboardproductanalyticslabel' style={styles.statLabel}>Items Sold</div>
+              <div className='dashboardhistoryvalue' style={styles.statValue}>{stats.totalSold}</div>
+              <div className='dashboardhistorylabel' style={styles.statLabel}>Items Sold</div>
             </div>
           </div>
           <div style={styles.statCard}>
-            <div className='dashboardproductanalyticsiconcontainer' style={{ ...styles.statIcon, }}>
-              <Package size={24} color="#175E54" className='dashboardproductanalyticsicon' />
+            <div className='dashboardhistoryiconcontainer' style={{ ...styles.statIcon, }}>
+              <Package size={24} color="#175E54" className='dashboardhistoryicon' />
             </div>
             <div style={styles.statContent}>
-              <div className='dashboardproductanalyticsvalue' style={styles.statValue}>{stats.totalMovement}</div>
-              <div className='dashboardproductanalyticslabel' style={styles.statLabel}>Total Movement</div>
+              <div className='dashboardhistoryvalue' style={styles.statValue}>{stats.totalMovement}</div>
+              <div className='dashboardhistorylabel' style={styles.statLabel}>Total Movement</div>
             </div>
           </div>
           <div style={styles.statCard}>
-            <div className='dashboardproductanalyticsiconcontainer' style={{ ...styles.statIcon, }}>
-              <FileText size={24} color="#8b5cf6" className='dashboardproductanalyticsicon' />
+            <div className='dashboardhistoryiconcontainer' style={{ ...styles.statIcon, }}>
+              <FileText size={24} color="#8b5cf6" className='dashboardhistoryicon' />
             </div>
             <div style={styles.statContent}>
-              <div className='dashboardproductanalyticsvalue' style={styles.statValue}>{filteredHistory.length}</div>
-              <div className='dashboardproductanalyticslabel' style={styles.statLabel}>History Records</div>
+              <div className='dashboardhistoryvalue' style={styles.statValue}>{filteredHistory.length}</div>
+              <div className='dashboardhistorylabel' style={styles.statLabel}>History Records</div>
             </div>
           </div>
         </div>
@@ -475,10 +490,11 @@ export default function StockHistoryPage() {
           </div>
         </div>
 
-        <div style={styles.filtersGrid}>
+        <div className='dashboardhistoryfiltergrid' style={styles.filtersGrid}>
           <div style={styles.filterGroup}>
             <label style={styles.filterLabel}>Action Type</label>
             <select
+              className='dashboardhistoryselectinput'
               value={filters.action}
               onChange={(e) => setFilters({ ...filters, action: e.target.value })}
               style={styles.filterSelect}
@@ -494,6 +510,7 @@ export default function StockHistoryPage() {
           <div style={styles.filterGroup}>
             <label style={styles.filterLabel}>Date Range</label>
             <select
+              className='dashboardhistoryselectinput'
               value={filters.dateRange}
               onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
               style={styles.filterSelect}
@@ -506,11 +523,12 @@ export default function StockHistoryPage() {
             </select>
           </div>
 
-          <div style={styles.filterGroup}>
+          <div className="dashboardhistorysearchcontainer" style={styles.filterGroup}>
             <label style={styles.filterLabel}>Search Product</label>
             <div style={styles.searchContainer}>
               <Search size={16} style={styles.searchIcon} />
               <input
+                className='dashboardhistorysearchinput'
                 type="text"
                 placeholder="Search by product name..."
                 value={filters.product}
@@ -532,140 +550,168 @@ export default function StockHistoryPage() {
 
       {/* ✅ Enhanced History Table */}
       <div style={styles.tableContainer}>
-        {filteredHistory.length > 0 ? (
-          <>
-            <div style={styles.tableHeader}>
-              <h3 style={styles.tableTitle}>
-                Stock Movement Records ({filteredHistory.length})
-              </h3>
-            </div>
-            <div style={styles.tableWrapper}>
-              <table style={styles.table}>
-                <thead>
-                  <tr style={styles.thead}>
-                    <th style={styles.th}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Calendar size={16} />
-                        <span>Date & Time</span>
-                      </div>
-                    </th>
-                    <th style={styles.th}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Package size={16} />
-                        <span>Product</span>
-                      </div>
-                    </th>
-                    <th style={styles.th}>Action</th>
-                    <th style={styles.th}>Total Stock</th>
-                    <th style={styles.th}>Online Stock</th>
-                    <th style={styles.th}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <User size={16} />
-                        <span>User</span>
-                      </div>
-                    </th>
-                    <th style={styles.th}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <FileText size={16} />
-                        <span>Note</span>
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
+        {/* ===== Header ===== */}
+        <div style={styles.tableHeader}>
+          <h3 style={styles.tableTitle}>
+            Stock Movement Records ({filteredHistory.length})
+          </h3>
+        </div>
 
-                <tbody>
-                  {filteredHistory.map((log, index) => (
-                    <tr key={log.id || index} style={styles.tableRow}>
-                      <td style={styles.td}>
-                        <div style={styles.dateCell}>
-                          <div style={styles.datePrimary}>
-                            {new Date(log.timestamp).toLocaleDateString('en-IN')}
-                          </div>
-                          <div style={styles.dateSecondary}>
-                            {new Date(log.timestamp).toLocaleTimeString('en-IN', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </div>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.productCell}>
-                          <Package size={16} color="#6b7280" />
-                          <span style={styles.productName}>{getProductName(log)}</span>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={{
-                          ...styles.actionCell,
-                          color: getActionColor(log.action)
-                        }}>
-                          {getActionIcon(log.action)}
-                          <span style={styles.actionLabel}>{getActionLabel(log.action)}</span>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={{
-                          ...styles.changeCell,
-                          color: (log.change_total || 0) >= 0 ? '#059669' : '#dc2626'
-                        }}>
-                          <strong>
-                            {(log.change_total || 0) > 0 ? '+' : ''}{log.change_total || 0}
-                          </strong>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={{
-                          ...styles.changeCell,
-                          color: (log.change_online || 0) >= 0 ? '#059669' : '#dc2626'
-                        }}>
-                          <strong>
-                            {(log.change_online || 0) > 0 ? '+' : ''}{log.change_online || 0}
-                          </strong>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.userCell}>
-                          <User size={14} color="#6b7280" />
-                          <span>{getUserName(log)}</span>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.noteCell}>
-                          {log.note ? (
-                            <span>{log.note}</span>
-                          ) : (
-                            <span style={styles.noNote}>No additional notes</span>
-                          )}
-                        </div>
-                      </td>
+        {/* ===== Desktop Table (visible ≥768px) ===== */}
+        {!isMobile && (
+          <div style={styles.desktopTable}>
+            {filteredHistory.length > 0 ? (
+              <div className='custom-scroll' style={styles.tableWrapper}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr style={styles.thead}>
+                      <th style={styles.th}>Date & Time</th>
+                      <th style={styles.th}>Product</th>
+                      <th style={styles.th}>Action</th>
+                      <th style={styles.th}>Total</th>
+                      <th style={styles.th}>Online</th>
+                      <th style={styles.th}>User</th>
+                      <th style={styles.th}>Note</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        ) : (
-          <div style={styles.emptyState}>
-            <History size={64} color="#d1d5db" />
-            <h3>No stock history found</h3>
-            <p>
-              {filters.action !== 'all' || filters.product || filters.dateRange !== '30'
-                ? 'No records match your current filters. Try adjusting the filters above.'
-                : 'No stock movements have been recorded yet. Stock changes will appear here when you update inventory levels.'
-              }
-            </p>
-            {(filters.action !== 'all' || filters.product || filters.dateRange !== '30') && (
-              <button
-                onClick={() => setFilters({ action: 'all', dateRange: '30', product: '' })}
-                style={styles.clearFiltersButton}
-              >
-                Clear All Filters
-              </button>
+                  </thead>
+                  <tbody>
+                    {filteredHistory.map((log) => (
+                      <tr key={log.id} style={styles.tableRow}>
+                        <td style={styles.td}>{formatDate(log.timestamp)}</td>
+                        <td style={styles.td}>{getProductName(log)}</td>
+                        <td style={{ ...styles.td, color: getActionColor(log.action) }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {getActionIcon(log.action)}
+                            {getActionLabel(log.action)}
+                          </div>
+                        </td>
+                        <td style={styles.td}>{log.change_total}</td>
+                        <td style={styles.td}>{log.change_online}</td>
+                        <td style={styles.td}>{getUserName(log)}</td>
+                        <td style={styles.td}>{log.note || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={styles.emptyState}>
+                <History size={64} color="#d1d5db" />
+                <h3>No stock history found</h3>
+              </div>
             )}
           </div>
         )}
+
+        {/* ===== Mobile Drawer View (visible <768px) ===== */}
+        {isMobile && (
+          <div style={styles.mobileList}>
+            {filteredHistory.length === 0 ? (
+              <div style={styles.noRecords}>No records found</div>
+            ) : (
+              filteredHistory.map((record) => (
+                <button
+                  key={record.id}
+                  onClick={() =>
+                    setExpandedId(expandedId === record.id ? null : record.id)
+                  }
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    border: 'none',
+                    borderBottom: '1px solid #e5e7eb',
+                    padding: 16,
+                    background: '#FDFFF0',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#c3ddf7ff')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                        <span style={{ fontWeight: 600, color: '#111827' }}>
+                          {getProductName(record)}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
+                        {new Date(record.timestamp).toLocaleDateString('en-IN')} •{' '}
+                        {new Date(record.timestamp).toLocaleTimeString('en-IN', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>
+                        {getUserName(record)}
+                      </div>
+                    </div>
+                    <ChevronDown style={{ width: 20, height: 20, color: '#1a4845', marginTop: 4 }} />
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        )}
+        {/* ===== Drawer Backdrop ===== */}
+        {expandedId && (
+          <>
+            <div
+              style={styles.backdrop}
+              onClick={() => setExpandedId(null)}
+            />
+            <div style={{
+              ...styles.drawer,
+              transform: expandedId ? 'translateY(0)' : 'translateY(100%)'
+            }}>
+              <div style={styles.drawerHeader}>
+                <h3 style={{ fontSize: 18, fontWeight: 600,  }}>
+                  Record Details
+                </h3>
+                <button
+                  onClick={() => setExpandedId(null)}
+                  style={styles.closeButton}
+                >
+                  <X style={{ width: 20, height: 20, color: 'white' }} />
+                </button>
+              </div>
+
+              <div style={{ padding: 16 }}>
+                {(() => {
+                  const record = filteredHistory.find((r) => r.id === expandedId);
+                  if (!record) return null;
+                  return (
+                    <>
+                      {[
+                        ['Product', getProductName(record)],
+                        ['Date & Time', formatDate(record.timestamp)],
+                        ['Action', (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {getActionIcon(record.action)}
+                            {getActionLabel(record.action)}
+                          </div>
+                        )],
+                        ['User', getUserName(record)],
+                        ['Note', record.note || 'No additional notes'],
+                      ].map(([label, value], i) => (
+                        <div key={i} style={{ marginBottom: 16 }}>
+                          <label style={{ fontSize: 12, fontWeight: 500, color: '#6b7280', display: 'block', marginBottom: 6 }}>
+                            {label}
+                          </label>
+                          <div style={{ background: '#FDFFF0',border:'1px solid #1a4845', borderRadius: 8, padding: 10 }}>
+                            {value}
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </>
+        )}
       </div>
+
 
       {/* ✅ CSS Animations */}
       <style jsx>{`
@@ -683,6 +729,31 @@ export default function StockHistoryPage() {
           from { opacity: 0; transform: translateX(-10px); }
           to { opacity: 1; transform: translateX(0); }
         }
+                  /* Target your tableWrapper scroll area */
+  .custom-scroll::-webkit-scrollbar {
+    height: 2px;   /* for horizontal scrollbar */
+    width: 2px;    /* for vertical scrollbar */
+  }
+
+  .custom-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;  /* track background */
+    border-radius: 6px;
+  }
+
+  .custom-scroll::-webkit-scrollbar-thumb {
+    background: #f1f1f1;  /* thumb (scroll handle) color */
+    border-radius: 6px;
+  }
+
+  .custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: #f1f1f1;  /* darker on hover */
+  }
+
+  /* Firefox support */
+  .custom-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #175E54 #f1f1f1;
+  }
       `}</style>
     </div>
   );
@@ -920,8 +991,8 @@ const styles = {
 
   filtersGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '20px'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+    gap: '10px'
   },
 
   filterGroup: {
@@ -965,10 +1036,10 @@ const styles = {
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
-    width: '80%',
+    width: '100%',
     transition: 'border-color 0.2s',
     backgroundColor: "#FDFFF0",
-
+    boxSizing: 'border-box',
   },
 
   searchClear: {
@@ -995,7 +1066,7 @@ const styles = {
     width: "100%",
     overflowX: "auto",  // ✅ Enables horizontal scroll
     overflowY: "auto",  // ✅ Enables vertical scroll
-    maxHeight: "67vh",  // ✅ Limits height and adds vertical scroll if needed
+    maxHeight: "63vh",  // ✅ Limits height and adds vertical scroll if needed
     borderRadius: "12px",
     border: '1px solid #175E54',
   },
@@ -1043,7 +1114,8 @@ const styles = {
 
 
   td: {
-    padding: "12px",
+    padding: "20px",
+    fontSize: '14px',
     verticalAlign: "middle",
     borderTop: '1px solid #175E54',
     whiteSpace: "nowrap", // ✅ Prevents long text wrapping (makes scroll work better)
@@ -1139,5 +1211,42 @@ const styles = {
     fontWeight: '500',
     marginTop: '16px',
     transition: 'all 0.2s'
-  }
+  },
+
+  noRecords: { textAlign: 'center', color: '#6b7280', padding: 20 },
+  backdrop: {
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40,
+  },
+  drawer: {
+    position: 'fixed',
+    left: 0, right: 0, bottom: 0,
+    background: '#FDFFF0',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    zIndex: 50,
+    transition: 'transform 0.3s ease-in-out',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+  },
+  drawerHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '16px',
+    borderBottom: '1px solid #e5e7eb',
+    position: 'sticky',
+    top: 0,
+    background: '#1a4845',
+    color:'white'
+  },
+  closeButton: {
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    borderRadius: 6,
+    padding: 4,
+  },
+  // Hide/show logic using JS since inline styles can’t use media queries:
+  desktopTable: { display: 'block' },
+  mobileList: { display: 'block' },
 };
