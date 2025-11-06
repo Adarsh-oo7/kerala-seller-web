@@ -1,4 +1,5 @@
-// app/dashboard/seller/payments/page.js - ✅ ENHANCED VERSION
+// app/dashboard/seller/payments/page.js - ✅ COMPLETE & FIXED
+
 'use client';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import axios from 'axios';
@@ -6,13 +7,18 @@ import { useRouter } from 'next/navigation';
 import RazorpaySetupModal from '../../../../components/RazorpaySetupModal';
 import { 
   CreditCard, Check, AlertCircle, Clock, DollarSign, 
-  TrendingUp, Eye, EyeOff, Copy, ExternalLink, RefreshCw
+  TrendingUp, Eye, EyeOff, Copy, ExternalLink, RefreshCw, Lock, Edit2, Trash2
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
 export default function PaymentsDashboard() {
-  const [gatewayStatus, setGatewayStatus] = useState(null);
+  const [gatewayStatus, setGatewayStatus] = useState({
+    razorpay: { connected: false, verified: false, status: 'pending' },
+    cashfree: { connected: false, verified: false, status: 'pending' },
+    primary_gateway: null,
+    is_ready: false
+  });
   const [payoutHistory, setPayoutHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -20,6 +26,7 @@ export default function PaymentsDashboard() {
   const [errorMsg, setErrorMsg] = useState('');
   const [showAccount, setShowAccount] = useState(false);
   const [razorpayModalOpen, setRazorpayModalOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const router = useRouter();
 
   const getAuthHeaders = useCallback(() => {
@@ -42,11 +49,30 @@ export default function PaymentsDashboard() {
         axios.get(
           `${API_BASE_URL}/api/payments/account/gateway_status/`,
           { headers }
-        ),
+        ).catch(error => {
+          // ✅ Handle 404 - return default status
+          if (error.response?.status === 404) {
+            console.log('Payment account not found, showing default state');
+            return { data: {
+              razorpay: { connected: false, verified: false, status: 'pending' },
+              cashfree: { connected: false, verified: false, status: 'pending' },
+              primary_gateway: null,
+              is_ready: false
+            }};
+          }
+          throw error;
+        }),
         axios.get(
           `${API_BASE_URL}/api/payments/payouts/history/`,
           { headers }
-        )
+        ).catch(error => {
+          // ✅ Handle 404 - return empty payouts
+          if (error.response?.status === 404) {
+            console.log('No payout history found');
+            return { data: { payouts: [] }};
+          }
+          throw error;
+        })
       ]);
 
       setGatewayStatus(statusRes.data);
@@ -54,6 +80,14 @@ export default function PaymentsDashboard() {
       setErrorMsg('');
     } catch (error) {
       console.error('Error fetching payment data:', error);
+      // ✅ Set default gateway status on error
+      setGatewayStatus({
+        razorpay: { connected: false, verified: false, status: 'pending' },
+        cashfree: { connected: false, verified: false, status: 'pending' },
+        primary_gateway: null,
+        is_ready: false
+      });
+      setPayoutHistory([]);
       setErrorMsg('Failed to load payment data');
     } finally {
       setRefreshing(false);
@@ -65,7 +99,6 @@ export default function PaymentsDashboard() {
     fetchPaymentData();
   }, [fetchPaymentData]);
 
-  // ✅ Auto-hide messages
   useEffect(() => {
     if (successMsg) {
       const timer = setTimeout(() => setSuccessMsg(''), 3000);
@@ -81,13 +114,20 @@ export default function PaymentsDashboard() {
   }, [errorMsg]);
 
   const handleRazorpayClick = useCallback(() => {
+    setEditMode(false);
+    setRazorpayModalOpen(true);
+  }, []);
+
+  const handleEditRazorpay = useCallback(() => {
+    setEditMode(true);
     setRazorpayModalOpen(true);
   }, []);
 
   const handleRazorpaySuccess = useCallback(() => {
-    setSuccessMsg('✅ Connected to Razorpay!');
+    setSuccessMsg(editMode ? '✅ Razorpay keys updated!' : '✅ Connected to Razorpay!');
+    setEditMode(false);
     fetchPaymentData();
-  }, [fetchPaymentData]);
+  }, [editMode, fetchPaymentData]);
 
   const connectCashfree = useCallback(async () => {
     const headers = getAuthHeaders();
@@ -106,7 +146,6 @@ export default function PaymentsDashboard() {
     }
   }, [getAuthHeaders, fetchPaymentData]);
 
-  // ✅ Memoize payout summary
   const payoutSummary = useMemo(() => {
     const successful = payoutHistory.filter(p => p.status === 'success');
     const pending = payoutHistory.filter(p => p.status === 'pending');
@@ -132,15 +171,19 @@ export default function PaymentsDashboard() {
     <div style={s.c}>
       <RazorpaySetupModal
         isOpen={razorpayModalOpen}
-        onClose={() => setRazorpayModalOpen(false)}
+        onClose={() => {
+          setRazorpayModalOpen(false);
+          setEditMode(false);
+        }}
         onSuccess={handleRazorpaySuccess}
+        editMode={editMode}
       />
 
       {/* Header */}
       <div style={s.h}>
         <div>
           <h1 style={s.t}>💰 Payment Gateways</h1>
-          <p style={s.st}>Manage Razorpay & Cashfree connections</p>
+          <p style={s.st}>Manage your payment methods & receive instant payouts</p>
         </div>
         <button 
           onClick={fetchPaymentData} 
@@ -170,104 +213,134 @@ export default function PaymentsDashboard() {
         </div>
       )}
 
-      {/* Gateway Status */}
-      {gatewayStatus && (
-        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'20px', padding:'24px'}}>
-          {/* Razorpay Card */}
-          <div style={s.card}>
-            <div style={s.cardH}>
-              <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-                <CreditCard size={24} color="#3b82f6"/>
-                <h2 style={s.cardT}>🔵 Razorpay</h2>
-              </div>
-              {gatewayStatus.razorpay?.verified && (
-                <div style={{...s.badge, backgroundColor: '#10b981'}}>✅ Connected</div>
-              )}
+      {/* Gateway Status Grid - ✅ Always renders now */}
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'20px', padding:'24px'}}>
+        
+        {/* Razorpay Card - ACTIVE */}
+        <div style={s.card}>
+          <div style={s.cardH}>
+            <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+              <CreditCard size={24} color="#3b82f6"/>
+              <h2 style={s.cardT}>🔵 Razorpay</h2>
+            </div>
+            {gatewayStatus.razorpay?.verified && (
+              <div style={{...s.badge, backgroundColor: '#10b981'}}>✅ Live</div>
+            )}
+          </div>
+
+          <div style={s.cardC}>
+            <div style={s.info}>
+              <p style={s.label}>Status</p>
+              <p style={{...s.value, color: gatewayStatus.razorpay?.verified ? '#10b981' : '#f59e0b'}}>
+                {gatewayStatus.razorpay?.status?.toUpperCase() || 'PENDING'}
+              </p>
             </div>
 
-            <div style={s.cardC}>
+            {gatewayStatus.razorpay?.account_id && (
               <div style={s.info}>
-                <p style={s.label}>Status</p>
-                <p style={{...s.value, color: gatewayStatus.razorpay?.verified ? '#10b981' : '#f59e0b'}}>
-                  {gatewayStatus.razorpay?.status?.toUpperCase()}
-                </p>
+                <p style={s.label}>Account ID</p>
+                <p style={s.value}>{gatewayStatus.razorpay.account_id}</p>
               </div>
+            )}
 
-              {gatewayStatus.razorpay?.account_id && (
-                <div style={s.info}>
-                  <p style={s.label}>Account ID</p>
-                  <p style={s.value}>{gatewayStatus.razorpay.account_id}</p>
-                </div>
-              )}
-
-              {!gatewayStatus.razorpay?.connected ? (
+            {!gatewayStatus.razorpay?.connected ? (
+              <button 
+                onClick={handleRazorpayClick} 
+                style={s.connectBtn}
+                aria-label="Connect Razorpay"
+              >
+                🔗 Connect Razorpay
+              </button>
+            ) : (
+              <div style={{display: 'flex', gap: '8px'}}>
                 <button 
-                  onClick={handleRazorpayClick} 
-                  style={s.connectBtn}
-                  aria-label="Connect Razorpay"
+                  onClick={handleEditRazorpay}
+                  style={{...s.connectBtn, backgroundColor: '#f59e0b', flex: 1}}
+                  aria-label="Edit Razorpay keys"
                 >
-                  🔗 Connect Razorpay
+                  <Edit2 size={14} style={{display: 'inline', marginRight: '4px'}}/>
+                  Edit Keys
                 </button>
-              ) : (
                 <button 
                   disabled 
-                  style={{...s.connectBtn, opacity: 0.5, cursor: 'not-allowed'}}
+                  style={{...s.connectBtn, opacity: 0.5, cursor: 'not-allowed', flex: 1}}
                   aria-label="Razorpay connected"
                 >
                   ✅ Connected
                 </button>
-              )}
-            </div>
-          </div>
-
-          {/* Cashfree Card */}
-          <div style={s.card}>
-            <div style={s.cardH}>
-              <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-                <CreditCard size={24} color="#10b981"/>
-                <h2 style={s.cardT}>🟢 Cashfree</h2>
               </div>
-              {gatewayStatus.cashfree?.verified && (
-                <div style={{...s.badge, backgroundColor: '#10b981'}}>✅ Connected</div>
-              )}
-            </div>
-
-            <div style={s.cardC}>
-              <div style={s.info}>
-                <p style={s.label}>Status</p>
-                <p style={{...s.value, color: gatewayStatus.cashfree?.verified ? '#10b981' : '#f59e0b'}}>
-                  {gatewayStatus.cashfree?.status?.toUpperCase()}
-                </p>
-              </div>
-
-              {gatewayStatus.cashfree?.bene_id && (
-                <div style={s.info}>
-                  <p style={s.label}>Beneficiary ID</p>
-                  <p style={s.value}>{gatewayStatus.cashfree.bene_id}</p>
-                </div>
-              )}
-
-              {!gatewayStatus.cashfree?.connected ? (
-                <button 
-                  onClick={connectCashfree} 
-                  style={s.connectBtn}
-                  aria-label="Connect Cashfree"
-                >
-                  🔗 Connect Cashfree
-                </button>
-              ) : (
-                <button 
-                  disabled 
-                  style={{...s.connectBtn, opacity: 0.5, cursor: 'not-allowed'}}
-                  aria-label="Cashfree connected"
-                >
-                  ✅ Connected
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
-      )}
+
+        {/* Cashfree Card - COMING SOON */}
+        <div style={{...s.card, opacity: 0.6, position: 'relative'}}>
+          <div style={s.comingSoonBadge}>
+            <Clock size={16}/>
+            <span>Coming Soon</span>
+          </div>
+
+          <div style={s.cardH}>
+            <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+              <CreditCard size={24} color="#10b981"/>
+              <h2 style={s.cardT}>🟢 Cashfree</h2>
+            </div>
+          </div>
+
+          <div style={s.cardC}>
+            <div style={s.info}>
+              <p style={s.label}>Status</p>
+              <p style={{...s.value, color:'#9ca3af'}}>COMING SOON</p>
+            </div>
+
+            <p style={{fontSize:'12px', color:'#6b7280', margin:'0', lineHeight:'1.4'}}>
+              💡 Cashfree payout integration is launching soon! Connect your bank account and get automatic weekly payouts.
+            </p>
+
+            <button 
+              disabled 
+              style={{...s.connectBtn, opacity: 0.5, cursor: 'not-allowed', backgroundColor: '#d1d5db'}}
+              aria-label="Cashfree coming soon"
+            >
+              ⏳ Coming Soon
+            </button>
+          </div>
+        </div>
+
+        {/* Stripe Card - COMING SOON */}
+        <div style={{...s.card, opacity: 0.6, position: 'relative'}}>
+          <div style={s.comingSoonBadge}>
+            <Clock size={16}/>
+            <span>Q1 2026</span>
+          </div>
+
+          <div style={s.cardH}>
+            <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+              <CreditCard size={24} color="#6366f1"/>
+              <h2 style={s.cardT}>🟣 Stripe</h2>
+            </div>
+          </div>
+
+          <div style={s.cardC}>
+            <div style={s.info}>
+              <p style={s.label}>Status</p>
+              <p style={{...s.value, color:'#9ca3af'}}>COMING Q1 2026</p>
+            </div>
+
+            <p style={{fontSize:'12px', color:'#6b7280', margin:'0', lineHeight:'1.4'}}>
+              🌍 International payments & global payouts with Stripe. Coming in Q1 2026.
+            </p>
+
+            <button 
+              disabled 
+              style={{...s.connectBtn, opacity: 0.5, cursor: 'not-allowed', backgroundColor: '#d1d5db'}}
+              aria-label="Stripe coming soon"
+            >
+              📅 Q1 2026
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Payout Summary */}
       {payoutHistory.length > 0 && (
@@ -312,14 +385,14 @@ export default function PaymentsDashboard() {
                     ₹{parseFloat(payout.amount).toLocaleString('en-IN', {minimumFractionDigits: 2})}
                   </div>
                   <div style={{flex: 2, fontSize:'13px'}}>
-                    {payout.gateway_display}
+                    {payout.gateway_display || payout.gateway_used}
                   </div>
                   <div style={{flex: 2}}>
                     <span style={{...s.statusBadge, 
                       backgroundColor: payout.status === 'success' ? '#d1fae5' : '#fef3c7',
                       color: payout.status === 'success' ? '#065f46' : '#92400e'
                     }}>
-                      {payout.status_display}
+                      {payout.status_display || payout.status}
                     </span>
                   </div>
                 </div>
@@ -339,13 +412,14 @@ export default function PaymentsDashboard() {
       <div style={s.infoBox}>
         <Check size={20} color="#10b981"/>
         <div>
-          <p style={s.infoBold}>💡 How Dual Gateway Works</p>
+          <p style={s.infoBold}>💡 Multiple Payment Methods Coming Soon</p>
           <ul style={s.infoList}>
-            <li>✅ Connect Razorpay OR Cashfree (or both!)</li>
-            <li>✅ Choose your preferred payment gateway</li>
-            <li>✅ 0% Commission - You keep 100% of sales</li>
-            <li>✅ Automatic weekly payouts to your bank</li>
-            <li>✅ Real-time payment tracking</li>
+            <li>✅ <strong>Razorpay</strong> - Live now! Connect your Razorpay account</li>
+            <li>⏳ <strong>Cashfree</strong> - Launching next (automatic bank payouts)</li>
+            <li>📅 <strong>Stripe</strong> - Q1 2026 (international support)</li>
+            <li>🔜 <strong>PayPal</strong> - Coming soon</li>
+            <li>✅ 0% Commission - You keep 100% of all sales</li>
+            <li>✅ Instant payouts - Get paid as soon as customers pay</li>
           </ul>
         </div>
       </div>
@@ -371,6 +445,7 @@ const s = {
   sa: { display: 'flex', alignItems: 'center', gap: '10px', margin: '16px 24px 0', padding: '12px 14px', backgroundColor: '#ecfdf5', border: '2px solid #10b981', borderRadius: '8px', color: '#065f46', fontWeight: 600, fontSize: '13px' },
   ea: { display: 'flex', alignItems: 'center', gap: '10px', margin: '16px 24px 0', padding: '12px 14px', backgroundColor: '#fef2f2', border: '2px solid #ef4444', borderRadius: '8px', color: '#991b1b', fontWeight: 600, fontSize: '13px' },
   card: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' },
+  comingSoonBadge: { position: 'absolute', top: '12px', right: '12px', display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '20px', fontSize: '11px', fontWeight: 600, color: '#92400e' },
   cardH: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '16px', borderBottom: '2px solid #f3f4f6' },
   cardT: { fontSize: '18px', fontWeight: 700, color: '#1f2937', margin: 0 },
   badge: { padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, color: 'white' },
