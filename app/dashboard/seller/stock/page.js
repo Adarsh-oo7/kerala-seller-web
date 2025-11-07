@@ -5,19 +5,19 @@ import axios from 'axios';
 import QuickAddStockForm from '../../../../components/QuickAddStockForm';
 import Link from 'next/link';
 import '../../../../styles/DashboardStock.css'
-import { 
-  Package, 
-  Plus, 
-  Minus, 
-  Search, 
-  History, 
-  AlertCircle, 
+import {
+  Package,
+  Plus,
+  Minus,
+  Search,
+  History,
+  AlertCircle,
   CheckCircle,
   TrendingUp,
   TrendingDown,
   RefreshCw,
   Edit3,
-  X
+  X, ChevronDown, ChevronUp,
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
@@ -27,9 +27,9 @@ const API_URL = `${API_BASE_URL}/user/store/products/`;
 // Enhanced Confirmation Modal Component
 function ConfirmationModal({ message, onConfirm, onCancel, isLoading }) {
   const [note, setNote] = useState('');
-  
-  const handleConfirmClick = () => { 
-    onConfirm(note); 
+
+  const handleConfirmClick = () => {
+    onConfirm(note);
   };
 
   const handleOverlayClick = (e) => {
@@ -47,9 +47,9 @@ function ConfirmationModal({ message, onConfirm, onCancel, isLoading }) {
             <X size={20} />
           </button>
         </div>
-        
+
         <p style={styles.modalMessage}>{message}</p>
-        
+
         <div style={styles.formGroup}>
           <label style={styles.label}>Reason for change (optional)</label>
           <textarea
@@ -61,17 +61,17 @@ function ConfirmationModal({ message, onConfirm, onCancel, isLoading }) {
             disabled={isLoading}
           />
         </div>
-        
+
         <div style={styles.buttonContainer}>
-          <button 
-            onClick={onCancel} 
+          <button
+            onClick={onCancel}
             style={styles.buttonSecondary}
             disabled={isLoading}
           >
             Cancel
           </button>
-          <button 
-            onClick={handleConfirmClick} 
+          <button
+            onClick={handleConfirmClick}
             style={styles.buttonPrimary}
             disabled={isLoading}
           >
@@ -103,6 +103,18 @@ export default function StockManagementPage() {
   const [isUpdatingStock, setIsUpdatingStock] = useState(null);
   const [error, setError] = useState('');
   const [stockFilter, setStockFilter] = useState('all'); // all, in_stock, low_stock, out_of_stock, overstocked
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [expandedId, setExpandedId] = useState(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const toggleExpand = (id) => {
+    setExpandedId(expandedId === id ? null : id);
+  };
 
   const fetchData = useCallback(async () => {
     const token = localStorage.getItem('accessToken');
@@ -115,15 +127,15 @@ export default function StockManagementPage() {
     try {
       setIsLoading(true);
       setError('');
-      
+
       console.log('Fetching products from:', API_URL);
-      const response = await axios.get(API_URL, { 
-        headers: { Authorization: `Bearer ${token}` } 
+      const response = await axios.get(API_URL, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       const productData = response.data.results || response.data || [];
       console.log('Products fetched for stock management:', productData.length);
-      
+
       setProducts(productData);
       setFilteredProducts(productData);
     } catch (error) {
@@ -157,22 +169,22 @@ export default function StockManagementPage() {
     // ✅ FIXED: Apply stock filter
     switch (stockFilter) {
       case 'in_stock':
-        filtered = filtered.filter(product => 
+        filtered = filtered.filter(product =>
           product.online_stock > 5
         );
         break;
       case 'low_stock':
-        filtered = filtered.filter(product => 
+        filtered = filtered.filter(product =>
           product.online_stock > 0 && product.online_stock <= 5
         );
         break;
       case 'out_of_stock':
-        filtered = filtered.filter(product => 
+        filtered = filtered.filter(product =>
           !product.online_stock || product.online_stock === 0
         );
         break;
       case 'overstocked':
-        filtered = filtered.filter(product => 
+        filtered = filtered.filter(product =>
           product.total_stock > 0 && product.online_stock > product.total_stock
         );
         break;
@@ -184,8 +196,8 @@ export default function StockManagementPage() {
     setFilteredProducts(filtered);
   }, [products, searchTerm, stockFilter]);
 
-  useEffect(() => { 
-    fetchData(); 
+  useEffect(() => {
+    fetchData();
   }, [fetchData]);
 
   const handleStockChange = (productId, stockType, newStock) => {
@@ -200,14 +212,13 @@ export default function StockManagementPage() {
     const stockTypeLabel = stockType.replace('_', ' ');
 
     setConfirmation({
-      message: `Update ${product.name}'s ${stockTypeLabel} from ${currentStock} to ${stockValue}? ${
-        difference > 0 ? `(+${difference})` : difference < 0 ? `(${difference})` : '(no change)'
-      }`,
+      message: `Update ${product.name}'s ${stockTypeLabel} from ${currentStock} to ${stockValue}? ${difference > 0 ? `(+${difference})` : difference < 0 ? `(${difference})` : '(no change)'
+        }`,
       onConfirm: async (note) => {
         setIsUpdatingStock(productId);
         const token = localStorage.getItem('accessToken');
-        const data = { 
-          [stockType]: stockValue, 
+        const data = {
+          [stockType]: stockValue,
           note: note || `${stockTypeLabel} updated via stock management`
         };
 
@@ -225,9 +236,9 @@ export default function StockManagementPage() {
               window.location.href = '/login/seller';
             }, 2000);
           } else {
-            const errorMessage = error.response?.data?.error || 
-                                error.response?.data?.message ||
-                                'Could not update stock. Please try again.';
+            const errorMessage = error.response?.data?.error ||
+              error.response?.data?.message ||
+              'Could not update stock. Please try again.';
             setError(errorMessage);
           }
           await fetchData();
@@ -245,7 +256,7 @@ export default function StockManagementPage() {
 
   const getStockStatus = (product) => {
     const { online_stock, total_stock } = product;
-    
+
     if (!online_stock || online_stock <= 0) {
       return { label: 'Out of Stock', color: '#ef4444', bgColor: '#fee2e2' };
     } else if (online_stock <= 5) {
@@ -270,22 +281,22 @@ export default function StockManagementPage() {
 
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
-  const handleFormSubmit = () => { 
-    handleCloseModal(); 
-    fetchData(); 
+  const handleFormSubmit = () => {
+    handleCloseModal();
+    fetchData();
   };
 
   const filterCounts = getFilterCounts();
 
   return (
-    <div style={styles.container}>
+    <div className='dashboardstockpagecontainer' style={styles.container}>
       {confirmation && (
-        <ConfirmationModal 
-          {...confirmation} 
+        <ConfirmationModal
+          {...confirmation}
           isLoading={isUpdatingStock !== null}
         />
       )}
-      
+
       {/* Header */}
       <div className='dashboardstockheader' style={styles.header}>
         <div>
@@ -322,9 +333,10 @@ export default function StockManagementPage() {
 
       {/* Search and Filters */}
       <div style={styles.filtersContainer}>
-        <div style={styles.searchContainer}>
-          <Search size={18} style={styles.searchIcon} />
+        <div className='dashboardstocksearchcontainer' style={styles.searchContainer}>
+          <Search className='dashboardstocksearchicon' size={18} style={styles.searchIcon} />
           <input
+            className='dashboardstocksearchinput'
             type="text"
             placeholder="Search by product name, model, or SKU..."
             value={searchTerm}
@@ -332,9 +344,9 @@ export default function StockManagementPage() {
             style={styles.searchInput}
           />
         </div>
-        
+
         {/* ✅ FIXED: Filter Tabs */}
-        <div style={styles.filterTabs}>
+        <div className="dashboardstockfilter-tabs" style={styles.filterTabs}>
           <button
             onClick={() => setStockFilter('all')}
             style={{
@@ -384,172 +396,271 @@ export default function StockManagementPage() {
       </div>
 
       {isModalOpen && (
-        <QuickAddStockForm 
-          onClose={handleCloseModal} 
-          onSuccess={handleFormSubmit} 
+        <QuickAddStockForm
+          onClose={handleCloseModal}
+          onSuccess={handleFormSubmit}
         />
       )}
 
       {/* Stock Table */}
-      <div style={styles.tableContainer}>
-        <table style={styles.table}>
-          <thead>
-            <tr style={styles.tableHeader}>
-              <th style={styles.th}>Product</th>
-              <th style={{...styles.th, textAlign: 'center'}}>Status</th>
-              <th style={{...styles.th, textAlign: 'center'}}>Total Stock</th>
-              <th style={{...styles.th, textAlign: 'center'}}>Online Stock</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div>
+        {isMobile ? (
+          <div>
             {isLoading ? (
-              <tr>
-                <td colSpan="4" style={{...styles.td, textAlign: 'center', padding: '3rem'}}>
-                  <div style={styles.loadingState}>
-                    <div style={styles.spinner}></div>
-                    <span>Loading your inventory...</span>
-                  </div>
-                </td>
-              </tr>
+              <p>Loading products...</p>
             ) : filteredProducts.length > 0 ? (
-              filteredProducts.map(product => {
-                const stockStatus = getStockStatus(product);
-                const isUpdating = isUpdatingStock === product.id;
-                
+              filteredProducts.map((product) => {
+                const status = getStockStatus(product);
                 return (
-                  <tr key={product.id} style={styles.tableRow}>
-                    <td style={styles.td}>
-                      <div style={styles.productInfo}>
-                        <img 
-                          src={product.image_url || product.main_image_url || 'https://via.placeholder.com/50x50/e9ecef/6c757d?text=No+Image'} 
-                          alt={product.name} 
-                          style={styles.productImage}
-                          onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/50x50/e9ecef/6c757d?text=No+Image';
-                          }}
+                  <div key={product.id} style={styles.dashboardstockcard}>
+                    {/* === Header === */}
+                    <div style={styles.stockcardheader} onClick={() => toggleExpand(product.id)}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <img
+                          src={
+                            product.image_url ||
+                            product.main_image_url ||
+                            "https://via.placeholder.com/56x56/e9ecef/6c757d?text=No+Image"
+                          }
+                          alt={product.name}
+                          style={styles.cardproductImage}
                         />
-                        <div style={styles.productDetails}>
-                          <strong style={styles.productName}>{product.name}</strong>
-                          {product.model_name && (
-                            <small style={styles.productModel}>Model: {product.model_name}</small>
-                          )}
-                          {product.sku && (
-                            <small style={styles.productSku}>SKU: {product.sku}</small>
-                          )}
+                        <div>
+                          <p style={styles.cardproductName}>{product.name}</p>
+                          <p style={styles.cardproductModel}>{product.model_name}</p>
                         </div>
                       </div>
-                    </td>
-                    
-                    <td style={{...styles.td, textAlign: 'center'}}>
-                      <span style={{
-                        ...styles.statusBadge,
-                        backgroundColor: stockStatus.bgColor,
-                        color: stockStatus.color
-                      }}>
-                        {stockStatus.label}
-                      </span>
-                    </td>
-                    
-                    <td style={{...styles.td, textAlign: 'center'}}>
-                      <div style={styles.stockControl}>
-                        <button 
-                          onClick={() => handleStockChange(product.id, 'total_stock', product.total_stock - 1)} 
-                          style={styles.stockButton}
-                          disabled={isUpdating}
-                          title="Decrease total stock"
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <input 
-                          type="number" 
-                          value={product.total_stock || 0} 
-                          onChange={(e) => handleStockChange(product.id, 'total_stock', e.target.value)} 
-                          style={styles.stockInput}
-                          min="0"
-                          disabled={isUpdating}
-                        />
-                        <button 
-                          onClick={() => handleStockChange(product.id, 'total_stock', product.total_stock + 1)} 
-                          style={styles.stockButton}
-                          disabled={isUpdating}
-                          title="Increase total stock"
-                        >
-                          <Plus size={14} />
-                        </button>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={styles.badge(status)}>{status.label}</span>
+                        {expandedId === product.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                       </div>
-                    </td>
-                    
-                    <td style={{...styles.td, textAlign: 'center'}}>
-                      <div style={styles.stockControl}>
-                        <button 
-                          onClick={() => handleStockChange(product.id, 'online_stock', product.online_stock - 1)} 
-                          style={styles.stockButton}
-                          disabled={isUpdating}
-                          title="Decrease online stock"
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <input 
-                          type="number" 
-                          value={product.online_stock || 0} 
-                          onChange={(e) => handleStockChange(product.id, 'online_stock', e.target.value)} 
-                          style={styles.stockInput}
-                          min="0"
-                          max={product.total_stock}
-                          disabled={isUpdating}
-                        />
-                        <button 
-                          onClick={() => handleStockChange(product.id, 'online_stock', Math.min(product.online_stock + 1, product.total_stock))} 
-                          style={styles.stockButton}
-                          disabled={isUpdating || product.online_stock >= product.total_stock}
-                          title="Increase online stock"
-                        >
-                          <Plus size={14} />
-                        </button>
-                      </div>
-                      {isUpdating && (
-                        <div style={styles.updatingIndicator}>
-                          <div style={styles.smallSpinner}></div>
-                          <span>Updating...</span>
+                    </div>
+
+                    {/* === Expanded Section === */}
+                    {expandedId === product.id && (
+                      <div style={styles.expanded}>
+
+                        {/* Total Stock - Horizontal Alignment */}
+                        <div style={styles.cardstockRow}>
+                          <p style={styles.cardstockLabel}>Total Stock</p>
+                          <div style={styles.cardstockControl}>
+                            <button
+                              onClick={() =>
+                                handleStockChange(product.id, "total_stock", product.total_stock - 1)
+                              }
+                              style={styles.cardstockButton}
+                              disabled={isUpdatingStock === product.id}
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <input
+                              type="number"
+                              value={product.total_stock}
+                              onChange={(e) =>
+                                handleStockChange(product.id, "total_stock", e.target.value)
+                              }
+                              style={styles.cardstockInput}
+                            />
+                            <button
+                              onClick={() =>
+                                handleStockChange(product.id, "total_stock", product.total_stock + 1)
+                              }
+                              style={styles.cardstockButton}
+                              disabled={isUpdatingStock === product.id}
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
                         </div>
-                      )}
-                    </td>
-                  </tr>
+
+                        {/* Online Stock - Horizontal Alignment */}
+                        <div style={styles.cardstockRow}>
+                          <p style={styles.cardstockLabel}>Online Stock</p>
+                          <div style={styles.cardstockControl}>
+                            <button
+                              onClick={() =>
+                                handleStockChange(product.id, "online_stock", product.online_stock - 1)
+                              }
+                              style={styles.cardstockButton}
+                              disabled={isUpdatingStock === product.id}
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <input
+                              type="number"
+                              value={product.online_stock}
+                              onChange={(e) =>
+                                handleStockChange(product.id, "online_stock", e.target.value)
+                              }
+                              style={styles.cardstockInput}
+                            />
+                            <button
+                              onClick={() =>
+                                handleStockChange(product.id, "online_stock", product.online_stock + 1)
+                              }
+                              style={styles.cardstockButton}
+                              disabled={isUpdatingStock === product.id}
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })
             ) : (
-              <tr>
-                <td colSpan="4" style={{...styles.td, textAlign: 'center', padding: '3rem'}}>
-                  <div style={styles.emptyState}>
-                    <Package size={48} />
-                    <h3>No products found</h3>
-                    <p>
-                      {searchTerm || stockFilter !== 'all'
-                        ? 'No products match your current filters.'
-                        : 'You haven\'t added any products to your store yet.'}
-                    </p>
-                    {searchTerm || stockFilter !== 'all' ? (
-                      <button
-                        onClick={() => {
-                          setSearchTerm('');
-                          setStockFilter('all');
-                        }}
-                        style={styles.clearFiltersButton}
-                      >
-                        Clear Filters
-                      </button>
-                    ) : (
-                      <button onClick={handleOpenModal} style={styles.buttonPrimary}>
-                        <Plus size={18} />
-                        Add Your First Product
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
+              <p>No products found.</p>
             )}
-          </tbody>
-        </table>
+          </div>
+
+        ) : (
+          // 💻 DESKTOP TABLE VIEW
+          <div style={styles.tableContainer}>
+            <div className='custom-scroll' style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr style={styles.tableHeader}>
+                    <th style={styles.th}>Product</th>
+                    <th style={{ ...styles.th, textAlign: "center" }}>Status</th>
+                    <th style={{ ...styles.th, textAlign: "center" }}>Total Stock</th>
+                    <th style={{ ...styles.th, textAlign: "center" }}>Online Stock</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan="4" style={{ textAlign: "center", padding: "3rem" }}>
+                        Loading your inventory...
+                      </td>
+                    </tr>
+                  ) : filteredProducts.length > 0 ? (
+                    filteredProducts.map((product) => {
+                      const stockStatus = getStockStatus(product);
+                      const isUpdating = isUpdatingStock === product.id;
+                      return (
+                        <tr key={product.id}>
+                          <td style={styles.td}>
+                            <div style={styles.productInfo}>
+                              <img
+                                src={
+                                  product.image_url ||
+                                  product.main_image_url ||
+                                  "https://via.placeholder.com/50x50/e9ecef/6c757d?text=No+Image"
+                                }
+                                alt={product.name}
+                                style={styles.productImage}
+                              />
+                              <div style={styles.productDetails}>
+                                <strong style={styles.productName}>{product.name}</strong>
+                                {product.model_name && (
+                                  <small style={styles.productModel}>Model: {product.model_name}</small>
+                                )}
+                                {product.sku && (
+                                  <small style={styles.productSku}>SKU: {product.sku}</small>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ ...styles.td, textAlign: "center" }}>
+                            <span
+                              style={{
+                                ...styles.statusBadge,
+                                backgroundColor: stockStatus.bgColor,
+                                color: stockStatus.color,
+                              }}
+                            >
+                              {stockStatus.label}
+                            </span>
+                          </td>
+                          <td style={{ ...styles.td, textAlign: "center" }}>
+                            <div style={styles.stockControl}>
+                              <button
+                                onClick={() =>
+                                  handleStockChange(product.id, "total_stock", product.total_stock - 1)
+                                }
+                                style={styles.stockButton}
+                                disabled={isUpdating}
+                              >
+                                <Minus size={14} />
+                              </button>
+                              <input
+                                type="number"
+                                value={product.total_stock || 0}
+                                onChange={(e) =>
+                                  handleStockChange(product.id, "total_stock", e.target.value)
+                                }
+                                style={styles.stockInput}
+                                min="0"
+                                disabled={isUpdating}
+                              />
+                              <button
+                                onClick={() =>
+                                  handleStockChange(product.id, "total_stock", product.total_stock + 1)
+                                }
+                                style={styles.stockButton}
+                                disabled={isUpdating}
+                              >
+                                <Plus size={14} />
+                              </button>
+                            </div>
+                          </td>
+                          <td style={{ ...styles.td, textAlign: "center" }}>
+                            <div style={styles.stockControl}>
+                              <button
+                                onClick={() =>
+                                  handleStockChange(product.id, "online_stock", product.online_stock - 1)
+                                }
+                                style={styles.stockButton}
+                                disabled={isUpdating}
+                              >
+                                <Minus size={14} />
+                              </button>
+                              <input
+                                type="number"
+                                value={product.online_stock || 0}
+                                onChange={(e) =>
+                                  handleStockChange(product.id, "online_stock", e.target.value)
+                                }
+                                style={styles.stockInput}
+                                min="0"
+                                max={product.total_stock}
+                                disabled={isUpdating}
+                              />
+                              <button
+                                onClick={() =>
+                                  handleStockChange(
+                                    product.id,
+                                    "online_stock",
+                                    Math.min(product.online_stock + 1, product.total_stock)
+                                  )
+                                }
+                                style={styles.stockButton}
+                                disabled={isUpdating || product.online_stock >= product.total_stock}
+                              >
+                                <Plus size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="4" style={{ textAlign: "center", padding: "3rem" }}>
+                        <div>
+                          <Package size={48} />
+                          <h3>No products found</h3>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* CSS Animations */}
@@ -563,6 +674,31 @@ export default function StockManagementPage() {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
+                  /* Target your tableWrapper scroll area */
+  .custom-scroll::-webkit-scrollbar {
+    height: 2px;   /* for horizontal scrollbar */
+    width: 2px;    /* for vertical scrollbar */
+  }
+
+  .custom-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;  /* track background */
+    border-radius: 6px;
+  }
+
+  .custom-scroll::-webkit-scrollbar-thumb {
+    background: #f1f1f1;  /* thumb (scroll handle) color */
+    border-radius: 6px;
+  }
+
+  .custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: #f1f1f1;  /* darker on hover */
+  }
+
+  /* Firefox support */
+  .custom-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #175E54 #f1f1f1;
+  }
       `}</style>
     </div>
   );
@@ -593,7 +729,7 @@ const styles = {
     gap: '12px',
     fontSize: '2rem',
     fontWeight: '700',
-    color: '#1f2937',
+    color: '#1a4845',
     margin: '0 0 8px 0'
   },
 
@@ -641,7 +777,9 @@ const styles = {
 
   searchContainer: {
     position: 'relative',
-    maxWidth: '400px'
+    maxWidth: '400px',
+    borderSizing: 'border-box'
+
   },
 
   searchIcon: {
@@ -655,12 +793,14 @@ const styles = {
 
   searchInput: {
     width: '100%',
-    padding: '12px 12px 12px 40px',
-    border: '1px solid #d1d5db',
+    padding: '8px 12px 8px 40px',
+    border: '1px solid rgba(42, 108, 72, 0.3)',
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
-    transition: 'border-color 0.2s'
+    transition: 'border-color 0.2s',
+    backgroundColor: '#FDFFF0',
+    borderSizing: 'border-box'
   },
 
   filterTabs: {
@@ -671,49 +811,49 @@ const styles = {
 
   filterTab: {
     padding: '8px 16px',
-    backgroundColor: 'white',
-    border: '1px solid #d1d5db',
+    backgroundColor: '#FDFFF0',
+    border: '1px solid rgb(23, 94, 84)',
     borderRadius: '20px',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500',
-    color: '#374151',
+    color: '#6b7280',
     transition: 'all 0.2s'
   },
 
   activeFilterTab: {
-    backgroundColor: '#3b82f6',
-    borderColor: '#3b82f6',
+    backgroundColor: 'rgb(23, 94, 84)',
+    borderColor: 'rgb(23, 94, 84)',
     color: 'white'
   },
 
   // Buttons
-  buttonPrimary: { 
+  buttonPrimary: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '12px 20px', 
-    backgroundColor: '#3b82f6', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '8px', 
-    cursor: 'pointer', 
+    padding: '12px 20px',
+    backgroundColor: 'rgb(23, 94, 84)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500',
     textDecoration: 'none',
     transition: 'all 0.2s'
   },
 
-  buttonSecondary: { 
+  buttonSecondary: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '12px 20px', 
-    backgroundColor: '#6b7280', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '8px', 
-    cursor: 'pointer', 
+    padding: '12px 20px',
+    backgroundColor: '#6b7280',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500',
     textDecoration: 'none',
@@ -737,37 +877,55 @@ const styles = {
     borderRadius: '12px',
     overflow: 'hidden',
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: '1px solid #e5e7eb'
+    border: '1px solid rgb(23, 94, 84)'
   },
 
-  table: { 
-    width: '100%', 
-    borderCollapse: 'collapse'
+  tableWrapper: {
+    backgroundColor: '#FDFFF0',
+    width: "100%",
+    overflowX: "auto",  // ✅ Enables horizontal scroll
+    overflowY: "auto",  // ✅ Enables vertical scroll
+    maxHeight: "67vh",  // ✅ Limits height and adds vertical scroll if needed
+  },
+
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
   },
 
   tableHeader: {
     backgroundColor: '#f8fafc'
   },
 
-  th: { 
-    padding: '16px 12px', 
-    textAlign: 'left', 
+  th: {
+    position: "sticky",
+    top: "0",
+    padding: '16px 12px',
+    textAlign: 'left',
     fontSize: '12px',
     fontWeight: '600',
-    color: '#374151',
+    color: 'white',
+    backgroundColor: 'rgb(23, 94, 84)',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
-    borderBottom: '1px solid #e5e7eb'
+    borderBottom: '1px solid rgb(23, 94, 84)',
+    whiteSpace: "nowrap",
+    userSelect: 'none',
+    zIndex: 5,
+    transition: "box-shadow 0.2s ease",
   },
 
   tableRow: {
-    borderBottom: '1px solid #f3f4f6',
+    borderTop: '1px solid rgb(23, 94, 84)',
     transition: 'background-color 0.2s'
   },
 
-  td: { 
-    padding: '16px 12px', 
-    verticalAlign: 'middle'
+  td: {
+    padding: '16px 12px',
+    verticalAlign: 'middle',
+    whiteSpace: "nowrap",
+    borderTop: '1px solid rgb(23, 94, 84)',
+
   },
 
   // Product Info
@@ -777,10 +935,10 @@ const styles = {
     gap: '12px'
   },
 
-  productImage: { 
+  productImage: {
     width: '50px',
     height: '50px',
-    objectFit: 'cover', 
+    objectFit: 'cover',
     borderRadius: '6px',
     border: '1px solid #e5e7eb'
   },
@@ -818,31 +976,32 @@ const styles = {
   },
 
   // Stock Controls
-  stockControl: { 
-    display: 'flex', 
-    alignItems: 'center', 
+  stockControl: {
+    display: 'flex',
+    alignItems: 'center',
     justifyContent: 'center',
     gap: '8px'
   },
 
-  stockInput: { 
-    width: '70px', 
+  stockInput: {
+    width: '40px',
     textAlign: 'center',
-    padding: '8px 4px', 
-    border: '1px solid #d1d5db', 
-    borderRadius: '6px', 
+    padding: '7px 4px',
+    border: '1px solid rgb(23, 94, 84)',
+    borderRadius: '6px',
     fontSize: '14px',
     fontWeight: '500',
-    outline: 'none'
+    outline: 'none',
+    backgroundColor: "#FDFFF0",
   },
 
-  stockButton: { 
-    width: '32px', 
-    height: '32px', 
-    border: '1px solid #d1d5db', 
-    borderRadius: '6px', 
-    cursor: 'pointer', 
-    backgroundColor: 'white', 
+  stockButton: {
+    width: '32px',
+    height: '32px',
+    border: '1px solid rgb(23, 94, 84)',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    backgroundColor: '#FDFFF0',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -898,26 +1057,26 @@ const styles = {
   },
 
   // Modal Styles
-  modalOverlay: { 
-    position: 'fixed', 
-    top: 0, 
-    left: 0, 
-    right: 0, 
-    bottom: 0, 
-    backgroundColor: 'rgba(0,0,0,0.5)', 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
     zIndex: 1000,
     padding: '20px'
   },
 
-  modalContent: { 
-    background: 'white', 
-    borderRadius: '16px', 
+  modalContent: {
+    background: '#FDFFF0',
+    borderRadius: '16px',
     width: '100%',
     maxWidth: '500px',
-    boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+    boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
   },
 
   modalHeader: {
@@ -932,7 +1091,7 @@ const styles = {
   modalTitle: {
     fontSize: '18px',
     fontWeight: '600',
-    color: '#1f2937',
+    color: 'rgb(23, 94, 84)',
     margin: 0
   },
 
@@ -940,7 +1099,7 @@ const styles = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    color: '#6b7280',
+    color: 'rgb(23, 94, 84)',
     padding: '4px',
     borderRadius: '4px'
   },
@@ -965,10 +1124,10 @@ const styles = {
     marginBottom: '6px'
   },
 
-  textarea: { 
-    width: '100%', 
+  textarea: {
+    width: '100%',
     padding: '12px 16px',
-    border: '1px solid #d1d5db', 
+    border: '1px solid #d1d5db',
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
@@ -977,11 +1136,88 @@ const styles = {
     boxSizing: 'border-box'
   },
 
-  buttonContainer: { 
-    display: 'flex', 
-    justifyContent: 'flex-end', 
+  buttonContainer: {
+    display: 'flex',
+    justifyContent: 'flex-end',
     gap: '12px',
     padding: '24px',
     borderTop: '1px solid #e5e7eb'
-  }
+  },
+  dashboardstockcard: {
+    border: '1px solid rgb(23, 94, 84)',
+    borderRadius: '12px',
+    background: '#FDFFF0',
+    marginBottom: '12px',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+    overflow: 'hidden',
+  },
+  stockcardheader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '12px 16px',
+    cursor: 'pointer',
+    background: '#FDFFF0',
+  },
+  expanded: {
+    borderTop: '1px solid rgb(23, 94, 84)',
+    padding: '12px 16px',
+    background: '#FDFFF0',
+  },
+  cardstockRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '12px',
+  },
+  cardstockLabel: {
+    fontSize: '13px',
+    fontWeight: 500,
+    color: '#444',
+    marginRight: '10px',
+  },
+  cardstockControl: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+  },
+  cardstockButton: {
+    background: '#FDFFF0',
+    border: '1px solid rgb(23, 94, 84)',
+    borderRadius: '6px',
+    padding: '4px 8px',
+    cursor: 'pointer',
+  },
+  cardstockInput: {
+    width: '40px',
+    textAlign: 'center',
+    border: '1px solid rgb(23, 94, 84)',
+    borderRadius: '6px',
+    padding: '4px',
+    backgroundColor: "#FDFFF0",
+  },
+  cardproductImage: {
+    width: '56px',
+    height: '56px',
+    borderRadius: '8px',
+    objectFit: 'cover',
+    background: '#FDFFF0',
+  },
+  cardproductName: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: '#111827',
+  },
+  cardproductModel: {
+    fontSize: '12px',
+    color: '#6b7280',
+  },
+  badge: (status) => ({
+    backgroundColor: status.bgColor,
+    color: status.color,
+    padding: '2px 8px',
+    borderRadius: '8px',
+    fontSize: '12px',
+    fontWeight: 500,
+  }),
 };

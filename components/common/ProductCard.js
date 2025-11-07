@@ -297,11 +297,12 @@ export default function ProductCard({
           )}
 
           {/* Discount badge */}
-          {discount && (
+          {discount > 0 && (
             <div className="discount-badge">
               {discount}% OFF
             </div>
           )}
+
 
           {stockStatus === 'low-stock' && (
             <div className="low-stock-badge">

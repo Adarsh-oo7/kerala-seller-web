@@ -10,6 +10,9 @@
         font-size: 13px !important;
     }
 
+    .dashboardstockpagecontainer {
+        padding: 0px !important;
+    }
 
 }
 
@@ -32,20 +35,48 @@
         font-size: 13px !important;
     }
 
+    .dashboardstockfilter-tabs {
+        gap: 6px !important;
+        justify-content: center !important;
+        /* center align for mobile */
+    }
+
+    .dashboardstockfilter-tabs button {
+        font-size: 14px !important;
+        padding: 8px 10px !important;
+        border-radius: 20px !important;
+        flex: 1 1 auto !important;
+        /* allow flexible resizing */
+        min-width: 90px !important;
+        text-align: center !important;
+    }
+
+    .dashboardstockpagecontainer {
+        padding: 0px !important;
+    }
 
 }
 
 @media(max-width: 768px) {
-    /* .dashboardhistorycontainer {
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
-        gap: 12px !important;
-    } */
+    .dashboardstockfilter-tabs {
+        gap: 6px !important;
+        justify-content: center !important;
+        /* center align for mobile */
+    }
+
+    .dashboardstockfilter-tabs button {
+        font-size: 14px !important;
+        padding: 8px 10px !important;
+        border-radius: 20px !important;
+        flex: 1 1 auto !important;
+        /* allow flexible resizing */
+        min-width: 90px !important;
+        text-align: center !important;
+    }
 
 }
 
 @media(max-width: 576px) {
-
-
 
     .dashboardstocktitle {
         font-size: 24px !important;
@@ -72,6 +103,37 @@
         font-size: 14px !important;
     }
 
+    .dashboardstocksearchcontainer {
+        max-width: 88% !important;
+    }
+
+    .dashboardstocksearchinput {
+        font-size: 13px !important;
+        padding: 8px 12px 8px 36px !important;
+        /* slightly more padding for touch */
+    }
+
+    .dashboardstocksearchcontainer .dashboardstocksearchicon {
+        left: 10px !important;
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    .dashboardstockfilter-tabs {
+        gap: 6px !important;
+        justify-content: center !important;
+        /* center align for mobile */
+    }
+
+    .dashboardstockfilter-tabs button {
+        font-size: 13px !important;
+        padding: 6px 10px !important;
+        border-radius: 20px !important;
+        flex: 1 1 auto !important;
+        /* allow flexible resizing */
+        min-width: 90px !important;
+        text-align: center !important;
+    }
 
 }
 
@@ -107,5 +169,36 @@
         display: grid !important;
     }
 
+    .dashboardstocksearchinput {
+        font-size: 12px !important;
+        padding: 6px 12px 6px 36px !important;
+        /* slightly more padding for touch */
+    }
+
+    .dashboardstocksearchcontainer {
+        max-width: 82% !important;
+    }
+
+    .dashboardstocksearchcontainer .dashboardstocksearchicon {
+        left: 10px !important;
+        width: 15px !important;
+        height: 15px !important;
+    }
+
+    .dashboardstockfilter-tabs {
+        gap: 6px !important;
+        justify-content: center !important;
+        /* center align for mobile */
+    }
+
+    .dashboardstockfilter-tabs button {
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+        border-radius: 20px !important;
+        flex: 1 1 auto !important;
+        /* allow flexible resizing */
+        min-width: 90px !important;
+        text-align: center !important;
+    }
 
 }
