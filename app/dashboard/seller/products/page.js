@@ -697,7 +697,7 @@ export default function ProductsPage() {
           )
         ) : (
           <div style={styles.emptyState}>
-            <Package size={64} />
+            <Package size={64} className='dashboardproductemptyicon' />
             <h3>
               {searchTerm || filterType !== 'all'
                 ? 'No products match your filters'
@@ -719,7 +719,7 @@ export default function ProductsPage() {
                 Clear Filters
               </button>
             ) : (
-              <button onClick={() => handleOpenModal()} style={styles.buttonPrimary}>
+              <button className='dashboardproductaddfirstprodbtn' onClick={() => handleOpenModal()} style={styles.buttonPrimary}>
                 <Plus size={18} />
                 Add Your First Product
               </button>

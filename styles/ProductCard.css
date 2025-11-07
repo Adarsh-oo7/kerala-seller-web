@@ -573,7 +573,7 @@
 
 .low-stock-badge {
     position: absolute;
-    top: 40px;
+    top: 8px;
     /* appears just below discount badge */
     left: 8px;
     background: #be1e237a;
@@ -586,6 +586,10 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
     z-index: 2;
     /* make sure it's above the image */
+}
+
+.discount-badge+.low-stock-badge {
+    top: 40px;
 }
 
 .product-title .model-name {

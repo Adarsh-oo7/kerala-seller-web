@@ -3,12 +3,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { 
-  History, 
-  Package, 
-  TrendingUp, 
-  TrendingDown, 
-  Calendar, 
+import '../../../../styles/DashboardHistory.css'
+
+import {
+  History,
+  Package,
+  TrendingUp,
+  TrendingDown,
+  Calendar,
   Filter,
   Download,
   AlertCircle,
@@ -21,21 +23,21 @@ import {
   RotateCcw,
   ShoppingCart,
   Plus,
-  Minus
+  Minus, ChevronDown, X
 } from 'lucide-react';
 
 // ✅ Enhanced API Configuration
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  
+
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
     return envUrl.trim();
   }
-  
+
   if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:8000';
   }
-  
+
   return 'https://keralaseller-backend.onrender.com';
 };
 
@@ -47,6 +49,8 @@ export default function StockHistoryPage() {
   const [filteredHistory, setFilteredHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedId, setExpandedId] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
   const [filters, setFilters] = useState({
     action: 'all',
     dateRange: '30',
@@ -56,9 +60,9 @@ export default function StockHistoryPage() {
 
   // ✅ Enhanced authentication check
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('accessToken') || 
-                 localStorage.getItem('buyerAccessToken') ||
-                 localStorage.getItem('access_token');
+    const token = localStorage.getItem('accessToken') ||
+      localStorage.getItem('buyerAccessToken') ||
+      localStorage.getItem('access_token');
     return token ? { Authorization: `Bearer ${token}` } : null;
   }, []);
 
@@ -129,10 +133,10 @@ export default function StockHistoryPage() {
     try {
       console.log('🔍 Fetching stock history from:', HISTORY_API_URL);
       const response = await axios.get(HISTORY_API_URL, { headers });
-      
+
       const historyData = response.data.results || response.data || [];
       console.log(`✅ Received ${historyData.length} stock history records`);
-      
+
       // Use real data if available, otherwise use mock data
       const dataToUse = historyData.length > 0 ? historyData : mockData;
       setHistory(dataToUse);
@@ -167,10 +171,10 @@ export default function StockHistoryPage() {
     // Filter by product name
     if (filters.product.trim()) {
       filtered = filtered.filter(item => {
-        const productName = item.product?.name || 
-                           item.product_name || 
-                           item.product || 
-                           'Unknown Product';
+        const productName = item.product?.name ||
+          item.product_name ||
+          item.product ||
+          'Unknown Product';
         return productName.toLowerCase().includes(filters.product.toLowerCase());
       });
     }
@@ -180,8 +184,8 @@ export default function StockHistoryPage() {
       const days = parseInt(filters.dateRange);
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days);
-      
-      filtered = filtered.filter(item => 
+
+      filtered = filtered.filter(item =>
         new Date(item.timestamp).getTime() >= cutoffDate.getTime()
       );
     }
@@ -253,18 +257,18 @@ export default function StockHistoryPage() {
   };
 
   const getProductName = (item) => {
-    return item.product?.name || 
-           item.product_name || 
-           item.product || 
-           'Unknown Product';
+    return item.product?.name ||
+      item.product_name ||
+      item.product ||
+      'Unknown Product';
   };
 
   const getUserName = (item) => {
     if (item.user) {
-      return item.user.full_name || 
-             item.user.email || 
-             item.user.name || 
-             'System User';
+      return item.user.full_name ||
+        item.user.email ||
+        item.user.name ||
+        'System User';
     }
     return 'System';
   };
@@ -274,10 +278,10 @@ export default function StockHistoryPage() {
     const stats = filteredHistory.reduce((acc, item) => {
       const totalChange = item.change_total || 0;
       const onlineChange = item.change_online || 0;
-      
+
       acc.totalMovement += Math.abs(totalChange);
       acc.onlineMovement += Math.abs(onlineChange);
-      
+
       if (totalChange > 0) {
         acc.stockIncreases++;
         acc.totalAdded += totalChange;
@@ -285,9 +289,9 @@ export default function StockHistoryPage() {
         acc.stockDecreases++;
         acc.totalSold += Math.abs(totalChange);
       }
-      
+
       acc.actionCounts[item.action] = (acc.actionCounts[item.action] || 0) + 1;
-      
+
       return acc;
     }, {
       totalMovement: 0,
@@ -298,7 +302,7 @@ export default function StockHistoryPage() {
       totalSold: 0,
       actionCounts: {}
     });
-    
+
     return stats;
   };
 
@@ -335,6 +339,17 @@ export default function StockHistoryPage() {
     URL.revokeObjectURL(url);
   };
 
+  useEffect(() => {
+    const checkWidth = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkWidth(); // run once on mount
+    window.addEventListener('resize', checkWidth);
+
+    return () => window.removeEventListener('resize', checkWidth);
+  }, []);
+
   if (isLoading) {
     return (
       <div style={styles.loadingContainer}>
@@ -359,29 +374,30 @@ export default function StockHistoryPage() {
   }
 
   return (
-    <div style={styles.pageContainer}>
+    <div className='dashboardhistorypagecontainer' style={styles.pageContainer}>
       {/* ✅ Enhanced Header */}
-      <div style={styles.header}>
+      <div className='dashboardHistoryheader' style={styles.header}>
         <div>
-          <h1 style={styles.pageTitle}>
-            <History size={28} />
+          <h1 className='dashboardhistorytitle' style={styles.pageTitle}>
+            <History size={28} className='dashboardhistorypackageicon' />
             Stock Movement History
           </h1>
-          <p style={styles.pageSubtitle}>
+          <p className='dashboardhistorysubtitle' style={styles.pageSubtitle}>
             Track all inventory changes and stock movements for your Kerala store
           </p>
         </div>
         <div style={styles.headerActions}>
-          <button 
-            onClick={exportHistory} 
-            style={styles.exportButton} 
+          <button
+            onClick={exportHistory}
+            className='dashboardhistoryexportbtn'
+            style={styles.exportButton}
             disabled={filteredHistory.length === 0}
             title="Export to CSV"
           >
             <Download size={18} />
             Export CSV
           </button>
-          <button onClick={fetchHistory} style={styles.refreshButton} title="Refresh data">
+          <button className='dashboardhistoryexportbtn' onClick={fetchHistory} style={styles.refreshButton} title="Refresh data">
             <RefreshCw size={18} />
             Refresh
           </button>
@@ -390,41 +406,41 @@ export default function StockHistoryPage() {
 
       {/* ✅ Enhanced Statistics Cards */}
       {filteredHistory.length > 0 && (
-        <div style={styles.statsContainer}>
+        <div className='dashboardhistorycontainer' style={styles.statsContainer}>
           <div style={styles.statCard}>
-            <div style={{...styles.statIcon, backgroundColor: '#ecfdf5'}}>
-              <TrendingUp size={20} color="#059669" />
+            <div className='dashboardhistoryiconcontainer' style={{ ...styles.statIcon, }}>
+              <TrendingUp size={24} color="#059669" className='dashboardhistoryicon' />
             </div>
             <div style={styles.statContent}>
-              <div style={styles.statValue}>{stats.totalAdded}</div>
-              <div style={styles.statLabel}>Items Added</div>
+              <div className='dashboardhistoryvalue' style={styles.statValue}>{stats.totalAdded}</div>
+              <div className='dashboardhistorylabel' style={styles.statLabel}>Items Added</div>
             </div>
           </div>
           <div style={styles.statCard}>
-            <div style={{...styles.statIcon, backgroundColor: '#fef2f2'}}>
-              <TrendingDown size={20} color="#dc2626" />
+            <div className='dashboardhistoryiconcontainer' style={{ ...styles.statIcon, }}>
+              <TrendingDown size={24} color="#dc2626" className='dashboardhistoryicon' />
             </div>
             <div style={styles.statContent}>
-              <div style={styles.statValue}>{stats.totalSold}</div>
-              <div style={styles.statLabel}>Items Sold</div>
+              <div className='dashboardhistoryvalue' style={styles.statValue}>{stats.totalSold}</div>
+              <div className='dashboardhistorylabel' style={styles.statLabel}>Items Sold</div>
             </div>
           </div>
           <div style={styles.statCard}>
-            <div style={{...styles.statIcon, backgroundColor: '#eff6ff'}}>
-              <Package size={20} color="#3b82f6" />
+            <div className='dashboardhistoryiconcontainer' style={{ ...styles.statIcon, }}>
+              <Package size={24} color="#175E54" className='dashboardhistoryicon' />
             </div>
             <div style={styles.statContent}>
-              <div style={styles.statValue}>{stats.totalMovement}</div>
-              <div style={styles.statLabel}>Total Movement</div>
+              <div className='dashboardhistoryvalue' style={styles.statValue}>{stats.totalMovement}</div>
+              <div className='dashboardhistorylabel' style={styles.statLabel}>Total Movement</div>
             </div>
           </div>
           <div style={styles.statCard}>
-            <div style={{...styles.statIcon, backgroundColor: '#f3e8ff'}}>
-              <FileText size={20} color="#8b5cf6" />
+            <div className='dashboardhistoryiconcontainer' style={{ ...styles.statIcon, }}>
+              <FileText size={24} color="#8b5cf6" className='dashboardhistoryicon' />
             </div>
             <div style={styles.statContent}>
-              <div style={styles.statValue}>{filteredHistory.length}</div>
-              <div style={styles.statLabel}>History Records</div>
+              <div className='dashboardhistoryvalue' style={styles.statValue}>{filteredHistory.length}</div>
+              <div className='dashboardhistorylabel' style={styles.statLabel}>History Records</div>
             </div>
           </div>
         </div>
@@ -441,8 +457,8 @@ export default function StockHistoryPage() {
             {filters.action !== 'all' && (
               <span style={styles.activeFilter}>
                 Action: {getActionLabel(filters.action)}
-                <button 
-                  onClick={() => setFilters({...filters, action: 'all'})}
+                <button
+                  onClick={() => setFilters({ ...filters, action: 'all' })}
                   style={styles.filterRemove}
                 >
                   ×
@@ -452,8 +468,8 @@ export default function StockHistoryPage() {
             {filters.product && (
               <span style={styles.activeFilter}>
                 Product: {filters.product}
-                <button 
-                  onClick={() => setFilters({...filters, product: ''})}
+                <button
+                  onClick={() => setFilters({ ...filters, product: '' })}
                   style={styles.filterRemove}
                 >
                   ×
@@ -463,8 +479,8 @@ export default function StockHistoryPage() {
             {filters.dateRange !== '30' && (
               <span style={styles.activeFilter}>
                 Date: {filters.dateRange === 'all' ? 'All time' : `Last ${filters.dateRange} days`}
-                <button 
-                  onClick={() => setFilters({...filters, dateRange: '30'})}
+                <button
+                  onClick={() => setFilters({ ...filters, dateRange: '30' })}
                   style={styles.filterRemove}
                 >
                   ×
@@ -473,13 +489,14 @@ export default function StockHistoryPage() {
             )}
           </div>
         </div>
-        
-        <div style={styles.filtersGrid}>
+
+        <div className='dashboardhistoryfiltergrid' style={styles.filtersGrid}>
           <div style={styles.filterGroup}>
             <label style={styles.filterLabel}>Action Type</label>
             <select
+              className='dashboardhistoryselectinput'
               value={filters.action}
-              onChange={(e) => setFilters({...filters, action: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, action: e.target.value })}
               style={styles.filterSelect}
             >
               <option value="all">All Actions</option>
@@ -493,8 +510,9 @@ export default function StockHistoryPage() {
           <div style={styles.filterGroup}>
             <label style={styles.filterLabel}>Date Range</label>
             <select
+              className='dashboardhistoryselectinput'
               value={filters.dateRange}
-              onChange={(e) => setFilters({...filters, dateRange: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
               style={styles.filterSelect}
             >
               <option value="1">Today</option>
@@ -505,20 +523,21 @@ export default function StockHistoryPage() {
             </select>
           </div>
 
-          <div style={styles.filterGroup}>
+          <div className="dashboardhistorysearchcontainer" style={styles.filterGroup}>
             <label style={styles.filterLabel}>Search Product</label>
             <div style={styles.searchContainer}>
               <Search size={16} style={styles.searchIcon} />
               <input
+                className='dashboardhistorysearchinput'
                 type="text"
                 placeholder="Search by product name..."
                 value={filters.product}
-                onChange={(e) => setFilters({...filters, product: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, product: e.target.value })}
                 style={styles.searchInput}
               />
               {filters.product && (
-                <button 
-                  onClick={() => setFilters({...filters, product: ''})}
+                <button
+                  onClick={() => setFilters({ ...filters, product: '' })}
                   style={styles.searchClear}
                 >
                   ×
@@ -531,131 +550,168 @@ export default function StockHistoryPage() {
 
       {/* ✅ Enhanced History Table */}
       <div style={styles.tableContainer}>
-        {filteredHistory.length > 0 ? (
-          <>
-            <div style={styles.tableHeader}>
-              <h3 style={styles.tableTitle}>
-                Stock Movement Records ({filteredHistory.length})
-              </h3>
-            </div>
-            <div style={styles.tableWrapper}>
-              <table style={styles.table}>
-                <thead>
-                  <tr style={styles.thead}>
-                    <th style={styles.th}>
-                      <Calendar size={16} />
-                      Date & Time
-                    </th>
-                    <th style={styles.th}>
-                      <Package size={16} />
-                      Product
-                    </th>
-                    <th style={styles.th}>Action</th>
-                    <th style={styles.th}>Total Stock</th>
-                    <th style={styles.th}>Online Stock</th>
-                    <th style={styles.th}>
-                      <User size={16} />
-                      User
-                    </th>
-                    <th style={styles.th}>
-                      <FileText size={16} />
-                      Note
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.map((log, index) => (
-                    <tr key={log.id || index} style={styles.tableRow}>
-                      <td style={styles.td}>
-                        <div style={styles.dateCell}>
-                          <div style={styles.datePrimary}>
-                            {new Date(log.timestamp).toLocaleDateString('en-IN')}
-                          </div>
-                          <div style={styles.dateSecondary}>
-                            {new Date(log.timestamp).toLocaleTimeString('en-IN', { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
-                          </div>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.productCell}>
-                          <Package size={16} color="#6b7280" />
-                          <span style={styles.productName}>{getProductName(log)}</span>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={{
-                          ...styles.actionCell,
-                          color: getActionColor(log.action)
-                        }}>
-                          {getActionIcon(log.action)}
-                          <span style={styles.actionLabel}>{getActionLabel(log.action)}</span>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={{
-                          ...styles.changeCell,
-                          color: (log.change_total || 0) >= 0 ? '#059669' : '#dc2626'
-                        }}>
-                          <strong>
-                            {(log.change_total || 0) > 0 ? '+' : ''}{log.change_total || 0}
-                          </strong>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={{
-                          ...styles.changeCell,
-                          color: (log.change_online || 0) >= 0 ? '#059669' : '#dc2626'
-                        }}>
-                          <strong>
-                            {(log.change_online || 0) > 0 ? '+' : ''}{log.change_online || 0}
-                          </strong>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.userCell}>
-                          <User size={14} color="#6b7280" />
-                          <span>{getUserName(log)}</span>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.noteCell}>
-                          {log.note ? (
-                            <span>{log.note}</span>
-                          ) : (
-                            <span style={styles.noNote}>No additional notes</span>
-                          )}
-                        </div>
-                      </td>
+        {/* ===== Header ===== */}
+        <div style={styles.tableHeader}>
+          <h3 style={styles.tableTitle}>
+            Stock Movement Records ({filteredHistory.length})
+          </h3>
+        </div>
+
+        {/* ===== Desktop Table (visible ≥768px) ===== */}
+        {!isMobile && (
+          <div style={styles.desktopTable}>
+            {filteredHistory.length > 0 ? (
+              <div className='custom-scroll' style={styles.tableWrapper}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr style={styles.thead}>
+                      <th style={styles.th}>Date & Time</th>
+                      <th style={styles.th}>Product</th>
+                      <th style={styles.th}>Action</th>
+                      <th style={styles.th}>Total</th>
+                      <th style={styles.th}>Online</th>
+                      <th style={styles.th}>User</th>
+                      <th style={styles.th}>Note</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        ) : (
-          <div style={styles.emptyState}>
-            <History size={64} color="#d1d5db" />
-            <h3>No stock history found</h3>
-            <p>
-              {filters.action !== 'all' || filters.product || filters.dateRange !== '30'
-                ? 'No records match your current filters. Try adjusting the filters above.'
-                : 'No stock movements have been recorded yet. Stock changes will appear here when you update inventory levels.'
-              }
-            </p>
-            {(filters.action !== 'all' || filters.product || filters.dateRange !== '30') && (
-              <button
-                onClick={() => setFilters({ action: 'all', dateRange: '30', product: '' })}
-                style={styles.clearFiltersButton}
-              >
-                Clear All Filters
-              </button>
+                  </thead>
+                  <tbody>
+                    {filteredHistory.map((log) => (
+                      <tr key={log.id} style={styles.tableRow}>
+                        <td style={styles.td}>{formatDate(log.timestamp)}</td>
+                        <td style={styles.td}>{getProductName(log)}</td>
+                        <td style={{ ...styles.td, color: getActionColor(log.action) }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {getActionIcon(log.action)}
+                            {getActionLabel(log.action)}
+                          </div>
+                        </td>
+                        <td style={styles.td}>{log.change_total}</td>
+                        <td style={styles.td}>{log.change_online}</td>
+                        <td style={styles.td}>{getUserName(log)}</td>
+                        <td style={styles.td}>{log.note || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={styles.emptyState}>
+                <History size={64} color="#d1d5db" />
+                <h3>No stock history found</h3>
+              </div>
             )}
           </div>
         )}
+
+        {/* ===== Mobile Drawer View (visible <768px) ===== */}
+        {isMobile && (
+          <div style={styles.mobileList}>
+            {filteredHistory.length === 0 ? (
+              <div style={styles.noRecords}>No records found</div>
+            ) : (
+              filteredHistory.map((record) => (
+                <button
+                  key={record.id}
+                  onClick={() =>
+                    setExpandedId(expandedId === record.id ? null : record.id)
+                  }
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    border: 'none',
+                    borderBottom: '1px solid #e5e7eb',
+                    padding: 16,
+                    background: '#FDFFF0',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#c3ddf7ff')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                        <span style={{ fontWeight: 600, color: '#111827' }}>
+                          {getProductName(record)}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
+                        {new Date(record.timestamp).toLocaleDateString('en-IN')} •{' '}
+                        {new Date(record.timestamp).toLocaleTimeString('en-IN', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>
+                        {getUserName(record)}
+                      </div>
+                    </div>
+                    <ChevronDown style={{ width: 20, height: 20, color: '#1a4845', marginTop: 4 }} />
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        )}
+        {/* ===== Drawer Backdrop ===== */}
+        {expandedId && (
+          <>
+            <div
+              style={styles.backdrop}
+              onClick={() => setExpandedId(null)}
+            />
+            <div style={{
+              ...styles.drawer,
+              transform: expandedId ? 'translateY(0)' : 'translateY(100%)'
+            }}>
+              <div style={styles.drawerHeader}>
+                <h3 style={{ fontSize: 18, fontWeight: 600,  }}>
+                  Record Details
+                </h3>
+                <button
+                  onClick={() => setExpandedId(null)}
+                  style={styles.closeButton}
+                >
+                  <X style={{ width: 20, height: 20, color: 'white' }} />
+                </button>
+              </div>
+
+              <div style={{ padding: 16 }}>
+                {(() => {
+                  const record = filteredHistory.find((r) => r.id === expandedId);
+                  if (!record) return null;
+                  return (
+                    <>
+                      {[
+                        ['Product', getProductName(record)],
+                        ['Date & Time', formatDate(record.timestamp)],
+                        ['Action', (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {getActionIcon(record.action)}
+                            {getActionLabel(record.action)}
+                          </div>
+                        )],
+                        ['User', getUserName(record)],
+                        ['Note', record.note || 'No additional notes'],
+                      ].map(([label, value], i) => (
+                        <div key={i} style={{ marginBottom: 16 }}>
+                          <label style={{ fontSize: 12, fontWeight: 500, color: '#6b7280', display: 'block', marginBottom: 6 }}>
+                            {label}
+                          </label>
+                          <div style={{ background: '#FDFFF0',border:'1px solid #1a4845', borderRadius: 8, padding: 10 }}>
+                            {value}
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </>
+        )}
       </div>
+
 
       {/* ✅ CSS Animations */}
       <style jsx>{`
@@ -673,6 +729,31 @@ export default function StockHistoryPage() {
           from { opacity: 0; transform: translateX(-10px); }
           to { opacity: 1; transform: translateX(0); }
         }
+                  /* Target your tableWrapper scroll area */
+  .custom-scroll::-webkit-scrollbar {
+    height: 2px;   /* for horizontal scrollbar */
+    width: 2px;    /* for vertical scrollbar */
+  }
+
+  .custom-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;  /* track background */
+    border-radius: 6px;
+  }
+
+  .custom-scroll::-webkit-scrollbar-thumb {
+    background: #f1f1f1;  /* thumb (scroll handle) color */
+    border-radius: 6px;
+  }
+
+  .custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: #f1f1f1;  /* darker on hover */
+  }
+
+  /* Firefox support */
+  .custom-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #175E54 #f1f1f1;
+  }
       `}</style>
     </div>
   );
@@ -684,11 +765,11 @@ const styles = {
     padding: '24px',
     maxWidth: '1400px',
     margin: '0 auto',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FDFFF0',
     minHeight: '100vh',
     animation: 'fadeIn 0.6s ease-out'
   },
-  
+
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -698,7 +779,7 @@ const styles = {
     gap: '20px',
     color: '#6b7280'
   },
-  
+
   spinner: {
     width: '32px',
     height: '32px',
@@ -707,7 +788,7 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
+
   errorContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -718,7 +799,7 @@ const styles = {
     textAlign: 'center',
     color: '#ef4444'
   },
-  
+
   retryButton: {
     display: 'flex',
     alignItems: 'center',
@@ -733,40 +814,42 @@ const styles = {
     fontWeight: '500',
     transition: 'all 0.2s'
   },
-  
+
   // Header
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '32px',
+    paddingBottom: '20px',
+    borderBottom: '1px solid #e5e7eb',
     flexWrap: 'wrap',
     gap: '16px'
   },
-  
+
   pageTitle: {
-    fontSize: '2rem',
-    fontWeight: '700',
-    color: '#1f2937',
+    color: '#175E54',
+    fontSize: '29px',
     margin: '0 0 8px 0',
+    fontWeight: '700',
     display: 'flex',
     alignItems: 'center',
     gap: '12px'
   },
-  
+
   pageSubtitle: {
-    fontSize: '1rem',
     color: '#6b7280',
+    fontSize: '15px',
     margin: 0,
     lineHeight: '1.5'
   },
-  
+
   headerActions: {
     display: 'flex',
     gap: '12px',
     alignItems: 'center'
   },
-  
+
   exportButton: {
     display: 'flex',
     alignItems: 'center',
@@ -781,7 +864,7 @@ const styles = {
     fontWeight: '500',
     transition: 'all 0.2s'
   },
-  
+
   refreshButton: {
     display: 'flex',
     alignItems: 'center',
@@ -800,27 +883,29 @@ const styles = {
   // Statistics
   statsContainer: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '20px',
-    marginBottom: '32px'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+    gap: '10px',
+    marginBottom: '50px'
   },
 
   statCard: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '24px',
-    border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
+    gap: '15px',
+    padding: '16px',
+    backgroundColor: '#FDFFF0',
+    borderRadius: '12px',
+    border: '1px solid rgba(42, 108, 72, 0.3)',
+    boxShadow: '0 4px 12px rgba(42, 108, 72, 0.3)',
     transition: 'all 0.2s'
   },
 
   statIcon: {
     width: '56px',
     height: '56px',
-    borderRadius: '12px',
+    backgroundColor: 'rgba(255, 238, 175, 1)',
+    color: '#3e7572ff',
+    borderRadius: '8px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center'
@@ -835,27 +920,27 @@ const styles = {
     fontSize: '24px',
     fontWeight: '700',
     color: '#1f2937',
-    lineHeight: '1.2'
+    margin: 0
   },
 
   statLabel: {
     fontSize: '14px',
     color: '#6b7280',
-    marginTop: '4px',
+    margin: '0 0 8px 0',
     textTransform: 'uppercase',
     letterSpacing: '0.5px'
   },
-  
+
   // Filters
   filtersContainer: {
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     borderRadius: '12px',
     padding: '24px',
     marginBottom: '24px',
-    border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    border: '1px solid #FDFFF0',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
   },
-  
+
   filtersHeader: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -864,14 +949,14 @@ const styles = {
     paddingBottom: '16px',
     borderBottom: '1px solid #e5e7eb'
   },
-  
+
   filtersTitle: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
     fontSize: '18px',
     fontWeight: '600',
-    color: '#1f2937',
+    color: '#175E54',
     margin: 0
   },
 
@@ -903,33 +988,34 @@ const styles = {
     padding: '0 2px',
     marginLeft: '2px'
   },
-  
+
   filtersGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '20px'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+    gap: '10px'
   },
-  
+
   filterGroup: {
     display: 'flex',
     flexDirection: 'column'
   },
-  
+
   filterLabel: {
     fontSize: '14px',
     fontWeight: '500',
     color: '#374151',
     marginBottom: '8px'
   },
-  
+
   filterSelect: {
     padding: '12px 16px',
     border: '1px solid #d1d5db',
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
-    backgroundColor: 'white',
-    transition: 'border-color 0.2s'
+    backgroundColor: '#FDFFF0',
+    transition: 'border-color 0.2s',
+    color: '#6b7280'
   },
 
   searchContainer: {
@@ -951,7 +1037,9 @@ const styles = {
     fontSize: '14px',
     outline: 'none',
     width: '100%',
-    transition: 'border-color 0.2s'
+    transition: 'border-color 0.2s',
+    backgroundColor: "#FDFFF0",
+    boxSizing: 'border-box',
   },
 
   searchClear: {
@@ -966,72 +1054,80 @@ const styles = {
     fontSize: '16px',
     fontWeight: 'bold'
   },
-  
+
   // Table
   tableContainer: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    width: "100%",
+    marginTop: "20px",
+    marginBottom: "50px",
+  },
+  tableWrapper: {
+    backgroundColor: '#FDFFF0',
+    width: "100%",
+    overflowX: "auto",  // ✅ Enables horizontal scroll
+    overflowY: "auto",  // ✅ Enables vertical scroll
+    maxHeight: "63vh",  // ✅ Limits height and adds vertical scroll if needed
+    borderRadius: "12px",
+    border: '1px solid #175E54',
   },
 
   tableHeader: {
     padding: '20px 24px',
     borderBottom: '1px solid #e5e7eb',
-    backgroundColor: '#f8fafc'
+    backgroundColor: '#FDFFF0'
   },
 
   tableTitle: {
     fontSize: '18px',
     fontWeight: '600',
-    color: '#1f2937',
+    color: '#175E54',
     margin: 0
   },
 
-  tableWrapper: {
-    overflowX: 'auto'
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    minWidth: "800px", // ✅ Ensures scroll when screen is smaller
   },
-  
-  table: { 
-    width: '100%', 
-    borderCollapse: 'collapse'
-  },
-  
-  thead: {
-    backgroundColor: '#f8fafc'
-  },
-  
-  th: { 
-    padding: '16px 20px',
-    textAlign: 'left', 
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#6b7280',
-    textTransform: 'uppercase',
+  th: {
+    position: "sticky",
+    top: 0,
+    backgroundColor: '#175E54',
+    textAlign: "left",
+    padding: "12px",
+    cursor: "pointer",
+    borderBottom: "1px solid #dee2e6",
+    fontWeight: "600",
+    whiteSpace: "nowrap",
+    userSelect: 'none',
     letterSpacing: '0.5px',
-    borderBottom: '1px solid #e5e7eb',
-    whiteSpace: 'nowrap'
+    textTransform: 'uppercase',
+    fontSize: '12px',
+    color: 'white',
+    zIndex: 2,
+    transition: "box-shadow 0.2s ease",
   },
-  
-  tableRow: {
-    borderBottom: '1px solid #f3f4f6',
-    transition: 'background-color 0.2s'
+
+  thead: {
+    backgroundColor: '#175E54'
   },
-  
-  td: { 
-    padding: '16px 20px',
+
+
+  td: {
+    padding: "20px",
     fontSize: '14px',
-    verticalAlign: 'middle'
+    verticalAlign: "middle",
+    borderTop: '1px solid #175E54',
+    whiteSpace: "nowrap", // ✅ Prevents long text wrapping (makes scroll work better)
   },
-  
+
   // Table cell styles
   dateCell: {
     display: 'flex',
     flexDirection: 'column',
     gap: '2px'
   },
-  
+
   datePrimary: {
     fontSize: '14px',
     fontWeight: '500',
@@ -1042,7 +1138,7 @@ const styles = {
     fontSize: '12px',
     color: '#6b7280'
   },
-  
+
   productCell: {
     display: 'flex',
     alignItems: 'center',
@@ -1053,7 +1149,7 @@ const styles = {
     fontWeight: '500',
     color: '#1f2937'
   },
-  
+
   actionCell: {
     display: 'flex',
     alignItems: 'center',
@@ -1064,7 +1160,7 @@ const styles = {
   actionLabel: {
     fontSize: '14px'
   },
-  
+
   changeCell: {
     fontWeight: '600',
     fontSize: '15px',
@@ -1078,19 +1174,19 @@ const styles = {
     fontSize: '13px',
     color: '#6b7280'
   },
-  
+
   noteCell: {
     maxWidth: '250px',
     wordBreak: 'break-word',
     fontSize: '13px',
     color: '#374151'
   },
-  
+
   noNote: {
     color: '#9ca3af',
     fontStyle: 'italic'
   },
-  
+
   // Empty state
   emptyState: {
     display: 'flex',
@@ -1103,7 +1199,7 @@ const styles = {
     textAlign: 'center',
     padding: '60px 40px'
   },
-  
+
   clearFiltersButton: {
     padding: '12px 24px',
     backgroundColor: '#3b82f6',
@@ -1115,5 +1211,42 @@ const styles = {
     fontWeight: '500',
     marginTop: '16px',
     transition: 'all 0.2s'
-  }
+  },
+
+  noRecords: { textAlign: 'center', color: '#6b7280', padding: 20 },
+  backdrop: {
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40,
+  },
+  drawer: {
+    position: 'fixed',
+    left: 0, right: 0, bottom: 0,
+    background: '#FDFFF0',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    zIndex: 50,
+    transition: 'transform 0.3s ease-in-out',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+  },
+  drawerHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '16px',
+    borderBottom: '1px solid #e5e7eb',
+    position: 'sticky',
+    top: 0,
+    background: '#1a4845',
+    color:'white'
+  },
+  closeButton: {
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    borderRadius: 6,
+    padding: 4,
+  },
+  // Hide/show logic using JS since inline styles can’t use media queries:
+  desktopTable: { display: 'block' },
+  mobileList: { display: 'block' },
 };

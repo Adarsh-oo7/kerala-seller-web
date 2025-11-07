@@ -34,7 +34,7 @@ import {
   Zap,
   Target,
   Copy,
-  Check
+  Check, ShieldCheck, Lock, Headphones,
 } from 'lucide-react';
 import SHeader from '../../../../components/common/SHeader';
 
@@ -225,7 +225,7 @@ function StoreAboutContent() {
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      
+
       setCopied(true);
       setShareStatus('copied');
       setTimeout(() => {
@@ -257,7 +257,7 @@ function StoreAboutContent() {
           timeout: 15000
         });
         console.log('✅ Main shop endpoint successful:', response.data);
-        
+
         // Handle main endpoint response
         if (response.data.store) {
           // Main endpoint returns { store: {...}, products: [...], products_count: 5 }
@@ -275,7 +275,7 @@ function StoreAboutContent() {
         }
         setIsLoading(false);
         return;
-        
+
       } catch (mainError) {
         console.log('⚠️ Main shop endpoint failed, trying about endpoint');
         try {
@@ -492,8 +492,8 @@ function StoreAboutContent() {
               <div className="store-share" style={styles.storeShare}>
                 <div className="store-actions" style={styles.storeActions}>
                   {/* ✅ WORKING Chat Button */}
-                  <button 
-                    className="Aboutaction-button" 
+                  <button
+                    className="Aboutaction-button"
                     style={styles.actionButtonPrimary}
                     onClick={handleChatClick}
                     title="Chat on WhatsApp"
@@ -501,10 +501,10 @@ function StoreAboutContent() {
                     <MessageCircle size={16} className='abouticonsize' />
                     <span className="action-text">Chat</span>
                   </button>
-                  
+
                   {/* ✅ WORKING Call Button */}
-                  <button 
-                    className="Aboutaction-button" 
+                  <button
+                    className="Aboutaction-button"
                     style={styles.actionButtonSecondary}
                     onClick={handleCallClick}
                     title="Call now"
@@ -512,18 +512,18 @@ function StoreAboutContent() {
                     <Phone size={16} className='abouticonsize' />
                     <span className="action-text">Call</span>
                   </button>
-                  
+
                   {/* ✅ WORKING Share Button */}
-                  <button 
-                    className="Aboutaction-button1" 
+                  <button
+                    className="Aboutaction-button"
                     style={{
                       ...styles.actionButtonIcon,
-                      backgroundColor: shareStatus === 'copied' ? '#10b981' : shareStatus === 'shared' ? '#3b82f6' : 'white'
+                      backgroundColor: shareStatus === 'copied' ? '#10b981' : shareStatus === 'shared' ? '#3b82f6' : '#eda5a7'
                     }}
                     onClick={handleShareClick}
                     title={shareStatus === 'copied' ? 'Link copied!' : shareStatus === 'shared' ? 'Shared!' : 'Share store'}
                   >
-                    {shareStatus === 'copied' ? <Check size={16} /> : <Share2 size={16} />}
+                    {shareStatus === 'copied' ? <Check size={16} className='abouticonsize' /> : <Share2 size={16} className='abouticonsize' />}
                   </button>
                 </div>
 
@@ -610,24 +610,24 @@ function StoreAboutContent() {
         {/* ✅ ENHANCED Store Features Section */}
         <div style={styles.featuresSection}>
           <h3 style={styles.sectionTitle}>Why Choose {storeData.name}?</h3>
-          <div style={styles.featuresGrid}>
+          <div className='shopslugaboutpagefeaturegrid' style={styles.featuresGrid}>
             <div style={styles.featureCard}>
-              <Shield size={24} style={{color: '#10b981'}} />
+              <Shield size={24} style={{ color: '#10b981' }} />
               <h4>Verified Business</h4>
               <p>Authenticated Kerala-based seller with genuine products</p>
             </div>
             <div style={styles.featureCard}>
-              <Truck size={24} style={{color: '#3b82f6'}} />
+              <Truck size={24} style={{ color: '#3b82f6' }} />
               <h4>Fast Delivery</h4>
               <p>Quick delivery across Kerala with reliable shipping</p>
             </div>
             <div style={styles.featureCard}>
-              <Heart size={24} style={{color: '#ef4444'}} />
+              <Heart size={24} style={{ color: '#ef4444' }} />
               <h4>Customer Focused</h4>
               <p>Dedicated to customer satisfaction and quality service</p>
             </div>
             <div style={styles.featureCard}>
-              <Zap size={24} style={{color: '#f59e0b'}} />
+              <Zap size={24} style={{ color: '#f59e0b' }} />
               <h4>Local Support</h4>
               <p>Supporting Kerala's local economy and businesses</p>
             </div>
@@ -635,15 +635,15 @@ function StoreAboutContent() {
         </div>
 
         {/* ✅ ENHANCED Store Details Section */}
-        <div className='aboutContainer' style={styles.aboutContainer}>
-          <div className='aboutCard1'
-          style={{
-            ...styles.aboutCard1,
-            textAlign: 'left',       
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start' 
-          }}>
+        <div className='aboutContainer' >
+          <div className='aboutCard aboutCard1'
+            style={{
+              ...styles.aboutCard1,
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start'
+            }}>
             {/* Left Card - About Store */}
             <img
               src={storeData.logo_url || `https://via.placeholder.com/150x150/3b82f6/ffffff?text=${encodeURIComponent(storeData.name?.charAt(0) || 'S')}`}
@@ -651,80 +651,12 @@ function StoreAboutContent() {
               className='Aboutsluglogo'
               style={styles.logo}
             />
-            <h3 style={styles.cardTitle}>About Our Store</h3>
+            <h3 className='aboutslugfoottitle' style={styles.cardTitle}>ABOUT OUR STORE</h3>
             <p className='aboutslugfootdesc' style={styles.description}>
               {storeData.description ||
                 `Welcome to ${storeData.name}! We are a trusted Kerala-based business committed to providing quality products and excellent customer service. Our mission is to bring you the best products while supporting the local economy of Kerala.`}
             </p>
-            
-            {/* Store Specialties */}
-            {storeData.business_category && (
-              <div style={styles.categoryTag}>
-                <Target size={16} />
-                <span>Specializes in {storeData.business_category}</span>
-              </div>
-            )}
-          </div>
 
-          <div className='aboutCard2'
-           style={{
-            ...styles.aboutCard2,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center', 
-            textAlign: 'center',  
-          }}>
-            {/* Center Card - Contact */}
-            <h3 className='aboutslugfoottitle'
-             style={{
-              fontWeight: '600',
-              marginBottom: '1rem',
-              color: '#1F2937'
-            }}>
-              CONTACT INFORMATION
-            </h3>
-
-            {/* Enhanced Contact Information */}
-            {(storeData.owner_name || storeData.seller_name) && (
-              <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
-                <Users size={18} />
-                <span><strong>Owner:</strong> {storeData.owner_name || storeData.seller_name}</span>
-              </div>
-            )}
-            <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
-              <Phone size={18} />
-              <span><strong>Phone:</strong> {formatPhoneNumber(storeData.whatsapp_number || storeData.phone || sellerPhone)}</span>
-            </div>
-            {storeData.email && (
-              <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
-                <Mail size={18} />
-                <span><strong>Email:</strong> {storeData.email}</span>
-              </div>
-            )}
-            {(storeData.business_address || storeData.address) && (
-              <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
-                <MapPin size={18} />
-                <span><strong>Address:</strong> {storeData.business_address || storeData.address}</span>
-              </div>
-            )}
-            {storeData.pincode && (
-              <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
-                <Globe size={18} />
-                <span><strong>Pincode:</strong> {storeData.pincode}</span>
-              </div>
-            )}
-            
-            {/* Business Hours */}
-            <div style={{ ...styles.infoRow, justifyContent: 'center', width: '100%' }}>
-              <Clock size={18} />
-              <span><strong>Hours:</strong> {storeData.business_hours || '9:00 AM - 8:00 PM'}</span>
-            </div>
-          </div>
-
-          <div className='aboutCard3' style={styles.aboutCard3}>
-            {/* Right Card - Social & More */}
-            <h3 className='aboutslugfoottitle' style={styles.socialTitle}>CONNECT WITH US</h3>
-            
             <div style={styles.socialIcons}>
               {storeData.facebook_link && (
                 <a href={storeData.facebook_link} target="_blank" rel="noopener noreferrer" style={styles.socialIcon}>
@@ -743,34 +675,108 @@ function StoreAboutContent() {
               )}
             </div>
 
-            {/* Payment Methods */}
+            {/* Store Specialties */}
+            {storeData.business_category && (
+              <div style={styles.categoryTag}>
+                <Target size={16} />
+                <span>Specializes in {storeData.business_category}</span>
+              </div>
+            )}
+          </div>
+
+          <div
+            className='aboutCard aboutCard2'
+            style={{
+              ...styles.aboutCard2,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center', // center horizontally
+              justifyContent: 'center',
+              textAlign: 'center',
+              gap: '18px',
+            }}
+          >
+            <h3
+              className='aboutslugfoottitle'
+              style={{
+                fontWeight: 600,
+                color: '#1a4845',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                margin: 0,
+              }}
+            >
+              CONTACT INFO
+            </h3>
+            <div>
+              <div style={styles.contactList}>
+                {(storeData.owner_name || storeData.seller_name) && (
+                  <div className='aboutslugfootdesc' style={styles.infoRow}>
+                    {/* <Users size={18} style={styles.infoIcon} /> */}
+                    <span>{storeData.owner_name || storeData.seller_name}</span>
+                  </div>
+                )}
+
+                <div className='aboutslugfootdesc' style={styles.infoRow}>
+                  {/* <Phone size={18} style={styles.infoIcon} /> */}
+                  <span>{formatPhoneNumber(storeData.whatsapp_number || storeData.phone || sellerPhone)}</span>
+                </div>
+
+                {(storeData.business_address || storeData.address) && (
+                  <div className='aboutslugfootdesc' style={styles.infoRow}>
+                    {/* <MapPin size={18} style={styles.infoIcon} /> */}
+                    <span>{storeData.business_address || storeData.address}</span>
+                  </div>
+                )}
+
+                <div className='aboutslugfootdesc' style={styles.infoRow}>
+                  {/* <Clock size={18} style={styles.infoIcon} /> */}
+                  <span>{storeData.business_hours || '9:00 AM - 8:00 PM'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+          <div className='aboutCard aboutCard3' style={styles.aboutCard3}>
             {storeData.payment_methods && (
               <div style={styles.paymentInfo}>
                 <h4 style={styles.cardSubtitle}>Payment Options</h4>
                 <p>{storeData.payment_methods}</p>
               </div>
             )}
-
-            {/* Additional Services */}
-            <div style={styles.servicesList}>
-              <h4 style={styles.cardSubtitle}>Services</h4>
+            <div className='aboutcard3sevicelist' style={styles.servicesList}>
+              <h3 className='aboutslugfoottitle' style={styles.cardTitle}>SERVICES</h3>
               <ul style={styles.serviceItems}>
-                <li>✓ Quality Guaranteed</li>
-                <li>✓ Secure Payments</li>
-                <li>✓ Kerala Delivery</li>
-                <li>✓ Customer Support</li>
+                <li className='aboutslugfootdesc' style={styles.serviceItem}>
+                  <ShieldCheck size={18} style={styles.serviceIcon} />
+                  <span>Quality Guaranteed</span>
+                </li>
+                <li className='aboutslugfootdesc' style={styles.serviceItem}>
+                  <Lock size={18} style={styles.serviceIcon} />
+                  <span>Secure Payments</span>
+                </li>
+                <li className='aboutslugfootdesc' style={styles.serviceItem}>
+                  <Truck size={18} style={styles.serviceIcon} />
+                  <span>Kerala Delivery</span>
+                </li>
+                <li className='aboutslugfootdesc' style={styles.serviceItem}>
+                  <Headphones size={18} style={styles.serviceIcon} />
+                  <span>Customer Support</span>
+                </li>
               </ul>
             </div>
           </div>
+
         </div>
 
         {/* ✅ ENHANCED Quick Actions */}
         <div style={styles.quickActionsSection}>
-          <Link href={getShopUrl()} style={styles.primaryButton}>
+          <Link href={getShopUrl()} className='shopslugaboutpagefooterprimarybtn' style={styles.primaryButton}>
             <Package size={16} />
             View All {storeData?.products_count || 0} Products
           </Link>
-          <button onClick={handleChatClick} style={styles.secondaryButton}>
+          <button onClick={handleChatClick} className='shopslugaboutpagefooterprimarybtn' style={styles.secondaryButton}>
             <MessageCircle size={16} />
             Chat with {storeData.name}
           </button>
@@ -794,7 +800,7 @@ function StoreAboutContent() {
           50% { opacity: 0.5; }
         }
       `}</style>
-    </div>
+    </div >
   );
 }
 
@@ -842,7 +848,7 @@ export default function StoreAboutPage() {
 const styles = {
   pageContainer: {
     minHeight: '100vh',
-    marginTop:'90px',
+    marginTop: '90px',
     backgroundColor: '#FDFFF0'
   },
 
@@ -862,11 +868,10 @@ const styles = {
 
   // Features Section
   featuresSection: {
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     borderRadius: '16px',
     padding: '32px',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-    margin: '32px 0'
+    boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
   },
 
   sectionTitle: {
@@ -879,7 +884,7 @@ const styles = {
 
   featuresGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
     gap: '20px'
   },
 
@@ -887,56 +892,53 @@ const styles = {
     textAlign: 'center',
     padding: '20px',
     borderRadius: '12px',
-    border: '1px solid #e5e7eb',
-    backgroundColor: '#f9fafb'
+    border: '1px solid #9cfcbfff',
+    backgroundColor: '#FDFFF0'
   },
 
   // Enhanced About Container
   aboutContainer: {
     display: 'flex',
+    flexDirection: 'row',   // all in a single row
+    flexWrap: 'nowrap',     // prevent wrapping
     justifyContent: 'space-between',
-    flexWrap: 'wrap',
+    alignItems: 'stretch',  // equal height
     gap: '20px',
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-    maxWidth: '1300px',
-    margin: '32px auto',
-    padding: '32px',
+    width: '100%',
+    padding: '20px',
     boxSizing: 'border-box',
+    boxShadow: '0 4px 20px #2753503f',
+    borderRadius: '12px',
   },
 
   aboutCard1: {
-    flex: '1 1 30%',      
-    backgroundColor: 'transparent',
-    padding: '20px',
-    boxSizing: 'border-box',
-    minWidth: '280px',   
-    textAlign: 'left',
+    flex: 1,
+    backgroundColor: '#FDFFF0',
+    borderRadius: '12px',
+    padding: '10px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    display: 'flex',
+    flexDirection: 'column',
   },
-
- aboutCard2: {
-    flex: '1 1 30%',      
-    backgroundColor: 'transparent',
+  aboutCard2: {
+    flex: 1,
+    backgroundColor: '#FDFFF0',
+    borderRadius: '12px',
     padding: '20px',
-    boxSizing: 'border-box',
-    minWidth: '280px',   
-    textAlign: 'center',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    display: 'flex',
+    flexDirection: 'column',
   },
-   aboutCard3: {
-    flex: '1 1 30%',      
-    backgroundColor: 'transparent',
+  aboutCard3: {
+    flex: 1,
+    backgroundColor: '#FDFFF0',
+    borderRadius: '12px',
     padding: '20px',
-    boxSizing: 'border-box',
-    minWidth: '280px',   
-    textAlign: 'center',
-  },
-
-  cardTitle: {
-    fontSize: '1.2rem',
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: '12px'
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: "center",
+    paddingTop: '40px'
   },
 
   cardSubtitle: {
@@ -967,13 +969,41 @@ const styles = {
   },
 
   servicesList: {
-    marginTop: '20px'
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+    gap: '10px',
+    paddingTop:'25px'
+  },
+
+  cardTitle: {
+    fontWeight: 600,
+    fontSize: '18px',
+    color: '#1a4845',
+    marginBottom: '8px',
   },
 
   serviceItems: {
     listStyle: 'none',
     padding: 0,
-    margin: 0
+    margin: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+  },
+
+  serviceItem: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+    fontSize: '15px',
+    color: '#6b7280',
+  },
+
+  serviceIcon: {
+    color: '#1a4845', // green accent
   },
 
   logo: {
@@ -984,27 +1014,33 @@ const styles = {
   },
 
   description: {
-    fontSize: '14px',
+    fontSize: '15px',
     color: '#6b7280',
     lineHeight: '1.6',
     margin: '12px 0'
   },
 
+  contactList: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center', // centers all items below header
+    justifyContent: 'center',
+    gap: '10px',
+    width: '100%',
+  },
+
   infoRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
-    marginBottom: '12px',
-    fontSize: '14px',
-    color: '#374151',
+    justifyContent: 'center', // keeps icon+text centered
+    gap: '8px',
+    fontSize: '15px',
+    color: '#6b7280',
+    lineHeight: '1.6',
+    textAlign: 'center',
+    flexWrap: 'wrap',
   },
 
-  socialTitle: {
-    fontWeight: '600',
-    color: '#1f2937',
-    margin: '0 0 16px 0',
-    fontSize: '1.1rem'
-  },
 
   socialIcons: {
     display: 'flex',
@@ -1014,11 +1050,8 @@ const styles = {
   },
 
   socialIcon: {
-    color: '#6b7280',
+    color: '#1a4845',
     transition: 'all 0.2s',
-    padding: '8px',
-    borderRadius: '8px',
-    border: '1px solid #e5e7eb'
   },
 
   // Loading & Error States
@@ -1125,8 +1158,8 @@ const styles = {
   // Store Header
   storeHeader: {
     display: 'flex',
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
+    justifyContent: 'space-between',
+    alignItems: 'center',
     flexWrap: 'wrap',
     gap: '2rem',
     width: '100%',
@@ -1212,7 +1245,7 @@ const styles = {
 
   storeActions: {
     display: 'flex',
-    flexDirection: 'column', 
+    flexDirection: 'column',
     alignItems: 'center',
     gap: '10px',
   },
@@ -1257,12 +1290,10 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '48px',
-    height: '48px',
-    backgroundColor: 'white',
-    color: '#6b7280',
+    padding: '12px 20px',
+    color: 'white',
     border: '2px solid #e5e7eb',
-    borderRadius: '50%',
+    borderRadius: '20%',
     cursor: 'pointer',
     transition: 'all 0.2s',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
@@ -1318,11 +1349,11 @@ const styles = {
   },
 
   statCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     padding: '28px',
     borderRadius: '16px',
     textAlign: 'center',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
     border: '1px solid #f3f4f6',
     transition: 'all 0.3s'
   },
@@ -1348,10 +1379,10 @@ const styles = {
 
   // Store Info Styles
   storeInfoSection: {
-    backgroundColor: 'white',
-    padding: '32px 0',
+    backgroundColor: '#FDFFF0',
     borderRadius: '16px',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+    marginTop: '30px',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
   },
 
   // Enhanced Quick Actions
