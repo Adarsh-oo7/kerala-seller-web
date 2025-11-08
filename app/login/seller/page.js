@@ -23,12 +23,9 @@ import {
   Globe,
   Shield,
   CheckCircle,
-  TrendingUp,
-  Users,
-  Zap
 } from 'lucide-react';
 
-// ✅ Enhanced API configuration
+// ✅ API configuration
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
@@ -57,7 +54,6 @@ const FloatingIcons = ({ totalIcons = 12 }) => {
     const container = containerRef.current;
     if (!container) return;
 
-    // Random properties
     const speeds = Array.from({ length: totalIcons }, () => ({
       x: (Math.random() - 0.5) * 1,
       y: (Math.random() - 0.5) * 1,
@@ -82,9 +78,7 @@ const FloatingIcons = ({ totalIcons = 12 }) => {
         pos.x += speed.x;
         pos.y += speed.y;
 
-        // Bounce horizontally
         if (pos.x <= 0 || pos.x + size >= rect.width) speed.x *= -1;
-        // Bounce vertically
         if (pos.y <= 0 || pos.y + size >= rect.height) speed.y *= -1;
 
         icon.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
@@ -137,7 +131,6 @@ const FloatingIcons = ({ totalIcons = 12 }) => {
   );
 };
 
-// ✅ Enhanced LoginForm with better token handling
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -153,7 +146,6 @@ function LoginForm() {
   const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  // ✅ Get current store info from URL
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
@@ -163,14 +155,12 @@ function LoginForm() {
         isInStore: !!storeMatch
       });
 
-      // Pre-fill phone if it matches store ID and is valid
       if (storeMatch && /^[6-9]\d{9}$/.test(storeMatch[1])) {
         setPhone(storeMatch[1]);
       }
     }
   }, []);
 
-  // ✅ FIXED: Better auth check to prevent infinite redirects
   useEffect(() => {
     const checkExistingAuth = async () => {
       try {
@@ -182,7 +172,6 @@ function LoginForm() {
 
         console.log('🔍 Checking existing seller token...');
 
-        // Verify token is still valid by making a quick API call
         const response = await axios.get(`${API_BASE_URL}/user/dashboard/`, {
           headers: { Authorization: `Bearer ${token}` },
           timeout: 5000
@@ -196,7 +185,6 @@ function LoginForm() {
         }
       } catch (error) {
         console.log('❌ Token invalid or expired, clearing auth data');
-        // Clear invalid tokens
         localStorage.removeItem('accessToken');
         localStorage.removeItem('access_token');
         localStorage.removeItem('sellerInfo');
@@ -232,14 +220,13 @@ function LoginForm() {
       }
     }
 
-    // Clear general error when user starts typing
     if (error) setError('');
   };
 
+  // ✅ SIMPLIFIED ONBOARDING - NO COUPON PAGE
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Enhanced validation
     const newFieldErrors = {};
 
     if (!phone.trim()) {
@@ -266,34 +253,27 @@ function LoginForm() {
     try {
       console.log('🔍 Attempting seller login with phone:', phone);
 
-      // ✅ FIXED: Send clean phone number and proper headers
       const response = await axios.post(LOGIN_API_URL, {
         phone: phone.trim(),
         password: password,
         user_type: 'seller'
       }, {
         timeout: 15000,
-        headers: {
-          'Content-Type': 'application/json'  // ✅ Ensure proper content type
-        }
+        headers: { 'Content-Type': 'application/json' }
       });
 
       console.log('✅ Login response received:', response.data);
 
-      // ✅ FIXED: Better token handling
-      const token = response.data.access_token ||
-        response.data.token ||
-        response.data.access;
+      const token = response.data.access_token || response.data.token || response.data.access;
 
       if (!token) {
         throw new Error('No access token received from server');
       }
 
       const { seller, debug_info } = response.data;
-
       console.log('✅ Login successful for:', debug_info?.admin_user_email || seller?.email || phone);
 
-      // ✅ CRITICAL: Clear any existing invalid tokens first
+      // Clear old tokens
       localStorage.removeItem('accessToken');
       localStorage.removeItem('access_token');
       localStorage.removeItem('sellerInfo');
@@ -312,18 +292,56 @@ function LoginForm() {
         localStorage.setItem('rememberSeller', 'true');
       }
 
-      console.log('✅ Token stored, redirecting to dashboard...');
+      // ✅ SIMPLIFIED: Check onboarding status (NO COUPON CHECK)
+      try {
+        console.log('🔍 Checking seller onboarding status...');
+        
+        const statusResponse = await axios.get(
+          `${API_BASE_URL}/users/seller/onboarding/status/`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
-      // ✅ FIXED: Use window.location for hard redirect to prevent loops
-      setTimeout(() => {
-        if (redirect) {
-          window.location.href = decodeURIComponent(redirect);
+        const { 
+          store_setup_completed,
+          razorpay_connected 
+        } = statusResponse.data;
+
+        console.log('✅ Onboarding status:', statusResponse.data);
+
+        // ✅ Simplified redirect logic (Login → Settings → Payments)
+        let redirectUrl;
+
+        if (!store_setup_completed) {
+          redirectUrl = '/dashboard/seller/settings';
+          console.log('📍 Redirecting to: Setup Store (Settings)');
+        } else if (!razorpay_connected) {
+          redirectUrl = '/dashboard/seller/payments';
+          console.log('📍 Redirecting to: Connect Razorpay (Payments)');
+        } else if (redirect) {
+          redirectUrl = decodeURIComponent(redirect);
+          console.log('📍 Redirecting to: Custom redirect');
         } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
-          window.location.href = `/store/${currentStoreInfo.storeId}/dashboard`;
+          redirectUrl = `/store/${currentStoreInfo.storeId}/dashboard`;
+          console.log('📍 Redirecting to: Store Dashboard');
         } else {
-          window.location.href = '/dashboard/seller';
+          redirectUrl = '/dashboard/seller';
+          console.log('📍 Redirecting to: Main Dashboard');
         }
-      }, 500); // Longer delay to ensure token is stored
+
+        setTimeout(() => {
+          window.location.href = redirectUrl;
+        }, 500);
+
+      } catch (statusError) {
+        console.error('⚠️ Failed to check onboarding status:', statusError);
+        
+        // Fallback - go to settings if onboarding status check fails
+        const fallbackUrl = '/dashboard/seller/settings';
+        
+        setTimeout(() => {
+          window.location.href = fallbackUrl;
+        }, 500);
+      }
 
     } catch (err) {
       console.error('❌ Login error:', err);
@@ -332,7 +350,6 @@ function LoginForm() {
       let errorMessage = 'Login failed. Please check your credentials.';
 
       if (err.response?.status === 400) {
-        // ✅ FIXED: Handle specific 400 error messages from backend
         if (err.response.data?.error) {
           errorMessage = err.response.data.error;
         } else if (err.response.data?.phone) {
@@ -369,7 +386,6 @@ function LoginForm() {
     }
   };
 
-  // ✅ Store-aware navigation
   const handleBackClick = () => {
     if (redirect) {
       router.push(decodeURIComponent(redirect));
@@ -380,7 +396,6 @@ function LoginForm() {
     }
   };
 
-  // ✅ Store-aware links
   const getForgotPasswordLink = () => {
     const redirectParam = redirect ? `?redirect=${encodeURIComponent(redirect)}` : '';
     if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
@@ -397,7 +412,6 @@ function LoginForm() {
     return `/register/seller${redirectParam}`;
   };
 
-  // ✅ Show loading while checking auth
   if (isCheckingAuth) {
     return (
       <div style={styles.card}>
@@ -412,7 +426,6 @@ function LoginForm() {
 
   return (
     <div style={styles.card}>
-      {/* ✅ Store context indicator */}
       {currentStoreInfo.isInStore && (
         <div style={styles.storeNotice}>
           <Globe size={16} />
@@ -420,7 +433,6 @@ function LoginForm() {
         </div>
       )}
 
-      {/* Header */}
       <div style={styles.header}>
         <div className='sellerloginiconcontainer' style={styles.iconContainer}>
           <Store className='sellerloginiconsize' size={32} color="#3b82f6" />
@@ -436,10 +448,8 @@ function LoginForm() {
         </p>
       </div>
 
-      {/* Login Form */}
       <form onSubmit={handleLogin} style={styles.form}>
         <div style={styles.inputGroup}>
-
           <div style={styles.phoneInputContainer}>
             <span className='sellerlogincountrycode' style={styles.countryCode}>+91</span>
             <input
@@ -464,7 +474,6 @@ function LoginForm() {
         </div>
 
         <div style={styles.inputGroup}>
-
           <div style={styles.passwordContainer}>
             <Lock size={18} style={styles.inputIcon} />
             <input
@@ -496,7 +505,6 @@ function LoginForm() {
           )}
         </div>
 
-        {/* Remember Me */}
         <div style={styles.checkboxContainer}>
           <label style={styles.checkboxLabel}>
             <input
@@ -510,7 +518,6 @@ function LoginForm() {
           </label>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div style={styles.errorContainer}>
             <AlertCircle size={16} />
@@ -518,7 +525,6 @@ function LoginForm() {
           </div>
         )}
 
-        {/* Login Button */}
         <button
           type="submit"
           className='sellerloginsigninbtn'
@@ -542,7 +548,6 @@ function LoginForm() {
         </button>
       </form>
 
-      {/* ✅ Security badges */}
       <div style={styles.securityBadges}>
         <div style={styles.securityBadge}>
           <Shield size={14} />
@@ -556,7 +561,6 @@ function LoginForm() {
 
       <FloatingIcons totalIcons={8} />
 
-      {/* Footer Links */}
       <div className='sellerloginfooterlinks' style={styles.footerLinks}>
         <Link href={getForgotPasswordLink()} style={styles.link}>
           Forgot Password?
@@ -567,7 +571,6 @@ function LoginForm() {
         </Link>
       </div>
 
-      {/* Back Section */}
       <div style={styles.backSection}>
         <button onClick={handleBackClick} style={styles.backLink}>
           <ArrowLeft size={16} />
@@ -575,7 +578,6 @@ function LoginForm() {
         </button>
       </div>
 
-      {/* ✅ Buyer login link */}
       <div style={styles.buyerLink}>
         <p style={styles.buyerText}>Are you a customer?</p>
         <Link href="/login/buyer" style={styles.buyerLinkButton}>
@@ -586,8 +588,6 @@ function LoginForm() {
   );
 }
 
-
-// ✅ Enhanced Loading component
 function LoginLoading() {
   return (
     <div style={styles.card}>
@@ -600,8 +600,6 @@ function LoginLoading() {
   );
 }
 
-
-// ✅ Enhanced main component
 export default function LoginSellerPage() {
   return (
     <div style={styles.pageContainer}>
@@ -612,7 +610,6 @@ export default function LoginSellerPage() {
         </Suspense>
       </div>
       <Footer />
-      {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -647,451 +644,44 @@ export default function LoginSellerPage() {
   );
 }
 
-// All styles remain the same as your original code...
 const styles = {
-  pageContainer: {
-    minHeight: '100vh',
-    backgroundColor: '#f9fafb'
-  },
-
-  container: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 'calc(100vh - 170px)', // ✅ UPDATE: Account for SHeader
-    padding: '20px',
-    backgroundColor: '#FDFFF0'
-  },
-
-  card: {
-    position: 'relative',
-    overflow: 'hidden',
-    backgroundAttachment: 'fixed',
-    marginTop: '50px',
-    padding: '40px',
-    borderRadius: '16px',
-    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-    width: '90%',
-    maxWidth: '400px',
-    backgroundColor: 'rgba(137, 172, 120, 0.45)',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
-    color: '#fff',
-    textAlign: 'center',
-    zIndex: 0,
-    transition: 'all 0.3s ease',
-  },
-
-  // Store notice
-  storeNotice: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 16px',
-    backgroundColor: '#dbeafe',
-    border: '1px solid #3b82f6',
-    borderRadius: '8px',
-    fontSize: '0.9rem',
-    color: '#1e40af',
-    marginBottom: '20px'
-  },
-
-  loadingContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '300px',
-    gap: '16px'
-  },
-
-  loadingSubtext: {
-    fontSize: '0.8rem',
-    color: '#9ca3af',
-    margin: 0
-  },
-
-  header: {
-    textAlign: 'center',
-    marginBottom: '32px'
-  },
-
-  iconContainer: {
-    width: '64px',
-    height: '64px',
-    backgroundColor: '#eff6ff',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: '0 auto 16px auto'
-  },
-
-  title: {
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: '8px'
-  },
-
-  subtitle: {
-    color: '#6b7280',
-    fontSize: '0.95rem',
-    lineHeight: '1.5'
-  },
-
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px'
-  },
-
-  inputGroup: {
-    display: 'flex',
-    flexDirection: 'column'
-  },
-
-  label: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '0.9rem',
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: '8px'
-  },
-
-  // Enhanced phone input
-  phoneInputContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    backgroundColor: '#ffffff',
-    overflow: 'hidden'
-  },
-
-  countryCode: {
-    padding: '14px 12px',
-    backgroundColor: '#f9fafb',
-    borderRight: '1px solid #d1d5db',
-    fontSize: '1rem',
-    color: '#374151',
-    fontWeight: '500'
-  },
-
-  phoneInput: {
-    width: '100%',
-    padding: '14px 16px',
-    border: 'none',
-    fontSize: '1rem',
-    backgroundColor: 'transparent',
-    outline: 'none'
-  },
-
-  input: {
-    width: '100%',
-    padding: '14px 16px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    fontSize: '1rem',
-    backgroundColor: '#ffffff',
-    transition: 'all 0.2s ease',
-    boxSizing: 'border-box',
-    outline: 'none'
-  },
-
-  passwordContainer: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center'
-  },
-
-  inputIcon: {
-    position: 'absolute',
-    left: '16px',
-    color: '#6b7280',
-    zIndex: 1
-  },
-
-  passwordInput: {
-    width: '100%',
-    padding: '14px 48px 14px 70px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    fontSize: '1rem',
-    backgroundColor: '#ffffff',
-    transition: 'all 0.2s ease',
-    boxSizing: 'border-box',
-    outline: 'none'
-  },
-
-  eyeButton: {
-    position: 'absolute',
-    right: '12px',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#6b7280',
-    padding: '4px',
-    borderRadius: '4px'
-  },
-
-  inputError: {
-    borderColor: '#ef4444'
-  },
-
-  fieldError: {
-    color: '#ef4444',
-    fontSize: '0.8rem',
-    marginTop: '4px'
-  },
-
-  checkboxContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  },
-
-  checkboxLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '0.9rem',
-    color: '#374151',
-    cursor: 'pointer'
-  },
-
-  checkbox: {
-    width: '16px',
-    height: '16px',
-    accentColor: '#3b82f6'
-  },
-
-  errorContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 16px',
-    backgroundColor: '#fef2f2',
-    border: '1px solid #ef4444',
-    borderRadius: '8px',
-    color: '#991b1b',
-    fontSize: '0.9rem'
-  },
-
-  button: {
-    width: '100%',
-    padding: '16px 24px',
-    border: 'none',
-    borderRadius: '8px',
-    backgroundColor: '#1a4845',
-    color: 'white',
-    cursor: 'pointer',
-    fontSize: '1rem',
-    fontWeight: '600',
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '52px'
-  },
-
-  buttonLoading: {
-    backgroundColor: '#9ca3af',
-    cursor: 'not-allowed'
-  },
-
-  buttonContent: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  },
-
-  spinner: {
-    width: '16px',
-    height: '16px',
-    border: '2px solid #f3f3f3',
-    borderTop: '2px solid #3b82f6',
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite'
-  },
-
-  // Security badges
-  securityBadges: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '16px',
-    marginTop: '20px',
-    paddingTop: '16px',
-    borderTop: '1px solid #f1f5f9'
-  },
-
-  securityBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    fontSize: '0.8rem',
-    color: '#059669',
-    fontWeight: '500'
-  },
-
-  footerLinks: {
-    marginTop: '24px',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontSize: '0.9rem',
-    gap: '12px'
-  },
-
-  link: {
-    color: '#3b82f6',
-    textDecoration: 'none',
-    fontWeight: '500'
-  },
-
-  divider: {
-    color: '#d1d5db'
-  },
-
-  backSection: {
-    marginTop: '20px',
-    textAlign: 'center',
-    paddingTop: '16px',
-    borderTop: '1px solid #e5e7eb'
-  },
-
-  backLink: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    color: '#6b7280',
-    background: 'none',
-    border: 'none',
-    fontSize: '0.9rem',
-    cursor: 'pointer'
-  },
-
-  // Buyer link section
-  buyerLink: {
-    marginTop: '16px',
-    padding: '16px',
-    backgroundColor: '#f8fafc',
-    borderRadius: '8px',
-    textAlign: 'center',
-    border: '1px solid #e2e8f0'
-  },
-
-  buyerText: {
-    fontSize: '0.9rem',
-    color: '#6b7280',
-    margin: '0 0 8px 0'
-  },
-
-  buyerLinkButton: {
-    display: 'inline-block',
-    padding: '8px 16px',
-    backgroundColor: '#059669',
-    color: 'white',
-    textDecoration: 'none',
-    borderRadius: '6px',
-    fontSize: '0.9rem',
-    fontWeight: '500',
-    transition: 'background-color 0.2s'
-  },
-
-  // Enhanced features section
-  featuresSection: {
-    maxWidth: '400px',
-    animation: 'slideIn 0.8s ease-out'
-  },
-
-  featuresTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: '24px',
-    textAlign: 'center'
-  },
-
-  featuresGrid: {
-    display: 'grid',
-    gap: '16px',
-    marginBottom: '32px'
-  },
-
-  featureCard: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '12px',
-    padding: '16px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '12px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-  },
-
-  featureIcon: {
-    flexShrink: 0,
-    padding: '8px',
-    backgroundColor: '#f8fafc',
-    borderRadius: '8px'
-  },
-
-  featureContent: {
-    flex: 1
-  },
-
-  featureTitle: {
-    fontSize: '1rem',
-    fontWeight: '600',
-    color: '#1f2937',
-    margin: '0 0 4px 0'
-  },
-
-  featureDescription: {
-    fontSize: '0.875rem',
-    color: '#6b7280',
-    margin: 0,
-    lineHeight: '1.4'
-  },
-
-  // Success stats
-  statsSection: {
-    padding: '20px',
-    backgroundColor: '#f0fdf4',
-    borderRadius: '12px',
-    border: '1px solid #bbf7d0'
-  },
-
-  statsTitle: {
-    fontSize: '1.1rem',
-    fontWeight: '600',
-    color: '#166534',
-    marginBottom: '16px',
-    textAlign: 'center'
-  },
-
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '16px'
-  },
-
-  statItem: {
-    textAlign: 'center'
-  },
-
-  statNumber: {
-    display: 'block',
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    color: '#166534'
-  },
-
-  statLabel: {
-    fontSize: '0.8rem',
-    color: '#16a34a'
-  }
+  pageContainer: { minHeight: '100vh', backgroundColor: '#f9fafb' },
+  container: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 170px)', padding: '20px', backgroundColor: '#FDFFF0' },
+  card: { position: 'relative', overflow: 'hidden', backgroundAttachment: 'fixed', marginTop: '50px', padding: '40px', borderRadius: '16px', boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)', width: '90%', maxWidth: '400px', backgroundColor: 'rgba(137, 172, 120, 0.45)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#fff', textAlign: 'center', zIndex: 0, transition: 'all 0.3s ease' },
+  storeNotice: { display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', backgroundColor: '#dbeafe', border: '1px solid #3b82f6', borderRadius: '8px', fontSize: '0.9rem', color: '#1e40af', marginBottom: '20px' },
+  loadingContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '16px' },
+  loadingSubtext: { fontSize: '0.8rem', color: '#9ca3af', margin: 0 },
+  header: { textAlign: 'center', marginBottom: '32px' },
+  iconContainer: { width: '64px', height: '64px', backgroundColor: '#eff6ff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' },
+  title: { fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '8px' },
+  subtitle: { color: '#6b7280', fontSize: '0.95rem', lineHeight: '1.5' },
+  form: { display: 'flex', flexDirection: 'column', gap: '20px' },
+  inputGroup: { display: 'flex', flexDirection: 'column' },
+  phoneInputContainer: { display: 'flex', alignItems: 'center', border: '1px solid #d1d5db', borderRadius: '8px', backgroundColor: '#ffffff', overflow: 'hidden' },
+  countryCode: { padding: '14px 12px', backgroundColor: '#f9fafb', borderRight: '1px solid #d1d5db', fontSize: '1rem', color: '#374151', fontWeight: '500' },
+  phoneInput: { width: '100%', padding: '14px 16px', border: 'none', fontSize: '1rem', backgroundColor: 'transparent', outline: 'none' },
+  passwordContainer: { position: 'relative', display: 'flex', alignItems: 'center' },
+  inputIcon: { position: 'absolute', left: '16px', color: '#6b7280', zIndex: 1 },
+  passwordInput: { width: '100%', padding: '14px 48px 14px 70px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '1rem', backgroundColor: '#ffffff', transition: 'all 0.2s ease', boxSizing: 'border-box', outline: 'none' },
+  eyeButton: { position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '4px', borderRadius: '4px' },
+  inputError: { borderColor: '#ef4444' },
+  fieldError: { color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' },
+  checkboxContainer: { display: 'flex', alignItems: 'center', gap: '8px' },
+  checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: '#374151', cursor: 'pointer' },
+  checkbox: { width: '16px', height: '16px', accentColor: '#3b82f6' },
+  errorContainer: { display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', backgroundColor: '#fef2f2', border: '1px solid #ef4444', borderRadius: '8px', color: '#991b1b', fontSize: '0.9rem' },
+  button: { width: '100%', padding: '16px 24px', border: 'none', borderRadius: '8px', backgroundColor: '#1a4845', color: 'white', cursor: 'pointer', fontSize: '1rem', fontWeight: '600', transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '52px' },
+  buttonLoading: { backgroundColor: '#9ca3af', cursor: 'not-allowed' },
+  buttonContent: { display: 'flex', alignItems: 'center', gap: '8px' },
+  spinner: { width: '16px', height: '16px', border: '2px solid #f3f3f3', borderTop: '2px solid #3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' },
+  securityBadges: { display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' },
+  securityBadge: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: '#059669', fontWeight: '500' },
+  footerLinks: { marginTop: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.9rem', gap: '12px' },
+  link: { color: '#3b82f6', textDecoration: 'none', fontWeight: '500' },
+  divider: { color: '#d1d5db' },
+  backSection: { marginTop: '20px', textAlign: 'center', paddingTop: '16px', borderTop: '1px solid #e5e7eb' },
+  backLink: { display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#6b7280', background: 'none', border: 'none', fontSize: '0.9rem', cursor: 'pointer' },
+  buyerLink: { marginTop: '16px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '8px', textAlign: 'center', border: '1px solid #e2e8f0' },
+  buyerText: { fontSize: '0.9rem', color: '#6b7280', margin: '0 0 8px 0' },
+  buyerLinkButton: { display: 'inline-block', padding: '8px 16px', backgroundColor: '#059669', color: 'white', textDecoration: 'none', borderRadius: '6px', fontSize: '0.9rem', fontWeight: '500', transition: 'background-color 0.2s' }
 };

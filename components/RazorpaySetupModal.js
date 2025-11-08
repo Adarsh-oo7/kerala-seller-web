@@ -1,7 +1,5 @@
-// components/RazorpaySetupModal.js - ✅ COMPLETE MODAL
-
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Eye, EyeOff, AlertCircle, Check } from 'lucide-react';
 import axios from 'axios';
 
@@ -18,8 +16,43 @@ export default function RazorpaySetupModal({ isOpen, onClose, onSuccess, editMod
     webhook_secret: false,
   });
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false); // For initial fetch only
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Fetch saved keys if editMode
+  useEffect(() => {
+    const fetchKeys = async () => {
+      if (isOpen && editMode) {
+        setFetching(true);
+        setError('');
+        try {
+          const token = localStorage.getItem('accessToken');
+          // Backend should hide secret if necessary
+          const res = await axios.get(
+            `${API_BASE_URL}/api/payments/account/razorpay_keys/`,
+            {
+              headers: { Authorization: `Bearer ${token}` }
+            }
+          );
+          if (res?.data) {
+            setFormData({
+              key_id: res.data.key_id || '',
+              key_secret: '', // never SHOW saved secret in plain text
+              webhook_secret: res.data.webhook_secret || '',
+            });
+          }
+        } catch (err) {
+          setError('Failed to load saved keys');
+        } finally {
+          setFetching(false);
+        }
+      } else if (!isOpen) {
+        setFormData({ key_id: '', key_secret: '', webhook_secret: '' });
+      }
+    };
+    fetchKeys();
+  }, [isOpen, editMode]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -39,9 +72,8 @@ export default function RazorpaySetupModal({ isOpen, onClose, onSuccess, editMod
     try {
       setLoading(true);
       const token = localStorage.getItem('accessToken');
-      
       const response = await axios.post(
-        `${API_BASE_URL}/api/payments/account/connect_razorpay_keys/`,
+        `${API_BASE_URL}/api/payments/account/connect_razorpay/`,
         {
           key_id: formData.key_id.trim(),
           key_secret: formData.key_secret.trim(),
@@ -52,7 +84,7 @@ export default function RazorpaySetupModal({ isOpen, onClose, onSuccess, editMod
         }
       );
 
-      if (response.status === 201) {
+      if (response.status === 201 || response.status === 200) {
         setSuccess('✅ Razorpay connected successfully!');
         setTimeout(() => {
           setFormData({ key_id: '', key_secret: '', webhook_secret: '' });
@@ -61,7 +93,6 @@ export default function RazorpaySetupModal({ isOpen, onClose, onSuccess, editMod
         }, 2000);
       }
     } catch (err) {
-      console.error('Connection error:', err);
       setError(
         err.response?.data?.error || 
         err.response?.data?.message || 
@@ -77,7 +108,6 @@ export default function RazorpaySetupModal({ isOpen, onClose, onSuccess, editMod
   return (
     <div style={s.overlay} onClick={onClose}>
       <div style={s.modal} onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
         <div style={s.header}>
           <h2 style={s.title}>
             🔵 {editMode ? 'Update' : 'Connect'} Razorpay
@@ -87,7 +117,6 @@ export default function RazorpaySetupModal({ isOpen, onClose, onSuccess, editMod
           </button>
         </div>
 
-        {/* Messages */}
         {error && (
           <div style={s.errorBox}>
             <AlertCircle size={16} />
@@ -100,121 +129,140 @@ export default function RazorpaySetupModal({ isOpen, onClose, onSuccess, editMod
             <span>{success}</span>
           </div>
         )}
-
-        {/* Info Box */}
-        <div style={s.infoBox}>
-          <AlertCircle size={14} />
-          <div>
-            <p style={s.infoBold}>How to get your Razorpay credentials:</p>
-            <ol style={s.infoList}>
-              <li>Go to <a href="https://dashboard.razorpay.com" target="_blank" rel="noopener noreferrer" style={s.link}>Razorpay Dashboard</a></li>
-              <li>Navigate to Settings → API Keys</li>
-              <li>Copy your Key ID and Secret</li>
-              <li>Paste them below</li>
-            </ol>
-          </div>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={s.form}>
-          {/* Key ID Field */}
-          <div style={s.formGroup}>
-            <label style={s.label}>Razorpay Key ID *</label>
-            <input
-              type="text"
-              name="key_id"
-              value={formData.key_id}
-              onChange={handleInputChange}
-              placeholder="rzp_test_XXXXXXXXXXXXX"
-              style={s.input}
-              required
-            />
-            <p style={s.hint}>Start with "rzp_test_" for test mode or "rzp_live_" for live</p>
+        {fetching ? (
+          <div style={{ padding: 16 }}>Loading saved keys...</div>
+        ) : (
+        <>
+          <div style={s.infoBox}>
+            <AlertCircle size={14} />
+            <div>
+              <p style={s.infoBold}>How to get your Razorpay credentials:</p>
+              <ol style={s.infoList}>
+                <li>Go to <a href="https://dashboard.razorpay.com" target="_blank" rel="noopener noreferrer" style={s.link}>Razorpay Dashboard</a></li>
+                <li>Navigate to Settings → API Keys</li>
+                <li>Copy your Key ID and Secret</li>
+                <li>Paste them below</li>
+              </ol>
+            </div>
           </div>
 
-          {/* Key Secret Field */}
-          <div style={s.formGroup}>
-            <label style={s.label}>Razorpay Key Secret *</label>
-            <div style={s.passwordContainer}>
+          <form onSubmit={handleSubmit} style={s.form} autoComplete="off">
+            <div style={s.formGroup}>
+              <label style={s.label}>Razorpay Key ID *</label>
               <input
-                type={showSecrets.key_secret ? 'text' : 'password'}
-                name="key_secret"
-                value={formData.key_secret}
+                type="text"
+                name="key_id"
+                value={formData.key_id}
                 onChange={handleInputChange}
-                placeholder="••••••••••••••••••••"
+                placeholder="rzp_test_XXXXXXXXXXXXX"
                 style={s.input}
                 required
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                disabled={loading || fetching}
               />
+              <p style={s.hint}>Start with "rzp_test_" for test mode or "rzp_live_" for live</p>
+            </div>
+
+            <div style={s.formGroup}>
+              <label style={s.label}>Razorpay Key Secret *</label>
+              <div style={s.passwordContainer}>
+                <input
+                  type={showSecrets.key_secret ? 'text' : 'password'}
+                  name="key_secret"
+                  value={formData.key_secret}
+                  onChange={handleInputChange}
+                  placeholder={editMode ? "•••••••••••••••••••• (re-enter to update)" : "••••••••••••••••••••"}
+                  style={s.input}
+                  required
+                  autoComplete="new-password"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                  disabled={loading || fetching}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSecrets(p => ({ ...p, key_secret: !p.key_secret }))}
+                  style={s.toggleBtn}
+                >
+                  {showSecrets.key_secret ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {editMode && (
+                <p style={s.hint}>Saving a new secret will overwrite the existing one. For security, the current key secret is never shown.</p>
+              )}
+            </div>
+
+            <div style={s.formGroup}>
+              <label style={s.label}>Webhook Secret (Optional)</label>
+              <div style={s.passwordContainer}>
+                <input
+                  type={showSecrets.webhook_secret ? 'text' : 'password'}
+                  name="webhook_secret"
+                  value={formData.webhook_secret}
+                  onChange={handleInputChange}
+                  placeholder="Your webhook secret (if set)"
+                  style={s.input}
+                  autoComplete="new-password"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                  disabled={loading || fetching}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSecrets(p => ({ ...p, webhook_secret: !p.webhook_secret }))}
+                  style={s.toggleBtn}
+                >
+                  {showSecrets.webhook_secret ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div style={s.buttonGroup}>
               <button
                 type="button"
-                onClick={() => setShowSecrets(p => ({ ...p, key_secret: !p.key_secret }))}
-                style={s.toggleBtn}
+                onClick={onClose}
+                style={s.cancelBtn}
+                disabled={loading}
               >
-                {showSecrets.key_secret ? <EyeOff size={16} /> : <Eye size={16} />}
+                Cancel
               </button>
-            </div>
-          </div>
-
-          {/* Webhook Secret Field (Optional) */}
-          <div style={s.formGroup}>
-            <label style={s.label}>Webhook Secret (Optional)</label>
-            <div style={s.passwordContainer}>
-              <input
-                type={showSecrets.webhook_secret ? 'text' : 'password'}
-                name="webhook_secret"
-                value={formData.webhook_secret}
-                onChange={handleInputChange}
-                placeholder="Your webhook secret (if set)"
-                style={s.input}
-              />
               <button
-                type="button"
-                onClick={() => setShowSecrets(p => ({ ...p, webhook_secret: !p.webhook_secret }))}
-                style={s.toggleBtn}
+                type="submit"
+                style={s.connectBtn}
+                disabled={loading}
               >
-                {showSecrets.webhook_secret ? <EyeOff size={16} /> : <Eye size={16} />}
+                {loading ? '⏳ Verifying...' : editMode ? '✅ Update Keys' : '🔗 Connect Razorpay'}
               </button>
             </div>
-          </div>
+          </form>
 
-          {/* Buttons */}
-          <div style={s.buttonGroup}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={s.cancelBtn}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              style={s.connectBtn}
-              disabled={loading}
-            >
-              {loading ? '⏳ Verifying...' : editMode ? '✅ Update Keys' : '🔗 Connect Razorpay'}
-            </button>
+          <div style={s.securityBox}>
+            <p style={s.securityTitle}>🔐 Your credentials are encrypted</p>
+            <p style={s.securityText}>
+              Your Razorpay keys are encrypted and securely stored. Never share them with anyone.
+            </p>
           </div>
-        </form>
+        </>
+        )}
 
-        {/* Security Info */}
-        <div style={s.securityBox}>
-          <p style={s.securityTitle}>🔐 Your credentials are encrypted</p>
-          <p style={s.securityText}>
-            Your Razorpay keys are encrypted and securely stored. Never share them with anyone.
-          </p>
-        </div>
+        <style jsx>{`
+          @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
       </div>
-
-      <style jsx>{`
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateY(-50px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
+
+// (Keep style object as is)
+
 
 const s = {
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },

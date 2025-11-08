@@ -1,13 +1,10 @@
-// app/dashboard/seller/payments/page.js - ✅ COMPLETE & FIXED
-
 'use client';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import RazorpaySetupModal from '../../../../components/RazorpaySetupModal';
 import { 
-  CreditCard, Check, AlertCircle, Clock, DollarSign, 
-  TrendingUp, Eye, EyeOff, Copy, ExternalLink, RefreshCw, Lock, Edit2, Trash2
+  CreditCard, Check, AlertCircle, Clock, RefreshCw, Edit2
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
@@ -24,9 +21,9 @@ export default function PaymentsDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [showAccount, setShowAccount] = useState(false);
   const [razorpayModalOpen, setRazorpayModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  
   const router = useRouter();
 
   const getAuthHeaders = useCallback(() => {
@@ -50,9 +47,7 @@ export default function PaymentsDashboard() {
           `${API_BASE_URL}/api/payments/account/gateway_status/`,
           { headers }
         ).catch(error => {
-          // ✅ Handle 404 - return default status
           if (error.response?.status === 404) {
-            console.log('Payment account not found, showing default state');
             return { data: {
               razorpay: { connected: false, verified: false, status: 'pending' },
               cashfree: { connected: false, verified: false, status: 'pending' },
@@ -66,9 +61,7 @@ export default function PaymentsDashboard() {
           `${API_BASE_URL}/api/payments/payouts/history/`,
           { headers }
         ).catch(error => {
-          // ✅ Handle 404 - return empty payouts
           if (error.response?.status === 404) {
-            console.log('No payout history found');
             return { data: { payouts: [] }};
           }
           throw error;
@@ -80,7 +73,6 @@ export default function PaymentsDashboard() {
       setErrorMsg('');
     } catch (error) {
       console.error('Error fetching payment data:', error);
-      // ✅ Set default gateway status on error
       setGatewayStatus({
         razorpay: { connected: false, verified: false, status: 'pending' },
         cashfree: { connected: false, verified: false, status: 'pending' },
@@ -129,23 +121,6 @@ export default function PaymentsDashboard() {
     fetchPaymentData();
   }, [editMode, fetchPaymentData]);
 
-  const connectCashfree = useCallback(async () => {
-    const headers = getAuthHeaders();
-    if (!headers) return;
-
-    try {
-      await axios.post(
-        `${API_BASE_URL}/api/payments/account/connect_cashfree/`,
-        {},
-        { headers }
-      );
-      setSuccessMsg('✅ Connected to Cashfree!');
-      fetchPaymentData();
-    } catch (error) {
-      setErrorMsg(`❌ ${error.response?.data?.error || 'Connection failed'}`);
-    }
-  }, [getAuthHeaders, fetchPaymentData]);
-
   const payoutSummary = useMemo(() => {
     const successful = payoutHistory.filter(p => p.status === 'success');
     const pending = payoutHistory.filter(p => p.status === 'pending');
@@ -179,7 +154,6 @@ export default function PaymentsDashboard() {
         editMode={editMode}
       />
 
-      {/* Header */}
       <div style={s.h}>
         <div>
           <h1 style={s.t}>💰 Payment Gateways</h1>
@@ -189,7 +163,6 @@ export default function PaymentsDashboard() {
           onClick={fetchPaymentData} 
           disabled={refreshing} 
           style={s.rb}
-          aria-label="Refresh payment data"
         >
           <RefreshCw 
             size={16} 
@@ -199,24 +172,21 @@ export default function PaymentsDashboard() {
         </button>
       </div>
 
-      {/* Messages */}
       {successMsg && (
-        <div style={s.sa} role="alert">
+        <div style={s.sa}>
           <Check size={18}/>
           <span>{successMsg}</span>
         </div>
       )}
       {errorMsg && (
-        <div style={s.ea} role="alert">
+        <div style={s.ea}>
           <AlertCircle size={18}/>
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* Gateway Status Grid - ✅ Always renders now */}
       <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'20px', padding:'24px'}}>
         
-        {/* Razorpay Card - ACTIVE */}
         <div style={s.card}>
           <div style={s.cardH}>
             <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
@@ -247,7 +217,6 @@ export default function PaymentsDashboard() {
               <button 
                 onClick={handleRazorpayClick} 
                 style={s.connectBtn}
-                aria-label="Connect Razorpay"
               >
                 🔗 Connect Razorpay
               </button>
@@ -256,7 +225,6 @@ export default function PaymentsDashboard() {
                 <button 
                   onClick={handleEditRazorpay}
                   style={{...s.connectBtn, backgroundColor: '#f59e0b', flex: 1}}
-                  aria-label="Edit Razorpay keys"
                 >
                   <Edit2 size={14} style={{display: 'inline', marginRight: '4px'}}/>
                   Edit Keys
@@ -264,7 +232,6 @@ export default function PaymentsDashboard() {
                 <button 
                   disabled 
                   style={{...s.connectBtn, opacity: 0.5, cursor: 'not-allowed', flex: 1}}
-                  aria-label="Razorpay connected"
                 >
                   ✅ Connected
                 </button>
@@ -273,7 +240,6 @@ export default function PaymentsDashboard() {
           </div>
         </div>
 
-        {/* Cashfree Card - COMING SOON */}
         <div style={{...s.card, opacity: 0.6, position: 'relative'}}>
           <div style={s.comingSoonBadge}>
             <Clock size={16}/>
@@ -300,14 +266,12 @@ export default function PaymentsDashboard() {
             <button 
               disabled 
               style={{...s.connectBtn, opacity: 0.5, cursor: 'not-allowed', backgroundColor: '#d1d5db'}}
-              aria-label="Cashfree coming soon"
             >
               ⏳ Coming Soon
             </button>
           </div>
         </div>
 
-        {/* Stripe Card - COMING SOON */}
         <div style={{...s.card, opacity: 0.6, position: 'relative'}}>
           <div style={s.comingSoonBadge}>
             <Clock size={16}/>
@@ -334,7 +298,6 @@ export default function PaymentsDashboard() {
             <button 
               disabled 
               style={{...s.connectBtn, opacity: 0.5, cursor: 'not-allowed', backgroundColor: '#d1d5db'}}
-              aria-label="Stripe coming soon"
             >
               📅 Q1 2026
             </button>
@@ -342,7 +305,6 @@ export default function PaymentsDashboard() {
         </div>
       </div>
 
-      {/* Payout Summary */}
       {payoutHistory.length > 0 && (
         <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:'16px', padding:'0 24px 24px'}}>
           <div style={{...s.card, padding:'16px'}}>
@@ -362,8 +324,7 @@ export default function PaymentsDashboard() {
         </div>
       )}
 
-      {/* Payout History */}
-      <div style={s.card}>
+      <div style={{...s.card, margin: '0 24px 24px'}}>
         <h2 style={s.cardT}>📊 Payout History</h2>
         
         {payoutHistory.length > 0 ? (
@@ -408,7 +369,6 @@ export default function PaymentsDashboard() {
         )}
       </div>
 
-      {/* Info Box */}
       <div style={s.infoBox}>
         <Check size={20} color="#10b981"/>
         <div>
