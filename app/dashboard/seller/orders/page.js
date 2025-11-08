@@ -540,7 +540,6 @@ const applyClientFilters = useCallback(() => {
         <button onClick={() => setShowAdvancedFilters(!showAdvancedFilters)} style={styles.filterToggle}><Filter size={18} />Filters</button>
       </div>
 
-      {/* Show results count while searching */}
       {searchTerm && (
         <div style={styles.searchResultsInfo}>
           🔍 Found <strong>{displayedOrders.length}</strong> order(s) matching "{searchTerm}"
