@@ -29,7 +29,7 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [storeData, setStoreData] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('COD'); // ✅ DEFAULT: Set COD as default
+  const [paymentMethod, setPaymentMethod] = useState('COD');
   const [shippingInfo, setShippingInfo] = useState({
     name: '', phone: '', address: '', city: '', pincode: ''
   });
@@ -65,7 +65,6 @@ export default function CheckoutPage() {
         return;
       }
 
-      // ✅ FIXED: Load cart from localStorage (not context)
       const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
       const sellerCart = multiCarts[sellerPhone] || [];
 
@@ -79,7 +78,6 @@ export default function CheckoutPage() {
 
       setCartItems(sellerCart);
 
-      // ✅ FIXED: Load store data and buyer profile
       try {
         const [storeRes, profileRes] = await Promise.allSettled([
           fetch(`${API_BASE_URL}/shop/${sellerPhone}/`),
@@ -121,7 +119,7 @@ export default function CheckoutPage() {
   const calculateTotal = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
 
-  // ✅ FIXED: Enhanced online payment with Razorpay
+  // ✅ FIXED: Enhanced online payment with Razorpay - SELLER ROUTING
   const handleOnlinePayment = async (orderData) => {
     if (!razorpayLoaded) {
       alert('Payment system not loaded. Please refresh and try again.');
@@ -151,12 +149,14 @@ export default function CheckoutPage() {
         throw new Error(errorData.error || 'Failed to create payment order');
       }
 
-      const { razorpay_order_id, amount, key } = await createOrderResponse.json();
+      // ✅ CHANGE #1: key → key_id (SELLER'S KEY)
+      const { razorpay_order_id, amount, key_id } = await createOrderResponse.json();
       console.log('✅ Razorpay order created:', razorpay_order_id);
+      console.log('✅ Using seller key:', key_id);
 
       // Step 2: Initialize Razorpay payment
       const options = {
-        key: key,
+        key: key_id,  // ✅ CHANGE #2: key → key_id (SELLER'S KEY)
         amount: amount,
         currency: 'INR',
         name: storeData?.name || `Store ${sellerPhone}`,
@@ -184,7 +184,7 @@ export default function CheckoutPage() {
             const verifyData = await verifyResponse.json();
 
             if (verifyResponse.ok && verifyData.success) {
-              // ✅ FIXED: Clear cart using sellerPhone
+              // ✅ Clear cart using sellerPhone
               const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
               delete multiCarts[sellerPhone];
               localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
@@ -285,7 +285,6 @@ export default function CheckoutPage() {
         if (!paymentSuccess) {
           setSubmitting(false);
         }
-        // Don't set submitting to false here as payment is in progress
       } else {
         // Handle COD
         const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
@@ -303,7 +302,7 @@ export default function CheckoutPage() {
         console.log('📤 COD Response:', responseData);
 
         if (response.ok) {
-          // ✅ FIXED: Clear cart using sellerPhone
+          // ✅ Clear cart using sellerPhone
           const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
           delete multiCarts[sellerPhone];
           localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
@@ -376,7 +375,6 @@ export default function CheckoutPage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(14, 69, 30, 0.145)', justifyContent: 'space-between', marginBottom: '30px', border: '1px solid rgba(14, 69, 30, 0.145)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', padding: '20px', borderRadius: '12px' }}>
 
-          {/* Left: Back Arrow */}
           <button
             onClick={() => router.push(`/cart/`)}
             style={{
@@ -393,30 +391,17 @@ export default function CheckoutPage() {
             <ArrowLeft size={20} />
           </button>
 
-          {/* Right: Package icon + Checkout text */}
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontSize: '20px' }}>
             <Package size={20} />
             Checkout
           </h1>
         </div>
 
-
-
-
-        {/* Debug Info (remove in production) */}
-        {/* <div style={{ 
-          backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '4px', 
-          marginBottom: '20px', fontSize: '12px' 
-        }}>
-          <strong>Debug:</strong> Store: {sellerPhone} | Items: {cartItems.length} | 
-          Payment: {paymentMethod} | Razorpay: {razorpayLoaded ? '✅' : '❌'}
-        </div> */}
-
         <div className='keralasellerscheckoutlayout' style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 350px', // Left column flexible, right column fixed
+          gridTemplateColumns: '1fr 350px',
           gap: '30px'
-        }}>          {/* Left Side - Shipping + Payment stacked */}
+        }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
             <div style={{ backgroundColor: '#FDFFF0', color: '#1a4845', border: '1px solid #bbbbbbff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', borderRadius: '12px', padding: '30px' }}>
               <h2 className='keralasellerscheckouttitle' style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px' }}>
@@ -425,7 +410,6 @@ export default function CheckoutPage() {
               </h2>
 
               <div style={{ marginBottom: '20px' }}>
-
                 <input
                   type="text"
                   className='keralasellersckeckoutinputsize'
@@ -446,7 +430,6 @@ export default function CheckoutPage() {
               </div>
 
               <div style={{ marginBottom: '20px' }}>
-
                 <input
                   type="tel"
                   className='keralasellersckeckoutinputsize'
@@ -467,7 +450,6 @@ export default function CheckoutPage() {
               </div>
 
               <div style={{ marginBottom: '20px' }}>
-
                 <textarea
                   value={shippingInfo.address}
                   className='keralasellersckeckoutinputsize'
@@ -490,7 +472,6 @@ export default function CheckoutPage() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
                 <div>
-
                   <input
                     type="text"
                     className='keralasellersckeckoutinputsize'
@@ -510,7 +491,6 @@ export default function CheckoutPage() {
                   />
                 </div>
                 <div>
-
                   <input
                     type="text"
                     className='keralasellersckeckoutinputsize'
@@ -532,9 +512,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-
             <div style={{ backgroundColor: '#FDFFF0', color: '#1a4845', border: '1px solid #bbbbbbff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', borderRadius: '12px', padding: '30px' }}>
-
               <h2 className='keralasellerscheckouttitle' style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px' }}>
                 <CreditCard size={20} />
                 PAYMENT METHOD
@@ -546,14 +524,13 @@ export default function CheckoutPage() {
                   justifyContent: 'flex-start',
                   display: 'flex',
                   padding: '16px',
-                  border: `2px solid ${paymentMethod === 'COD' ? 'rgba(14, 69, 30, 0.145)' : 'rgba(14, 69, 30, 0.145)'}`,
+                  border: `2px solid rgba(14, 69, 30, 0.145)`,
                   borderRadius: '8px',
                   marginBottom: '12px',
                   cursor: 'pointer',
                   backgroundColor: paymentMethod === 'COD' ? 'rgba(14, 69, 30, 0.145)' : '#FDFFF0',
                   transition: 'background-color 0.3s ease'
                 }}>
-
                   <input
                     type="radio"
                     name="payment"
@@ -583,7 +560,7 @@ export default function CheckoutPage() {
                   alignItems: 'center',
                   justifyContent: 'flex-start',
                   padding: '16px',
-                  border: `2px solid ${paymentMethod === 'ONLINE' ? 'rgba(14, 69, 30, 0.145)' : 'rgba(14, 69, 30, 0.145)'}`,
+                  border: `2px solid rgba(14, 69, 30, 0.145)`,
                   borderRadius: '8px',
                   cursor: 'pointer',
                   backgroundColor: paymentMethod === 'ONLINE' ? 'rgba(14, 69, 30, 0.145)' : '#FDFFF0',
@@ -620,7 +597,6 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Right Side - Order Summary */}
           <div style={{ flex: '0 0 400px', backgroundColor: '#FDFFF0', color: '#1a4845', border: '1px solid #bbbbbbff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', borderRadius: '12px', padding: '30px', height: 'fit-content' }}>
             <h2 className='keralasellerscheckouttitle' style={{ fontSize: '18px' }}>ORDER SUMMARY</h2>
 
@@ -652,30 +628,26 @@ export default function CheckoutPage() {
               </div>
             ))}
 
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingTop: '16px',
-                fontSize: '14px'
-              }}
-            >
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingTop: '16px',
+              fontSize: '14px'
+            }}>
               <span>
                 Subtotal ({cartItems.length} item{cartItems.length !== 1 ? 's' : ''})
               </span>
               <span className='keralasellerscheckoutitemname'>{formatPrice(calculateTotal())}</span>
             </div>
 
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: '8px',
-                fontSize: '14px'
-              }}
-            >
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: '8px',
+              fontSize: '14px'
+            }}>
               <span>Delivery</span>
               <span style={{ color: '#10b981', fontWeight: '600' }}>Free</span>
             </div>
@@ -687,7 +659,6 @@ export default function CheckoutPage() {
               padding: '16px 0',
               marginTop: '16px',
               fontSize: '20px',
-
             }}>
               <span className='keralasellerscheckoutitemname'>Total:</span>
               <span className='keralasellerscheckoutitemname' style={{ color: 'rgb(5, 150, 105)', fontWeight: 'bold' }}>{formatPrice(calculateTotal())}</span>
@@ -712,7 +683,7 @@ export default function CheckoutPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '10px', // space between icon and text
+                gap: '10px',
                 transition: 'background-color 0.3s ease'
               }}
             >
@@ -721,7 +692,6 @@ export default function CheckoutPage() {
                 ? 'Processing...'
                 : `Place Order (${formatPrice(calculateTotal())})`}
             </button>
-
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation'; // ✅ Add this import
 import ProductForm from '../../../../components/ProductForm';
 import '../../../../styles/DashboardProduct.css'
 import {
@@ -27,23 +28,43 @@ import {
   Layers
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
+// ✅ Add the subscription API URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const API_URL = `${API_BASE_URL}/user/store/products/`;
+const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`; // ✅ Add this
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [subscription, setSubscription] = useState(null); // ✅ Add this state
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all'); // all, low_stock, out_of_stock
+  const [filterType, setFilterType] = useState('all');
   const [isDeleting, setIsDeleting] = useState(null);
-  const [viewMode, setViewMode] = useState('table'); // table, grid
-  const [sortBy, setSortBy] = useState('name'); // name, price, stock, created_at
-  const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
+  const [viewMode, setViewMode] = useState('table');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const router = useRouter(); // ✅ Add this
+
+  // ✅ Add this function to fetch subscription
+  const fetchSubscription = useCallback(async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+
+    try {
+      const response = await axios.get(SUBSCRIPTION_API_URL, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setSubscription(response.data);
+      console.log('✅ Subscription loaded:', response.data);
+    } catch (err) {
+      console.log('⚠️ No active subscription found');
+      setSubscription(null);
+    }
+  }, []);
 
   const fetchProducts = useCallback(async () => {
     const token = localStorage.getItem('accessToken');
@@ -101,6 +122,13 @@ export default function ProductsPage() {
       setIsLoading(false);
     }
   }, []);
+
+    useEffect(() => {
+    fetchSubscription();
+    fetchProducts();
+  }, [fetchSubscription, fetchProducts]);
+
+
 
   // ✅ Enhanced filtering and sorting
   useEffect(() => {
@@ -222,10 +250,21 @@ export default function ProductsPage() {
     }
   };
 
-  const handleOpenModal = (product = null) => {
-    setEditingProduct(product);
-    setIsModalOpen(true);
-  };
+const handleOpenModal = (product = null) => {
+  // Check subscription before allowing add (but allow edit of existing products)
+  if (!subscription?.is_active && !product) {
+    // Show confirmation dialog asking user to subscribe
+    if (window.confirm('You need an active subscription to add products.\n\nWould you like to subscribe now?')) {
+      router.push('/subscription');
+    }
+    return;
+  }
+  
+  // If subscription is active or editing existing product, open modal
+  setEditingProduct(product);
+  setIsModalOpen(true);
+};
+
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -697,7 +736,7 @@ export default function ProductsPage() {
           )
         ) : (
           <div style={styles.emptyState}>
-            <Package size={64} />
+            <Package size={64} className='dashboardproductemptyicon' />
             <h3>
               {searchTerm || filterType !== 'all'
                 ? 'No products match your filters'
@@ -719,7 +758,7 @@ export default function ProductsPage() {
                 Clear Filters
               </button>
             ) : (
-              <button onClick={() => handleOpenModal()} style={styles.buttonPrimary}>
+              <button className='dashboardproductaddfirstprodbtn' onClick={() => handleOpenModal()} style={styles.buttonPrimary}>
                 <Plus size={18} />
                 Add Your First Product
               </button>

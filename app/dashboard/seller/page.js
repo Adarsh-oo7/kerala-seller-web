@@ -19,29 +19,26 @@ import {
     AlertCircle,
     CheckCircle,
     RefreshCw,
-    Globe
+    Globe,
+    Crown
 } from 'lucide-react';
 
-// ✅ Enhanced API Configuration
 const getApiBaseUrl = () => {
     const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-
     if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
         return envUrl.trim();
     }
-
     if (process.env.NODE_ENV === 'development') {
         return 'http://localhost:8000';
     }
-
     return 'https://keralaseller-backend.onrender.com';
 };
 
 const API_BASE_URL = getApiBaseUrl();
 const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
 const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
+const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`; // ✅ Added
 
-// ✅ Enhanced Frontend base URL for store links
 const getFrontendBaseUrl = () => {
     if (typeof window !== 'undefined') {
         return `${window.location.protocol}//${window.location.host}`;
@@ -49,7 +46,6 @@ const getFrontendBaseUrl = () => {
     return process.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'http://localhost:3000';
 };
 
-// ✅ SEO-friendly URL generator (same as in other components)
 const generateShopSlug = (shop) => {
     if (!shop || !shop.name) return 'shop';
 
@@ -71,7 +67,6 @@ const generateShopSlug = (shop) => {
     return slug.length >= 3 ? slug : `shop-${shop.seller_phone || 'store'}`;
 };
 
-// ✅ Enhanced Setup Store Prompt Component
 function SetupStorePrompt() {
     return (
         <div style={styles.setupCard}>
@@ -110,9 +105,7 @@ function SetupStorePrompt() {
     );
 }
 
-// ✅ Enhanced Store Link Component
 function StoreLink({ storeData, phone, copySuccess, onCopy, onVisit }) {
-    // Generate SEO-friendly shop URL
     const getShopUrl = () => {
         if (!phone) return `${getFrontendBaseUrl()}/shop`;
 
@@ -121,7 +114,6 @@ function StoreLink({ storeData, phone, copySuccess, onCopy, onVisit }) {
             return `${getFrontendBaseUrl()}/shop/${shopSlug}?id=${phone}`;
         }
 
-        // Fallback to direct phone URL for incomplete profiles
         return `${getFrontendBaseUrl()}/shop/shop-${phone}?id=${phone}`;
     };
 
@@ -186,16 +178,71 @@ function StoreLink({ storeData, phone, copySuccess, onCopy, onVisit }) {
     );
 }
 
-// Main Dashboard Overview Component
+// ✅ NEW: Subscription prompt component
+function SubscriptionPromptCard() {
+    return (
+        <div style={styles.card}>
+            <div style={styles.cardHeader}>
+                <h3 className='dashboardoverviewcardtitle' style={styles.cardTitle}>
+                    <Globe size={20} color='#ef4444' />
+                    Your Public Storefront
+                </h3>
+            </div>
+            <div style={styles.subscriptionPrompt}>
+                <Crown size={48} color='#f59e0b' style={{ marginBottom: 16 }} />
+                <h4 style={{ margin: '0 0 12px 0', color: '#1f2937', fontSize: '18px', fontWeight: '600' }}>
+                    Subscribe to Get Your Online Shop
+                </h4>
+                <p style={{ margin: '0 0 20px 0', color: '#6b7280', lineHeight: 1.6, fontSize: '14px' }}>
+                    Get your own SEO-optimized online storefront to showcase your products to customers across Kerala and India.
+                </p>
+                <Link 
+                    href="/dashboard/seller/subscription" 
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 24px',
+                        backgroundColor: '#ef4444',
+                        color: 'white',
+                        textDecoration: 'none',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        transition: 'all 0.2s',
+                        fontSize: '14px'
+                    }}
+                >
+                    <Crown size={18} />
+                    Subscribe Now
+                </Link>
+                <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#059669', fontSize: '13px' }}>
+                        <CheckCircle size={16} />
+                        <span>SEO-optimized storefront</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#059669', fontSize: '13px' }}>
+                        <CheckCircle size={16} />
+                        <span>Reach customers across Kerala</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#059669', fontSize: '13px' }}>
+                        <CheckCircle size={16} />
+                        <span>Zero commission fees</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function SellerDashboardOverview() {
     const [dashboardData, setDashboardData] = useState(null);
     const [storeData, setStoreData] = useState(null);
+    const [subscription, setSubscription] = useState(null); // ✅ Added
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [copySuccess, setCopySuccess] = useState(false);
     const router = useRouter();
 
-    // Get authentication headers
     const getAuthHeaders = useCallback(() => {
         const token = localStorage.getItem('accessToken') ||
             localStorage.getItem('buyerAccessToken') ||
@@ -203,7 +250,21 @@ export default function SellerDashboardOverview() {
         return token ? { Authorization: `Bearer ${token}` } : null;
     }, []);
 
-    // ✅ Enhanced fetch function with better error handling
+    // ✅ NEW: Fetch subscription
+    const fetchSubscription = useCallback(async () => {
+        const headers = getAuthHeaders();
+        if (!headers) return;
+
+        try {
+            const response = await axios.get(SUBSCRIPTION_API_URL, { headers });
+            setSubscription(response.data);
+            console.log('✅ Subscription loaded:', response.data);
+        } catch (err) {
+            console.log('⚠️ No active subscription found');
+            setSubscription(null);
+        }
+    }, [getAuthHeaders]);
+
     const fetchDashboardData = useCallback(async () => {
         const headers = getAuthHeaders();
         if (!headers) {
@@ -217,10 +278,9 @@ export default function SellerDashboardOverview() {
         try {
             console.log('🔍 Fetching dashboard data...');
 
-            // Fetch both dashboard and store profile data
             const [dashboardRes, storeRes] = await Promise.all([
                 axios.get(DASHBOARD_API_URL, { headers, timeout: 15000 }),
-                axios.get(PROFILE_API_URL, { headers, timeout: 15000 }).catch(() => null) // Don't fail if profile doesn't exist
+                axios.get(PROFILE_API_URL, { headers, timeout: 15000 }).catch(() => null)
             ]);
 
             console.log('✅ Dashboard data received:', dashboardRes.data);
@@ -248,9 +308,9 @@ export default function SellerDashboardOverview() {
 
     useEffect(() => {
         fetchDashboardData();
-    }, [fetchDashboardData]);
+        fetchSubscription(); // ✅ Added
+    }, [fetchDashboardData, fetchSubscription]);
 
-    // ✅ Enhanced copy function that handles SEO URLs
     const copyStoreLink = async (url) => {
         if (!url) return;
 
@@ -259,7 +319,6 @@ export default function SellerDashboardOverview() {
             setCopySuccess(true);
             setTimeout(() => setCopySuccess(false), 2000);
         } catch (err) {
-            // Fallback for browsers that don't support clipboard API
             const textArea = document.createElement('textarea');
             textArea.value = url;
             document.body.appendChild(textArea);
@@ -271,7 +330,6 @@ export default function SellerDashboardOverview() {
         }
     };
 
-    // ✅ Enhanced visit store function
     const visitStore = (url) => {
         if (!url) return;
         window.open(url, '_blank', 'noopener,noreferrer');
@@ -313,17 +371,14 @@ export default function SellerDashboardOverview() {
         );
     }
 
-    // Determine if store profile is complete
     const hasStoreProfile = dashboardData.has_store_profile || (storeData && storeData.name);
     const sellerName = dashboardData.seller?.name || storeData?.seller?.name || storeData?.name || 'Kerala Seller';
     const sellerPhone = dashboardData.seller?.phone || storeData?.seller?.phone || storeData?.phone;
 
     return (
         <div className='dashboardoverviewcontainer' style={styles.dashboardContainer}>
-            {/* ✅ Enhanced Header */}
             <div className='dashboardoverviewheader' style={styles.header}>
                 <div className='dashboardoverviewwelcomesection' style={styles.welcomeSection}>
-                    {/* ✅ Avatar / Logo */}
                     <div className='dashboardoverviewavatar' style={styles.avatar}>
                         {storeData?.logo_url ? (
                             <img
@@ -338,11 +393,10 @@ export default function SellerDashboardOverview() {
                         )}
                     </div>
 
-                    {/* ✅ Welcome Text */}
                     <div>
                         <h1 className='dashboardoverviewwelcometitle' style={styles.welcomeTitle}>Welcome back, <span style={styles.sellernameclr}>{sellerName}</span> !</h1>
                         <p className='dashboardoverviewwelcomesubtitle' style={styles.welcomeSubtitle}>
-                            What’s New at Your Kerala Store Today
+                            What's New at Your Kerala Store Today
                         </p>
                     </div>
                 </div>
@@ -351,7 +405,7 @@ export default function SellerDashboardOverview() {
                         <Package size={18} color='#175E54' />
                         Manage Products
                     </Link>
-                    <button className='dashboardoverviewrefreshbtn' onClick={fetchDashboardData} style={styles.refreshButton}>
+                    <button className='dashboardoverviewrefreshbtn' onClick={() => { fetchDashboardData(); fetchSubscription(); }} style={styles.refreshButton}>
                         <RefreshCw size={16} color='#175E54' />
                         Refresh
                     </button>
@@ -360,7 +414,6 @@ export default function SellerDashboardOverview() {
 
             {hasStoreProfile ? (
                 <>
-                    {/* ✅ Enhanced Statistics Cards */}
                     <div className='dashboardoverviewstatcontainer' style={styles.statsContainer}>
                         <StatCard
                             title="Total Revenue"
@@ -392,18 +445,20 @@ export default function SellerDashboardOverview() {
                         />
                     </div>
 
-                    {/* ✅ Enhanced Main Content Grid */}
                     <div className='dashboardoverviewgridcontainer' style={styles.gridContainer}>
-                        {/* ✅ Enhanced Store Link Card with SEO URLs */}
-                        <StoreLink
-                            storeData={storeData}
-                            phone={sellerPhone}
-                            copySuccess={copySuccess}
-                            onCopy={copyStoreLink}
-                            onVisit={visitStore}
-                        />
+                        {/* ✅ Conditional rendering based on subscription */}
+                        {subscription?.is_active ? (
+                            <StoreLink
+                                storeData={storeData}
+                                phone={sellerPhone}
+                                copySuccess={copySuccess}
+                                onCopy={copyStoreLink}
+                                onVisit={visitStore}
+                            />
+                        ) : (
+                            <SubscriptionPromptCard />
+                        )}
 
-                        {/* Top Selling Products */}
                         <div style={styles.card}>
                             <div style={styles.cardHeader}>
                                 <h3 className='dashboardoverviewcardtitle' style={styles.cardTitle}>
@@ -414,7 +469,6 @@ export default function SellerDashboardOverview() {
                             {dashboardData.analytics?.top_selling_products?.length > 0 ? (
                                 <div style={styles.productsList}>
                                     {(() => {
-                                        // Find the highest sold value to normalize others
                                         const products = dashboardData.analytics.top_selling_products.slice(0, 4);
                                         const maxSold = Math.max(...products.map(p => p.total_sold || p.sold_count || 0));
 
@@ -455,11 +509,9 @@ export default function SellerDashboardOverview() {
                                     </p>
                                 </div>
                             )}
-
                         </div>
                     </div>
 
-                    {/* ✅ Enhanced Quick Actions */}
                     <div style={styles.quickActionsContainer}>
                         <h3 className='dashboardoverviewsectiontitle' style={styles.sectionTitle}>Quick Actions</h3>
                         <div className='dashboardoverviewquickactiongrid' style={styles.quickActionsGrid}>
@@ -486,7 +538,6 @@ export default function SellerDashboardOverview() {
                 <SetupStorePrompt />
             )}
 
-            {/* ✅ CSS Animations */}
             <style jsx>{`
             @keyframes spin {
                 0% { transform: rotate(0deg); }
@@ -506,7 +557,6 @@ export default function SellerDashboardOverview() {
     );
 }
 
-// ✅ Enhanced StatCard component
 function StatCard({ title, value, icon, color, bgColor }) {
     return (
         <div className='dashboardoverviewstatcardcontainer' style={styles.statCard}>
@@ -521,7 +571,6 @@ function StatCard({ title, value, icon, color, bgColor }) {
     );
 }
 
-// ✅ Enhanced styles with better visual hierarchy
 const styles = {
     dashboardContainer: {
         padding: '0px 0px 24px 24px',
@@ -556,7 +605,6 @@ const styles = {
         borderRadius: '4px',
         transition: 'width 0.5s ease',
     },
-
 
     spinner: {
         width: '32px',
@@ -620,7 +668,7 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#E5E7EB', // light gray background
+        backgroundColor: '#E5E7EB',
         flexShrink: 0,
     },
 
@@ -634,7 +682,7 @@ const styles = {
         width: '70px',
         height: '70px',
         borderRadius: '50%',
-        backgroundColor: '#175E54', // your theme color
+        backgroundColor: '#175E54',
         color: '#fff',
         display: 'flex',
         alignItems: 'center',
@@ -644,13 +692,13 @@ const styles = {
         flexShrink: 0,
     },
 
-
     welcomeTitle: {
         fontSize: '22px',
         fontWeight: '700',
         color: 'white',
         margin: '0 0 8px 0'
     },
+
     sellernameclr: {
         color: "rgba(255, 238, 175, 1)",
     },
@@ -697,7 +745,6 @@ const styles = {
         transition: 'all 0.2s'
     },
 
-    // ✅ Enhanced Setup Card
     setupCard: {
         backgroundColor: '#fefce8',
         border: '2px solid #facc15',
@@ -770,7 +817,6 @@ const styles = {
         fontWeight: '500'
     },
 
-    // Statistics
     statsContainer: {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
@@ -819,7 +865,6 @@ const styles = {
         color: '#1f2937'
     },
 
-    // Grid
     gridContainer: {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
@@ -857,7 +902,6 @@ const styles = {
         lineHeight: '1.5'
     },
 
-    // ✅ Enhanced Link Box
     linkBox: {
         display: 'flex',
         flexDirection: 'column',
@@ -934,12 +978,11 @@ const styles = {
         transition: 'all 0.2s'
     },
 
-    // ✅ New SEO Info
     seoInfo: {
         display: 'flex',
-        flexDirection: 'column', // 🧩 stack items vertically
+        flexDirection: 'column',
         alignItems: 'flex-start',
-        gap: '6px', // smaller vertical gap between tag & description
+        gap: '6px',
         marginTop: '16px',
         padding: '12px',
         backgroundColor: '#FDFFF0',
@@ -962,8 +1005,15 @@ const styles = {
         lineHeight: '1.5',
     },
 
+    // ✅ NEW: Subscription prompt styles
+    subscriptionPrompt: {
+        textAlign: 'center',
+        padding: '30px 20px',
+        backgroundColor: '#fef2f2',
+        borderRadius: '12px',
+        border: '2px dashed #fca5a5'
+    },
 
-    // Products
     productsList: {
         display: 'flex',
         flexDirection: 'column',
@@ -1026,7 +1076,6 @@ const styles = {
         lineHeight: '1.5'
     },
 
-    // Quick Actions
     quickActionsContainer: {
         marginTop: '40px'
     },

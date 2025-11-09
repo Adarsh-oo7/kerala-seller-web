@@ -283,22 +283,81 @@ export default function OrdersListPage() {
   };
 
   // ✅ NEW: Client-side filtering & searching in real-time
-  const applyClientFilters = useCallback(() => {
-    let filtered = [...allOrders];
+// ✅ FIXED: Combined client-side filtering with ALL filters
+const applyClientFilters = useCallback(() => {
+  let filtered = [...allOrders];
 
-    // Search filter (client-side - instant)
-    if (searchTerm.trim()) {
-      const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(order => 
-        order.id.toString().includes(search) ||
-        (order.customer_name && order.customer_name.toLowerCase().includes(search)) ||
-        (order.customer_phone && order.customer_phone.includes(searchTerm))
-      );
-      console.log(`🔍 Searching for "${searchTerm}" - found ${filtered.length} orders`);
+  // 1. Status filter
+  if (statusFilter) {
+    filtered = filtered.filter(order => order.status === statusFilter);
+  }
+
+  // 2. Payment method filter
+  if (paymentFilter) {
+    filtered = filtered.filter(order => order.payment_method === paymentFilter);
+  }
+
+  // 3. Search filter (instant)
+  if (searchTerm.trim()) {
+    const search = searchTerm.toLowerCase();
+    filtered = filtered.filter(order => 
+      order.id.toString().includes(search) ||
+      (order.customer_name && order.customer_name.toLowerCase().includes(search)) ||
+      (order.customer_phone && order.customer_phone.includes(searchTerm))
+    );
+  }
+
+  // 4. Amount range filter
+  if (minAmount) {
+    filtered = filtered.filter(order => parseFloat(order.total_amount) >= parseFloat(minAmount));
+  }
+  if (maxAmount) {
+    filtered = filtered.filter(order => parseFloat(order.total_amount) <= parseFloat(maxAmount));
+  }
+
+  // 5. Date filter
+  if (dateFilter) {
+    const now = new Date();
+    let startDate;
+    
+    switch (dateFilter) {
+      case 'today':
+        startDate = new Date(now.setHours(0, 0, 0, 0));
+        break;
+      case 'week':
+        startDate = new Date(now.setDate(now.getDate() - 7));
+        break;
+      case 'month':
+        startDate = new Date(now.setMonth(now.getMonth() - 1));
+        break;
+      case 'quarter':
+        startDate = new Date(now.setMonth(now.getMonth() - 3));
+        break;
     }
+    
+    if (startDate) {
+      filtered = filtered.filter(order => new Date(order.created_at) >= startDate);
+    }
+  }
 
-    setDisplayedOrders(filtered);
-  }, [allOrders, searchTerm]);
+  // 6. Sort
+  filtered.sort((a, b) => {
+    switch (sortBy) {
+      case '-created_at':
+        return new Date(b.created_at) - new Date(a.created_at);
+      case '-total_amount':
+        return parseFloat(b.total_amount) - parseFloat(a.total_amount);
+      case 'total_amount':
+        return parseFloat(a.total_amount) - parseFloat(b.total_amount);
+      default:
+        return new Date(b.created_at) - new Date(a.created_at);
+    }
+  });
+
+  console.log(`✅ Filtered orders: ${filtered.length} (Status: ${statusFilter}, Payment: ${paymentFilter}, Search: "${searchTerm}")`);
+  setDisplayedOrders(filtered);
+}, [allOrders, searchTerm, statusFilter, paymentFilter, dateFilter, minAmount, maxAmount, sortBy]);
+
 
   const markNotificationAsRead = async (notificationId) => {
     const headers = getAuthHeaders();
@@ -481,7 +540,6 @@ export default function OrdersListPage() {
         <button onClick={() => setShowAdvancedFilters(!showAdvancedFilters)} style={styles.filterToggle}><Filter size={18} />Filters</button>
       </div>
 
-      {/* Show results count while searching */}
       {searchTerm && (
         <div style={styles.searchResultsInfo}>
           🔍 Found <strong>{displayedOrders.length}</strong> order(s) matching "{searchTerm}"
