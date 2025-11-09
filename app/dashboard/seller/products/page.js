@@ -129,7 +129,6 @@ export default function ProductsPage() {
   }, [fetchSubscription, fetchProducts]);
 
 
-
   // ✅ Enhanced filtering and sorting
   useEffect(() => {
     let filtered = [...products];
