@@ -1,13 +1,23 @@
+// 'use client' directive is important for Next.js to treat this as a client-side component
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Header from '../../../components/common/Header';
-import Footer from '../../../components/common/Footer';
-import "../../../styles/Registerseller.css";
+import Header from '../../../components/common/Header'; // Adjust path as needed
+import Footer from '../../../components/common/Footer'; // Adjust path as needed
+import "../../../styles/Registerseller.css"; // Ensure this path is correct for global styles
 
+// Import Firebase Authentication modules
+import { auth } from '../../../firebase'; // Adjust path to your firebase.js file
+import {
+    PhoneAuthProvider,
+    RecaptchaVerifier,
+    signInWithPhoneNumber
+} from "firebase/auth";
+
+// Import Lucide icons
 import {
     Store,
     User,
@@ -22,7 +32,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 
-// ✅ Enhanced API configuration
+// Enhanced API configuration
 const getApiBaseUrl = () => {
     const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
     if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
@@ -31,14 +41,13 @@ const getApiBaseUrl = () => {
     if (process.env.NODE_ENV === 'development') {
         return 'http://localhost:8000';
     }
-    return 'https://keralaseller-backend.onrender.com';
+    return 'https://keralaseller-backend.onrender.com'; // Your production backend URL
 };
 
 const API_BASE_URL = getApiBaseUrl();
-const SEND_OTP_API = `${API_BASE_URL}/user/send-otp/`;
 const REGISTER_API = `${API_BASE_URL}/user/register/`;
 
-console.log('🌐 Registration API URLs:', { API_BASE_URL, SEND_OTP_API, REGISTER_API });
+console.log('🌐 Registration API URLs:', { API_BASE_URL, REGISTER_API });
 
 export default function RegisterSellerPage() {
     const [step, setStep] = useState(1);
@@ -50,7 +59,7 @@ export default function RegisterSellerPage() {
     const [formData, setFormData] = useState({
         name: '',
         shop_name: '',
-        phone: '',
+        phone: '', // Storing 10-digit local format
         email: '',
         password: '',
         confirmPassword: '',
@@ -58,12 +67,57 @@ export default function RegisterSellerPage() {
     });
     const router = useRouter();
 
+    // Firebase specific states
+    const [recaptchaVerifier, setRecaptchaVerifier] = useState(null);
+    const [confirmationResult, setConfirmationResult] = useState(null); // Stores the result after sending OTP
+
+    // Initialize reCAPTCHA Verifier
+    useEffect(() => {
+        // Ensure this runs only client-side and only once
+        if (typeof window !== 'undefined' && !recaptchaVerifier) {
+            try {
+                if (auth) { // Ensure auth object is available
+                    const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                        'size': 'invisible', // Makes the reCAPTCHA invisible initially
+                        'callback': (response) => {
+                            console.log("reCAPTCHA callback fired!");
+                            // Here you might automatically trigger the OTP send if it's not already in progress
+                            // Or enable a disabled button once verification is complete.
+                        },
+                        'expired-callback': () => {
+                            console.log("reCAPTCHA expired!");
+                            setError('Security check expired. Please try sending OTP again.');
+                            if (recaptchaVerifier) {
+                                recaptchaVerifier.clear(); // Clear and re-render if expired
+                            }
+                            setIsLoading(false);
+                        }
+                    });
+                    verifier.render().then((widgetId) => {
+                        console.log("reCAPTCHA rendered with widget ID:", widgetId);
+                        setRecaptchaVerifier(verifier);
+                    });
+                }
+            } catch (e) {
+                console.error("Error initializing reCAPTCHA:", e);
+                setError("Failed to load security check. Please try again or refresh.");
+            }
+        }
+        // Cleanup function for useEffect (optional, but good practice if verifier needs to be destroyed)
+        return () => {
+            if (recaptchaVerifier) {
+                recaptchaVerifier.clear();
+            }
+        };
+    }, [recaptchaVerifier]); // Dependency array: re-run if recaptchaVerifier changes from null to a value
+
     const validateEmail = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     };
 
     const validatePhone = (phone) => {
+        // Updated regex to allow 10 digits starting with 6-9
         const phoneRegex = /^[6-9]\d{9}$/;
         return phoneRegex.test(phone);
     };
@@ -147,40 +201,40 @@ export default function RegisterSellerPage() {
             return;
         }
 
+        if (!recaptchaVerifier) {
+            setError('Security check (reCAPTCHA) not initialized. Please refresh the page and try again.');
+            return;
+        }
+
         setIsLoading(true);
 
         try {
-            console.log('🔍 Sending OTP for phone:', formData.phone);
+            const phoneNumber = `+91${formData.phone.trim()}`; // Firebase expects international format
+            console.log('🔍 Sending OTP via Firebase for phone:', phoneNumber);
 
-            const response = await axios.post(SEND_OTP_API, {
-                phone: formData.phone.trim()
-            }, {
-                timeout: 15000,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            console.log('✅ OTP sent successfully');
-            setStep(2);
+            // Use Firebase's signInWithPhoneNumber
+            const result = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+            setConfirmationResult(result); // Store this for OTP verification later
+            console.log('✅ OTP sent successfully via Firebase');
+            setStep(2); // Move to OTP verification step
 
         } catch (err) {
-            console.error('❌ OTP send error:', err);
-            console.error('❌ Error response:', err.response?.data);
-
+            console.error('❌ Firebase OTP send error:', err);
             let errorMessage = 'Failed to send OTP. Please try again.';
 
-            if (err.response?.data?.error) {
-                errorMessage = err.response.data.error;
-            } else if (err.response?.data?.phone) {
-                errorMessage = Array.isArray(err.response.data.phone)
-                    ? err.response.data.phone[0]
-                    : err.response.data.phone;
-            } else if (err.response?.status === 400) {
-                errorMessage = 'Invalid phone number format. Please check and try again.';
-            } else if (err.code === 'ECONNABORTED') {
-                errorMessage = 'Request timed out. Please check your connection and try again.';
+            if (err.code === 'auth/invalid-phone-number') {
+                errorMessage = 'The phone number provided is invalid. Please check the format.';
+            } else if (err.code === 'auth/too-many-requests') {
+                errorMessage = 'Too many OTP requests. Please try again later.';
+                if (recaptchaVerifier) recaptchaVerifier.clear(); // Clear reCAPTCHA if we hit rate limits
+            } else if (err.code === 'auth/captcha-check-failed' || err.code === 'auth/web-storage-unsupported') {
+                 // auth/web-storage-unsupported can occur if 3rd party cookies are blocked, or browser is in incognito without explicit allowing
+                errorMessage = 'Security verification failed. Please ensure cookies are enabled or try in a regular browser window.';
+                if (recaptchaVerifier) recaptchaVerifier.clear();
+            } else if (err.code === 'auth/internal-error') {
+                errorMessage = 'Firebase internal error. Please try again.';
             }
+            // Add other Firebase error codes as needed
 
             setError(errorMessage);
         } finally {
@@ -188,7 +242,6 @@ export default function RegisterSellerPage() {
         }
     };
 
-    // ✅ FINAL FIX: Send exact fields that backend serializer expects
     const handleCompleteRegistration = async (e) => {
         e.preventDefault();
         setError('');
@@ -198,24 +251,41 @@ export default function RegisterSellerPage() {
             return;
         }
 
+        if (!confirmationResult) {
+            setError('OTP verification flow was not initiated. Please go back and send OTP.');
+            return;
+        }
+
         setIsLoading(true);
 
         try {
-            // ✅ FIXED: Send exact fields that backend serializer expects
+            // 1. Verify OTP with Firebase using the stored confirmationResult
+            const userCredential = await confirmationResult.confirm(formData.otp.trim());
+            const user = userCredential.user;
+
+            // 2. Get Firebase ID Token
+            const firebaseIdToken = await user.getIdToken();
+            console.log('✅ Firebase OTP verified successfully. User UID:', user.uid);
+            console.log('✅ Firebase ID Token obtained.');
+
+            // 3. Send Firebase ID Token and other data to your Django backend
             const registrationData = {
-                phone: formData.phone.trim(),
+                // Ensure phone number is sent in the same format (+91XXXXXXXXXX) as Firebase expects
+                phone: `+91${formData.phone.trim()}`,
                 password: formData.password,
-                name: formData.name.trim(),  // ✅ 'name' not 'full_name'
+                confirmPassword: formData.confirmPassword,  // ✅ ADD THIS LINE
+
+                name: formData.name.trim(),
                 shop_name: formData.shop_name.trim(),
                 email: formData.email.trim(),
-                confirmPassword: formData.confirmPassword, // ✅ Include this field
-                otp: formData.otp.trim(),
+                firebase_id_token: firebaseIdToken, // ✅ Send the Firebase ID Token!
+                // The OTP itself is no longer sent to your backend
             };
 
-            console.log('🔍 Sending registration data:', {
+            console.log('🔍 Sending registration data to Django:', {
                 ...registrationData,
                 password: '***hidden***',
-                confirmPassword: '***hidden***'
+                firebase_id_token: '***hidden***' // Hide token in console for security
             });
 
             const response = await axios.post(REGISTER_API, registrationData, {
@@ -225,23 +295,23 @@ export default function RegisterSellerPage() {
                 }
             });
 
-            console.log('✅ Registration successful:', response.data);
+            console.log('✅ Registration successful (Django response):', response.data);
 
-            // Show success message and redirect
-            setError(''); // Clear any errors
+            setError('');
             setTimeout(() => {
                 router.push('/login/seller?message=Registration successful! Please log in with your credentials.');
             }, 1500);
 
         } catch (err) {
-            console.error('❌ Registration error:', err);
-            console.error('❌ Error response:', err.response?.data);
-
-            // ✅ Enhanced error handling for backend constraint errors
-            const errorData = err.response?.data;
+            console.error('❌ Firebase OTP or Django registration error:', err);
             let errorMessage = 'Registration failed. Please try again.';
 
-            if (errorData?.error) {
+            if (err.code === 'auth/invalid-verification-code') {
+                errorMessage = 'The OTP you entered is incorrect or expired.';
+            } else if (err.code === 'auth/code-expired') {
+                errorMessage = 'The verification code has expired. Please resend OTP.';
+            } else if (err.response?.data?.error) { // Handle Django errors
+                const errorData = err.response?.data;
                 if (errorData.error.includes('seller account already exists')) {
                     errorMessage = 'A seller account with this phone number already exists. Please try logging in instead.';
                 } else if (errorData.error.includes('UNIQUE constraint')) {
@@ -249,24 +319,8 @@ export default function RegisterSellerPage() {
                 } else {
                     errorMessage = errorData.error;
                 }
-            } else if (errorData?.phone?.[0]) {
-                errorMessage = errorData.phone[0];
-            } else if (errorData?.email?.[0]) {
-                errorMessage = errorData.email[0];
-            } else if (errorData?.otp?.[0]) {
-                errorMessage = errorData.otp[0];
-            } else if (errorData?.name?.[0]) {  // ✅ Handle 'name' field errors
-                errorMessage = errorData.name[0];
-            } else if (errorData?.shop_name?.[0]) {
-                errorMessage = errorData.shop_name[0];
-            } else if (errorData?.password?.[0]) {
-                errorMessage = errorData.password[0];
-            } else if (errorData?.confirmPassword?.[0]) {  // ✅ Handle confirmPassword errors
-                errorMessage = errorData.confirmPassword[0];
             } else if (err.response?.status === 400) {
-                errorMessage = 'Invalid registration data. Please check all fields and try again.';
-            } else if (err.response?.status === 409) {
-                errorMessage = 'An account with this phone number or email already exists.';
+                errorMessage = 'Invalid registration data provided to the server. Please check your inputs.';
             } else if (err.code === 'ECONNABORTED') {
                 errorMessage = 'Request timed out. Please check your connection and try again.';
             }
@@ -281,24 +335,29 @@ export default function RegisterSellerPage() {
         setError('');
         setIsLoading(true);
 
+        if (!recaptchaVerifier) {
+            setError('Security check (reCAPTCHA) not initialized. Please refresh the page and try again.');
+            setIsLoading(false);
+            return;
+        }
+
         try {
-            await axios.post(SEND_OTP_API, {
-                phone: formData.phone.trim()
-            }, {
-                timeout: 10000,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            setError(''); // Clear error first, then show success
-            setTimeout(() => {
-                setError('OTP has been resent to your phone');
-            }, 100);
-
+            const phoneNumber = `+91${formData.phone.trim()}`;
+            // Calling signInWithPhoneNumber again will send a new OTP
+            const result = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+            setConfirmationResult(result); // Update confirmationResult with the new one
+            console.log('✅ New OTP sent successfully via Firebase');
+            setError('OTP has been resent to your phone'); // Provide success feedback
         } catch (err) {
-            console.error('❌ Resend OTP error:', err);
-            setError('Failed to resend OTP. Please try again.');
+            console.error('❌ Firebase Resend OTP error:', err);
+            let errorMessage = 'Failed to resend OTP. Please try again.';
+            if (err.code === 'auth/too-many-requests') {
+                errorMessage = 'Too many OTP resend attempts. Please wait before trying again.';
+            } else if (err.code === 'auth/captcha-check-failed' || err.code === 'auth/web-storage-unsupported') {
+                errorMessage = 'Security verification failed. Please ensure cookies are enabled or try in a regular browser window.';
+                if (recaptchaVerifier) recaptchaVerifier.clear();
+            }
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -308,11 +367,19 @@ export default function RegisterSellerPage() {
         setStep(1);
         setFormData(prev => ({ ...prev, otp: '' }));
         setError('');
+        if (recaptchaVerifier) {
+            recaptchaVerifier.clear(); // Clear reCAPTCHA when going back to step 1
+            setRecaptchaVerifier(null); // Force re-initialization of reCAPTCHA
+        }
     };
 
     return (
         <div style={styles.pageContainer}>
             <Header />
+
+            {/* This div is essential for reCAPTCHA. Firebase will render into it. */}
+            {/* It's styled with `display: 'none'` because we're using 'invisible' reCAPTCHA. */}
+            <div id="recaptcha-container" style={{ display: 'none' }}></div>
 
             <div style={styles.container}>
                 <div style={styles.card}>
@@ -348,10 +415,6 @@ export default function RegisterSellerPage() {
                         /* Step 1: Business Details */
                         <form onSubmit={handleSendOtp} style={styles.form}>
                             <div style={styles.inputGroup}>
-                                {/* <label style={styles.label}>
-                                    <User size={16} />
-                                    Your Full Name
-                                </label> */}
                                 <div style={styles.inputWrapper}>
                                     <User className='sellerregistericons' size={18} style={styles.inputIcon} />
                                     <input
@@ -375,10 +438,6 @@ export default function RegisterSellerPage() {
                             </div>
 
                             <div style={styles.inputGroup}>
-                                {/* <label style={styles.label}>
-                                    <Store size={16} />
-                                    Shop Name
-                                </label> */}
                                 <div style={styles.inputWrapper}>
                                     <Store className='sellerregistericons' size={18} style={styles.inputIcon} />
                                     <input
@@ -402,10 +461,6 @@ export default function RegisterSellerPage() {
                             </div>
 
                             <div style={styles.inputGroup}>
-                                {/* <label style={styles.label}>
-                                    <Mail size={16} />
-                                    Email Address
-                                </label> */}
                                 <div style={styles.inputWrapper}>
                                     <Mail className='sellerregistericons' size={18} style={styles.inputIcon} />
                                     <input
@@ -429,10 +484,6 @@ export default function RegisterSellerPage() {
                             </div>
 
                             <div style={styles.inputGroup}>
-                                {/* <label style={styles.label}>
-                                    <Phone size={16} />
-                                    Phone Number
-                                </label> */}
                                 <div style={styles.phoneInputContainer}>
                                     <span className='sellerregistercountryocde' style={styles.countryCode}>+91</span>
                                     <input
@@ -457,10 +508,6 @@ export default function RegisterSellerPage() {
                             </div>
 
                             <div style={styles.inputGroup}>
-                                {/* <label style={styles.label}>
-                                    <Lock size={16} />
-                                    Password
-                                </label> */}
                                 <div style={styles.passwordContainer}>
                                     <Lock className='sellerregistericons' size={18} style={styles.inputIcon} />
                                     <input
@@ -493,10 +540,6 @@ export default function RegisterSellerPage() {
                             </div>
 
                             <div style={styles.inputGroup}>
-                                {/* <label style={styles.label}>
-                                    <Lock size={16} />
-                                    Confirm Password
-                                </label> */}
                                 <div style={styles.passwordContainer}>
                                     <Lock className='sellerregistericons' size={18} style={styles.inputIcon} />
                                     <input
@@ -535,7 +578,7 @@ export default function RegisterSellerPage() {
                                     ...styles.button,
                                     ...(isLoading ? styles.buttonLoading : {})
                                 }}
-                                disabled={isLoading}
+                                disabled={isLoading || !recaptchaVerifier}
                             >
                                 {isLoading ? (
                                     <span style={styles.buttonContent}>
@@ -651,10 +694,18 @@ export default function RegisterSellerPage() {
             </div>
             <Footer />
 
+            {/* Spinner keyframe animation */}
+            <style jsx global>{`
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `}</style>
         </div>
     );
 }
 
+// Your CSS-in-JS styles
 const styles = {
     pageContainer: {
         minHeight: '100vh',
@@ -791,7 +842,6 @@ const styles = {
         zIndex: 1
     },
 
-    // ✅ Enhanced phone input styling
     phoneInputContainer: {
         display: 'flex',
         alignItems: 'center',
