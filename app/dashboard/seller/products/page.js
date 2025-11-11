@@ -254,7 +254,7 @@ const handleOpenModal = (product = null) => {
   if (!subscription?.is_active && !product) {
     // Show confirmation dialog asking user to subscribe
     if (window.confirm('You need an active subscription to add products.\n\nWould you like to subscribe now?')) {
-      router.push('/subscription');
+      router.push('/dashboard/seller/subscription');
     }
     return;
   }
