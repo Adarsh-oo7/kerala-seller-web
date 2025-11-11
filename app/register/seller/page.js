@@ -271,7 +271,8 @@ export default function RegisterSellerPage() {
             // 3. Send Firebase ID Token and other data to your Django backend
             const registrationData = {
                 // Ensure phone number is sent in the same format (+91XXXXXXXXXX) as Firebase expects
-                phone: `+91${formData.phone.trim()}`,
+                phone: formData.phone.trim(),  // ✅ CORRECT - just 10 digits
+
                 password: formData.password,
                 confirmPassword: formData.confirmPassword,  // ✅ ADD THIS LINE
 
