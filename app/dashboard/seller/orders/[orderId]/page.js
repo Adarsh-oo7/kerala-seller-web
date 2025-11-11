@@ -4,14 +4,16 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  FileText, 
-  Truck, 
-  User, 
-  Phone, 
-  MapPin, 
-  Edit, 
-  ArrowLeft, 
+import '../../../../../styles/DashboardOrders.css'
+
+import {
+  FileText,
+  Truck,
+  User,
+  Phone,
+  MapPin,
+  Edit,
+  ArrowLeft,
   Package,
   CreditCard,
   Wallet,
@@ -25,7 +27,8 @@ import {
   MessageSquare,
   Star,
   Copy,
-  Eye
+  Eye,
+  Timer
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
@@ -35,29 +38,29 @@ const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
 // ✅ Order Timeline Component
 function OrderTimeline({ order }) {
   const timelineSteps = [
-    { 
-      key: 'PENDING', 
-      label: 'Order Placed', 
-      icon: <CheckCircle size={16} />, 
-      completed: ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) 
+    {
+      key: 'PENDING',
+      label: 'Order Placed',
+      icon: <CheckCircle size={16} />,
+      completed: ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status)
     },
-    { 
-      key: 'PROCESSING', 
-      label: 'Processing', 
-      icon: <Package size={16} />, 
-      completed: ['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) 
+    {
+      key: 'PROCESSING',
+      label: 'Processing',
+      icon: <Package size={16} />,
+      completed: ['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status)
     },
-    { 
-      key: 'SHIPPED', 
-      label: 'Shipped', 
-      icon: <Truck size={16} />, 
-      completed: ['SHIPPED', 'DELIVERED'].includes(order.status) 
+    {
+      key: 'SHIPPED',
+      label: 'Shipped',
+      icon: <Truck size={16} />,
+      completed: ['SHIPPED', 'DELIVERED'].includes(order.status)
     },
-    { 
-      key: 'DELIVERED', 
-      label: 'Delivered', 
-      icon: <Star size={16} />, 
-      completed: order.status === 'DELIVERED' 
+    {
+      key: 'DELIVERED',
+      label: 'Delivered',
+      icon: <Star size={16} />,
+      completed: order.status === 'DELIVERED'
     }
   ];
 
@@ -78,35 +81,66 @@ function OrderTimeline({ order }) {
   }
 
   return (
-    <div style={styles.timelineContainer}>
-      <div style={styles.timeline}>
+    <div className="timeline-container" style={styles.timelineContainer}>
+      <div className="timeline" style={styles.timeline}>
         {timelineSteps.map((step, index) => (
-          <div key={step.key} style={styles.timelineStep}>
-            <div style={{
-              ...styles.timelineIcon,
-              backgroundColor: step.completed ? '#10b981' : '#e5e7eb',
-              color: step.completed ? 'white' : '#6b7280'
-            }}>
-              {step.icon}
+          <div className="timeline-step" key={step.key} style={styles.timelineStep}>
+            <div className="icon-and-connector" style={styles.iconAndConnector}>
+              {/* Left connector */}
+              {index > 0 && (
+                <div
+                  className={`connector ${timelineSteps[index - 1].completed ? 'completed' : ''}`}
+                  style={{
+                    ...styles.connector,
+                    left: 0,
+                    width: '50%',
+                    backgroundColor: timelineSteps[index - 1].completed ? '#10b981' : '#e5e7eb'
+                  }}
+                />
+              )}
+
+              {/* Icon */}
+              <div
+                className={`timeline-icon ${step.completed ? 'completed' : ''}`}
+                style={{
+                  ...styles.timelineIcon,
+                  backgroundColor: step.completed ? '#10b981' : '#e5e7eb',
+                  color: step.completed ? 'white' : '#6b7280',
+                  zIndex: 1,
+                }}
+              >
+                {step.icon}
+              </div>
+
+              {/* Right connector */}
+              {index < timelineSteps.length - 1 && (
+                <div
+                  className={`connector ${step.completed ? 'completed' : ''}`}
+                  style={{
+                    ...styles.connector,
+                    right: 0,
+                    width: '50%',
+                    backgroundColor: step.completed ? '#10b981' : '#e5e7eb'
+                  }}
+                />
+              )}
             </div>
-            <div style={styles.timelineContent}>
-              <div style={{
-                ...styles.timelineLabel,
-                color: step.completed ? '#1f2937' : '#6b7280',
-                fontWeight: step.completed ? '600' : '400'
-              }}>
+
+            <div className="timeline-content" style={styles.timelineContent}>
+              <div
+                className={`timeline-label ${step.completed ? 'active' : ''}`}
+                style={{
+                  ...styles.timelineLabel,
+                  color: step.completed ? '#1f2937' : '#6b7280',
+                  fontWeight: step.completed ? '600' : '400'
+                }}
+              >
                 {step.label}
               </div>
               {step.key === order.status && (
-                <div style={styles.currentStep}>Current Status</div>
+                <div className="current-step" style={styles.currentStep}>Current Status</div>
               )}
             </div>
-            {index < timelineSteps.length - 1 && (
-              <div style={{
-                ...styles.timelineConnector,
-                backgroundColor: step.completed ? '#10b981' : '#e5e7eb'
-              }} />
-            )}
           </div>
         ))}
       </div>
@@ -116,260 +150,263 @@ function OrderTimeline({ order }) {
 
 // ✅ FIXED: Enhanced Update Status Modal with cancellation prevention
 function UpdateStatusModal({ order, onClose, onUpdate }) {
-    const [status, setStatus] = useState(order.status);
-    const [trackingId, setTrackingId] = useState(order.tracking_id || '');
-    const [shippingProvider, setShippingProvider] = useState(order.shipping_provider || '');
-    const [notes, setNotes] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
-    const [error, setError] = useState('');
+  const [status, setStatus] = useState(order.status);
+  const [trackingId, setTrackingId] = useState(order.tracking_id || '');
+  const [shippingProvider, setShippingProvider] = useState(order.shipping_provider || '');
+  const [notes, setNotes] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
 
-    // ✅ NEW: Check if order can be modified
-    const canModifyOrder = order.status !== 'CANCELLED' && order.status !== 'DELIVERED';
-    const isOrderCancelled = order.status === 'CANCELLED';
-    const isOrderDelivered = order.status === 'DELIVERED';
+  // ✅ NEW: Check if order can be modified
+  const canModifyOrder = order.status !== 'CANCELLED' && order.status !== 'DELIVERED';
+  const isOrderCancelled = order.status === 'CANCELLED';
+  const isOrderDelivered = order.status === 'DELIVERED';
 
-    const handleSave = async () => {
-        // ✅ FIXED: Prevent saving if order is cancelled or delivered
-        if (isOrderCancelled) {
-            setError('Cannot update status of a cancelled order.');
-            return;
-        }
+  const handleSave = async () => {
+    // ✅ FIXED: Prevent saving if order is cancelled or delivered
+    if (isOrderCancelled) {
+      setError('Cannot update status of a cancelled order.');
+      return;
+    }
 
-        if (isOrderDelivered) {
-            setError('Cannot update status of a delivered order.');
-            return;
-        }
+    if (isOrderDelivered) {
+      setError('Cannot update status of a delivered order.');
+      return;
+    }
 
-        setIsSaving(true);
-        setError('');
-        
-        const token = localStorage.getItem('accessToken') || localStorage.getItem('sellerAccessToken');
-        if (!token) {
-            setError('Authentication token not found. Please log in again.');
-            setIsSaving(false);
-            return;
-        }
+    setIsSaving(true);
+    setError('');
 
-        const updateData = { status };
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('sellerAccessToken');
+    if (!token) {
+      setError('Authentication token not found. Please log in again.');
+      setIsSaving(false);
+      return;
+    }
 
-        if (status === 'SHIPPED') {
-            if (!trackingId.trim() || !shippingProvider.trim()) {
-                setError("Please provide both a shipping provider and a tracking ID for shipped orders.");
-                setIsSaving(false);
-                return;
-            }
-            updateData.tracking_id = trackingId.trim();
-            updateData.shipping_provider = shippingProvider.trim();
-        }
+    const updateData = { status };
 
-        if (notes.trim()) {
-            updateData.notes = notes.trim();
-        }
+    if (status === 'SHIPPED') {
+      if (!trackingId.trim() || !shippingProvider.trim()) {
+        setError("Please provide both a shipping provider and a tracking ID for shipped orders.");
+        setIsSaving(false);
+        return;
+      }
+      updateData.tracking_id = trackingId.trim();
+      updateData.shipping_provider = shippingProvider.trim();
+    }
 
-        try {
-            console.log('Updating order status:', updateData);
-            await axios.patch(`${ORDERS_API_URL}${order.id}/update_status/`, updateData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            onUpdate();
-            onClose();
-        } catch (error) {
-            console.error('Status update failed:', error);
-            if (error.response?.status === 401) {
-                setError('Session expired. Please log in again.');
-                setTimeout(() => {
-                    window.location.href = '/login/seller';
-                }, 2000);
-            } else {
-                const errorMessage = error.response?.data?.error || 
-                                   error.response?.data?.message ||
-                                   'Failed to update order status. Please try again.';
-                setError(errorMessage);
-            }
-        } finally {
-            setIsSaving(false);
-        }
-    };
+    if (notes.trim()) {
+      updateData.notes = notes.trim();
+    }
 
-    const handleOverlayClick = (e) => {
-        if (e.target === e.currentTarget) {
-            onClose();
-        }
-    };
+    try {
+      console.log('Updating order status:', updateData);
+      await axios.patch(`${ORDERS_API_URL}${order.id}/update_status/`, updateData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      onUpdate();
+      onClose();
+    } catch (error) {
+      console.error('Status update failed:', error);
+      if (error.response?.status === 401) {
+        setError('Session expired. Please log in again.');
+        setTimeout(() => {
+          window.location.href = '/login/seller';
+        }, 2000);
+      } else {
+        const errorMessage = error.response?.data?.error ||
+          error.response?.data?.message ||
+          'Failed to update order status. Please try again.';
+        setError(errorMessage);
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-    return (
-        <div style={styles.modalOverlay} onClick={handleOverlayClick}>
-            <div style={styles.modalContent}>
-                <div style={styles.modalHeader}>
-                    <h2 style={styles.modalTitle}>
-                        {isOrderCancelled ? 'Order Details' : isOrderDelivered ? 'Order Details' : 'Update Order'} #{order.id}
-                    </h2>
-                    <button onClick={onClose} style={styles.closeButton}>
-                        <X size={20} />
-                    </button>
-                </div>
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
 
-                {/* ✅ NEW: Show warning for cancelled orders */}
-                {isOrderCancelled && (
-                    <div style={styles.cancelledWarning}>
-                        <AlertCircle size={16} />
-                        <div>
-                            <span>This order has been cancelled and cannot be modified.</span>
-                            {order.cancel_reason && (
-                                <div style={styles.cancelReason}>
-                                    <strong>Cancellation Reason:</strong> {order.cancel_reason}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* ✅ NEW: Show warning for delivered orders */}
-                {isOrderDelivered && (
-                    <div style={styles.deliveredWarning}>
-                        <CheckCircle size={16} />
-                        <span>This order has been delivered and cannot be modified further.</span>
-                    </div>
-                )}
-
-                {error && (
-                    <div style={styles.errorMessage}>
-                        <AlertCircle size={16} />
-                        <span>{error}</span>
-                    </div>
-                )}
-
-                <div style={styles.modalBody}>
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Order Status</label>
-                        <select 
-                            value={status} 
-                            onChange={e => setStatus(e.target.value)} 
-                            style={{
-                                ...styles.input,
-                                backgroundColor: !canModifyOrder ? '#f3f4f6' : 'white',
-                                cursor: !canModifyOrder ? 'not-allowed' : 'pointer'
-                            }}
-                            disabled={isSaving || !canModifyOrder}
-                        >
-                            <option value="PENDING">Pending</option>
-                            <option value="PROCESSING">Processing</option>
-                            <option value="SHIPPED">Shipped</option>
-                            <option value="DELIVERED">Delivered</option>
-                            <option value="CANCELLED">Cancelled</option>
-                        </select>
-                        {!canModifyOrder && (
-                            <small style={styles.disabledNote}>
-                                Status cannot be changed for {isOrderCancelled ? 'cancelled' : 'delivered'} orders
-                            </small>
-                        )}
-                    </div>
-
-                    {status === 'SHIPPED' && canModifyOrder && (
-                        <>
-                            <div style={styles.formGroup}>
-                                <label style={styles.label}>
-                                    <Truck size={16} />
-                                    Shipping Provider
-                                </label>
-                                <input 
-                                    type="text" 
-                                    value={shippingProvider} 
-                                    onChange={e => setShippingProvider(e.target.value)} 
-                                    style={styles.input}
-                                    placeholder="e.g., DTDC, Professional Couriers, Blue Dart"
-                                    disabled={isSaving}
-                                />
-                            </div>
-                            <div style={styles.formGroup}>
-                                <label style={styles.label}>
-                                    <Package size={16} />
-                                    Tracking ID
-                                </label>
-                                <input 
-                                    type="text" 
-                                    value={trackingId} 
-                                    onChange={e => setTrackingId(e.target.value)} 
-                                    style={styles.input}
-                                    placeholder="Enter tracking number"
-                                    disabled={isSaving}
-                                />
-                            </div>
-                        </>
-                    )}
-
-                    {/* ✅ Show existing shipping info for cancelled/delivered orders */}
-                    {!canModifyOrder && order.shipping_provider && (
-                        <div style={styles.formGroup}>
-                            <label style={styles.label}>Shipping Information</label>
-                            <div style={styles.readOnlyInfo}>
-                                <div><strong>Provider:</strong> {order.shipping_provider}</div>
-                                {order.tracking_id && (
-                                    <div><strong>Tracking ID:</strong> {order.tracking_id}</div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Notes field - always show for reference */}
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>
-                            <MessageSquare size={16} />
-                            {canModifyOrder ? 'Additional Notes (Optional)' : 'Order Notes'}
-                        </label>
-                        <textarea 
-                            value={notes} 
-                            onChange={e => setNotes(e.target.value)} 
-                            style={{
-                                ...styles.input, 
-                                minHeight: '80px', 
-                                resize: 'vertical',
-                                backgroundColor: !canModifyOrder ? '#f3f4f6' : 'white'
-                            }}
-                            placeholder={canModifyOrder ? "Add any additional information or instructions..." : "No additional notes available"}
-                            disabled={isSaving || !canModifyOrder}
-                            maxLength={500}
-                            readOnly={!canModifyOrder}
-                        />
-                        {canModifyOrder && (
-                            <small style={styles.charCount}>{notes.length}/500 characters</small>
-                        )}
-                    </div>
-                </div>
-
-                <div style={styles.modalFooter}>
-                    <button 
-                        onClick={onClose} 
-                        style={styles.buttonSecondary} 
-                        disabled={isSaving}
-                    >
-                        {canModifyOrder ? 'Cancel' : 'Close'}
-                    </button>
-                    
-                    {/* ✅ Only show save button for modifiable orders */}
-                    {canModifyOrder && (
-                        <button 
-                            onClick={handleSave} 
-                            style={styles.buttonPrimary} 
-                            disabled={isSaving}
-                        >
-                            {isSaving ? (
-                                <>
-                                    <div style={styles.spinner}></div>
-                                    Saving...
-                                </>
-                            ) : (
-                                <>
-                                    <CheckCircle size={16} />
-                                    Save Status
-                                </>
-                            )}
-                        </button>
-                    )}
-                </div>
-            </div>
+  return (
+    <div style={styles.modalOverlay} onClick={handleOverlayClick}>
+      <div style={styles.modalContent}>
+        <div style={styles.modalHeader}>
+          <h2 style={styles.modalTitle}>
+            {isOrderCancelled ? 'Order Details' : isOrderDelivered ? 'Order Details' : 'Update Order'} #{order.id}
+          </h2>
+          <button onClick={onClose} style={styles.closeButton}>
+            <X size={20} />
+          </button>
         </div>
-    );
+
+        {/* ✅ NEW: Show warning for cancelled orders */}
+        {isOrderCancelled && (
+          <div style={styles.cancelledWarning}>
+            <AlertCircle size={16} />
+            <div>
+              <span>This order has been cancelled and cannot be modified.</span>
+              {order.cancel_reason && (
+                <div style={styles.cancelReason}>
+                  <strong>Cancellation Reason:</strong> {order.cancel_reason}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ✅ NEW: Show warning for delivered orders */}
+        {isOrderDelivered && (
+          <div style={styles.deliveredWarning}>
+            <CheckCircle size={16} />
+            <span>This order has been delivered and cannot be modified further.</span>
+          </div>
+        )}
+
+        {error && (
+          <div style={styles.errorMessage}>
+            <AlertCircle size={16} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div style={styles.modalBody}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>
+              <Clock size={16} />
+              Order Status
+            </label>
+            <select
+              value={status}
+              onChange={e => setStatus(e.target.value)}
+              style={{
+                ...styles.input,
+                backgroundColor: !canModifyOrder ? '#f3f4f6' : '#FDFFF0',
+                cursor: !canModifyOrder ? 'not-allowed' : 'pointer'
+              }}
+              disabled={isSaving || !canModifyOrder}
+            >
+              <option value="PENDING">Pending</option>
+              <option value="PROCESSING">Processing</option>
+              <option value="SHIPPED">Shipped</option>
+              <option value="DELIVERED">Delivered</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+            {!canModifyOrder && (
+              <small style={styles.disabledNote}>
+                Status cannot be changed for {isOrderCancelled ? 'cancelled' : 'delivered'} orders
+              </small>
+            )}
+          </div>
+
+          {status === 'SHIPPED' && canModifyOrder && (
+            <>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>
+                  <Truck size={16} />
+                  Shipping Provider
+                </label>
+                <input
+                  type="text"
+                  value={shippingProvider}
+                  onChange={e => setShippingProvider(e.target.value)}
+                  style={styles.input}
+                  placeholder="e.g., DTDC, Professional Couriers, Blue Dart"
+                  disabled={isSaving}
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>
+                  <Package size={16} />
+                  Tracking ID
+                </label>
+                <input
+                  type="text"
+                  value={trackingId}
+                  onChange={e => setTrackingId(e.target.value)}
+                  style={styles.input}
+                  placeholder="Enter tracking number"
+                  disabled={isSaving}
+                />
+              </div>
+            </>
+          )}
+
+          {/* ✅ Show existing shipping info for cancelled/delivered orders */}
+          {!canModifyOrder && order.shipping_provider && (
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Shipping Information</label>
+              <div style={styles.readOnlyInfo}>
+                <div><strong>Provider:</strong> {order.shipping_provider}</div>
+                {order.tracking_id && (
+                  <div><strong>Tracking ID:</strong> {order.tracking_id}</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Notes field - always show for reference */}
+          <div style={styles.formGroup}>
+            <label style={styles.label}>
+              <MessageSquare size={16} />
+              {canModifyOrder ? 'Additional Notes (Optional)' : 'Order Notes'}
+            </label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              style={{
+                ...styles.input,
+                minHeight: '80px',
+                resize: 'vertical',
+                backgroundColor: !canModifyOrder ? '#f3f4f6' : '#FDFFF0'
+              }}
+              placeholder={canModifyOrder ? "Add any additional information or instructions..." : "No additional notes available"}
+              disabled={isSaving || !canModifyOrder}
+              maxLength={500}
+              readOnly={!canModifyOrder}
+            />
+            {canModifyOrder && (
+              <small style={styles.charCount}>{notes.length}/500 characters</small>
+            )}
+          </div>
+        </div>
+
+        <div style={styles.modalFooter}>
+          <button
+            onClick={onClose}
+            style={styles.buttoncancel}
+            disabled={isSaving}
+          >
+            {canModifyOrder ? 'Cancel' : 'Close'}
+          </button>
+
+          {/* ✅ Only show save button for modifiable orders */}
+          {canModifyOrder && (
+            <button
+              onClick={handleSave}
+              style={styles.buttonPrimary}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <div style={styles.spinner}></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={16} />
+                  Save Status
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Main Order Details Page Component
@@ -381,7 +418,7 @@ export default function OrderDetailPage() {
   const [copied, setCopied] = useState(false);
   const { orderId } = useParams();
   const router = useRouter();
-  
+
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken') || localStorage.getItem('sellerAccessToken');
     if (!token) {
@@ -394,15 +431,16 @@ export default function OrderDetailPage() {
   const fetchOrderDetails = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers || !orderId) return;
-    
+
     setIsLoading(true);
     setError('');
-    
+
     try {
       console.log('Fetching order details for ID:', orderId);
       const response = await axios.get(`${ORDERS_API_URL}${orderId}/`, { headers });
-      
+
       console.log('Order details received:', response.data);
+
       setOrder(response.data);
     } catch (error) {
       console.error("Failed to fetch order details", error);
@@ -437,15 +475,15 @@ export default function OrderDetailPage() {
   const handleGenerateBill = async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
-    
+
     const billUrl = `${API_BASE_URL}/user/orders/${order.id}/generate-bill/`;
-    
+
     try {
-      const response = await axios.get(billUrl, { 
-        headers, 
-        responseType: 'blob' 
+      const response = await axios.get(billUrl, {
+        headers,
+        responseType: 'blob'
       });
-      
+
       const file = new Blob([response.data], { type: 'text/html' });
       const fileURL = URL.createObjectURL(file);
       window.open(fileURL, '_blank');
@@ -465,15 +503,15 @@ export default function OrderDetailPage() {
   const handleDownloadBill = async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
-    
+
     const billUrl = `${API_BASE_URL}/user/orders/${order.id}/download-bill/`;
-    
+
     try {
-      const response = await axios.get(billUrl, { 
-        headers, 
-        responseType: 'blob' 
+      const response = await axios.get(billUrl, {
+        headers,
+        responseType: 'blob'
       });
-      
+
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -498,10 +536,10 @@ export default function OrderDetailPage() {
       'DELIVERED': { backgroundColor: '#d1fae5', color: '#065f46', borderColor: '#10b981' },
       'CANCELLED': { backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#ef4444' },
     };
-    const baseStyle = { 
-      padding: '8px 16px', 
-      borderRadius: '20px', 
-      fontSize: '14px', 
+    const baseStyle = {
+      padding: '6px 12px',
+      borderRadius: '20px',
+      fontSize: '13px',
       fontWeight: '600',
       display: 'inline-flex',
       alignItems: 'center',
@@ -575,11 +613,11 @@ export default function OrderDetailPage() {
   }
 
   return (
-    <div style={styles.pageContainer}>
-      <Link href="/dashboard/seller/orders" style={styles.backLink}>
+    <div className='dashboardorderidpagecontainer' style={styles.pageContainer}>
+      {/* <Link href="/dashboard/seller/orders" style={styles.backLink}>
         <ArrowLeft size={18} /> 
         Back to All Orders
-      </Link>
+      </Link> */}
 
       {error && (
         <div style={styles.errorBanner}>
@@ -588,36 +626,36 @@ export default function OrderDetailPage() {
         </div>
       )}
 
-      <div style={styles.header}>
+      <div className='dashboardorderidpageheader' style={styles.header}>
         <div style={styles.headerInfo}>
-          <h1 style={styles.pageTitle}>Order #{order.id}</h1>
-          <div style={styles.orderMeta}>
+          <h1 className='dashboardordertitle' style={styles.pageTitle}>Order #{order.id}</h1>
+          <div className='dashboardorderidsubtitle' style={styles.orderMeta}>
             <Calendar size={16} />
-            <span>Placed on {formatDate(order.created_at)}</span>
+            <span >Placed on {formatDate(order.created_at)}</span>
           </div>
         </div>
         <div style={styles.headerActions}>
-          <button onClick={handleDownloadBill} style={styles.buttonTertiary}>
-            <Download size={16}/>
+          <button className='dashboardorderexportbtn' onClick={handleDownloadBill} style={styles.buttonTertiary}>
+            <Download className='dashboardordernotificationbellicon' size={16} />
             Download PDF
           </button>
-          <button onClick={handleGenerateBill} style={styles.buttonSecondary}>
-            <FileText size={16}/>
+          <button className='dashboardorderexportbtn' onClick={handleGenerateBill} style={styles.buttonSecondary}>
+            <FileText className='dashboardordernotificationbellicon' size={16} />
             View Bill
           </button>
-          
+
           {/* ✅ FIXED: Only show Update Status button for non-cancelled, non-delivered orders */}
           {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
-            <button onClick={() => setIsModalOpen(true)} style={styles.buttonPrimary}>
-              <Edit size={16}/>
+            <button className='dashboardorderexportbtn' onClick={() => setIsModalOpen(true)} style={styles.buttonPrimary}>
+              <Edit className='dashboardordernotificationbellicon' size={16} />
               Update Status
             </button>
           )}
-          
+
           {/* ✅ NEW: Show "View Details" button for cancelled/delivered orders */}
           {(order.status === 'CANCELLED' || order.status === 'DELIVERED') && (
-            <button onClick={() => setIsModalOpen(true)} style={styles.buttonInfo}>
-              <Eye size={16}/>
+            <button className='dashboardorderexportbtn' onClick={() => setIsModalOpen(true)} style={styles.buttonInfo}>
+              <Eye className='dashboardordernotificationbellicon' size={16} />
               View Details
             </button>
           )}
@@ -626,40 +664,44 @@ export default function OrderDetailPage() {
 
       {/* ✅ Order Timeline */}
       <div style={styles.timelineCard}>
-        <h3 style={styles.cardTitle}>
-          <Truck size={20}/>
+        <h3 style={styles.cardTitle1} className="order-progress-title">
           Order Progress
+          <div className="truck-wrapper">
+            <Truck size={20} className="truck-icon" />
+            <span className="smoke"></span>
+            <span className="smoke smoke2"></span>
+          </div>
         </h3>
         <OrderTimeline order={order} />
       </div>
 
-      <div style={styles.grid}>
+      <div className='dashboardorderdetailscardgrid' style={styles.grid}>
         <div style={styles.card}>
-          <h3 style={styles.cardTitle}>
-            <User size={20}/>
+          <h3 className='dashboardorderdetailscardtitle' style={styles.cardTitle}>
+            <User size={20} />
             Customer Details
           </h3>
-          <div style={styles.detailItem}>
-            <strong>Name:</strong> 
+          <div className='dashboardorderdetailscarddetailitem' style={styles.detailItem}>
+            <strong>Name:</strong>
             <span>{order.customer_name || 'Guest Customer'}</span>
           </div>
           {order.customer_phone && (
-            <div style={styles.detailItem}>
+            <div className='dashboardorderdetailscarddetailitem' style={styles.detailItem}>
               <strong>Phone:</strong>
               <span>+91 {order.customer_phone}</span>
             </div>
           )}
           {order.shipping_address && (
-            <div style={styles.detailItem}>
-              <strong><MapPin size={14}/> Address:</strong>
+            <div className='dashboardorderdetailscarddetailitem' style={styles.detailItem}>
+              <strong> Address:</strong>
               <span>{order.shipping_address}</span>
             </div>
           )}
-          <div style={styles.detailItem}>
+          <div className='dashboardorderdetailscarddetailitem' style={styles.detailItem}>
             <strong>Order Type:</strong>
             <span style={{
               ...styles.orderType,
-              backgroundColor: order.order_type === 'LOCAL' ? '#fef3c7' : '#dbeafe',
+              // backgroundColor: order.order_type === 'LOCAL' ? '#fef3c7' : '#dbeafe',
               color: order.order_type === 'LOCAL' ? '#92400e' : '#1e40af'
             }}>
               {order.order_type === 'LOCAL' ? '🏪 Local Bill' : '🛒 Online Order'}
@@ -668,24 +710,24 @@ export default function OrderDetailPage() {
         </div>
 
         <div style={styles.card}>
-          <h3 style={styles.cardTitle}>
-            <Truck size={20}/>
+          <h3 className='dashboardorderdetailscardtitle' style={styles.cardTitle}>
+            <Truck size={20} />
             Order Status
           </h3>
           <div style={styles.statusSection}>
-            <div style={getStatusStyle(order.status)}>
+            <div className='dashboardorderdetailsstatusstyle' style={getStatusStyle(order.status)}>
               {getStatusIcon(order.status)}
               {order.status}
             </div>
           </div>
           {order.shipping_provider && (
-            <div style={styles.detailItem}>
+            <div className='dashboardorderdetailscarddetailitem' style={styles.detailItem}>
               <strong>Provider:</strong>
               <span>{order.shipping_provider}</span>
             </div>
           )}
           {order.tracking_id && (
-            <div style={styles.detailItem}>
+            <div className='dashboardorderdetailscarddetailitem' style={styles.detailItem}>
               <strong>Tracking ID:</strong>
               <div style={styles.trackingIdContainer}>
                 <span style={styles.trackingId}>{order.tracking_id}</span>
@@ -703,16 +745,16 @@ export default function OrderDetailPage() {
         </div>
 
         <div style={styles.card}>
-          <h3 style={styles.cardTitle}>
-            {order.payment_method === 'ONLINE' ? <CreditCard size={20}/> : <Wallet size={20}/>}
+          <h3 className='dashboardorderdetailscardtitle' style={styles.cardTitle}>
+            {order.payment_method === 'ONLINE' ? <CreditCard size={20} /> : <Wallet size={20} />}
             Payment Details
           </h3>
-          <div style={styles.detailItem}>
+          <div className='dashboardorderdetailscarddetailitem' style={styles.detailItem}>
             <strong>Method:</strong>
             <span>{order.payment_method === 'ONLINE' ? 'Online Payment' : 'Cash on Delivery'}</span>
           </div>
           {order.payment_status && (
-            <div style={styles.detailItem}>
+            <div className='dashboardorderdetailscarddetailitem' style={styles.detailItem}>
               <strong>Status:</strong>
               <span style={{
                 ...styles.paymentStatus,
@@ -723,7 +765,7 @@ export default function OrderDetailPage() {
               </span>
             </div>
           )}
-          <div style={styles.detailItem}>
+          <div className='dashboardorderdetailscarddetailitem' style={styles.detailItem}>
             <strong>Total Amount:</strong>
             <span style={styles.totalAmountHighlight}>₹{parseFloat(order.total_amount).toFixed(2)}</span>
           </div>
@@ -731,64 +773,113 @@ export default function OrderDetailPage() {
       </div>
 
       <div style={styles.itemsCard}>
-        <h3 style={styles.cardTitle}>
-          <Package size={20}/>
+        <h3 className="dashboardorderdetailscardtitle" style={styles.cardTitle}>
+          <Package size={20} />
           Items in this Order ({order.items?.length || 0})
         </h3>
-        {order.items && order.items.length > 0 ? (
-          <div style={styles.tableContainer}>
-            <table style={styles.table}>
-              <thead>
-                <tr style={styles.tableHeader}>
-                  <th style={styles.th}>Product</th>
-                  <th style={styles.th}>Quantity</th>
-                  <th style={styles.th}>Unit Price</th>
-                  <th style={styles.th}>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {order.items.map((item, index) => (
-                  <tr key={item.id || index} style={styles.tableRow}>
-                    <td style={styles.td}>
-                      <div style={styles.productInfo}>
-                        <strong>{item.product?.name || item.product_name || 'Product'}</strong>
-                        {item.product?.model_name && (
-                          <div style={styles.productModel}>
-                            Model: {item.product.model_name}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td style={styles.td}>
-                      <span style={styles.quantity}>{item.quantity}</span>
-                    </td>
-                    <td style={styles.td}>₹{parseFloat(item.price || 0).toFixed(2)}</td>
-                    <td style={styles.td}>
-                      <strong>₹{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}</strong>
-                    </td>
+
+        {/* ✅ Desktop Table View */}
+        <div className="desktop-view" style={styles.desktopView}>
+          {order.items && order.items.length > 0 ? (
+            <div style={styles.tableContainer}>
+              <table style={styles.table}>
+                <thead>
+                  <tr style={styles.tableHeader}>
+                    <th style={styles.th}>Product</th>
+                    <th style={styles.th}>Quantity</th>
+                    <th style={styles.th}>Unit Price</th>
+                    <th style={styles.th}>Subtotal</th>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr style={styles.totalRow}>
-                  <td colSpan="3" style={styles.totalLabel}>Grand Total:</td>
-                  <td style={styles.totalAmount}>₹{parseFloat(order.total_amount).toFixed(2)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        ) : (
-          <div style={styles.emptyItems}>
-            <Package size={32} />
-            <p>No items found for this order</p>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {order.items.map((item, index) => (
+                    <tr key={item.id || index} style={styles.tableRow}>
+                      <td style={styles.td}>
+                        <div style={styles.productInfo}>
+                          <strong>{item.product?.name || item.product_name || 'Product'}</strong>
+                          {item.product?.model_name && (
+                            <div style={styles.productModel}>Model: {item.product.model_name}</div>
+                          )}
+                        </div>
+                      </td>
+                      <td style={styles.td}>
+                        <span style={styles.quantity}>{item.quantity}</span>
+                      </td>
+                      <td style={styles.td}>₹{parseFloat(item.price || 0).toFixed(2)}</td>
+                      <td style={styles.td}>
+                        <strong>₹{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}</strong>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr style={styles.totalRow}>
+                    <td colSpan="3" style={styles.totalLabel}>Grand Total:</td>
+                    <td style={styles.totalAmount}>₹{parseFloat(order.total_amount).toFixed(2)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          ) : (
+            <div style={styles.emptyItems}>
+              <Package size={32} />
+              <p>No items found for this order</p>
+            </div>
+          )}
+        </div>
+
+        {/* ✅ Mobile Card View */}
+        <div className="mobile-view" style={styles.mobileView}>
+          {order.items && order.items.length > 0 ? (
+            <>
+              {order.items.map((item, index) => (
+                <div key={item.id || index} style={styles.mobileCard}>
+                  <div style={styles.mobileHeader}>
+                    <strong>{item.product?.name || item.product_name || 'Product'}</strong>
+                    {item.product?.model_name && (
+                      <div style={styles.mobileModel}>Model: {item.product.model_name}</div>
+                    )}
+                  </div>
+                  <div style={styles.mobileDetails}>
+                    <div style={styles.mobileRow}>
+                      <span style={styles.mobileLabel}>Quantity:</span>
+                      <span style={styles.mobileValue}>{item.quantity}</span>
+                    </div>
+                    <div style={styles.mobileRow}>
+                      <span style={styles.mobileLabel}>Unit Price:</span>
+                      <span style={styles.mobileValue}>₹{parseFloat(item.price || 0).toFixed(2)}</span>
+                    </div>
+                    <div style={styles.mobileRowStrong}>
+                      <span>Subtotal:</span>
+                      <span>₹{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <div style={styles.mobileTotal}>
+                <span style={styles.mobileTotalLabel}>Grand Total:</span>
+                <span style={styles.mobileTotalAmount}>
+                  ₹{parseFloat(order.total_amount).toFixed(2)}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div style={styles.emptyItems}>
+              <Package size={32} />
+              <p>No items found for this order</p>
+            </div>
+          )}
+        </div>
       </div>
 
+
+
+
       {isModalOpen && (
-        <UpdateStatusModal 
-          order={order} 
-          onClose={() => setIsModalOpen(false)} 
+        <UpdateStatusModal
+          order={order}
+          onClose={() => setIsModalOpen(false)}
           onUpdate={fetchOrderDetails}
         />
       )}
@@ -816,7 +907,7 @@ const styles = {
     margin: '0 auto',
     animation: 'fadeIn 0.6s ease-out'
   },
-  
+
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -825,7 +916,7 @@ const styles = {
     minHeight: '400px',
     gap: '20px'
   },
-  
+
   spinner: {
     width: '16px',
     height: '16px',
@@ -835,7 +926,7 @@ const styles = {
     animation: 'spin 1s linear infinite',
     display: 'inline-block'
   },
-  
+
   errorContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -846,7 +937,7 @@ const styles = {
     textAlign: 'center',
     color: '#ef4444'
   },
-  
+
   retryButton: {
     display: 'flex',
     alignItems: 'center',
@@ -860,7 +951,7 @@ const styles = {
     fontSize: '16px',
     fontWeight: '500'
   },
-  
+
   backToOrdersLink: {
     display: 'flex',
     alignItems: 'center',
@@ -872,21 +963,21 @@ const styles = {
     borderRadius: '8px',
     backgroundColor: '#eff6ff'
   },
-  
-  backLink: { 
-    textDecoration: 'none', 
-    color: '#3b82f6', 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '8px', 
-    marginBottom: '24px', 
+
+  backLink: {
+    textDecoration: 'none',
+    color: '#3b82f6',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '24px',
     fontWeight: '500',
     padding: '8px 12px',
     borderRadius: '6px',
     backgroundColor: '#eff6ff',
     width: 'fit-content'
   },
-  
+
   errorBanner: {
     display: 'flex',
     alignItems: 'center',
@@ -898,31 +989,31 @@ const styles = {
     color: '#991b1b',
     marginBottom: '20px'
   },
-  
-  header: { 
-    display: 'flex', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: '32px', 
-    paddingBottom: '20px', 
+
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '32px',
+    paddingBottom: '20px',
     borderBottom: '1px solid #e5e7eb',
     flexWrap: 'wrap',
     gap: '16px'
   },
-  
+
   headerInfo: {
     display: 'flex',
     flexDirection: 'column',
     gap: '8px'
   },
-  
+
   pageTitle: {
     fontSize: '2rem',
     fontWeight: '700',
     color: '#1f2937',
     margin: 0
   },
-  
+
   orderMeta: {
     display: 'flex',
     alignItems: 'center',
@@ -930,32 +1021,32 @@ const styles = {
     color: '#6b7280',
     fontSize: '14px'
   },
-  
-  headerActions: { 
-    display: 'flex', 
+
+  headerActions: {
+    display: 'flex',
     gap: '12px',
     flexWrap: 'wrap'
   },
 
   // Timeline styles
   timelineCard: {
-    border: '1px solid #e5e7eb', 
-    borderRadius: '12px', 
-    padding: '24px', 
-    backgroundColor: '#fff', 
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    border: '1px solid #e5e7eb',
+    borderRadius: '12px',
+    padding: '24px',
+    backgroundColor: '#FDFFF0',
+    boxShadow: '0 0 20px rgba(0, 0, 0, 0.3)',
     marginBottom: '32px'
   },
 
   timelineContainer: {
-    marginTop: '16px'
+    marginTop: '16px',
   },
 
   timeline: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    position: 'relative'
+    position: 'relative',
   },
 
   timelineStep: {
@@ -963,7 +1054,24 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     flex: 1,
-    position: 'relative'
+    position: 'relative',
+  },
+
+  iconAndConnector: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+
+  connector: {
+    position: 'absolute',
+    top: '50%',
+    height: '2px',
+    backgroundColor: '#e5e7eb',
+    transform: 'translateY(-50%)',
+    zIndex: 0,
   },
 
   timelineIcon: {
@@ -973,38 +1081,32 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: '8px',
-    transition: 'all 0.3s ease'
+    zIndex: 1,
+    transition: 'all 0.3s ease',
   },
 
   timelineContent: {
-    textAlign: 'center'
+    textAlign: 'center',
+    marginTop: '8px', // ✅ push label below icon
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
   },
 
   timelineLabel: {
     fontSize: '14px',
     fontWeight: '500',
-    marginBottom: '4px'
+    marginBottom: '4px',
   },
 
   currentStep: {
     fontSize: '12px',
     color: '#3b82f6',
-    fontWeight: '600'
-  },
-
-  timelineConnector: {
-    position: 'absolute',
-    top: '20px',
-    left: '50%',
-    right: '-50%',
-    height: '2px',
-    zIndex: -1
+    fontWeight: '600',
   },
 
   cancelledTimeline: {
     display: 'flex',
-    flexDirection: 'column',
     gap: '12px',
     padding: '16px',
     backgroundColor: '#fef2f2',
@@ -1020,54 +1122,68 @@ const styles = {
     borderRadius: '4px',
     marginTop: '8px'
   },
-  
-  grid: { 
-    display: 'grid', 
-    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
-    gap: '24px', 
+
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+    gap: '24px',
     marginBottom: '32px'
   },
-  
-  card: { 
-    border: '1px solid #e5e7eb', 
-    borderRadius: '12px', 
-    padding: '24px', 
-    backgroundColor: '#fff', 
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+
+  card: {
+    border: '1px solid #e5e7eb',
+    borderRadius: '12px',
+    padding: '24px',
+    backgroundColor: '#FDFFF0',
+    boxShadow: '0 0 20px rgba(0, 0, 0, 0.3)'
   },
-  
+
   itemsCard: {
-    border: '1px solid #e5e7eb', 
-    borderRadius: '12px', 
-    padding: '24px', 
-    backgroundColor: '#fff', 
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    border: '1px solid #e5e7eb',
+    borderRadius: '12px',
+    padding: '24px',
+    backgroundColor: '#FDFFF0',
+    boxShadow: '0 0 20px rgba(0, 0, 0, 0.3)'
   },
-  
-  cardTitle: { 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '10px', 
-    borderBottom: '1px solid #e5e7eb', 
-    paddingBottom: '16px', 
+
+  cardTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    borderBottom: '1px solid #e5e7eb',
+    paddingBottom: '16px',
     marginBottom: '20px',
     fontSize: '18px',
     fontWeight: '600',
     color: '#1f2937',
     margin: '0 0 20px 0'
   },
-  
+
+  cardTitle1: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    borderBottom: '1px solid #e5e7eb',
+    paddingBottom: '16px',
+    marginBottom: '20px',
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#24964c',
+    margin: '0 0 20px 0'
+  },
+
   detailItem: {
     display: 'flex',
     alignItems: 'flex-start',
     gap: '8px',
     marginBottom: '12px',
-    fontSize: '14px'
+    fontSize: '14px',
+    color: '#6b7280'
   },
 
   orderType: {
-    padding: '4px 8px',
-    borderRadius: '12px',
+    // padding: '4px 8px',
+    // borderRadius: '12px',
     fontSize: '12px',
     fontWeight: '600'
   },
@@ -1077,7 +1193,7 @@ const styles = {
     fontWeight: '700',
     color: '#059669'
   },
-  
+
   statusSection: {
     marginBottom: '16px'
   },
@@ -1087,7 +1203,7 @@ const styles = {
     alignItems: 'center',
     gap: '8px'
   },
-  
+
   trackingId: {
     fontFamily: 'monospace',
     backgroundColor: '#f3f4f6',
@@ -1109,84 +1225,84 @@ const styles = {
     fontSize: '12px',
     fontWeight: '500'
   },
-  
+
   paymentStatus: {
     padding: '4px 8px',
     borderRadius: '12px',
     fontSize: '12px',
     fontWeight: '600'
   },
-  
+
   tableContainer: {
     overflowX: 'auto'
   },
-  
-  table: { 
-    width: '100%', 
+
+  table: {
+    width: '100%',
     borderCollapse: 'collapse'
   },
-  
+
   tableHeader: {
-    backgroundColor: '#f8fafc'
+    backgroundColor: 'rgb(23, 94, 84)'
   },
-  
+
   th: {
     padding: '12px',
     textAlign: 'left',
     fontSize: '12px',
     fontWeight: '600',
-    color: '#6b7280',
+    color: 'white',
     textTransform: 'uppercase',
     borderBottom: '1px solid #e5e7eb'
   },
-  
+
   tableRow: {
     borderBottom: '1px solid #f3f4f6'
   },
-  
+
   td: {
     padding: '16px 12px',
     fontSize: '14px',
     verticalAlign: 'middle'
   },
-  
+
   productInfo: {
     display: 'flex',
     flexDirection: 'column',
     gap: '4px'
   },
-  
+
   productModel: {
     fontSize: '12px',
     color: '#6b7280'
   },
-  
+
   quantity: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#FDFFF0',
     padding: '4px 8px',
     borderRadius: '4px',
     fontWeight: '600'
   },
-  
+
   totalRow: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#FDFFF0',
     borderTop: '2px solid #e5e7eb'
   },
-  
+
   totalLabel: {
     textAlign: 'right',
     fontWeight: '600',
     fontSize: '16px',
     padding: '16px 12px'
   },
-  
+
   totalAmount: {
     fontWeight: '700',
     fontSize: '18px',
     color: '#059669',
     padding: '16px 12px'
   },
-  
+
   emptyItems: {
     display: 'flex',
     flexDirection: 'column',
@@ -1196,32 +1312,32 @@ const styles = {
     gap: '16px',
     color: '#6b7280'
   },
-  
+
   // Modal Styles
-  modalOverlay: { 
-    position: 'fixed', 
-    top: 0, 
-    left: 0, 
-    right: 0, 
-    bottom: 0, 
-    backgroundColor: 'rgba(0,0,0,0.5)', 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
     zIndex: 1000,
     padding: '20px'
   },
-  
-  modalContent: { 
-    background: 'white', 
-    borderRadius: '12px', 
+
+  modalContent: {
+    background: '#FDFFF0',
+    borderRadius: '12px',
     width: '100%',
     maxWidth: '500px',
     maxHeight: '90vh',
     overflow: 'auto',
     boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
   },
-  
+
   modalHeader: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -1230,27 +1346,27 @@ const styles = {
     borderBottom: '1px solid #e5e7eb',
     marginBottom: '24px'
   },
-  
+
   modalTitle: {
     fontSize: '18px',
     fontWeight: '600',
-    color: '#1f2937',
+    color: 'rgb(23, 94, 84',
     margin: 0
   },
-  
+
   closeButton: {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    color: '#6b7280',
+    color: 'rgb(23, 94, 84',
     padding: '4px',
     borderRadius: '4px'
   },
-  
+
   modalBody: {
     padding: '0 24px'
   },
-  
+
   errorMessage: {
     display: 'flex',
     alignItems: 'center',
@@ -1316,11 +1432,11 @@ const styles = {
     borderRadius: '6px',
     fontSize: '14px'
   },
-  
-  formGroup: { 
+
+  formGroup: {
     marginBottom: '20px'
   },
-  
+
   label: {
     display: 'flex',
     alignItems: 'center',
@@ -1330,16 +1446,17 @@ const styles = {
     fontWeight: '500',
     color: '#374151'
   },
-  
-  input: { 
-    width: '100%', 
-    padding: '12px 16px', 
-    boxSizing: 'border-box', 
-    border: '1px solid #d1d5db', 
+
+  input: {
+    width: '100%',
+    padding: '12px 16px',
+    boxSizing: 'border-box',
+    border: '1px solid #d1d5db',
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
-    transition: 'border-color 0.2s'
+    transition: 'border-color 0.2s',
+    backgroundColor: '#FDFFF0'
   },
 
   charCount: {
@@ -1348,7 +1465,7 @@ const styles = {
     marginTop: '4px',
     textAlign: 'right'
   },
-  
+
   modalFooter: {
     display: 'flex',
     justifyContent: 'flex-end',
@@ -1357,31 +1474,46 @@ const styles = {
     borderTop: '1px solid #e5e7eb',
     marginTop: '24px'
   },
-  
-  buttonPrimary: { 
-    display: 'inline-flex', 
-    alignItems: 'center', 
-    gap: '8px', 
-    padding: '12px 20px', 
-    backgroundColor: '#3b82f6', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '8px', 
+
+  buttonPrimary: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 20px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500',
     transition: 'background-color 0.2s'
   },
-  
-  buttonSecondary: { 
-    display: 'inline-flex', 
-    alignItems: 'center', 
-    gap: '8px', 
-    padding: '12px 20px', 
-    backgroundColor: '#6b7280', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '8px', 
+
+  buttonSecondary: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 20px',
+    backgroundColor: '#80706bff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'background-color 0.2s'
+  },
+
+    buttoncancel: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 20px',
+    backgroundColor: '#ed3939ff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500',
@@ -1389,14 +1521,14 @@ const styles = {
   },
 
   buttonTertiary: {
-    display: 'inline-flex', 
-    alignItems: 'center', 
-    gap: '8px', 
-    padding: '12px 20px', 
-    backgroundColor: '#059669', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '8px', 
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 20px',
+    backgroundColor: '#059669',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500',
@@ -1405,17 +1537,66 @@ const styles = {
 
   // ✅ NEW: Info button style
   buttonInfo: {
-    display: 'inline-flex', 
-    alignItems: 'center', 
-    gap: '8px', 
-    padding: '12px 20px', 
-    backgroundColor: '#0ea5e9', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '8px', 
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 20px',
+    backgroundColor: '#0ea5e9',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500',
     transition: 'background-color 0.2s'
   },
+  mobileContainer: {
+    background: '#fff',
+    border: '1px solid #e5e7eb',
+    borderRadius: '8px',
+    padding: '12px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+  },
+  mobileCard: {
+    borderBottom: '1px solid #f1f1f1',
+    paddingBottom: '10px',
+    marginBottom: '10px',
+  },
+  mobileHeader: {
+    marginBottom: '6px',
+    fontSize: '14px',
+    fontWeight: 600,
+  },
+  mobileModel: {
+    fontSize: '12px',
+    color: '#6b7280',
+    marginTop: '2px',
+  },
+  mobileDetails: { fontSize: '13px' },
+  mobileRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: '4px',
+    color: '#374151',
+  },
+  mobileRowStrong: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginTop: '6px',
+    fontWeight: 600,
+  },
+  mobileLabel: { color: '#6b7280' },
+  mobileValue: { color: '#111827' },
+  mobileTotal: {
+    borderTop: '1px solid #e5e7eb',
+    paddingTop: '10px',
+    marginTop: '10px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontWeight: 600,
+    fontSize: '15px',
+  },
+  mobileTotalLabel: { color: '#111827' },
+  mobileTotalAmount: { color: 'rgb(5, 150, 105)' },
+
 };
