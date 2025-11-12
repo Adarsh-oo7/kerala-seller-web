@@ -2,23 +2,27 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { 
-  Search, 
-  Plus, 
-  Minus, 
-  X, 
-  ShoppingCart, 
-  User, 
-  Phone, 
+import '../../../../styles/DashboardBilling.css'
+
+import {
+  Search,
+  Plus,
+  Minus,
+  X,
+  ShoppingCart,
+  User,
+  Phone,
   Receipt,
   Package,
   AlertCircle,
   CheckCircle,
-  MapPin,
   Clock,
   Settings,
   RefreshCw,
-  Banknote
+  Banknote,
+  Wallet,
+  Coin,
+  CoinsIcon
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
@@ -43,16 +47,16 @@ export default function LocalBillingPage() {
   // ✅ Better token handling
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken') ||
-                  localStorage.getItem('access_token') ||
-                  localStorage.getItem('sellerAccessToken') ||
-                  localStorage.getItem('authToken');
-    
+      localStorage.getItem('access_token') ||
+      localStorage.getItem('sellerAccessToken') ||
+      localStorage.getItem('authToken');
+
     if (!token) {
       console.error("Seller is not authenticated.");
       setError("Please log in to access billing features.");
       return null;
     }
-    
+
     return { 'Authorization': `Bearer ${token}` };
   }, []);
 
@@ -62,19 +66,19 @@ export default function LocalBillingPage() {
     if (!headers) return;
 
     setIsAutoDetecting(true);
-    
+
     try {
       console.log('🔍 Auto-detecting seller phone...');
-      
+
       // Try store profile API (this worked in your logs)
       try {
         const response = await axios.get(`${API_BASE_URL}/api/store/profile/`, { headers });
         console.log('Store profile response:', response.data);
-        
-        const phone = response.data.seller_phone || 
-                     response.data.phone ||
-                     response.data.seller?.phone;
-                     
+
+        const phone = response.data.seller_phone ||
+          response.data.phone ||
+          response.data.seller?.phone;
+
         if (phone) {
           setSellerPhone(phone);
           localStorage.setItem('sellerPhone', phone);
@@ -88,9 +92,9 @@ export default function LocalBillingPage() {
 
       // Fallback to localStorage
       const storedPhone = localStorage.getItem('sellerPhone') ||
-                         localStorage.getItem('seller_phone') ||
-                         localStorage.getItem('userPhone');
-      
+        localStorage.getItem('seller_phone') ||
+        localStorage.getItem('userPhone');
+
       if (storedPhone) {
         setSellerPhone(storedPhone);
         console.log('✅ Phone found in localStorage:', storedPhone);
@@ -99,7 +103,7 @@ export default function LocalBillingPage() {
       }
 
       console.log('⚠️ Could not auto-detect seller phone. Manual input required.');
-      
+
     } catch (error) {
       console.error('Auto-detection failed:', error);
     } finally {
@@ -119,13 +123,13 @@ export default function LocalBillingPage() {
       console.log('Fetching products from:', PRODUCTS_API_URL);
       const response = await axios.get(PRODUCTS_API_URL, { headers });
       const productData = response.data.results || response.data || [];
-      
+
       // Filter to show only products with local stock
       const locallyAvailableProducts = productData.filter(product => {
         const localStock = product.total_stock || 0;
         return localStock > 0;
       });
-      
+
       console.log(`Fetched ${productData.length} products, ${locallyAvailableProducts.length} locally available`);
       setProducts(locallyAvailableProducts);
       setFilteredProducts(locallyAvailableProducts);
@@ -146,7 +150,7 @@ export default function LocalBillingPage() {
     if (!searchTerm.trim()) {
       setFilteredProducts(products);
     } else {
-      const filtered = products.filter(product => 
+      const filtered = products.filter(product =>
         product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.model_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -187,26 +191,26 @@ export default function LocalBillingPage() {
     setSuccess(`Added ${product.name} to bill`);
     setTimeout(() => setSuccess(''), 2000);
   };
-  
+
   const updateQuantity = (productId, quantity) => {
     const newQty = Math.max(1, parseInt(quantity, 10) || 1);
     const product = products.find(p => p.id === productId);
-    
+
     if (product && newQty > product.total_stock) {
       setError(`Only ${product.total_stock} units available for ${product.name}`);
       setTimeout(() => setError(''), 3000);
       return;
     }
 
-    setBillItems(prev => prev.map(item => 
+    setBillItems(prev => prev.map(item =>
       item.id === productId ? { ...item, quantity: newQty } : item
     ));
   };
-  
+
   const removeFromBill = (productId) => {
     setBillItems(prev => prev.filter(item => item.id !== productId));
   };
-  
+
   const calculateTotal = () => {
     return billItems.reduce((total, item) => total + (parseFloat(item.price) * item.quantity), 0);
   };
@@ -226,7 +230,7 @@ export default function LocalBillingPage() {
       setError('Please enter a valid 10-digit customer phone number');
       return false;
     }
-    
+
     return true;
   };
 
@@ -243,14 +247,14 @@ export default function LocalBillingPage() {
 
     setIsProcessing(true);
     setError('');
-    
+
     const headers = getAuthHeaders();
     if (!headers) {
-        setError("Authentication error. Please log in again.");
-        setIsProcessing(false);
-        return;
+      setError("Authentication error. Please log in again.");
+      setIsProcessing(false);
+      return;
     }
-    
+
     try {
       // ✅ Step 1: Create local bill and reduce stock
       const billData = {
@@ -265,7 +269,7 @@ export default function LocalBillingPage() {
       };
 
       console.log('🔍 Creating local bill:', billData);
-      
+
       const requestConfig = {
         headers: {
           ...headers,
@@ -275,7 +279,7 @@ export default function LocalBillingPage() {
 
       const billResponse = await axios.post(CREATE_BILL_URL, billData, requestConfig);
       console.log('✅ Local bill created:', billResponse.data);
-      
+
       // ✅ Step 2: Generate and display bill HTML
       const billId = billResponse.data.bill_id;
       const billHtmlData = {
@@ -303,29 +307,29 @@ export default function LocalBillingPage() {
       const file = new Blob([htmlResponse.data], { type: 'text/html' });
       const fileURL = URL.createObjectURL(file);
       window.open(fileURL, '_blank');
-      
+
       // Save seller phone for future use
       localStorage.setItem('sellerPhone', sellerPhone);
-      
+
       // Reset form
       setBillItems([]);
       setCustomer({ name: '', phone: '' });
       setSuccess(`✅ Bill ${billId} generated! Stock updated automatically.`);
       setTimeout(() => setSuccess(''), 5000);
-      
+
       // Refresh products to show updated stock
       fetchProducts();
-      
+
     } catch (error) {
       console.error('❌ Billing error:', error);
       console.error('❌ Error response:', error.response?.data);
-      
+
       if (error.response?.status === 401) {
         setError('Session expired. Please log in again.');
       } else if (error.response?.status === 400) {
         const errorData = error.response.data;
         let errorMessage = 'Invalid request. Please check your input.';
-        
+
         if (typeof errorData === 'string') {
           errorMessage = errorData;
         } else if (errorData?.error) {
@@ -335,13 +339,13 @@ export default function LocalBillingPage() {
         } else if (errorData?.detail) {
           errorMessage = errorData.detail;
         }
-        
+
         setError(errorMessage);
       } else {
-        const errorMessage = error.response?.data?.error || 
-                            error.response?.data?.message ||
-                            error.message ||
-                            'Could not create bill. Please try again.';
+        const errorMessage = error.response?.data?.error ||
+          error.response?.data?.message ||
+          error.message ||
+          'Could not create bill. Please try again.';
         setError(errorMessage);
       }
     } finally {
@@ -358,14 +362,13 @@ export default function LocalBillingPage() {
   };
 
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.header}>
-        <h1 style={styles.pageTitle}>
-          <Banknote size={28} />
+    <div className='dashboardbillingpagecontainer' style={styles.pageContainer}>
+      <div className='dashboardbillingheader' style={styles.header}>
+        <h1 className='dashboardbillingtitle' style={styles.pageTitle}>
+          <Wallet className='dashboardbillingpackageicon' size={28} />
           Direct Local Billing
         </h1>
-        <p style={styles.pageSubtitle}>
-          <MapPin size={16} style={{marginRight: '4px'}} />
+        <p className='dashboardbillingsubtitle' style={styles.pageSubtitle}>
           Instant cash billing for walk-in customers • No order tracking
         </p>
       </div>
@@ -374,11 +377,11 @@ export default function LocalBillingPage() {
       <div style={styles.sellerSection}>
         <div style={styles.sellerInputGroup}>
           <Settings size={16} style={styles.inputIcon} />
-          <input 
-            type="tel" 
-            placeholder={isAutoDetecting ? "Auto-detecting phone..." : "Your Phone Number (Required for billing)"} 
-            value={sellerPhone} 
-            onChange={e => setSellerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} 
+          <input
+            type="tel"
+            placeholder={isAutoDetecting ? "Auto-detecting phone..." : "Your Phone Number (Required for billing)"}
+            value={sellerPhone}
+            onChange={e => setSellerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
             disabled={isAutoDetecting}
             style={{
               ...styles.sellerInput,
@@ -387,16 +390,18 @@ export default function LocalBillingPage() {
             }}
             maxLength={10}
           />
-          <button 
+          {/* <button 
             onClick={autoDetectSellerPhone}
             style={styles.autoDetectButton}
             title="Auto-detect phone number"
             disabled={isAutoDetecting}
           >
             <RefreshCw size={16} style={isAutoDetecting ? {animation: 'spin 1s linear infinite'} : {}} />
-          </button>
+          </button> */}
           {sellerPhone && sellerPhone.length === 10 && (
-            <div style={styles.validationIcon}>✅</div>
+            <div style={styles.validationIcon}>
+              <CheckCircle size={18} color="#22c55e" /> {/* Green success icon */}
+            </div>
           )}
         </div>
         {sellerPhone && sellerPhone.length !== 10 && (
@@ -412,7 +417,8 @@ export default function LocalBillingPage() {
         <Package size={16} />
         <span>Showing only products with local inventory ({filteredProducts.length} available)</span>
         <div style={styles.directBillingBadge}>
-          💰 Direct Billing - No Order Creation
+          <Receipt size={18} color="#e82a2aff" style={{ marginRight: 6 }} />
+          Direct Billing – No Order Creation
         </div>
       </div>
 
@@ -426,7 +432,7 @@ export default function LocalBillingPage() {
           </button>
         </div>
       )}
-      
+
       {success && (
         <div style={styles.successMessage}>
           <CheckCircle size={16} />
@@ -449,18 +455,18 @@ export default function LocalBillingPage() {
               {filteredProducts.length} items in stock
             </div>
           </div>
-          
+
           <div style={styles.searchContainer}>
             <Search size={18} style={styles.searchIcon} />
-            <input 
-              type="text" 
-              placeholder="Search local inventory..." 
-              value={searchTerm} 
-              onChange={e => setSearchTerm(e.target.value)} 
+            <input
+              type="text"
+              placeholder="Search local inventory..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
               style={styles.searchInput}
             />
           </div>
-          
+
           <div style={styles.productList}>
             {isLoading ? (
               <div style={styles.loadingProducts}>
@@ -469,9 +475,9 @@ export default function LocalBillingPage() {
               </div>
             ) : filteredProducts.length > 0 ? (
               filteredProducts.map(product => (
-                <div 
-                  key={product.id} 
-                  onClick={() => addToBill(product)} 
+                <div
+                  key={product.id}
+                  onClick={() => addToBill(product)}
                   style={styles.productItem}
                 >
                   <div style={styles.productInfo}>
@@ -518,31 +524,31 @@ export default function LocalBillingPage() {
               </button>
             )}
           </div>
-          
+
           <div style={styles.customerDetails}>
             <div style={styles.inputGroup}>
               <User size={16} style={styles.inputIcon} />
-              <input 
-                type="text" 
-                placeholder="Customer Name (Optional)" 
-                value={customer.name} 
-                onChange={e => setCustomer({...customer, name: e.target.value})} 
+              <input
+                type="text"
+                placeholder="Customer Name (Optional)"
+                value={customer.name}
+                onChange={e => setCustomer({ ...customer, name: e.target.value })}
                 style={styles.customerInput}
               />
             </div>
             <div style={styles.inputGroup}>
               <Phone size={16} style={styles.inputIcon} />
-              <input 
-                type="tel" 
-                placeholder="Customer Phone (Optional)" 
-                value={customer.phone} 
-                onChange={e => setCustomer({...customer, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} 
+              <input
+                type="tel"
+                placeholder="Customer Phone (Optional)"
+                value={customer.phone}
+                onChange={e => setCustomer({ ...customer, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                 style={styles.customerInput}
                 maxLength={10}
               />
             </div>
           </div>
-          
+
           <div style={styles.billItemsContainer}>
             {billItems.length > 0 ? (
               <table style={styles.billTable}>
@@ -569,22 +575,22 @@ export default function LocalBillingPage() {
                       </td>
                       <td style={styles.billTableCell}>
                         <div style={styles.quantityContainer}>
-                          <button 
+                          <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             style={styles.quantityButton}
                             disabled={item.quantity <= 1}
                           >
                             <Minus size={12} />
                           </button>
-                          <input 
-                            type="number" 
-                            value={item.quantity} 
-                            onChange={e => updateQuantity(item.id, e.target.value)} 
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={e => updateQuantity(item.id, e.target.value)}
                             style={styles.quantityInput}
                             min={1}
                             max={item.total_stock}
                           />
-                          <button 
+                          <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             style={styles.quantityButton}
                             disabled={item.quantity >= item.total_stock}
@@ -598,8 +604,8 @@ export default function LocalBillingPage() {
                         <strong>₹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
                       </td>
                       <td style={styles.billTableCell}>
-                        <button 
-                          onClick={() => removeFromBill(item.id)} 
+                        <button
+                          onClick={() => removeFromBill(item.id)}
                           style={styles.removeButton}
                           title="Remove item"
                         >
@@ -618,7 +624,7 @@ export default function LocalBillingPage() {
               </div>
             )}
           </div>
-          
+
           {billItems.length > 0 && (
             <>
               <div style={styles.billSummary}>
@@ -630,14 +636,14 @@ export default function LocalBillingPage() {
                   {billItems.length} item{billItems.length !== 1 ? 's' : ''}
                 </div>
                 <div style={styles.billType}>
-                  <Banknote size={12} style={{marginRight: '4px'}} />
+                  <Banknote size={12} style={{ marginRight: '4px' }} />
                   <small>Direct Cash Payment • No Order Tracking</small>
                 </div>
               </div>
-              
-              <button 
-                onClick={handleGenerateBill} 
-                disabled={isProcessing || !sellerPhone || sellerPhone.length !== 10 || isAutoDetecting} 
+
+              <button
+                onClick={handleGenerateBill}
+                disabled={isProcessing || !sellerPhone || sellerPhone.length !== 10 || isAutoDetecting}
                 style={{
                   ...styles.generateButton,
                   ...(isProcessing || !sellerPhone || sellerPhone.length !== 10 || isAutoDetecting ? styles.generateButtonDisabled : {})
@@ -686,23 +692,23 @@ const styles = {
     padding: '24px',
     maxWidth: '1400px',
     margin: '0 auto',
-    backgroundColor: '#f8fafc'
+    backgroundColor: '#FDFFF0'
   },
-  
+
   header: {
     marginBottom: '20px'
   },
-  
+
   pageTitle: {
     fontSize: '2rem',
     fontWeight: '700',
-    color: '#1f2937',
+    color: 'rgb(23, 94, 84)',
     margin: '0 0 8px 0',
     display: 'flex',
     alignItems: 'center',
     gap: '12px'
   },
-  
+
   pageSubtitle: {
     fontSize: '1rem',
     color: '#6b7280',
@@ -712,12 +718,7 @@ const styles = {
   },
 
   sellerSection: {
-    backgroundColor: 'white',
-    padding: '16px',
-    borderRadius: '8px',
-    border: '1px solid #e5e7eb',
     marginBottom: '20px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
 
   sellerInputGroup: {
@@ -730,7 +731,7 @@ const styles = {
   sellerInput: {
     width: '100%',
     padding: '12px 12px 12px 40px',
-    border: '2px solid #d1d5db',
+    border: '1px solid #d1d5db',
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
@@ -804,15 +805,19 @@ const styles = {
   },
 
   directBillingBadge: {
-    fontSize: '12px',
-    color: '#dc2626',
-    backgroundColor: '#fef2f2',
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontWeight: '600',
-    border: '1px solid #fecaca'
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    backgroundColor: '#f4ece9ff',  // light green tint
+    color: '#e82a2aff',            // deep green text
+    padding: '5px 10px',
+    borderRadius: '8px',
+    fontSize: '13px',
+    fontWeight: 500,
+    width: 'fit-content',
+    border: '1px solid #f75454ff',
   },
-  
+
   errorMessage: {
     display: 'flex',
     alignItems: 'center',
@@ -825,7 +830,7 @@ const styles = {
     color: '#991b1b',
     marginBottom: '20px'
   },
-  
+
   successMessage: {
     display: 'flex',
     alignItems: 'center',
@@ -847,29 +852,29 @@ const styles = {
     opacity: 0.7,
     padding: '2px'
   },
-  
-  billingLayout: { 
-    display: 'grid', 
-    gridTemplateColumns: '1fr 1fr', 
+
+  billingLayout: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
     gap: '24px'
   },
-  
-  productSelection: { 
-    backgroundColor: 'white',
-    borderRadius: '12px', 
+
+  productSelection: {
+    backgroundColor: '#FDFFF0',
+    borderRadius: '12px',
+    padding: '24px',
+    border: '1px solid #d9d9d9ff',
+    boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+  },
+
+  currentBill: {
+    backgroundColor: '#FDFFF0',
+    borderRadius: '12px',
     padding: '24px',
     border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
   },
-  
-  currentBill: { 
-    backgroundColor: 'white',
-    borderRadius: '12px', 
-    padding: '24px',
-    border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-  },
-  
+
   sectionHeader: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -878,7 +883,7 @@ const styles = {
     paddingBottom: '12px',
     borderBottom: '1px solid #e5e7eb'
   },
-  
+
   sectionTitle: {
     display: 'flex',
     alignItems: 'center',
@@ -898,7 +903,7 @@ const styles = {
     borderRadius: '4px',
     border: '1px solid #10b981'
   },
-  
+
   clearButton: {
     padding: '6px 12px',
     backgroundColor: '#ef4444',
@@ -909,12 +914,12 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500'
   },
-  
+
   searchContainer: {
     position: 'relative',
     marginBottom: '16px'
   },
-  
+
   searchIcon: {
     position: 'absolute',
     left: '12px',
@@ -923,22 +928,23 @@ const styles = {
     color: '#6b7280',
     zIndex: 1
   },
-  
-  searchInput: { 
-    width: '100%', 
-    padding: '12px 12px 12px 40px', 
-    border: '1px solid #d1d5db',
+
+  searchInput: {
+    width: '100%',
+    padding: '12px 12px 12px 40px',
+    border: '1px solid rgba(72, 184, 169, 1)',
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    backgroundColor: 'rgba(23, 94, 85, 0.07)'
   },
-  
-  productList: { 
-    maxHeight: '500px', 
+
+  productList: {
+    maxHeight: '500px',
     overflowY: 'auto'
   },
-  
+
   loadingProducts: {
     display: 'flex',
     flexDirection: 'column',
@@ -948,7 +954,7 @@ const styles = {
     gap: '12px',
     color: '#6b7280'
   },
-  
+
   spinner: {
     width: '20px',
     height: '20px',
@@ -957,44 +963,44 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
-  productItem: { 
+
+  productItem: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '12px', 
-    cursor: 'pointer', 
+    padding: '12px',
+    cursor: 'pointer',
     borderRadius: '8px',
-    border: '1px solid #e5e7eb',
+    border: '1px solid rgba(72, 184, 169, 1)',
     marginBottom: '8px',
     transition: 'all 0.2s ease',
-    backgroundColor: 'white'
+    backgroundColor: 'rgba(23, 94, 85, 0.07)'
   },
-  
+
   productInfo: {
     flex: 1
   },
-  
+
   productName: {
     fontSize: '14px',
     fontWeight: '500',
     color: '#1f2937',
     marginBottom: '4px'
   },
-  
+
   productModel: {
     fontSize: '12px',
     color: '#6b7280',
     marginLeft: '6px'
   },
-  
+
   productPrice: {
     fontSize: '14px',
     fontWeight: '600',
     color: '#059669',
     marginBottom: '4px'
   },
-  
+
   productStock: {
     fontSize: '12px',
     color: '#6b7280',
@@ -1011,18 +1017,18 @@ const styles = {
     borderRadius: '4px',
     fontWeight: '500'
   },
-  
+
   addButton: {
     width: '32px',
     height: '32px',
-    backgroundColor: '#3b82f6',
+    backgroundColor: 'rgb(23, 94, 84)',
     color: 'white',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center'
   },
-  
+
   noProducts: {
     display: 'flex',
     flexDirection: 'column',
@@ -1039,75 +1045,77 @@ const styles = {
     color: '#9ca3af',
     fontStyle: 'italic'
   },
-  
-  customerDetails: { 
-    marginBottom: '20px', 
-    display: 'flex', 
+
+  customerDetails: {
+    marginBottom: '20px',
+    display: 'flex',
     flexDirection: 'column',
     gap: '12px'
   },
-  
+
   inputGroup: {
     position: 'relative',
     display: 'flex',
     alignItems: 'center'
   },
-  
+
   inputIcon: {
     position: 'absolute',
     left: '12px',
     color: '#6b7280',
     zIndex: 1
   },
-  
-  customerInput: { 
+
+  customerInput: {
     width: '100%',
-    padding: '12px 12px 12px 40px', 
-    border: '1px solid #d1d5db',
+    padding: '12px 12px 12px 40px',
+    border: '1px solid rgba(72, 184, 169, 1)',
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    backgroundColor: 'rgba(23, 94, 85, 0.07)'
+
   },
-  
+
   billItemsContainer: {
     marginBottom: '20px'
   },
-  
-  billTable: { 
+
+  billTable: {
     width: '100%',
     borderCollapse: 'collapse'
   },
-  
+
   billTableHeader: {
-    backgroundColor: '#f8fafc'
+    backgroundColor: 'rgb(23, 94, 84)'
   },
-  
+
   billTableHeaderCell: {
     padding: '12px 8px',
     textAlign: 'left',
     fontSize: '12px',
     fontWeight: '600',
-    color: '#6b7280',
+    color: 'white',
     textTransform: 'uppercase',
     borderBottom: '1px solid #e5e7eb'
   },
-  
+
   billTableRow: {
     borderBottom: '1px solid #f3f4f6'
   },
-  
+
   billTableCell: {
     padding: '12px 8px',
     fontSize: '14px',
     verticalAlign: 'middle'
   },
-  
+
   billItemName: {
     fontWeight: '500',
     color: '#1f2937'
   },
-  
+
   billItemModel: {
     fontSize: '12px',
     color: '#6b7280',
@@ -1123,13 +1131,13 @@ const styles = {
     marginTop: '4px',
     display: 'inline-block'
   },
-  
+
   quantityContainer: {
     display: 'flex',
     alignItems: 'center',
     gap: '4px'
   },
-  
+
   quantityButton: {
     width: '24px',
     height: '24px',
@@ -1141,7 +1149,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center'
   },
-  
+
   quantityInput: {
     width: '50px',
     padding: '4px',
@@ -1150,7 +1158,7 @@ const styles = {
     borderRadius: '4px',
     fontSize: '12px'
   },
-  
+
   removeButton: {
     color: '#ef4444',
     background: 'none',
@@ -1162,7 +1170,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center'
   },
-  
+
   emptyBill: {
     display: 'flex',
     flexDirection: 'column',
@@ -1173,13 +1181,13 @@ const styles = {
     color: '#6b7280',
     textAlign: 'center'
   },
-  
+
   emptyBillHint: {
     fontSize: '14px',
     color: '#9ca3af',
     margin: 0
   },
-  
+
   billSummary: {
     backgroundColor: '#fef2f2',
     padding: '16px',
@@ -1187,20 +1195,20 @@ const styles = {
     marginBottom: '16px',
     border: '1px solid #fecaca'
   },
-  
-  billTotal: { 
+
+  billTotal: {
     fontSize: '20px',
     fontWeight: '700',
     color: '#dc2626',
     marginBottom: '4px'
   },
-  
+
   billItems: {
     fontSize: '14px',
     color: '#6b7280',
     marginBottom: '8px'
   },
-  
+
   billType: {
     fontSize: '12px',
     color: '#dc2626',
@@ -1208,15 +1216,15 @@ const styles = {
     display: 'flex',
     alignItems: 'center'
   },
-  
-  generateButton: { 
-    width: '100%', 
-    padding: '16px 24px', 
-    backgroundColor: '#dc2626', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '8px', 
-    cursor: 'pointer', 
+
+  generateButton: {
+    width: '100%',
+    padding: '16px 24px',
+    backgroundColor: '#dc2626',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
     fontSize: '16px',
     fontWeight: '600',
     display: 'flex',
@@ -1229,7 +1237,7 @@ const styles = {
     backgroundColor: '#9ca3af',
     cursor: 'not-allowed'
   },
-  
+
   buttonContent: {
     display: 'flex',
     alignItems: 'center',
