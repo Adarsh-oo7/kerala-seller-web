@@ -1,0 +1,70 @@
+@media(max-width: 1200px) {
+
+    .dashboardbillingpagecontainer {
+        padding: 0px !important;
+    }
+
+    .dashboardbillingheader {
+        padding: 0px !important;
+    }
+
+}
+
+@media(max-width: 991px) {
+
+
+
+    .dashboardbillingtitle {
+        font-size: 28px !important;
+    }
+
+
+}
+
+
+
+@media(max-width: 768px) {}
+
+@media(max-width: 576px) {
+
+
+    .dashboardbillingtitle {
+        font-size: 24px !important;
+    }
+
+    .dashboardbillingpackageicon {
+        width: 25px !important;
+        height: 25px !important;
+    }
+
+    .dashboardbillingsubtitle {
+        font-size: 14px !important;
+    }
+
+    .dashboardbillingpagecontainer {
+        padding: 0px !important;
+    }
+
+}
+
+@media(max-width: 480px) {
+
+
+    .dashboardbillingtitle {
+        font-size: 22px !important;
+    }
+
+    .dashboardbillingpackageicon {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    .dashboardbillingsubtitle {
+        font-size: 14px !important;
+    }
+
+    .dashboardbillingpagecontainer {
+        padding: 0px !important;
+    }
+
+}
