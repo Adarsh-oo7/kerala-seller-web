@@ -2,13 +2,15 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Package, 
-  ShoppingCart, 
-  Users, 
+import '../../../../styles/DashboardAnalytics.css'
+
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Package,
+  ShoppingCart,
+  Users,
   Eye,
   Calendar,
   BarChart3,
@@ -104,16 +106,16 @@ export default function AnalyticsPage() {
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
     // Filter orders by date range
-    const filteredOrders = orders.filter(order => 
+    const filteredOrders = orders.filter(order =>
       new Date(order.created_at) >= cutoffDate && order.status === 'DELIVERED'
     );
 
     const previousCutoffDate = new Date();
     previousCutoffDate.setDate(previousCutoffDate.getDate() - (days * 2));
-    
-    const previousOrders = orders.filter(order => 
-      new Date(order.created_at) >= previousCutoffDate && 
-      new Date(order.created_at) < cutoffDate && 
+
+    const previousOrders = orders.filter(order =>
+      new Date(order.created_at) >= previousCutoffDate &&
+      new Date(order.created_at) < cutoffDate &&
       order.status === 'DELIVERED'
     );
 
@@ -200,7 +202,7 @@ export default function AnalyticsPage() {
         const date = new Date(now);
         date.setDate(date.getDate() - i);
         date.setHours(0, 0, 0, 0);
-        
+
         const nextDay = new Date(date);
         nextDay.setDate(nextDay.getDate() + 1);
 
@@ -220,12 +222,12 @@ export default function AnalyticsPage() {
     } else {
       // Weekly trend for longer periods
       const weeksToShow = Math.min(Math.ceil(days / 7), 8);
-      
+
       for (let i = weeksToShow - 1; i >= 0; i--) {
         const weekStart = new Date(now);
         weekStart.setDate(weekStart.getDate() - (i * 7) - (now.getDay()));
         weekStart.setHours(0, 0, 0, 0);
-        
+
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekEnd.getDate() + 7);
 
@@ -314,20 +316,21 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div style={styles.pageContainer}>
+    <div className='dashboardanalyticspagecontainer' style={styles.pageContainer}>
       {/* Header */}
-      <div style={styles.header}>
+      <div className='dashboardanalyticspageheader' style={styles.header}>
         <div>
-          <h1 style={styles.pageTitle}>
-            <BarChart3 size={28} />
+          <h1 className='dashboardanalyticstitle' style={styles.pageTitle}>
+            <BarChart3 className='dashboardanalyticspackageicon' size={28} />
             Analytics Dashboard
           </h1>
-          <p style={styles.pageSubtitle}>
+          <p className='dashboardanalyticssubtitle' style={styles.pageSubtitle}>
             Track your store's performance and growth metrics
           </p>
         </div>
         <div style={styles.headerActions}>
           <select
+            className='dashboardanalyticsdrpdwn'
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
             style={styles.dateSelect}
@@ -337,26 +340,29 @@ export default function AnalyticsPage() {
             <option value="90">Last 3 months</option>
             <option value="365">Last year</option>
           </select>
-          <button onClick={exportAnalytics} style={styles.exportButton}>
-            <Download size={18} />
+          <button className='dashboardanalyticsrefreshbtn' onClick={exportAnalytics} style={styles.exportButton}>
+            <Download className='dashboardanalyticsbellicon' size={18} />
             Export
           </button>
-          <button onClick={handleRefresh} style={styles.refreshButton} disabled={refreshing}>
-            <RefreshCw size={18} className={refreshing ? 'spin' : ''} />
+          <button className='dashboardanalyticsrefreshbtn' onClick={handleRefresh} style={styles.refreshButton} disabled={refreshing}>
+            <RefreshCw
+              size={18}
+              className={`dashboardanalyticsbellicon ${refreshing ? 'spin' : ''}`}
+            />
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
       </div>
 
       {/* Overview Cards */}
-      <div style={styles.overviewGrid}>
-        <div style={styles.overviewCard}>
+      <div className='dashboardanalyticsoverviewgrid' style={styles.overviewGrid}>
+        <div className='dashboardanalyticsoverviewcard' style={styles.overviewCard}>
           <div style={styles.cardHeader}>
-            <div style={styles.cardTitle}>Total Revenue</div>
+            <div className='dashboardanalyticsoverviewcardtitle' style={styles.cardTitle}>Total Revenue</div>
             <DollarSign size={20} color="#059669" />
           </div>
-          <div style={styles.cardValue}>₹{analytics.overview.totalRevenue.toLocaleString('en-IN')}</div>
-          <div style={styles.cardChange}>
+          <div className='dashboardanalyticsoverviewcardvalue' style={styles.cardValue}>₹{analytics.overview.totalRevenue.toLocaleString('en-IN')}</div>
+          <div className='dashboardanalyticsoverviewcardchange' style={styles.cardChange}>
             {analytics.overview.revenueChange >= 0 ? (
               <ArrowUpRight size={16} color="#059669" />
             ) : (
@@ -370,13 +376,13 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div style={styles.overviewCard}>
+        <div className='dashboardanalyticsoverviewcard' style={styles.overviewCard}>
           <div style={styles.cardHeader}>
-            <div style={styles.cardTitle}>Total Orders</div>
+            <div className='dashboardanalyticsoverviewcardtitle' style={styles.cardTitle}>Total Orders</div>
             <ShoppingCart size={20} color="#3b82f6" />
           </div>
-          <div style={styles.cardValue}>{analytics.overview.totalOrders.toLocaleString()}</div>
-          <div style={styles.cardChange}>
+          <div className='dashboardanalyticsoverviewcardvalue' style={styles.cardValue}>{analytics.overview.totalOrders.toLocaleString()}</div>
+          <div className='dashboardanalyticsoverviewcardchange' style={styles.cardChange}>
             {analytics.overview.ordersChange >= 0 ? (
               <ArrowUpRight size={16} color="#059669" />
             ) : (
@@ -390,13 +396,13 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div style={styles.overviewCard}>
+        <div className='dashboardanalyticsoverviewcard' style={styles.overviewCard}>
           <div style={styles.cardHeader}>
-            <div style={styles.cardTitle}>Average Order Value</div>
+            <div className='dashboardanalyticsoverviewcardtitle' style={styles.cardTitle}>Average Order Value</div>
             <Target size={20} color="#8b5cf6" />
           </div>
-          <div style={styles.cardValue}>₹{analytics.overview.avgOrderValue.toFixed(0)}</div>
-          <div style={styles.cardChange}>
+          <div className='dashboardanalyticsoverviewcardvalue' style={styles.cardValue}>₹{analytics.overview.avgOrderValue.toFixed(0)}</div>
+          <div className='dashboardanalyticsoverviewcardchange' style={styles.cardChange}>
             <Clock size={16} color="#6b7280" />
             <span style={{ color: '#6b7280' }}>
               Per completed order
@@ -404,13 +410,13 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div style={styles.overviewCard}>
+        <div className='dashboardanalyticsoverviewcard' style={styles.overviewCard}>
           <div style={styles.cardHeader}>
-            <div style={styles.cardTitle}>Total Products</div>
+            <div className='dashboardanalyticsoverviewcardtitle' style={styles.cardTitle}>Total Products</div>
             <Package size={20} color="#f59e0b" />
           </div>
-          <div style={styles.cardValue}>{analytics.overview.totalProducts}</div>
-          <div style={styles.cardChange}>
+          <div className='dashboardanalyticsoverviewcardvalue' style={styles.cardValue}>{analytics.overview.totalProducts}</div>
+          <div className='dashboardanalyticsoverviewcardchange' style={styles.cardChange}>
             <Eye size={16} color="#6b7280" />
             <span style={{ color: '#6b7280' }}>
               Active in catalog
@@ -420,12 +426,12 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Charts Section */}
-      <div style={styles.chartsGrid}>
+      <div className='dashboardanalyticschartgrid' style={styles.chartsGrid}>
         {/* Sales Trend Chart */}
         <div style={styles.chartCard}>
           <div style={styles.chartHeader}>
-            <h3 style={styles.chartTitle}>
-              <TrendingUp size={20} />
+            <h3 className='dashboardanalyticscharttitle' style={styles.chartTitle}>
+              <TrendingUp size={20} color='#267918ff' />
               Sales Trend
             </h3>
           </div>
@@ -435,10 +441,10 @@ export default function AnalyticsPage() {
                 {analytics.salesTrend.map((point, index) => {
                   const maxRevenue = Math.max(...analytics.salesTrend.map(p => p.revenue));
                   const height = maxRevenue > 0 ? (point.revenue / maxRevenue) * 100 : 0;
-                  
+
                   return (
                     <div key={index} style={styles.trendBar}>
-                      <div 
+                      <div
                         style={{
                           ...styles.trendBarFill,
                           height: `${height}%`
@@ -462,8 +468,8 @@ export default function AnalyticsPage() {
         {/* Top Products */}
         <div style={styles.chartCard}>
           <div style={styles.chartHeader}>
-            <h3 style={styles.chartTitle}>
-              <Star size={20} />
+            <h3 className='dashboardanalyticscharttitle' style={styles.chartTitle}>
+              <Star size={20} color='#f5ee2dff' />
               Top Products
             </h3>
           </div>
@@ -507,15 +513,15 @@ export default function AnalyticsPage() {
           {analytics.recentActivity.length > 0 ? (
             <div style={styles.activityList}>
               {analytics.recentActivity.slice(0, 8).map((activity, index) => (
-                <div key={index} style={styles.activityItem}>
+                <div className="dashboardanalyticsactivity-item" key={index} style={styles.activityItem}>
                   <div style={styles.activityIcon}>
                     <ShoppingCart size={16} />
                   </div>
                   <div style={styles.activityDetails}>
-                    <div style={styles.activityTitle}>{activity.title}</div>
-                    <div style={styles.activityDescription}>{activity.description}</div>
+                    <div className='dashboardanalyticsactivityitemtitle' style={styles.activityitemTitle}>{activity.title}</div>
+                    <div className='dashboardanalyticsactivitydescription' style={styles.activityDescription}>{activity.description}</div>
                   </div>
-                  <div style={styles.activityTime}>
+                  <div className="dashboardanalyticsactivity-time" style={styles.activityTime}>
                     {new Date(activity.time).toLocaleDateString('en-IN', {
                       month: 'short',
                       day: 'numeric',
@@ -523,12 +529,12 @@ export default function AnalyticsPage() {
                       minute: '2-digit'
                     })}
                   </div>
-                  <div style={{
+                  <div className='dashboardanalyticsactivity-status' style={{
                     ...styles.activityStatus,
-                    backgroundColor: activity.status === 'DELIVERED' ? '#d1fae5' : 
-                                   activity.status === 'PENDING' ? '#fef3c7' : '#e5e7eb',
-                    color: activity.status === 'DELIVERED' ? '#065f46' : 
-                          activity.status === 'PENDING' ? '#92400e' : '#374151'
+                    backgroundColor: activity.status === 'DELIVERED' ? '#d1fae5' :
+                      activity.status === 'PENDING' ? '#fef3c7' : '#dfed201f',
+                    color: activity.status === 'DELIVERED' ? '#065f46' :
+                      activity.status === 'PENDING' ? '#bbb817ff' : '#b82323ff'
                   }}>
                     {activity.status}
                   </div>
@@ -571,7 +577,7 @@ const styles = {
     margin: '0 auto',
     animation: 'fadeIn 0.6s ease-out'
   },
-  
+
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -580,7 +586,7 @@ const styles = {
     minHeight: '400px',
     gap: '20px'
   },
-  
+
   spinner: {
     width: '32px',
     height: '32px',
@@ -589,7 +595,7 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  
+
   errorContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -600,7 +606,7 @@ const styles = {
     textAlign: 'center',
     color: '#ef4444'
   },
-  
+
   retryButton: {
     display: 'flex',
     alignItems: 'center',
@@ -614,7 +620,7 @@ const styles = {
     fontSize: '16px',
     fontWeight: '500'
   },
-  
+
   header: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -623,23 +629,23 @@ const styles = {
     flexWrap: 'wrap',
     gap: '16px'
   },
-  
+
   pageTitle: {
     fontSize: '2rem',
     fontWeight: '700',
-    color: '#1f2937',
+    color: 'rgb(23, 94, 84)',
     margin: '0 0 8px 0',
     display: 'flex',
     alignItems: 'center',
     gap: '12px'
   },
-  
+
   pageSubtitle: {
     fontSize: '1rem',
     color: '#6b7280',
     margin: 0
   },
-  
+
   headerActions: {
     display: 'flex',
     gap: '12px',
@@ -653,9 +659,9 @@ const styles = {
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
-    backgroundColor: 'white'
+    backgroundColor: 'rgb(255, 238, 175)'
   },
-  
+
   exportButton: {
     display: 'flex',
     alignItems: 'center',
@@ -669,7 +675,7 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500'
   },
-  
+
   refreshButton: {
     display: 'flex',
     alignItems: 'center',
@@ -687,17 +693,17 @@ const styles = {
   // Overview Cards
   overviewGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(245px, 1fr))',
     gap: '20px',
     marginBottom: '32px'
   },
 
   overviewCard: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgb(253, 255, 240)',
     borderRadius: '12px',
     padding: '24px',
-    border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    border: '1px solid rgba(42, 108, 72, 0.3)',
+    boxShadow: 'rgba(42, 108, 72, 0.3) 0px 4px 12px'
   },
 
   cardHeader: {
@@ -714,7 +720,7 @@ const styles = {
   },
 
   cardValue: {
-    fontSize: '2rem',
+    fontSize: '24px',
     fontWeight: '700',
     color: '#1f2937',
     marginBottom: '8px'
@@ -736,10 +742,10 @@ const styles = {
   },
 
   chartCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     borderRadius: '12px',
-    border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    border: '1px solid rgba(42, 108, 72, 0.3)',
+    boxShadow: 'rgba(42, 108, 72, 0.3) 0px 4px 12px',
     overflow: 'hidden'
   },
 
@@ -807,7 +813,7 @@ const styles = {
     alignItems: 'center',
     gap: '12px',
     padding: '12px',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#0c470912',
     borderRadius: '8px'
   },
 
@@ -859,10 +865,10 @@ const styles = {
 
   // Recent Activity
   activityCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#FDFFF0',
     borderRadius: '12px',
-    border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    border: '1px solid rgba(42, 108, 72, 0.3)',
+    boxShadow: 'rgba(42, 108, 72, 0.3) 0px 4px 12px',
     overflow: 'hidden'
   },
 
@@ -881,6 +887,19 @@ const styles = {
     margin: 0
   },
 
+  activityitemTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '17px',
+    fontWeight: '600',
+    color: '#1f2937',
+    margin: 0
+  },
+  activityDescription: {
+    fontSize: '15px',
+  },
+
   activityContent: {
     padding: '24px'
   },
@@ -896,14 +915,14 @@ const styles = {
     alignItems: 'center',
     gap: '12px',
     padding: '12px',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#0c470912',
     borderRadius: '8px'
   },
 
   activityIcon: {
     width: '32px',
     height: '32px',
-    backgroundColor: '#3b82f6',
+    backgroundColor: 'rgb(23, 94, 84)',
     color: 'white',
     borderRadius: '50%',
     display: 'flex',

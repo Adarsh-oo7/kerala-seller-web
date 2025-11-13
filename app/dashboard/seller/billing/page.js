@@ -43,6 +43,13 @@ export default function LocalBillingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // ✅ Better token handling
   const getAuthHeaders = useCallback(() => {
@@ -390,17 +397,17 @@ export default function LocalBillingPage() {
             }}
             maxLength={10}
           />
-          {/* <button 
+          <button
             onClick={autoDetectSellerPhone}
             style={styles.autoDetectButton}
             title="Auto-detect phone number"
             disabled={isAutoDetecting}
           >
-            <RefreshCw size={16} style={isAutoDetecting ? {animation: 'spin 1s linear infinite'} : {}} />
-          </button> */}
+            <RefreshCw size={16} style={isAutoDetecting ? { animation: 'spin 1s linear infinite' } : {}} />
+          </button>
           {sellerPhone && sellerPhone.length === 10 && (
             <div style={styles.validationIcon}>
-              <CheckCircle size={18} color="#22c55e" /> {/* Green success icon */}
+              <CheckCircle size={16} color="#22c55e" /> {/* Green success icon */}
             </div>
           )}
         </div>
@@ -413,9 +420,13 @@ export default function LocalBillingPage() {
       </div>
 
       {/* LOCAL STOCK INFO BANNER */}
-      <div style={styles.infoBanner}>
-        <Package size={16} />
-        <span>Showing only products with local inventory ({filteredProducts.length} available)</span>
+      <div className='dashboardbillinginfobanner' style={styles.infoBanner}>
+        <div className='dashboardbillinginventoryinfo' style={styles.inventoryInfo}>
+          <Package size={16} style={styles.inventoryIcon} />
+          <span style={styles.inventoryText}>
+            Showing only products with local inventory ({filteredProducts.length} available)
+          </span>
+        </div>
         <div style={styles.directBillingBadge}>
           <Receipt size={18} color="#e82a2aff" style={{ marginRight: 6 }} />
           Direct Billing – No Order Creation
@@ -443,15 +454,15 @@ export default function LocalBillingPage() {
         </div>
       )}
 
-      <div style={styles.billingLayout}>
+      <div className='dashboardbillinglayoutgrid' style={styles.billingLayout}>
         {/* Product Selection */}
         <div style={styles.productSelection}>
           <div style={styles.sectionHeader}>
-            <h3 style={styles.sectionTitle}>
-              <Package size={20} />
+            <h3 className='dashboardbillingsectiontitle' style={styles.sectionTitle}>
+              <Package className='dashboardbillingsectionicon' size={20} />
               Local Products
             </h3>
-            <div style={styles.stockCounter}>
+            <div className='dashboardbillingstockcounter' style={styles.stockCounter}>
               {filteredProducts.length} items in stock
             </div>
           </div>
@@ -459,6 +470,7 @@ export default function LocalBillingPage() {
           <div style={styles.searchContainer}>
             <Search size={18} style={styles.searchIcon} />
             <input
+              className='dashboardbillinginput'
               type="text"
               placeholder="Search local inventory..."
               value={searchTerm}
@@ -467,7 +479,7 @@ export default function LocalBillingPage() {
             />
           </div>
 
-          <div style={styles.productList}>
+          <div className='billingscroll' style={styles.productList}>
             {isLoading ? (
               <div style={styles.loadingProducts}>
                 <div style={styles.spinner}></div>
@@ -494,8 +506,8 @@ export default function LocalBillingPage() {
                       </span>
                     </div>
                   </div>
-                  <div style={styles.addButton}>
-                    <Plus size={16} />
+                  <div className='dashboardbillingaddbtn' style={styles.addButton}>
+                    <Plus className='dashboardbillingaddbtnicon' size={16} />
                   </div>
                 </div>
               ))
@@ -514,12 +526,12 @@ export default function LocalBillingPage() {
         {/* Current Bill */}
         <div style={styles.currentBill}>
           <div style={styles.sectionHeader}>
-            <h3 style={styles.sectionTitle}>
-              <Banknote size={20} />
+            <h3 className='dashboardbillingsectiontitle' style={styles.sectionTitle}>
+              <Banknote className='dashboardbillingsectionicon' size={20} />
               Cash Bill
             </h3>
             {billItems.length > 0 && (
-              <button onClick={clearBill} style={styles.clearButton}>
+              <button className='dashboardbillingclearbtn' onClick={clearBill} style={styles.clearButton}>
                 Clear All
               </button>
             )}
@@ -529,6 +541,7 @@ export default function LocalBillingPage() {
             <div style={styles.inputGroup}>
               <User size={16} style={styles.inputIcon} />
               <input
+                className='dashboardbillinginput'
                 type="text"
                 placeholder="Customer Name (Optional)"
                 value={customer.name}
@@ -539,6 +552,7 @@ export default function LocalBillingPage() {
             <div style={styles.inputGroup}>
               <Phone size={16} style={styles.inputIcon} />
               <input
+                className='dashboardbillinginput'
                 type="tel"
                 placeholder="Customer Phone (Optional)"
                 value={customer.phone}
@@ -551,71 +565,132 @@ export default function LocalBillingPage() {
 
           <div style={styles.billItemsContainer}>
             {billItems.length > 0 ? (
-              <table style={styles.billTable}>
-                <thead>
-                  <tr style={styles.billTableHeader}>
-                    <th style={styles.billTableHeaderCell}>Item</th>
-                    <th style={styles.billTableHeaderCell}>Qty</th>
-                    <th style={styles.billTableHeaderCell}>Price</th>
-                    <th style={styles.billTableHeaderCell}>Total</th>
-                    <th style={styles.billTableHeaderCell}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {billItems.map(item => (
-                    <tr key={item.id} style={styles.billTableRow}>
-                      <td style={styles.billTableCell}>
-                        <div style={styles.billItemName}>{item.name}</div>
-                        {item.model_name && (
-                          <div style={styles.billItemModel}>{item.model_name}</div>
-                        )}
-                        <div style={styles.stockIndicator}>
-                          Stock: {item.total_stock} available
-                        </div>
-                      </td>
-                      <td style={styles.billTableCell}>
-                        <div style={styles.quantityContainer}>
-                          <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            style={styles.quantityButton}
-                            disabled={item.quantity <= 1}
-                          >
-                            <Minus size={12} />
-                          </button>
-                          <input
-                            type="number"
-                            value={item.quantity}
-                            onChange={e => updateQuantity(item.id, e.target.value)}
-                            style={styles.quantityInput}
-                            min={1}
-                            max={item.total_stock}
-                          />
-                          <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            style={styles.quantityButton}
-                            disabled={item.quantity >= item.total_stock}
-                          >
-                            <Plus size={12} />
+              <div className='billingscroll' style={styles.billTableWrapper}>
+                {isMobile ? (
+                  // ✅ Mobile Card Layout
+                  <div style={styles.mobileCardList}>
+                    {billItems.map(item => (
+                      <div key={item.id} style={styles.mobileCard}>
+                        <div style={styles.mobileCardHeader}>
+                          <div style={styles.mobileCardTitle}>
+                            <div style={styles.itemName}>{item.name}</div>
+                            {item.model_name && <div style={styles.itemModel}>{item.model_name}</div>}
+                            <div style={styles.itemStock}>✓ Stock: {item.total_stock} available</div>
+                          </div>
+                          <button onClick={() => removeFromBill(item.id)} style={styles.removeButton}>
+                            <X size={16} />
                           </button>
                         </div>
-                      </td>
-                      <td style={styles.billTableCell}>₹{parseFloat(item.price).toFixed(2)}</td>
-                      <td style={styles.billTableCell}>
-                        <strong>₹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
-                      </td>
-                      <td style={styles.billTableCell}>
-                        <button
-                          onClick={() => removeFromBill(item.id)}
-                          style={styles.removeButton}
-                          title="Remove item"
-                        >
-                          <X size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+
+                        <div style={styles.mobileCardBody}>
+                          <div style={styles.qtySection}>
+                            <span style={styles.qtyLabel}>Quantity</span>
+                            <div style={styles.qtyControls}>
+                              <button
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                style={styles.qtyButton}
+                                disabled={item.quantity <= 1}
+                              >
+                                <Minus size={14} />
+                              </button>
+                              <input
+                                type="number"
+                                value={item.quantity}
+                                readOnly
+                                style={styles.qtyInput}
+                              />
+                              <button
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                style={styles.qtyButton}
+                                disabled={item.quantity >= item.total_stock}
+                              >
+                                <Plus size={14} />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div style={styles.priceSection}>
+                            <div style={styles.priceLine}>
+                              <span>Price</span>
+                              <strong>₹{parseFloat(item.price).toFixed(2)}</strong>
+                            </div>
+                            <div style={styles.priceLine}>
+                              <span>Total</span>
+                              <strong>₹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <table style={styles.billTable}>
+                    <thead>
+                      <tr style={styles.billTableHeader}>
+                        <th style={styles.billTableHeaderCell}>Item</th>
+                        <th style={styles.billTableHeaderCell}>Qty</th>
+                        <th style={styles.billTableHeaderCell}>Price</th>
+                        <th style={styles.billTableHeaderCell}>Total</th>
+                        <th style={styles.billTableHeaderCell}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {billItems.map(item => (
+                        <tr key={item.id} style={styles.billTableRow}>
+                          <td style={styles.billTableCell}>
+                            <div style={styles.billItemName}>{item.name}</div>
+                            {item.model_name && (
+                              <div style={styles.billItemModel}>{item.model_name}</div>
+                            )}
+                            <div style={styles.stockIndicator}>
+                              Stock: {item.total_stock} available
+                            </div>
+                          </td>
+                          <td style={styles.billTableCell}>
+                            <div style={styles.quantityContainer}>
+                              <button
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                style={styles.quantityButton}
+                                disabled={item.quantity <= 1}
+                              >
+                                <Minus size={12} />
+                              </button>
+                              <input
+                                type="number"
+                                value={item.quantity}
+                                onChange={e => updateQuantity(item.id, e.target.value)}
+                                style={styles.quantityInput}
+                                min={1}
+                                max={item.total_stock}
+                              />
+                              <button
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                style={styles.quantityButton}
+                                disabled={item.quantity >= item.total_stock}
+                              >
+                                <Plus size={12} />
+                              </button>
+                            </div>
+                          </td>
+                          <td style={styles.billTableCell}>₹{parseFloat(item.price).toFixed(2)}</td>
+                          <td style={styles.billTableCell}>
+                            <strong>₹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
+                          </td>
+                          <td style={styles.billTableCell}>
+                            <button
+                              onClick={() => removeFromBill(item.id)}
+                              style={styles.removeButton}
+                              title="Remove item"
+                            >
+                              <X size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             ) : (
               <div style={styles.emptyBill}>
                 <Banknote size={32} />
@@ -628,7 +703,7 @@ export default function LocalBillingPage() {
           {billItems.length > 0 && (
             <>
               <div style={styles.billSummary}>
-                <div style={styles.billTotal}>
+                <div className='dashboardbillingtotalcash' style={styles.billTotal}>
                   <span>Total Cash Amount: </span>
                   <strong>₹{calculateTotal().toFixed(2)}</strong>
                 </div>
@@ -642,6 +717,7 @@ export default function LocalBillingPage() {
               </div>
 
               <button
+                className='dashboardbillinggeneratebtn'
                 onClick={handleGenerateBill}
                 disabled={isProcessing || !sellerPhone || sellerPhone.length !== 10 || isAutoDetecting}
                 style={{
@@ -681,6 +757,30 @@ export default function LocalBillingPage() {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
+            .billingscroll::-webkit-scrollbar {
+              height: 2px;   /* for horizontal scrollbar */
+              width: 2px;    /* for vertical scrollbar */
+            }
+          
+            .billingscroll::-webkit-scrollbar-track {
+              background: #f1f1f1;  /* track background */
+              border-radius: 6px;
+            }
+          
+            .billingscroll::-webkit-scrollbar-thumb {
+              background: #f1f1f1;  /* thumb (scroll handle) color */
+              border-radius: 6px;
+            }
+          
+            .billingscroll::-webkit-scrollbar-thumb:hover {
+              background: #f1f1f1;  /* darker on hover */
+            }
+          
+            /* Firefox support */
+            .billingscroll {
+              scrollbar-width: thin;
+              scrollbar-color: #175E54 #FDFFF0;
+            }
       `}</style>
     </div>
   );
@@ -725,7 +825,9 @@ const styles = {
     position: 'relative',
     display: 'flex',
     alignItems: 'center',
-    width: '350px'
+    width: '100%',
+    maxWidth: '350px', // prevents it from becoming too wide on desktop
+    boxSizing: 'border-box',
   },
 
   sellerInput: {
@@ -758,11 +860,9 @@ const styles = {
   autoDetectButton: {
     position: 'absolute',
     right: '40px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
+    color: '#10b981',
     border: 'none',
-    padding: '6px',
-    borderRadius: '4px',
+    backgroundColor: 'transparent',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -802,6 +902,23 @@ const styles = {
     marginBottom: '20px',
     fontSize: '14px',
     fontWeight: '500'
+  },
+
+  inventoryInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px', // space between icon and text
+    color: '#374151',
+    fontSize: '14px',
+  },
+
+  inventoryIcon: {
+    flexShrink: 0, // prevent icon from squishing
+    color: '#2563eb', // optional accent color
+  },
+
+  inventoryText: {
+    lineHeight: '1.4',
   },
 
   directBillingBadge: {
@@ -856,7 +973,8 @@ const styles = {
   billingLayout: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '24px'
+    gap: '24px',
+    boxSizing: "border-box",
   },
 
   productSelection: {
@@ -941,7 +1059,7 @@ const styles = {
   },
 
   productList: {
-    maxHeight: '500px',
+    maxHeight: '470px',
     overflowY: 'auto'
   },
 
@@ -1082,13 +1200,26 @@ const styles = {
     marginBottom: '20px'
   },
 
+  billTableWrapper: {
+    maxHeight: '220px',           // limit table height
+    overflowY: 'auto',            // enable vertical scrolling
+    border: '1px solid #e5e7eb',
+    borderRadius: '8px',
+    marginTop: '10px',
+    position: 'relative',
+  },
+
   billTable: {
     width: '100%',
-    borderCollapse: 'collapse'
+    borderCollapse: 'collapse',
+    minWidth: '500px',
   },
 
   billTableHeader: {
-    backgroundColor: 'rgb(23, 94, 84)'
+    position: 'sticky',
+    top: 0,
+    backgroundColor: 'rgb(23, 94, 84)',
+    zIndex: 2,
   },
 
   billTableHeaderCell: {
@@ -1098,7 +1229,8 @@ const styles = {
     fontWeight: '600',
     color: 'white',
     textTransform: 'uppercase',
-    borderBottom: '1px solid #e5e7eb'
+    borderBottom: '1px solid #e5e7eb',
+    backgroundColor: 'rgb(23, 94, 84)',
   },
 
   billTableRow: {
@@ -1142,7 +1274,7 @@ const styles = {
     width: '24px',
     height: '24px',
     backgroundColor: '#f3f4f6',
-    border: '1px solid #d1d5db',
+    border: '1px solid rgb(23, 94, 84)',
     borderRadius: '4px',
     cursor: 'pointer',
     display: 'flex',
@@ -1154,9 +1286,10 @@ const styles = {
     width: '50px',
     padding: '4px',
     textAlign: 'center',
-    border: '1px solid #d1d5db',
+    border: '1px solid rgb(23, 94, 84)',
     borderRadius: '4px',
-    fontSize: '12px'
+    fontSize: '12px',
+    backgroundColor: '#FDFFF0'
   },
 
   removeButton: {
@@ -1242,5 +1375,66 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px'
-  }
+  },
+  mobileCardList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  },
+  mobileCard: {
+    border: '1px solid #abababff',
+    borderRadius: '10px',
+    padding: '16px',
+    background: '#FDFFF0',
+  },
+  mobileCardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '12px',
+  },
+  mobileCardTitle: { flex: 1 },
+  itemName: { fontWeight: 600, fontSize: '14px', color: '#111' },
+  itemModel: { fontSize: '12px', color: '#666', marginTop: '4px' },
+  itemStock: { fontSize: '12px', color: '#16a34a', marginTop: '4px' },
+
+  qtySection: { flex: 1 },
+  qtyLabel: { fontSize: '12px', color: '#666' },
+  qtyControls: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginTop: '6px',
+  },
+  qtyButton: {
+    width: '28px',
+    height: '28px',
+    border: '1px solid rgb(23, 94, 84)',
+    borderRadius: '6px',
+    background: '#f9fafb',
+    cursor: 'pointer',
+  },
+  qtyInput: {
+    width: '40px',
+    textAlign: 'center',
+    border: '1px solid #ccc',
+    borderRadius: '6px',
+    padding: '4px',
+    fontSize: '13px',
+    backgroundColor: '#FDFFF0'
+  },
+
+  priceSection: {
+    textAlign: 'right',
+    marginTop: '10px',
+    borderTop: '1px solid #eee',
+    paddingTop: '8px',
+  },
+  priceLine: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '13px',
+    marginTop: '2px',
+  },
+
 };
