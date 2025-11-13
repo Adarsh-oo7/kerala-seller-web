@@ -29,6 +29,7 @@ import {
     CreditCard,
     MapPin,
     User,
+    AlertOctagon
 } from 'lucide-react';
 
 // ✅ Enhanced API base URL handling with environment variables
@@ -62,6 +63,11 @@ export default function BuyerOrdersPage() {
     const [showOrderDetails, setShowOrderDetails] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
 
+    // ✅ Cancellation Modal States
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [orderToCancel, setOrderToCancel] = useState(null);
+    const [cancelReason, setCancelReason] = useState('');
+
     const openOrderDetails = (order) => {
         setSelectedOrder(order);
         setShowOrderDetails(true);
@@ -71,7 +77,6 @@ export default function BuyerOrdersPage() {
         setShowOrderDetails(false);
         setSelectedOrder(null);
     };
-
 
     // ✅ Enhanced token handling - supports both Google login and regular login
     const getAuthHeaders = useCallback(() => {
@@ -94,7 +99,6 @@ export default function BuyerOrdersPage() {
         if (typeof window === 'undefined') return { storeId: null, isInStore: false };
 
         const currentPath = window.location.pathname;
-        // Support both /shop/[slug] and /store/[id] URL patterns
         const storeMatch = currentPath.match(/\/shop\/([^\/]+)/) || currentPath.match(/\/store\/([^\/]+)/);
         return {
             storeId: storeMatch ? storeMatch[1] : null,
@@ -111,11 +115,9 @@ export default function BuyerOrdersPage() {
         setError('');
 
         try {
-            // Get current store context
             const storeInfo = getCurrentStoreInfo();
             setCurrentStoreInfo(storeInfo);
 
-            // Build API URL with store filter if in store context
             let apiUrl = ORDERS_API_URL;
             if (storeInfo.isInStore && storeInfo.storeId) {
                 const separator = apiUrl.includes('?') ? '&' : '?';
@@ -136,7 +138,6 @@ export default function BuyerOrdersPage() {
         } catch (err) {
             console.error("Failed to fetch order history", err);
             if (err.response?.status === 401) {
-                // Clear tokens and redirect
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('buyerAccessToken');
                 localStorage.removeItem('accessToken');
@@ -151,7 +152,7 @@ export default function BuyerOrdersPage() {
         }
     }, [getAuthHeaders, router, getCurrentStoreInfo]);
 
-    // ✅ NEW: Download Invoice Handler
+    // ✅ Download Invoice Handler
     const handleDownloadInvoice = async (orderId) => {
         const headers = getAuthHeaders();
         if (!headers) return;
@@ -178,38 +179,45 @@ export default function BuyerOrdersPage() {
         }
     };
 
-    // ✅ NEW: Cancel Order Handler
-    const handleCancelOrder = async (orderId, paymentMethod) => {
-        // Confirm cancellation
-        const confirmMessage = paymentMethod === 'COD'
-            ? 'Are you sure you want to cancel this COD order?'
-            : 'Are you sure you want to cancel this order? Refund will be processed within 5-7 business days.';
+    // ✅ Open Cancel Modal
+    const openCancelModal = (order) => {
+        setOrderToCancel(order);
+        setCancelReason('');
+        setShowCancelModal(true);
+    };
 
-        if (!window.confirm(confirmMessage)) {
+    // ✅ Close Cancel Modal
+    const closeCancelModal = () => {
+        setShowCancelModal(false);
+        setOrderToCancel(null);
+        setCancelReason('');
+    };
+
+    // ✅ Handle Cancel Order with Reason
+    const handleCancelOrder = async () => {
+        if (!cancelReason.trim()) {
+            alert('Please provide a reason for cancellation');
             return;
         }
 
         const headers = getAuthHeaders();
         if (!headers) return;
 
-        setCancellingOrderId(orderId);
+        setCancellingOrderId(orderToCancel.id);
 
         try {
             const response = await axios.post(
-                CANCEL_ORDER_API_URL(orderId),
-                {},
-                {
-                    headers,
-                    timeout: 15000
-                }
+                CANCEL_ORDER_API_URL(orderToCancel.id),
+                { reason: cancelReason.trim() },
+                { headers, timeout: 15000 }
             );
 
-            // Success - refresh orders
             alert(response.data?.message || 'Order cancelled successfully!');
-            await fetchOrders(); // Refresh the list
+            closeCancelModal();
+            await fetchOrders();
         } catch (err) {
-            console.error('Order cancellation failed', err);
-            alert(err.response?.data?.message || 'Failed to cancel order. Please try again or contact support.');
+            console.error('Order cancellation failed:', err);
+            alert(err.response?.data?.message || 'Failed to cancel order. Please try again.');
         } finally {
             setCancellingOrderId(null);
         }
@@ -222,14 +230,12 @@ export default function BuyerOrdersPage() {
     useEffect(() => {
         let filtered = [...orders];
 
-        // Apply status filter
         if (statusFilter !== 'all') {
             filtered = filtered.filter(order =>
                 order.status?.toLowerCase() === statusFilter.toLowerCase()
             );
         }
 
-        // Apply search filter
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(order =>
@@ -243,7 +249,6 @@ export default function BuyerOrdersPage() {
             );
         }
 
-        // Apply sorting
         filtered.sort((a, b) => {
             switch (sortBy) {
                 case 'newest':
@@ -302,10 +307,8 @@ export default function BuyerOrdersPage() {
         });
     };
 
-    // ✅ Enhanced: Smart back navigation that works with different URL structures
     const getBackUrl = () => {
         if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
-            // Check if it's a shop URL structure
             if (window.location.pathname.includes('/shop/')) {
                 return `/shop/${currentStoreInfo.storeId}`;
             }
@@ -314,7 +317,6 @@ export default function BuyerOrdersPage() {
         return '/profile';
     };
 
-    // ✅ Helper: Check if order can be cancelled
     const canCancelOrder = (order) => {
         return order.status?.toUpperCase() === 'PENDING';
     };
@@ -362,7 +364,6 @@ export default function BuyerOrdersPage() {
             <h2 className='keralasellersprofileordertitle' style={styles.pageTitle}>YOUR ORDERS</h2>
 
             <div style={styles.container}>
-                {/* ✅ Show store context indicator */}
                 {currentStoreInfo.isInStore && (
                     <div style={styles.storeIndicator}>
                         <Store size={16} />
@@ -420,8 +421,6 @@ export default function BuyerOrdersPage() {
 
                             return (
                                 <div key={order.id} style={styles.card}>
-
-
                                     <div className='keralasellersprofileordercardbody' style={styles.cardBody}>
                                         <div className='keralasellersprofileordercardbodygap' style={styles.itemsAndStatus}>
                                             {order.items && order.items.length > 0 && (
@@ -433,8 +432,7 @@ export default function BuyerOrdersPage() {
                                                         {order.items.slice(0, 3).map((item, index) => (
                                                             <li key={item.id || index} style={styles.itemListItem}>
                                                                 <span className='keralasellersprofileorderitemdetails' style={styles.itemQuantity}>
-                                                                    {item.quantity} x                                                                     {item.product?.name || item.product_name || 'Item'}
-                                                                    {item.product?.name || item.product_name || 'Item'}
+                                                                    {item.quantity} x {item.product?.name || item.product_name || 'Item'}
                                                                 </span>
                                                             </li>
                                                         ))}
@@ -447,7 +445,6 @@ export default function BuyerOrdersPage() {
                                                 </div>
                                             )}
 
-                                            {/* ✅ Status moved to the right */}
                                             <div style={styles.statusSectionBody}>
                                                 <span className='keralasellersprofileorderstatustext' style={{
                                                     ...styles.statusBadge,
@@ -459,7 +456,6 @@ export default function BuyerOrdersPage() {
                                             </div>
                                         </div>
 
-                                        {/* Shipping Info */}
                                         {(order.shipping_provider || order.tracking_id) && (
                                             <div style={styles.shippingInfo}>
                                                 {order.shipping_provider && (
@@ -480,9 +476,7 @@ export default function BuyerOrdersPage() {
                                         )}
                                     </div>
 
-
                                     <div className='keralasellersprofileordercardbody' style={styles.cardFooter}>
-
                                         <div style={styles.footerLeft}>
                                             <span className='keralasellersprofileordertotalprice' style={styles.totalLabel}>Total:</span>
                                             <strong className='keralasellersprofileordertotalprice' style={styles.totalFooter}>
@@ -490,9 +484,7 @@ export default function BuyerOrdersPage() {
                                             </strong>
                                         </div>
 
-
                                         <div className='keralasellersorder-actions' style={styles.cardActions}>
-
                                             <button
                                                 className='keralasellersprofileorderactionbtn'
                                                 onClick={() => openOrderDetails(order)}
@@ -501,34 +493,18 @@ export default function BuyerOrdersPage() {
                                                 View Details
                                             </button>
 
-
-                                            {/* ✅ NEW: Cancel Button for PENDING orders */}
                                             {canCancelOrder(order) && (
                                                 <button
-                                                    className='keralasellersprofileorderactionbtn'
-                                                    onClick={() => handleCancelOrder(order.id, order.payment_method)}
-                                                    disabled={cancellingOrderId === order.id}
-                                                    style={{
-                                                        ...styles.cancelButton,
-                                                        ...(cancellingOrderId === order.id ? styles.disabledButton : {})
-                                                    }}
+                                                    className="keralasellers-profile-order-action-btn"
+                                                    onClick={() => openCancelModal(order)}
+                                                    style={styles.cancelButton}
                                                     title="Cancel this order"
                                                 >
-                                                    {cancellingOrderId === order.id ? (
-                                                        <>
-                                                            <div style={styles.smallSpinner}></div>
-                                                            Cancelling...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <XCircle size={16} />
-                                                            Cancel Order
-                                                        </>
-                                                    )}
+                                                    <XCircle size={16} />
+                                                    Cancel Order
                                                 </button>
                                             )}
 
-                                            {/* ✅ UPDATED: Invoice Download for DELIVERED orders */}
                                             {order.status?.toLowerCase() === 'delivered' && (
                                                 <button
                                                     className='keralasellersprofileorderactionbtn'
@@ -552,7 +528,6 @@ export default function BuyerOrdersPage() {
                 {showOrderDetails && selectedOrder && (
                     <div style={styles.modalOverlay} onClick={closeOrderDetails}>
                         <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                            {/* 🔹 Header */}
                             <div style={styles.modalHeader}>
                                 <h2 style={styles.modalTitle}>Order Details #{selectedOrder.id}</h2>
                                 <button style={styles.closeButton} onClick={closeOrderDetails}>
@@ -560,9 +535,7 @@ export default function BuyerOrdersPage() {
                                 </button>
                             </div>
 
-                            {/* 🔹 Body */}
                             <div style={styles.modalBody}>
-                                {/* 🔸 Order Status */}
                                 <div style={styles.detailSection}>
                                     <h3 style={styles.sectionTitle}>Order Status</h3>
                                     <div style={styles.statusDetail}>
@@ -587,7 +560,6 @@ export default function BuyerOrdersPage() {
                                     </div>
                                 </div>
 
-                                {/* 🔸 Order Information */}
                                 <div style={styles.detailSection}>
                                     <h3 style={styles.sectionTitle}>Order Information</h3>
                                     <div style={styles.infoGrid}>
@@ -637,7 +609,6 @@ export default function BuyerOrdersPage() {
                                     </div>
                                 </div>
 
-                                {/* 🔸 Order Items */}
                                 <div style={styles.detailSection}>
                                     <h3 style={styles.sectionTitle}>Order Items</h3>
                                     <div style={styles.itemsList}>
@@ -656,8 +627,6 @@ export default function BuyerOrdersPage() {
                                                                 {item.product.description}
                                                             </div>
                                                         )}
-
-
                                                     </div>
                                                     <div style={styles.modalItemTotal}>
                                                         {formatPrice(item.price * item.quantity)}
@@ -672,7 +641,6 @@ export default function BuyerOrdersPage() {
                                     </div>
                                 </div>
 
-                                {/* 🔸 Delivery Address */}
                                 {selectedOrder.shipping_address && (
                                     <div style={styles.detailSection}>
                                         <h3 style={styles.sectionTitle}>Delivery Address</h3>
@@ -683,7 +651,6 @@ export default function BuyerOrdersPage() {
                                     </div>
                                 )}
 
-                                {/* 🔸 Cancel Reason */}
                                 {selectedOrder.status?.toLowerCase() === 'cancelled' && selectedOrder.cancel_reason && (
                                     <div style={styles.detailSection}>
                                         <h3 style={styles.sectionTitle}>Cancellation Reason</h3>
@@ -694,7 +661,6 @@ export default function BuyerOrdersPage() {
                                     </div>
                                 )}
 
-                                {/* 🔸 Total */}
                                 <div style={styles.detailSection}>
                                     <div style={styles.totalSection}>
                                         <div style={styles.totalLabel}>Total</div>
@@ -705,11 +671,7 @@ export default function BuyerOrdersPage() {
                                 </div>
                             </div>
 
-                            {/* 🔹 Footer */}
                             <div style={styles.modalFooter}>
-                                
-
-                                {/* ✅ Download Invoice */}
                                 <button
                                     style={styles.invoiceButton}
                                     onClick={() => handleDownloadInvoice(selectedOrder.id)}
@@ -717,13 +679,12 @@ export default function BuyerOrdersPage() {
                                     Download Invoice
                                 </button>
 
-                                {/* ✅ Cancel Order */}
                                 {canCancelOrder(selectedOrder) && (
                                     <button
                                         style={styles.cancelModalButton}
                                         onClick={() => {
                                             closeOrderDetails();
-                                            handleCancelOrder(selectedOrder.id, selectedOrder.payment_method);
+                                            openCancelModal(selectedOrder);
                                         }}
                                         disabled={cancellingOrderId === selectedOrder.id}
                                     >
@@ -735,8 +696,116 @@ export default function BuyerOrdersPage() {
                     </div>
                 )}
 
+                {/* ✅ CANCELLATION REASON MODAL */}
+                {showCancelModal && orderToCancel && (
+                    <div style={styles.modalOverlay} onClick={closeCancelModal}>
+                        <div style={styles.cancelModalContent} onClick={(e) => e.stopPropagation()}>
+                            {/* Header */}
+                            <div style={styles.modalHeader}>
+                                <h2 style={styles.modalTitle}>
+                                    <AlertOctagon size={24} style={{ marginRight: '8px' }} />
+                                    Cancel Order #{orderToCancel.id}
+                                </h2>
+                                <button style={styles.closeButton} onClick={closeCancelModal}>
+                                    <X color="white" size={24} />
+                                </button>
+                            </div>
 
-                {/* Results Summary */}
+                            {/* Body */}
+                            <div style={styles.modalBody}>
+                                {/* Warning */}
+                                <div style={styles.cancelWarning}>
+                                    <AlertCircle size={20} color="#f59e0b" />
+                                    <div>
+                                        <p style={{ margin: '0 0 8px 0', fontWeight: '600' }}>
+                                            Are you sure you want to cancel this order?
+                                        </p>
+                                        <p style={{ margin: 0, fontSize: '13px' }}>
+                                            {orderToCancel.payment_method === 'COD'
+                                                ? 'This COD order will be cancelled immediately.'
+                                                : 'Refund will be processed within 5-7 business days.'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Reason Input */}
+                                <div style={styles.detailSection}>
+                                    <h3 style={styles.sectionTitle}>
+                                        Reason for Cancellation <span style={{ color: '#ef4444' }}>*</span>
+                                    </h3>
+                                    <textarea
+                                        value={cancelReason}
+                                        onChange={(e) => setCancelReason(e.target.value)}
+                                        placeholder="Please provide a detailed reason for cancelling this order..."
+                                        style={styles.customReasonTextarea}
+                                        rows={4}
+                                        maxLength={500}
+                                        autoFocus
+                                    />
+                                    <div style={styles.characterCount}>
+                                        {cancelReason.length}/500 characters
+                                        {cancelReason.trim().length >= 10 && (
+                                            <span style={{ color: '#10b981', marginLeft: '12px', fontWeight: '600' }}>
+                                                ✓ Ready to submit
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Order Summary */}
+                                <div style={styles.detailSection}>
+                                    <h3 style={styles.sectionTitle}>Order Summary</h3>
+                                    <div style={styles.cancelOrderSummary}>
+                                        <div style={styles.summaryRow}>
+                                            <span>Order Total:</span>
+                                            <span style={styles.summaryAmount}>{formatPrice(orderToCancel.total_amount)}</span>
+                                        </div>
+                                        <div style={styles.summaryRow}>
+                                            <span>Payment Method:</span>
+                                            <span>{orderToCancel.payment_method === 'COD' ? 'Cash on Delivery' : 'Online Payment'}</span>
+                                        </div>
+                                        <div style={styles.summaryRow}>
+                                            <span>Items:</span>
+                                            <span>{orderToCancel.items?.length || 0} item(s)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div style={styles.modalFooter}>
+                                <button
+                                    style={styles.closeModalButton}
+                                    onClick={closeCancelModal}
+                                    disabled={cancellingOrderId === orderToCancel.id}
+                                >
+                                    Keep Order
+                                </button>
+                                <button
+                                    style={{
+                                        ...styles.confirmCancelButton,
+                                        ...(cancellingOrderId === orderToCancel.id || !cancelReason.trim() ? styles.disabledButton : {})
+                                    }}
+                                    onClick={handleCancelOrder}
+                                    disabled={cancellingOrderId === orderToCancel.id || !cancelReason.trim()}
+                                >
+                                    {cancellingOrderId === orderToCancel.id ? (
+                                        <span style={styles.buttonContent}>
+                                            <div style={styles.smallSpinner}></div>
+                                            Cancelling...
+                                        </span>
+                                    ) : (
+                                        <span style={styles.buttonContent}>
+                                            <XCircle size={16} />
+                                            Confirm Cancellation
+                                        </span>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {filteredOrders.length > 0 && (
                     <div style={styles.resultsSummary}>
                         <p>
@@ -749,6 +818,7 @@ export default function BuyerOrdersPage() {
                 )}
             </div>
             <Footer />
+
             {/* CSS Animations */}
             <style jsx>{`
                 @keyframes spin {
@@ -766,7 +836,7 @@ export default function BuyerOrdersPage() {
 }
 
 const styles = {
-    // ✅ Enhanced: Store context indicator
+    // Keep all your existing styles...
     storeIndicator: {
         display: 'flex',
         alignItems: 'center',
@@ -780,21 +850,17 @@ const styles = {
         fontWeight: '500',
         marginBottom: '24px'
     },
-
-    // Store info in order cards
     storeInfo: {
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
         marginTop: '4px'
     },
-
     storeLabel: {
         fontSize: '12px',
         color: '#6b7280',
         fontWeight: '500'
     },
-
     storeName: {
         fontSize: '12px',
         color: '#3b82f6',
@@ -803,11 +869,8 @@ const styles = {
         padding: '2px 6px',
         borderRadius: '4px'
     },
-
     pagecontainer: { backgroundColor: "#FDFFF0" },
     container: { minHeight: '100vh', backgroundColor: '#FDFFF0', padding: '20px', maxWidth: '1200px', margin: '0 auto' },
-
-    // Loading and Error States
     loadingContainer: {
         display: 'flex',
         flexDirection: 'column',
@@ -817,7 +880,6 @@ const styles = {
         gap: '20px',
         flex: 1
     },
-
     spinner: {
         width: '32px',
         height: '32px',
@@ -833,8 +895,6 @@ const styles = {
         color: '#1f2937',
         marginTop: '50px'
     },
-
-    // ✅ NEW: Small spinner for button loading state
     smallSpinner: {
         width: '14px',
         height: '14px',
@@ -843,7 +903,6 @@ const styles = {
         borderRadius: '50%',
         animation: 'spin 1s linear infinite'
     },
-
     errorContainer: {
         display: 'flex',
         flexDirection: 'column',
@@ -855,14 +914,12 @@ const styles = {
         padding: '40px',
         flex: 1
     },
-
     errorActions: {
         display: 'flex',
         gap: '12px',
         flexWrap: 'wrap',
         justifyContent: 'center'
     },
-
     backToProfileLink: {
         display: 'flex',
         alignItems: 'center',
@@ -874,7 +931,6 @@ const styles = {
         borderRadius: '8px',
         backgroundColor: '#eff6ff'
     },
-
     retryButton: {
         display: 'flex',
         alignItems: 'center',
@@ -888,7 +944,6 @@ const styles = {
         fontSize: '16px',
         fontWeight: '500'
     },
-
     clearFiltersButton: {
         padding: '10px 20px',
         backgroundColor: '#3b82f6',
@@ -900,7 +955,6 @@ const styles = {
         fontWeight: '500',
         marginTop: '16px'
     },
-
     emptyState: {
         textAlign: 'center',
         padding: '80px 40px',
@@ -909,7 +963,59 @@ const styles = {
         border: '2px dashed #d1d5db',
         color: '#6b7280'
     },
-
+    
+    // ✅ NEW: Cancel Modal Styles
+    cancelWarning: {
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '12px',
+        backgroundColor: '#fef3c7',
+        border: '1px solid #fbbf24',
+        borderRadius: '8px',
+        padding: '16px',
+        marginBottom: '24px',
+        color: '#92400e',
+    },
+    customReasonTextarea: {
+        width: '100%',
+        padding: '12px',
+        border: '2px solid #e5e7eb',
+        borderRadius: '8px',
+        fontSize: '14px',
+        resize: 'vertical',
+        fontFamily: 'inherit',
+        outline: 'none',
+        transition: 'border-color 0.2s',
+        boxSizing: 'border-box',
+    },
+    characterCount: {
+        fontSize: '12px',
+        color: '#6b7280',
+        textAlign: 'right',
+        marginTop: '8px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    cancelOrderSummary: {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        padding: '16px',
+        borderRadius: '8px',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+    },
+    summaryRow: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '10px 0',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        color: 'white',
+    },
+    summaryAmount: {
+        fontWeight: '700',
+        color: '#10b981',
+        fontSize: '16px',
+    },
     emptyActions: {
         display: 'flex',
         gap: '12px',
@@ -917,7 +1023,6 @@ const styles = {
         justifyContent: 'center',
         flexWrap: 'wrap'
     },
-
     homeButton: {
         display: 'inline-flex',
         alignItems: 'center',
@@ -930,8 +1035,6 @@ const styles = {
         fontSize: '16px',
         fontWeight: '500'
     },
-
-
     shopButton: {
         display: 'inline-flex',
         alignItems: 'center',
@@ -949,9 +1052,8 @@ const styles = {
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         gap: '24px',
-        flexWrap: 'wrap' // ensures responsiveness
+        flexWrap: 'wrap'
     },
-
     statusSectionBody: {
         display: 'flex',
         alignItems: 'center',
@@ -959,15 +1061,12 @@ const styles = {
         minWidth: '150px',
         justifyContent: 'flex-end'
     },
-
-    // Order List
     orderList: {
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem',
         width: '100%',
     },
-
     card: {
         width: '100%',
         boxSizing: 'border-box',
@@ -977,22 +1076,17 @@ const styles = {
         border: '1px solid #e5e7eb',
         boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
     },
-
-
-
     orderInfo: {
         display: 'flex',
         flexDirection: 'column',
         gap: '6px'
     },
-
     orderId: {
         fontSize: '18px',
         fontWeight: '700',
         color: '#1f2937',
         margin: 0
     },
-
     orderMeta: {
         display: 'flex',
         alignItems: 'center',
@@ -1001,26 +1095,21 @@ const styles = {
         fontSize: '14px',
         flexWrap: 'wrap'
     },
-
     orderTime: {
         fontSize: '13px',
         opacity: 0.8
     },
-
     orderAmount: {
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
         marginBottom: '16px'
     },
-
     total: {
         fontSize: '20px',
         fontWeight: '700',
         color: '#059669'
     },
-
-    // ✅ NEW: Payment method badge
     paymentMethod: {
         fontSize: '12px',
         fontWeight: '600',
@@ -1029,46 +1118,37 @@ const styles = {
         backgroundColor: '#f3f4f6',
         color: '#374151'
     },
-
     cardBody: {
         padding: '12px 24px'
     },
-
     statusSection: {
         display: 'flex',
         alignItems: 'center',
         gap: '8px'
     },
-
     statusLabel: {
         fontSize: '14px',
         fontWeight: '500',
         color: '#374151'
     },
-
     statusBadge: {
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
-        // padding: '6px 12px',
-        // borderRadius: '20px',
         fontSize: '14px',
         fontWeight: '600',
         textTransform: 'uppercase',
         letterSpacing: '0.5px'
     },
-
     itemsSection: {
         marginBottom: '16px'
     },
-
     itemsHeader: {
         fontSize: '16px',
         fontWeight: '600',
         color: '#1a4845 ',
         margin: '0 0 8px 0'
     },
-
     itemList: {
         listStyle: 'none',
         padding: 0,
@@ -1077,7 +1157,6 @@ const styles = {
         flexDirection: 'column',
         gap: '6px'
     },
-
     itemListItem: {
         display: 'flex',
         alignItems: 'center',
@@ -1085,23 +1164,19 @@ const styles = {
         fontSize: '14px',
         color: ' #1a4845'
     },
-
     itemQuantity: {
         fontWeight: '500',
         color: 'rgb(107, 114, 128) ',
         minWidth: '30px'
     },
-
     itemName: {
         flex: 1
     },
-
     moreItems: {
         fontStyle: 'italic',
         color: '#6b7280',
         fontSize: '13px'
     },
-
     shippingInfo: {
         display: 'flex',
         flexDirection: 'column',
@@ -1111,7 +1186,6 @@ const styles = {
         borderRadius: '8px',
         border: '1px solid #bbf7d0'
     },
-
     shippingItem: {
         display: 'flex',
         alignItems: 'center',
@@ -1119,11 +1193,9 @@ const styles = {
         fontSize: '14px',
         color: '#166534'
     },
-
     trackingLabel: {
         fontWeight: '500'
     },
-
     trackingId: {
         fontFamily: 'monospace',
         backgroundColor: '#dcfce7',
@@ -1131,19 +1203,16 @@ const styles = {
         borderRadius: '4px',
         fontSize: '13px'
     },
-
     footerLeft: {
         display: 'flex',
         alignItems: 'center',
         gap: '12px'
     },
-
     totalFooter: {
         fontSize: '17px',
         fontWeight: '600',
         color: '#1a4845'
     },
-
     cardFooter: {
         padding: '16px 24px',
         borderTop: '1px solid #e5e7eb',
@@ -1157,14 +1226,12 @@ const styles = {
         fontWeight: '600',
         color: '#1a4845'
     },
-
     cardActions: {
         display: 'flex',
         gap: '12px',
         justifyContent: 'flex-end',
         flexWrap: 'wrap'
     },
-
     viewButton: {
         display: 'inline-flex',
         alignItems: 'center',
@@ -1180,8 +1247,6 @@ const styles = {
         border: 'none',
         cursor: 'pointer'
     },
-
-    // ✅ NEW: Cancel button style
     cancelButton: {
         display: 'inline-flex',
         alignItems: 'center',
@@ -1196,8 +1261,6 @@ const styles = {
         fontWeight: '500',
         transition: 'all 0.2s'
     },
-
-    // ✅ RENAMED from reorderButton: Invoice download button style
     invoiceButton: {
         display: 'inline-flex',
         alignItems: 'center',
@@ -1212,15 +1275,11 @@ const styles = {
         fontWeight: '500',
         transition: 'all 0.2s'
     },
-
-    // ✅ NEW: Disabled button state
     disabledButton: {
         opacity: 0.6,
         cursor: 'not-allowed',
         pointerEvents: 'none'
     },
-
-    // Results Summary
     resultsSummary: {
         textAlign: 'center',
         marginTop: '24px',
@@ -1228,8 +1287,6 @@ const styles = {
         color: '#6b7280',
         fontSize: '14px'
     },
-
-    // Modal Styles
     modalOverlay: {
         position: 'fixed',
         top: 0,
@@ -1242,15 +1299,14 @@ const styles = {
         justifyContent: 'center',
         zIndex: 1000,
         padding: '20px',
-        overflowY: 'auto', // ✅ allow scroll if modal too tall
+        overflowY: 'auto',
     },
-
     modalContent: {
         borderRadius: '16px',
         maxWidth: '600px',
         width: '100%',
         maxHeight: '90vh',
-        display: 'flex', // ✅ enable body+footer flex layout
+        display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
         backgroundColor: 'rgba(49, 47, 47, 0.2)',
@@ -1261,136 +1317,189 @@ const styles = {
         color: 'white',
     },
     cancelModalContent: {
-        borderRadius: '16px', maxWidth: '500px',
-        width: '100%', maxHeight: '90vh', overflow: 'hidden',
-        backgroundColor: 'rgba(49, 47, 47, 0.2)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        borderRadius: '16px',
+        maxWidth: '500px',
+        width: '100%',
+        maxHeight: '90vh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        backgroundColor: 'rgba(49, 47, 47, 0.95)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         color: 'white',
     },
-
-    // ✅ Review Modal Content
-    reviewModalContent: {
-        backgroundColor: 'white', borderRadius: '16px', maxWidth: '500px',
-        width: '100%', maxHeight: '90vh', overflow: 'hidden',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-    },
-
     modalHeader: {
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '24px', borderBottom: '1px solid #e5e7eb'
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '24px',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'rgba(14, 69, 30, 0.2)',
     },
     modalTitle: {
-        fontSize: '20px', fontWeight: '700', color: 'white', margin: 0,
-        display: 'flex', alignItems: 'center'
+        fontSize: '20px',
+        fontWeight: '700',
+        color: 'white',
+        margin: 0,
+        display: 'flex',
+        alignItems: 'center'
     },
     closeButton: {
-        background: 'none', border: 'none', cursor: 'pointer',
-        color: '#6b7280', padding: '8px', borderRadius: '8px',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        color: '#6b7280',
+        padding: '8px',
+        borderRadius: '8px',
         transition: 'all 0.2s'
     },
     modalBody: {
-        flex: 1, // ✅ allow it to grow & scroll inside modal
+        flex: 1,
         padding: '24px',
         overflowY: 'auto',
-        maxHeight: 'calc(90vh - 140px)', // ✅ adjusted to leave room for footer
+        maxHeight: 'calc(90vh - 140px)',
         boxSizing: 'border-box',
     },
-
     detailSection: {
         marginBottom: '24px'
     },
     sectionTitle: {
-        fontSize: '16px', fontWeight: '600', color: '#1a4845',
-        marginBottom: '12px', margin: '0 0 12px 0'
+        fontSize: '16px',
+        fontWeight: '600',
+        color: '#1a4845',
+        marginBottom: '12px',
+        margin: '0 0 12px 0'
     },
     statusDetail: {
-        display: 'flex', alignItems: 'center', gap: '12px',
-        backgroundColor: 'transparent', padding: '12px', borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        backgroundColor: 'transparent',
+        padding: '12px',
+        borderRadius: '8px',
         border: '1px solid rgba(255, 255, 255, 0.38)',
         color: 'white',
     },
     infoGrid: {
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
         gap: '16px'
     },
     infoItem: {
-        display: 'flex', alignItems: 'flex-start', gap: '12px',
-        padding: '12px', borderRadius: '8px', backgroundColor: 'transparent',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '12px',
+        padding: '12px',
+        borderRadius: '8px',
+        backgroundColor: 'transparent',
         border: '1px solid rgba(255, 255, 255, 0.38)',
         color: '#1a4845',
     },
     infoLabel: {
-        fontSize: '12px', color: '#1a4845', fontWeight: '500',
-        textTransform: 'uppercase', letterSpacing: '0.05em'
+        fontSize: '12px',
+        color: '#1a4845',
+        fontWeight: '500',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em'
     },
     infoValue: {
-        fontSize: '14px', color: '#6b7280', fontWeight: '500', marginTop: '2px'
+        fontSize: '14px',
+        color: '#6b7280',
+        fontWeight: '500',
+        marginTop: '2px'
     },
     itemsList: {
-        display: 'flex', flexDirection: 'column', gap: '12px'
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px'
     },
     modalOrderItem: {
-        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-        padding: '16px', backgroundColor: 'transparent',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        padding: '16px',
+        backgroundColor: 'transparent',
         border: '1px solid rgba(255, 255, 255, 0.38)',
-        color: 'white', borderRadius: '8px'
+        color: 'white',
+        borderRadius: '8px'
     },
     modalItemInfo: {
         flex: 1
     },
     modalItemName: {
-        fontSize: '16px', fontWeight: '600', color: '#1a4845', marginBottom: '4px'
+        fontSize: '16px',
+        fontWeight: '600',
+        color: '#1a4845',
+        marginBottom: '4px'
     },
     modalItemPrice: {
-        fontSize: '14px', color: '#6b7280', marginBottom: '6px'
+        fontSize: '14px',
+        color: '#6b7280',
+        marginBottom: '6px'
     },
     modalItemDesc: {
-        fontSize: '12px', color: '#6b7280', lineHeight: '1.4', marginBottom: '8px'
+        fontSize: '12px',
+        color: '#6b7280',
+        lineHeight: '1.4',
+        marginBottom: '8px'
     },
-
-    // ✅ Product Review in Modal
-    modalProductReview: {
-        marginTop: '8px'
-    },
-
     modalItemTotal: {
-        fontSize: '16px', fontWeight: '700', color: '#1a4845'
+        fontSize: '16px',
+        fontWeight: '700',
+        color: '#1a4845'
     },
     noItemsModal: {
-        textAlign: 'center', padding: '20px', color: '#9ca3af',
+        textAlign: 'center',
+        padding: '20px',
+        color: '#9ca3af',
         fontStyle: 'italic'
     },
     addressBox: {
-        display: 'flex', alignItems: 'center', gap: '12px',
-        padding: '16px', backgroundColor: 'transparent',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '16px',
+        backgroundColor: 'transparent',
         border: '1px solid rgba(255, 255, 255, 0.38)',
-        color: '#1a4845', borderRadius: '8px',
+        color: '#1a4845',
+        borderRadius: '8px',
     },
     addressText: {
-        fontSize: '14px', color: '#1a4845', lineHeight: '1.5'
+        fontSize: '14px',
+        color: '#1a4845',
+        lineHeight: '1.5'
     },
     cancelReasonBox: {
-        display: 'flex', alignItems: 'flex-start', gap: '12px',
-        padding: '16px', backgroundColor: '#fef2f2', borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '12px',
+        padding: '16px',
+        backgroundColor: '#fef2f2',
+        borderRadius: '8px',
         border: '1px solid #fecaca'
     },
     cancelReasonText: {
-        fontSize: '14px', color: '#dc2626', lineHeight: '1.5'
+        fontSize: '14px',
+        color: '#dc2626',
+        lineHeight: '1.5'
     },
     totalSection: {
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '16px', backgroundColor: 'transparent',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '16px',
+        backgroundColor: 'transparent',
         border: '1px solid rgba(255, 255, 255, 0.38)',
-        color: 'white', borderRadius: '8px',
-    },
-    totalLabel: {
-        fontSize: '16px', fontWeight: '600', color: '#1a4845'
+        color: 'white',
+        borderRadius: '8px',
     },
     totalAmount: {
-        fontSize: '20px', fontWeight: '700', color: '#1a4845'
+        fontSize: '20px',
+        fontWeight: '700',
+        color: '#1a4845'
     },
     modalFooter: {
         display: 'flex',
@@ -1398,21 +1507,51 @@ const styles = {
         alignItems: 'center',
         gap: '12px',
         padding: '16px 24px',
-        borderTop: '1px solid #e5e7eb',
-        backgroundColor: 'rgba(14, 69, 30, 0.145)',
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'rgba(14, 69, 30, 0.2)',
         position: 'sticky',
         bottom: 0,
         zIndex: 1,
     },
     closeModalButton: {
-        padding: '10px 20px', backgroundColor: '#6b7280', color: 'white',
-        border: 'none', borderRadius: '8px', cursor: 'pointer',
-        fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
+        padding: '10px 20px',
+        backgroundColor: '#6b7280',
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: '500',
+        transition: 'all 0.2s'
     },
     cancelModalButton: {
-        padding: '10px 20px', backgroundColor: '#ef4444', color: 'white',
-        border: 'none', borderRadius: '8px', cursor: 'pointer',
-        fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
+        padding: '10px 20px',
+        backgroundColor: '#ef4444',
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: '500',
+        transition: 'all 0.2s'
     },
-
+    confirmCancelButton: {
+        padding: '10px 20px',
+        backgroundColor: '#ef4444',
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: '600',
+        transition: 'all 0.2s',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+    },
+    buttonContent: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+    },
 };
