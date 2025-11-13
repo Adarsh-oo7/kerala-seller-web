@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { Upload, Check, AlertCircle, Star, Building, Save, Image as ImageIcon, Trash2, X, ArrowRight, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Upload, Check, AlertCircle, Star, Building, Save, Image as ImageIcon, Trash2, X } from 'lucide-react';
 
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
@@ -37,7 +37,6 @@ const uploadToCloudinary = async (file, options = {}) => {
       if (options.crop) formData.append('crop', options.crop);
       formData.append('quality', 'auto:good');
       formData.append('fetch_format', 'auto');
-
       const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudname}/image/upload`, { method: 'POST', body: formData });
       if (!response.ok) {
         if (name === 'fallback') throw new Error('Upload failed');
@@ -74,12 +73,6 @@ export default function SettingsPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isDeleting, setIsDeleting] = useState({ logo: false, banner: false });
-  
-  const [paymentStatus, setPaymentStatus] = useState({
-    razorpay: { connected: false, verified: false, status: 'not_connected' },
-    is_ready: false
-  });
-  const [loadingPaymentStatus, setLoadingPaymentStatus] = useState(true);
 
   const router = useRouter();
 
@@ -88,21 +81,6 @@ export default function SettingsPage() {
     if (!token) { router.push('/login/seller'); return null; }
     return { Authorization: `Bearer ${token}` };
   }, [router]);
-
-  const fetchPaymentStatus = useCallback(async () => {
-    const headers = getAuthHeaders();
-    if (!headers) return;
-    
-    try {
-      setLoadingPaymentStatus(true);
-      const response = await axios.get(`${API_BASE_URL}/api/payments/account/gateway_status/`, { headers });
-      setPaymentStatus(response.data);
-    } catch (error) {
-      console.error('Error fetching payment status:', error);
-    } finally {
-      setLoadingPaymentStatus(false);
-    }
-  }, [getAuthHeaders]);
 
   const fetchPredefinedBanners = useCallback(async () => {
     try {
@@ -140,8 +118,7 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchStoreProfile();
     fetchPredefinedBanners();
-    fetchPaymentStatus();
-  }, [fetchStoreProfile, fetchPredefinedBanners, fetchPaymentStatus]);
+  }, [fetchStoreProfile, fetchPredefinedBanners]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -251,19 +228,19 @@ export default function SettingsPage() {
     e.preventDefault();
     setSuccessMessage('');
     setErrorMessage('');
-    
+  
     if (!store.name?.trim() || !store.description?.trim() || !store.whatsappnumber?.trim()) {
       setErrorMessage('Fill all required fields');
       return;
     }
-    
+  
     setIsSaving(true);
     const headers = getAuthHeaders();
     if (!headers) {
       setIsSaving(false);
       return;
     }
-    
+  
     try {
       const requestData = {
         ...store,
@@ -271,17 +248,17 @@ export default function SettingsPage() {
         predefined_banner_2: selectedPredefinedBanners[1] || null,
         predefined_banner_3: selectedPredefinedBanners[2] || null,
       };
-      
+  
       if (newLogo) {
         requestData.cloudinary_logo = { public_id: newLogo.publicid, url: newLogo.url };
       }
-      
+  
       if (newBanner) {
         requestData.cloudinary_banner_1 = { public_id: newBanner.publicid, url: newBanner.url };
       }
-      
+  
       const response = await axios.patch(API_URL, requestData, { headers });
-      
+  
       if (response.data.store_profile) {
         setStore((prev) => ({ ...prev, ...response.data.store_profile }));
         setNewLogo(null);
@@ -291,10 +268,13 @@ export default function SettingsPage() {
         if (response.data.store_profile.logo_url) setCurrentLogoUrl(response.data.store_profile.logo_url);
         if (response.data.store_profile.banner_1_url) setCurrentBannerUrl(response.data.store_profile.banner_1_url);
       }
-      
-      setSuccessMessage('✅ Settings updated!');
-      setTimeout(() => setSuccessMessage(''), 5000);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+      setSuccessMessage('✅ Settings updated! Redirecting...');
+  
+      setTimeout(() => {
+        router.push('/dashboard/seller/payments');
+      }, 1500);
+  
     } catch (error) {
       console.error('❌ Update error:', error);
       setErrorMessage(error.response?.data?.error || 'Update failed');
@@ -304,96 +284,477 @@ export default function SettingsPage() {
     }
   };
 
-  if (isLoading) return (<div style={s.load}><div style={s.spin}></div><p>Loading...</p></div>);
-
-  const getPaymentStatusDisplay = () => {
-    if (loadingPaymentStatus) {
-      return { icon: Clock, color: '#6b7280', bgColor: '#f3f4f6', text: 'Loading...', desc: 'Checking payment status' };
-    }
-    
-    if (paymentStatus.razorpay.verified || paymentStatus.razorpay.connected) {
-      return { icon: CheckCircle2, color: '#10b981', bgColor: '#ecfdf5', text: 'Connected', desc: 'Razorpay payment gateway is active' };
-    }
-    
-    return { icon: XCircle, color: '#ef4444', bgColor: '#fef2f2', text: 'Not Connected', desc: 'Set up Razorpay to accept payments' };
-  };
-
-  const statusDisplay = getPaymentStatusDisplay();
-  const StatusIcon = statusDisplay.icon;
+  if (isLoading) 
+    return (
+      <div style={s.load}>
+        <div style={s.spin}></div>
+        <p>Loading...</p>
+      </div>
+    );
 
   return (
     <div style={s.c}>
       <div style={s.h}>
-        <div><h1 style={s.t}>Store Settings</h1><p style={s.st}>Manage your store info & media</p></div>
-      </div>
-
-      {successMessage && <div style={s.sa}><Check size={18}/><span>{successMessage}</span></div>}
-      {errorMessage && <div style={s.ea}><AlertCircle size={18}/><span>{errorMessage}</span></div>}
-
-      <div style={{...s.statusCard, backgroundColor: statusDisplay.bgColor, borderColor: statusDisplay.color}}>
-        <div style={s.statusContent}>
-          <div style={s.statusHeader}>
-            <StatusIcon size={20} color={statusDisplay.color} />
-            <h3 style={{...s.statusTitle, color: statusDisplay.color}}>Payment Gateway: {statusDisplay.text}</h3>
-          </div>
-          <p style={{...s.statusDesc, color: statusDisplay.color}}>{statusDisplay.desc}</p>
+        <div>
+          <h1 style={s.t}>Store Settings</h1>
+          <p style={s.st}>Manage your store info & media</p>
         </div>
-        <button onClick={() => router.push('/dashboard/seller/payments')} style={{...s.statusBtn, backgroundColor: statusDisplay.color}}>
-          {paymentStatus.razorpay.connected ? 'Manage' : 'Setup Now'} <ArrowRight size={14} />
-        </button>
       </div>
+
+      {successMessage && (
+        <div style={s.sa}>
+          <Check size={18} />
+          <span>{successMessage}</span>
+        </div>
+      )}
+      {errorMessage && (
+        <div style={s.ea}>
+          <AlertCircle size={18} />
+          <span>{errorMessage}</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} style={s.f}>
+        {/* Store Images Section */}
         <div style={s.sec}>
-          <h3 style={s.sh}><Star size={18}/>Store Images</h3>
+          <h3 style={s.sh}>
+            <Star size={18} />
+            Store Images
+          </h3>
           <div style={s.ig}>
             <div>
-              <label style={s.l}>Logo{(logoPreview || currentLogoUrl) && <span style={{color:'#10b981',fontSize:'11px',marginLeft:'6px'}}>✓ Set</span>}</label>
+              <label style={s.l}>
+                Logo
+                {(logoPreview || currentLogoUrl) && (
+                  <span style={{ color: '#10b981', fontSize: '11px', marginLeft: '6px' }}>
+                    ✓ Set
+                  </span>
+                )}
+              </label>
               <div style={s.iu}>
                 {logoPreview || currentLogoUrl ? (
                   <>
-                    <img src={logoPreview || currentLogoUrl} alt="Logo" style={s.lp}/>
-                    <button type="button" onClick={handleDeleteLogo} disabled={isDeleting.logo} style={s.db}>
-                      {isDeleting.logo ? <div style={{width:'12px',height:'12px',border:'2px solid white',borderTop:'2px solid transparent',borderRadius:'50%',animation:'spin 0.6s linear infinite'}}></div> : <Trash2 size={14}/>}
+                    <img src={logoPreview || currentLogoUrl} alt="Logo" style={s.lp} />
+                    <button
+                      type="button"
+                      onClick={handleDeleteLogo}
+                      disabled={isDeleting.logo}
+                      style={s.db}
+                    >
+                      {isDeleting.logo ? (
+                        <div
+                          style={{
+                            width: '12px',
+                            height: '12px',
+                            border: '2px solid white',
+                            borderTop: '2px solid transparent',
+                            borderRadius: '50%',
+                            animation: 'spin 0.6s linear infinite',
+                          }}
+                        />
+                      ) : (
+                        <Trash2 size={14} />
+                      )}
                     </button>
                   </>
                 ) : (
-                  <div style={s.ph}><Upload size={20}/><span>No Logo</span></div>
+                  <div style={s.ph}>
+                    <Upload size={20} />
+                    <span>No Logo</span>
+                  </div>
                 )}
-                <div style={s.io}><input type="file" accept="image/*" onChange={(e)=>handleFileChange('logo',e.target.files[0])} style={s.hi} id="logo-up" disabled={isUploading}/><label htmlFor="logo-up" style={s.ub}>{isUploading?'Uploading...':(currentLogoUrl||logoPreview)?'📷 Change':'📤 Upload'}</label></div>
+                <div style={s.io}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileChange('logo', e.target.files[0])}
+                    style={s.hi}
+                    id="logo-up"
+                    disabled={isUploading}
+                  />
+                  <label htmlFor="logo-up" style={s.ub}>
+                    {isUploading ? 'Uploading...' : currentLogoUrl || logoPreview ? '📷 Change' : '📤 Upload'}
+                  </label>
+                </div>
               </div>
-              {logoPreview && <p style={{fontSize:'11px',color:'#f59e0b',marginTop:'6px',fontWeight:600}}>⚠️ Click Save to apply</p>}
+              {logoPreview && (
+                <p
+                  style={{
+                    fontSize: '11px',
+                    color: '#f59e0b',
+                    marginTop: '6px',
+                    fontWeight: 600,
+                  }}
+                >
+                  ⚠️ Click Save to apply
+                </p>
+              )}
             </div>
 
             <div>
               <label style={s.l}>Banner</label>
-              <button type="button" onClick={()=>setShowBannerGallery(!showBannerGallery)} style={{...s.gb,backgroundColor:selectedPredefinedBanners.length>0?'#10b981':'#8b5cf6'}}><ImageIcon size={14}/>{selectedPredefinedBanners.length>0?`✅ ${selectedPredefinedBanners.length} Selected`:'🎨 Choose (Max 3)'}</button>
-              {showBannerGallery && <div style={s.bg}><h4 style={{fontSize:'13px',fontWeight:600,marginBottom:'10px',color:'#374151'}}>{predefinedBanners.length>0?`Select Banners (${selectedPredefinedBanners.length}/3)`:'No banners'}</h4>{predefinedBanners.length>0?<div style={s.gg}>{predefinedBanners.map((b)=><div key={b.id} onClick={()=>handleBannerSelect(b.id,b.image_url)} style={{...s.gi,...(selectedPredefinedBanners.includes(b.id)?s.gis:{})}}><img src={b.image_url} alt={b.name} style={s.gim}/>{selectedPredefinedBanners.includes(b.id)&&<div style={s.sb}><Check size={12}/>#{selectedPredefinedBanners.indexOf(b.id)+1}</div>}<div style={s.bn}>{b.name}</div></div>)}</div>:<p style={{color:'#6b7280',fontSize:'13px',textAlign:'center',padding:'15px'}}>No banners. Contact admin.</p>}</div>}
-              {currentBannerUrls.length>0 && <div style={{marginTop:'10px',marginBottom:'10px'}}><label style={s.l}>Selected ({currentBannerUrls.length})</label><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:'6px',marginTop:'6px'}}>{currentBannerUrls.map((url,i)=>{const bannerId = selectedPredefinedBanners[i];return (<div key={i} style={{position:'relative',borderRadius:'6px',overflow:'hidden',border:'2px solid #10b981'}}><img src={url} alt={`Banner ${i+1}`} style={{width:'100%',height:'70px',objectFit:'cover'}}/><div style={{position:'absolute',top:'3px',left:'3px',backgroundColor:'#10b981',color:'white',borderRadius:'3px',padding:'2px 5px',fontSize:'10px',fontWeight:600}}>#{i+1}</div><button type="button" onClick={() => handleRemovePredefinedBanner(bannerId, url)} style={{position:'absolute',top:'3px',right:'3px',backgroundColor:'#ef4444',color:'white',border:'none',borderRadius:'3px',padding:'3px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={12}/></button></div>);})}</div></div>}
-              <div style={{marginTop:'10px'}}><label style={s.l}>Custom Banner{(bannerPreview || currentBannerUrl) && <span style={{color:'#10b981',fontSize:'11px',marginLeft:'6px'}}>✓ Set</span>}</label><div style={s.iu}>{bannerPreview || currentBannerUrl ? (<><img src={bannerPreview || currentBannerUrl} alt="Banner" style={s.bp}/><button type="button" onClick={handleDeleteBanner} disabled={isDeleting.banner} style={s.db}>{isDeleting.banner ? <div style={{width:'12px',height:'12px',border:'2px solid white',borderTop:'2px solid transparent',borderRadius:'50%',animation:'spin 0.6s linear infinite'}}></div> : <Trash2 size={14}/>}</button></>) : <div style={s.ph}><Upload size={20}/><span>No Banner</span></div>}<div style={s.io}><input type="file" accept="image/*" onChange={(e)=>handleFileChange('banner',e.target.files[0])} style={s.hi} id="ban-up" disabled={isUploading}/><label htmlFor="ban-up" style={s.ub}>{isUploading?'Uploading...':(currentBannerUrl||bannerPreview)?'📷 Change':'📤 Upload'}</label></div></div>{bannerPreview && <p style={{fontSize:'11px',color:'#f59e0b',marginTop:'6px',fontWeight:600}}>⚠️ Click Save to apply</p>}</div>
+              <button
+                type="button"
+                onClick={() => setShowBannerGallery(!showBannerGallery)}
+                style={{
+                  ...s.gb,
+                  backgroundColor: selectedPredefinedBanners.length > 0 ? '#10b981' : '#8b5cf6',
+                }}
+              >
+                <ImageIcon size={14} />
+                {selectedPredefinedBanners.length > 0
+                  ? `✅ ${selectedPredefinedBanners.length} Selected`
+                  : '🎨 Choose (Max 3)'}
+              </button>
+              {showBannerGallery && (
+                <div style={s.bg}>
+                  <h4
+                    style={{
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      marginBottom: '10px',
+                      color: '#374151',
+                    }}
+                  >
+                    {predefinedBanners.length > 0
+                      ? `Select Banners (${selectedPredefinedBanners.length}/3)`
+                      : 'No banners. Contact admin.'}
+                  </h4>
+                  {predefinedBanners.length > 0 ? (
+                    <div style={s.gg}>
+                      {predefinedBanners.map((b) => (
+                        <div
+                          key={b.id}
+                          onClick={() => handleBannerSelect(b.id, b.image_url)}
+                          style={{
+                            ...s.gi,
+                            ...(selectedPredefinedBanners.includes(b.id) ? s.gis : {}),
+                          }}
+                        >
+                          <img src={b.image_url} alt={b.name} style={s.gim} />
+                          {selectedPredefinedBanners.includes(b.id) && (
+                            <div style={s.sb}>
+                              <Check size={12} />
+                              #{selectedPredefinedBanners.indexOf(b.id) + 1}
+                            </div>
+                          )}
+                          <div style={s.bn}>{b.name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p
+                      style={{
+                        color: '#6b7280',
+                        fontSize: '13px',
+                        textAlign: 'center',
+                        padding: '15px',
+                      }}
+                    >
+                      No banners. Contact admin.
+                    </p>
+                  )}
+                </div>
+              )}
+              {currentBannerUrls.length > 0 && (
+                <div style={{ marginTop: '10px', marginBottom: '10px' }}>
+                  <label style={s.l}>Selected ({currentBannerUrls.length})</label>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))',
+                      gap: '6px',
+                      marginTop: '6px',
+                    }}
+                  >
+                    {currentBannerUrls.map((url, i) => {
+                      const bannerId = selectedPredefinedBanners[i];
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            position: 'relative',
+                            borderRadius: '6px',
+                            overflow: 'hidden',
+                            border: '2px solid #10b981',
+                          }}
+                        >
+                          <img
+                            src={url}
+                            alt={`Banner ${i + 1}`}
+                            style={{ width: '100%', height: '70px', objectFit: 'cover' }}
+                          />
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '3px',
+                              left: '3px',
+                              backgroundColor: '#10b981',
+                              color: 'white',
+                              borderRadius: '3px',
+                              padding: '2px 5px',
+                              fontSize: '10px',
+                              fontWeight: 600,
+                            }}
+                          >
+                            #{i + 1}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePredefinedBanner(bannerId, url)}
+                            style={{
+                              position: 'absolute',
+                              top: '3px',
+                              right: '3px',
+                              backgroundColor: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '3px',
+                              padding: '3px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              <div style={{ marginTop: '10px' }}>
+                <label style={s.l}>
+                  Custom Banner
+                  {(bannerPreview || currentBannerUrl) && (
+                    <span style={{ color: '#10b981', fontSize: '11px', marginLeft: '6px' }}>✓ Set</span>
+                  )}
+                </label>
+                <div style={s.iu}>
+                  {bannerPreview || currentBannerUrl ? (
+                    <>
+                      <img src={bannerPreview || currentBannerUrl} alt="Banner" style={s.bp} />
+                      <button
+                        type="button"
+                        onClick={handleDeleteBanner}
+                        disabled={isDeleting.banner}
+                        style={s.db}
+                      >
+                        {isDeleting.banner ? (
+                          <div
+                            style={{
+                              width: '12px',
+                              height: '12px',
+                              border: '2px solid white',
+                              borderTop: '2px solid transparent',
+                              borderRadius: '50%',
+                              animation: 'spin 0.6s linear infinite',
+                            }}
+                          />
+                        ) : (
+                          <Trash2 size={14} />
+                        )}
+                      </button>
+                    </>
+                  ) : (
+                    <div style={s.ph}>
+                      <Upload size={20} />
+                      <span>No Banner</span>
+                    </div>
+                  )}
+                  <div style={s.io}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileChange('banner', e.target.files[0])}
+                      style={s.hi}
+                      id="ban-up"
+                      disabled={isUploading}
+                    />
+                    <label htmlFor="ban-up" style={s.ub}>
+                      {isUploading ? 'Uploading...' : currentBannerUrl || bannerPreview ? '📷 Change' : '📤 Upload'}
+                    </label>
+                  </div>
+                </div>
+                {bannerPreview && (
+                  <p
+                    style={{
+                      fontSize: '11px',
+                      color: '#f59e0b',
+                      marginTop: '6px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    ⚠️ Click Save to apply
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
-        
+
+        {/* Basic Info Section */}
         <div style={s.sec}>
-          <h3 style={s.sh}><Building size={18}/>Basic Info</h3>
-          <div style={s.fg}><label style={s.l}>Store Name *</label><input type="text" name="name" value={store.name} onChange={handleInputChange} required style={s.in} placeholder="My Store"/></div>
-          <div style={s.fg}><label style={s.l}>Tagline</label><input type="text" name="tagline" value={store.tagline} onChange={handleInputChange} style={s.in} placeholder="Quality Products" maxLength={150}/></div>
-          <div style={s.fg}><label style={s.l}>Description *</label><textarea name="description" value={store.description} onChange={handleInputChange} required rows={3} style={s.ta} placeholder="About your store..." maxLength={500}/></div>
-          <div style={s.gr}>
-            <div style={s.fg}><label style={s.l}>WhatsApp *</label><input type="text" name="whatsappnumber" value={store.whatsappnumber} onChange={handleInputChange} required style={s.in} placeholder="+91 9876543210"/></div>
-            <div style={s.fg}><label style={s.l}>Local Delivery</label><input type="text" name="deliverytimelocal" value={store.deliverytimelocal} onChange={handleInputChange} style={s.in} placeholder="1-2 days"/></div>
+          <h3 style={s.sh}>
+            <Building size={18} />
+            Basic Info
+          </h3>
+          <div style={s.fg}>
+            <label style={s.l}>Store Name *</label>
+            <input
+              type="text"
+              name="name"
+              value={store.name}
+              onChange={handleInputChange}
+              required
+              style={s.in}
+              placeholder="My Store"
+            />
           </div>
-          <div style={s.fg}><label style={s.l}>National Delivery</label><input type="text" name="deliverytimenational" value={store.deliverytimenational} onChange={handleInputChange} style={s.in} placeholder="3-7 days"/></div>
-          <div style={s.fg}><label style={s.cl}><input type="checkbox" name="acceptscod" checked={store.acceptscod} onChange={handleInputChange} style={s.cb2}/>Accept Cash on Delivery (COD)</label></div>
+          <div style={s.fg}>
+            <label style={s.l}>Tagline</label>
+            <input
+              type="text"
+              name="tagline"
+              value={store.tagline}
+              onChange={handleInputChange}
+              style={s.in}
+              placeholder="Quality Products"
+              maxLength={150}
+            />
+          </div>
+          <div style={s.fg}>
+            <label style={s.l}>Description *</label>
+            <textarea
+              name="description"
+              value={store.description}
+              onChange={handleInputChange}
+              required
+              rows={3}
+              style={s.ta}
+              placeholder="About your store..."
+              maxLength={500}
+            />
+          </div>
+          <div style={s.gr}>
+            <div style={s.fg}>
+              <label style={s.l}>WhatsApp *</label>
+              <input
+                type="text"
+                name="whatsappnumber"
+                value={store.whatsappnumber}
+                onChange={handleInputChange}
+                required
+                style={s.in}
+                placeholder="+91 9876543210"
+              />
+            </div>
+            <div style={s.fg}>
+              <label style={s.l}>Local Delivery</label>
+              <input
+                type="text"
+                name="deliverytimelocal"
+                value={store.deliverytimelocal}
+                onChange={handleInputChange}
+                style={s.in}
+                placeholder="1-2 days"
+              />
+            </div>
+          </div>
+          <div style={s.fg}>
+            <label style={s.l}>National Delivery</label>
+            <input
+              type="text"
+              name="deliverytimenational"
+              value={store.deliverytimenational}
+              onChange={handleInputChange}
+              style={s.in}
+              placeholder="3-7 days"
+            />
+          </div>
+          <div style={s.fg}>
+            <label style={s.cl}>
+              <input
+                type="checkbox"
+                name="acceptscod"
+                checked={store.acceptscod}
+                onChange={handleInputChange}
+                style={s.cb2}
+              />
+              Accept Cash on Delivery (COD)
+            </label>
+          </div>
         </div>
 
-        <div style={s.ss}><button type="submit" disabled={isSaving} style={s.sb2}>{isSaving?'Saving...':<><Save size={16}/>Save Changes</>}</button></div>
+        <div style={s.ss}>
+          <button type="submit" disabled={isSaving} style={s.sb2}>
+            {isSaving ? 'Saving...' : <><Save size={16} />Save & Continue to Payments</>}
+          </button>
+        </div>
       </form>
 
-      <style jsx>{`@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes slideDown{from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      <style jsx>{`
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-15px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }
 
-const s={c:{minHeight:'100vh',backgroundColor:'#f9fafb',padding:'16px',maxWidth:'900px',margin:'0 auto'},load:{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'300px',gap:'15px'},spin:{width:'28px',height:'28px',border:'3px solid #f3f3f3',borderTop:'3px solid #3b82f6',borderRadius:'50%',animation:'spin 1s linear infinite'},h:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px',flexWrap:'wrap',gap:'12px'},t:{fontSize:'24px',fontWeight:700,color:'#1f2937',margin:0},st:{color:'#6b7280',fontSize:'13px',marginTop:'3px'},sa:{display:'flex',alignItems:'center',gap:'10px',padding:'14px 18px',backgroundColor:'#ecfdf5',border:'2px solid #10b981',borderRadius:'10px',color:'#065f46',marginBottom:'16px',fontSize:'14px',fontWeight:600,boxShadow:'0 3px 10px rgba(16,185,129,0.2)',animation:'slideDown 0.3s'},ea:{display:'flex',alignItems:'center',gap:'10px',padding:'14px 18px',backgroundColor:'#fef2f2',border:'2px solid #ef4444',borderRadius:'10px',color:'#991b1b',marginBottom:'16px',fontSize:'14px',fontWeight:600,boxShadow:'0 3px 10px rgba(239,68,68,0.2)',animation:'slideDown 0.3s'},statusCard:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'18px 20px',borderRadius:'12px',marginBottom:'20px',border:'2px solid',transition:'all 0.2s'},statusContent:{flex:1},statusHeader:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'6px'},statusTitle:{fontSize:'15px',fontWeight:700,margin:0},statusDesc:{fontSize:'13px',margin:0,opacity:0.9},statusBtn:{display:'flex',alignItems:'center',gap:'6px',padding:'10px 18px',color:'white',border:'none',borderRadius:'8px',cursor:'pointer',fontSize:'13px',fontWeight:600,transition:'all 0.2s'},f:{display:'flex',flexDirection:'column',gap:'16px'},sec:{backgroundColor:'white',borderRadius:'12px',padding:'20px',boxShadow:'0 1px 2px rgba(0,0,0,0.1)'},sh:{display:'flex',alignItems:'center',gap:'10px',fontSize:'16px',fontWeight:700,color:'#1f2937',marginBottom:'16px',paddingBottom:'12px',borderBottom:'2px solid #f3f4f6'},fg:{display:'flex',flexDirection:'column',gap:'6px',marginBottom:'12px'},gr:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:'12px',marginBottom:'12px'},l:{fontSize:'13px',fontWeight:600,color:'#374151'},in:{padding:'10px 14px',border:'2px solid #e5e7eb',borderRadius:'6px',fontSize:'13px',outline:'none'},ta:{padding:'10px 14px',border:'2px solid #e5e7eb',borderRadius:'6px',fontSize:'13px',outline:'none',resize:'vertical',fontFamily:'inherit'},cl:{display:'flex',alignItems:'center',gap:'6px',cursor:'pointer',fontSize:'13px'},cb2:{width:'14px',height:'14px',cursor:'pointer'},ig:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:'16px'},gb:{display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',width:'100%',padding:'10px',border:'none',borderRadius:'6px',color:'white',fontSize:'13px',fontWeight:600,cursor:'pointer',marginBottom:'10px',transition:'all 0.2s'},bg:{padding:'12px',backgroundColor:'#f9fafb',borderRadius:'10px',border:'2px solid #e5e7eb',marginBottom:'10px'},gg:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',gap:'10px'},gi:{position:'relative',border:'2px solid #e5e7eb',borderRadius:'6px',overflow:'hidden',cursor:'pointer',transition:'all 0.2s'},gis:{border:'3px solid #10b981',boxShadow:'0 3px 10px rgba(16,185,129,0.3)'},gim:{width:'100%',height:'85px',objectFit:'cover'},sb:{position:'absolute',top:'4px',right:'4px',display:'flex',alignItems:'center',gap:'3px',padding:'3px 6px',backgroundColor:'#10b981',color:'white',borderRadius:'4px',fontSize:'10px',fontWeight:600},bn:{padding:'6px',backgroundColor:'white',fontSize:'11px',fontWeight:500,color:'#374151',textAlign:'center'},iu:{position:'relative',borderRadius:'10px',overflow:'hidden',border:'2px dashed #d1d5db',backgroundColor:'#f9fafb'},lp:{width:'100%',height:'160px',objectFit:'contain',backgroundColor:'white'},bp:{width:'100%',height:'160px',objectFit:'cover'},ph:{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'160px',color:'#6b7280',gap:'6px',fontSize:'13px'},io:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',opacity:0,transition:'opacity 0.2s'},hi:{display:'none'},ub:{display:'inline-block',padding:'10px 16px',backgroundColor:'#3b82f6',color:'white',borderRadius:'6px',cursor:'pointer',fontSize:'13px',fontWeight:500},db:{position:'absolute',top:'8px',right:'8px',backgroundColor:'#ef4444',color:'white',border:'none',borderRadius:'6px',padding:'8px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 2px 6px rgba(239,68,68,0.4)',transition:'all 0.2s',zIndex:10},ss:{display:'flex',justifyContent:'flex-end',paddingTop:'16px'},sb2:{display:'flex',alignItems:'center',gap:'10px',padding:'14px 28px',backgroundColor:'#3b82f6',color:'white',border:'none',borderRadius:'10px',cursor:'pointer',fontSize:'15px',fontWeight:600}};
+const s = {
+  c: { minHeight: '100vh', backgroundColor: '#f9fafb', padding: '16px', maxWidth: '900px', margin: '0 auto' },
+  load: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '15px' },
+  spin: { width: '28px', height: '28px', border: '3px solid #f3f3f3', borderTop: '3px solid #3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' },
+  h: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' },
+  t: { fontSize: '24px', fontWeight: 700, color: '#1f2937', margin: 0 },
+  st: { color: '#6b7280', fontSize: '13px', marginTop: '3px' },
+  sa: { display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', backgroundColor: '#ecfdf5', border: '2px solid #10b981', borderRadius: '10px', color: '#065f46', marginBottom: '16px', fontSize: '14px', fontWeight: 600, boxShadow: '0 3px 10px rgba(16,185,129,0.2)', animation: 'slideDown 0.3s' },
+  ea: { display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', backgroundColor: '#fef2f2', border: '2px solid #ef4444', borderRadius: '10px', color: '#991b1b', marginBottom: '16px', fontSize: '14px', fontWeight: 600, boxShadow: '0 3px 10px rgba(239,68,68,0.2)', animation: 'slideDown 0.3s' },
+  f: { display: 'flex', flexDirection: 'column', gap: '16px' },
+  sec: { backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' },
+  sh: { display: 'flex', alignItems: 'center', gap: '10px', fontSize: '16px', fontWeight: 700, color: '#1f2937', marginBottom: '16px', paddingBottom: '12px', borderBottom: '2px solid #f3f4f6' },
+  fg: { display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' },
+  gr: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '12px', marginBottom: '12px' },
+  l: { fontSize: '13px', fontWeight: 600, color: '#374151' },
+  in: { padding: '10px 14px', border: '2px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', outline: 'none' },
+  ta: { padding: '10px 14px', border: '2px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' },
+  cl: { display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' },
+  cb2: { width: '14px', height: '14px', cursor: 'pointer' },
+  ig: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: '16px' },
+  gb: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', padding: '10px', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer', marginBottom: '10px', transition: 'all 0.2s' },
+  bg: { padding: '12px', backgroundColor: '#f9fafb', borderRadius: '10px', border: '2px solid #e5e7eb', marginBottom: '10px' },
+  gg: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: '10px' },
+  gi: { position: 'relative', border: '2px solid #e5e7eb', borderRadius: '6px', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s' },
+  gis: { border: '3px solid #10b981', boxShadow: '0 3px 10px rgba(16,185,129,0.3)' },
+  gim: { width: '100%', height: '85px', objectFit: 'cover' },
+  sb: { position: 'absolute', top: '4px', right: '4px', display: 'flex', alignItems: 'center', gap: '3px', padding: '3px 6px', backgroundColor: '#10b981', color: 'white', borderRadius: '4px', fontSize: '10px', fontWeight: 600 },
+  bn: { padding: '6px', backgroundColor: 'white', fontSize: '11px', fontWeight: 500, color: '#374151', textAlign: 'center' },
+  iu: { position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '2px dashed #d1d5db', backgroundColor: '#f9fafb' },
+  lp: { width: '100%', height: '160px', objectFit: 'contain', backgroundColor: 'white' },
+  bp: { width: '100%', height: '160px', objectFit: 'cover' },
+  ph: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '160px', color: '#6b7280', gap: '6px', fontSize: '13px' },
+  io: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s' },
+  hi: { display: 'none' },
+  ub: { display: 'inline-block', padding: '10px 16px', backgroundColor: '#3b82f6', color: 'white', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 500 },
+  db: { position: 'absolute', top: '8px', right: '8px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(239,68,68,0.4)', transition: 'all 0.2s', zIndex: 10 },
+  ss: { display: 'flex', justifyContent: 'flex-end', paddingTop: '16px' },
+  sb2: { display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 28px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '15px', fontWeight: 600 },
+};

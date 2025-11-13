@@ -5,12 +5,12 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Header from '../../../components/common/Header'; // Adjust path as needed
-import Footer from '../../../components/common/Footer'; // Adjust path as needed
-import "../../../styles/Registerseller.css"; // Ensure this path is correct for global styles
+import Header from '../../../components/common/Header';
+import Footer from '../../../components/common/Footer';
+import "../../../styles/Registerseller.css";
 
 // Import Firebase Authentication modules
-import { auth } from '../../../firebase'; // Adjust path to your firebase.js file
+import { auth } from '../../../firebase';
 import {
     PhoneAuthProvider,
     RecaptchaVerifier,
@@ -41,13 +41,14 @@ const getApiBaseUrl = () => {
     if (process.env.NODE_ENV === 'development') {
         return 'http://localhost:8000';
     }
-    return 'https://keralaseller-backend.onrender.com'; // Your production backend URL
+    return 'https://keralaseller-backend.onrender.com';
 };
 
 const API_BASE_URL = getApiBaseUrl();
 const REGISTER_API = `${API_BASE_URL}/user/register/`;
+const CHECK_EXISTS_API = `${API_BASE_URL}/user/check-exists/`; // ✅ NEW
 
-console.log('🌐 Registration API URLs:', { API_BASE_URL, REGISTER_API });
+console.log('🌐 Registration API URLs:', { API_BASE_URL, REGISTER_API, CHECK_EXISTS_API });
 
 export default function RegisterSellerPage() {
     const [step, setStep] = useState(1);
@@ -59,7 +60,7 @@ export default function RegisterSellerPage() {
     const [formData, setFormData] = useState({
         name: '',
         shop_name: '',
-        phone: '', // Storing 10-digit local format
+        phone: '',
         email: '',
         password: '',
         confirmPassword: '',
@@ -69,26 +70,23 @@ export default function RegisterSellerPage() {
 
     // Firebase specific states
     const [recaptchaVerifier, setRecaptchaVerifier] = useState(null);
-    const [confirmationResult, setConfirmationResult] = useState(null); // Stores the result after sending OTP
+    const [confirmationResult, setConfirmationResult] = useState(null);
 
     // Initialize reCAPTCHA Verifier
     useEffect(() => {
-        // Ensure this runs only client-side and only once
         if (typeof window !== 'undefined' && !recaptchaVerifier) {
             try {
-                if (auth) { // Ensure auth object is available
+                if (auth) {
                     const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                        'size': 'invisible', // Makes the reCAPTCHA invisible initially
+                        'size': 'invisible',
                         'callback': (response) => {
                             console.log("reCAPTCHA callback fired!");
-                            // Here you might automatically trigger the OTP send if it's not already in progress
-                            // Or enable a disabled button once verification is complete.
                         },
                         'expired-callback': () => {
                             console.log("reCAPTCHA expired!");
                             setError('Security check expired. Please try sending OTP again.');
                             if (recaptchaVerifier) {
-                                recaptchaVerifier.clear(); // Clear and re-render if expired
+                                recaptchaVerifier.clear();
                             }
                             setIsLoading(false);
                         }
@@ -103,13 +101,12 @@ export default function RegisterSellerPage() {
                 setError("Failed to load security check. Please try again or refresh.");
             }
         }
-        // Cleanup function for useEffect (optional, but good practice if verifier needs to be destroyed)
         return () => {
             if (recaptchaVerifier) {
                 recaptchaVerifier.clear();
             }
         };
-    }, [recaptchaVerifier]); // Dependency array: re-run if recaptchaVerifier changes from null to a value
+    }, [recaptchaVerifier]);
 
     const validateEmail = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -117,7 +114,6 @@ export default function RegisterSellerPage() {
     };
 
     const validatePhone = (phone) => {
-        // Updated regex to allow 10 digits starting with 6-9
         const phoneRegex = /^[6-9]\d{9}$/;
         return phoneRegex.test(phone);
     };
@@ -172,7 +168,6 @@ export default function RegisterSellerPage() {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        // Format phone number to remove non-digits
         if (name === 'phone') {
             const formattedValue = value.replace(/\D/g, '').slice(0, 10);
             setFormData({ ...formData, [name]: formattedValue });
@@ -180,7 +175,6 @@ export default function RegisterSellerPage() {
             setFormData({ ...formData, [name]: value });
         }
 
-        // Clear validation error for this field
         if (validationErrors[name]) {
             setValidationErrors(prev => ({
                 ...prev,
@@ -188,10 +182,34 @@ export default function RegisterSellerPage() {
             }));
         }
 
-        // Clear general error
         if (error) setError('');
     };
 
+    // ✅ NEW: Check if seller exists before sending OTP
+    const checkSellerExists = async () => {
+        try {
+            console.log('🔍 Checking if seller exists...');
+            
+            const response = await axios.post(CHECK_EXISTS_API, {
+                phone: formData.phone.trim(),
+                email: formData.email.trim()
+            }, {
+                timeout: 10000,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log('✅ Check result:', response.data);
+            return response.data;
+
+        } catch (err) {
+            console.error('❌ Check seller exists failed:', err);
+            throw new Error('Failed to verify availability. Please try again.');
+        }
+    };
+
+    // 🔥 UPDATED: Check first, then send OTP
     const handleSendOtp = async (e) => {
         e.preventDefault();
         setError('');
@@ -209,32 +227,61 @@ export default function RegisterSellerPage() {
         setIsLoading(true);
 
         try {
-            const phoneNumber = `+91${formData.phone.trim()}`; // Firebase expects international format
+            // ✅ STEP 1: Check if phone/email already exists
+            console.log('🔍 Step 1: Checking if seller already exists...');
+            
+            const checkResult = await checkSellerExists();
+            
+            if (checkResult.exists) {
+                // ❌ Phone or email already exists
+                console.log('❌ Seller already exists:', checkResult.field);
+                
+                if (checkResult.field === 'phone') {
+                    setValidationErrors(prev => ({
+                        ...prev,
+                        phone: checkResult.message || 'This phone number is already registered'
+                    }));
+                    setError('This phone number is already registered. Please login instead.');
+                } else if (checkResult.field === 'email') {
+                    setValidationErrors(prev => ({
+                        ...prev,
+                        email: checkResult.message || 'This email is already registered'
+                    }));
+                    setError('This email is already registered. Please use a different email.');
+                }
+                
+                setIsLoading(false);
+                return;
+            }
+
+            // ✅ STEP 2: Phone and email are available - Send Firebase OTP
+            console.log('✅ Phone and email available. Sending Firebase OTP...');
+            
+            const phoneNumber = `+91${formData.phone.trim()}`;
             console.log('🔍 Sending OTP via Firebase for phone:', phoneNumber);
 
-            // Use Firebase's signInWithPhoneNumber
             const result = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
-            setConfirmationResult(result); // Store this for OTP verification later
+            setConfirmationResult(result);
             console.log('✅ OTP sent successfully via Firebase');
-            setStep(2); // Move to OTP verification step
+            setStep(2);
 
         } catch (err) {
-            console.error('❌ Firebase OTP send error:', err);
+            console.error('❌ Error:', err);
             let errorMessage = 'Failed to send OTP. Please try again.';
 
             if (err.code === 'auth/invalid-phone-number') {
                 errorMessage = 'The phone number provided is invalid. Please check the format.';
             } else if (err.code === 'auth/too-many-requests') {
                 errorMessage = 'Too many OTP requests. Please try again later.';
-                if (recaptchaVerifier) recaptchaVerifier.clear(); // Clear reCAPTCHA if we hit rate limits
+                if (recaptchaVerifier) recaptchaVerifier.clear();
             } else if (err.code === 'auth/captcha-check-failed' || err.code === 'auth/web-storage-unsupported') {
-                 // auth/web-storage-unsupported can occur if 3rd party cookies are blocked, or browser is in incognito without explicit allowing
                 errorMessage = 'Security verification failed. Please ensure cookies are enabled or try in a regular browser window.';
                 if (recaptchaVerifier) recaptchaVerifier.clear();
             } else if (err.code === 'auth/internal-error') {
                 errorMessage = 'Firebase internal error. Please try again.';
+            } else if (err.message) {
+                errorMessage = err.message;
             }
-            // Add other Firebase error codes as needed
 
             setError(errorMessage);
         } finally {
@@ -259,34 +306,27 @@ export default function RegisterSellerPage() {
         setIsLoading(true);
 
         try {
-            // 1. Verify OTP with Firebase using the stored confirmationResult
             const userCredential = await confirmationResult.confirm(formData.otp.trim());
             const user = userCredential.user;
 
-            // 2. Get Firebase ID Token
             const firebaseIdToken = await user.getIdToken();
             console.log('✅ Firebase OTP verified successfully. User UID:', user.uid);
             console.log('✅ Firebase ID Token obtained.');
 
-            // 3. Send Firebase ID Token and other data to your Django backend
             const registrationData = {
-                // Ensure phone number is sent in the same format (+91XXXXXXXXXX) as Firebase expects
-                phone: formData.phone.trim(),  // ✅ CORRECT - just 10 digits
-
+                phone: formData.phone.trim(),
                 password: formData.password,
-                confirmPassword: formData.confirmPassword,  // ✅ ADD THIS LINE
-
+                confirmPassword: formData.confirmPassword,
                 name: formData.name.trim(),
                 shop_name: formData.shop_name.trim(),
                 email: formData.email.trim(),
-                firebase_id_token: firebaseIdToken, // ✅ Send the Firebase ID Token!
-                // The OTP itself is no longer sent to your backend
+                firebase_id_token: firebaseIdToken,
             };
 
             console.log('🔍 Sending registration data to Django:', {
                 ...registrationData,
                 password: '***hidden***',
-                firebase_id_token: '***hidden***' // Hide token in console for security
+                firebase_id_token: '***hidden***'
             });
 
             const response = await axios.post(REGISTER_API, registrationData, {
@@ -311,7 +351,7 @@ export default function RegisterSellerPage() {
                 errorMessage = 'The OTP you entered is incorrect or expired.';
             } else if (err.code === 'auth/code-expired') {
                 errorMessage = 'The verification code has expired. Please resend OTP.';
-            } else if (err.response?.data?.error) { // Handle Django errors
+            } else if (err.response?.data?.error) {
                 const errorData = err.response?.data;
                 if (errorData.error.includes('seller account already exists')) {
                     errorMessage = 'A seller account with this phone number already exists. Please try logging in instead.';
@@ -344,11 +384,10 @@ export default function RegisterSellerPage() {
 
         try {
             const phoneNumber = `+91${formData.phone.trim()}`;
-            // Calling signInWithPhoneNumber again will send a new OTP
             const result = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
-            setConfirmationResult(result); // Update confirmationResult with the new one
+            setConfirmationResult(result);
             console.log('✅ New OTP sent successfully via Firebase');
-            setError('OTP has been resent to your phone'); // Provide success feedback
+            setError('OTP has been resent to your phone');
         } catch (err) {
             console.error('❌ Firebase Resend OTP error:', err);
             let errorMessage = 'Failed to resend OTP. Please try again.';
@@ -369,8 +408,8 @@ export default function RegisterSellerPage() {
         setFormData(prev => ({ ...prev, otp: '' }));
         setError('');
         if (recaptchaVerifier) {
-            recaptchaVerifier.clear(); // Clear reCAPTCHA when going back to step 1
-            setRecaptchaVerifier(null); // Force re-initialization of reCAPTCHA
+            recaptchaVerifier.clear();
+            setRecaptchaVerifier(null);
         }
     };
 
@@ -378,8 +417,6 @@ export default function RegisterSellerPage() {
         <div style={styles.pageContainer}>
             <Header />
 
-            {/* This div is essential for reCAPTCHA. Firebase will render into it. */}
-            {/* It's styled with `display: 'none'` because we're using 'invisible' reCAPTCHA. */}
             <div id="recaptcha-container" style={{ display: 'none' }}></div>
 
             <div style={styles.container}>
@@ -584,7 +621,7 @@ export default function RegisterSellerPage() {
                                 {isLoading ? (
                                     <span style={styles.buttonContent}>
                                         <div style={styles.spinner}></div>
-                                        Sending OTP...
+                                        Checking availability...
                                     </span>
                                 ) : (
                                     <span style={styles.buttonContent}>
@@ -595,7 +632,7 @@ export default function RegisterSellerPage() {
                             </button>
                         </form>
                     ) : (
-                        /* Step 2: OTP Verification */
+                        /* Step 2: OTP Verification - SAME AS BEFORE */
                         <form onSubmit={handleCompleteRegistration} style={styles.form}>
                             <div className='regsellerotpinfo' style={styles.otpInfo}>
                                 <Phone size={20} color='#1a4845' />
@@ -603,7 +640,7 @@ export default function RegisterSellerPage() {
                                     <p className='regsellerotptext' style={styles.otpText}>
                                         Verification code sent to:
                                     </p>
-                                    <strong  className='regsellerotptext' style={styles.otpPhone}>+91 {formData.phone}</strong>
+                                    <strong className='regsellerotptext' style={styles.otpPhone}>+91 {formData.phone}</strong>
                                 </div>
                             </div>
 
@@ -712,7 +749,10 @@ const styles = {
         minHeight: '100vh',
         backgroundColor: '#FDFFF0'
     },
-
+    pageContainer: {
+        minHeight: '100vh',
+        backgroundColor: '#FDFFF0'
+    },
     container: {
         display: 'flex',
         justifyContent: 'center',
