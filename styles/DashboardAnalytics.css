@@ -1,0 +1,206 @@
+.dashboardanalyticsactivity-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+}
+
+@media(max-width: 1200px) {
+
+    .dashboardanalyticsrefreshbtn {
+        padding: 7px 11px !important;
+        height: 35px !important;
+        font-size: 13px !important;
+    }
+
+    .dashboardanalyticsdrpdwn {
+        padding: 7px 11px !important;
+        height: 35px !important;
+        font-size: 13px !important;
+    }
+
+    .dashboardanalyticspagecontainer {
+        padding: 0px !important;
+    }
+
+    .dashboardanalyticspageheader {
+        display: grid !important;
+    }
+
+}
+
+@media(max-width: 991px) {
+
+
+
+    .dashboardanalyticstitle {
+        font-size: 28px !important;
+    }
+
+    .dashboardanalyticsrefreshbtn {
+        padding: 7px 11px !important;
+        height: 35px !important;
+        font-size: 13px !important;
+    }
+
+    .dashboardanalyticsdrpdwn {
+        padding: 7px 11px !important;
+        height: 35px !important;
+        font-size: 13px !important;
+    }
+
+}
+
+@media (max-width: 850px) {
+    .dashboardanalyticsactivity-item {
+        align-items: flex-start !important;
+    }
+
+    .dashboardanalyticsactivity-time {
+        order: 2 !important;
+        flex-basis: 100% !important;
+        margin-left: 48px !important;
+        font-size: 13px !important;
+        color: #6b7280 !important;
+    }
+}
+
+
+
+
+@media(max-width: 768px) {
+    .dashboardanalyticsoverviewgrid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+        gap: 15px !important;
+    }
+}
+
+@media(max-width: 576px) {
+
+
+
+
+    .dashboardanalyticstitle {
+        font-size: 24px !important;
+    }
+
+    .dashboardanalyticspackageicon {
+        width: 25px !important;
+        height: 25px !important;
+    }
+
+    .dashboardanalyticsrefreshbtn {
+        padding: 7px 11px !important;
+        height: 32px !important;
+        font-size: 12px !important;
+    }
+
+    .dashboardanalyticsdrpdwn {
+        padding: 7px 11px !important;
+        height: 32px !important;
+        font-size: 12px !important;
+    }
+
+    .dashboardanalyticsbellicon {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .dashboardanalyticsoverviewgrid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+        gap: 15px !important;
+    }
+
+    .dashboardanalyticschartgrid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+        gap: 20px !important;
+    }
+
+    .dashboardanalyticscharttitle {
+        font-size: 17px !important;
+    }
+
+}
+
+@media(max-width: 480px) {
+
+
+    .dashboardanalyticstitle {
+        font-size: 22px !important;
+    }
+
+    .dashboardanalyticspackageicon {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+
+    .dashboardanalyticssubtitle {
+        font-size: 13px !important;
+    }
+
+    .dashboardanalyticsrefreshbtn {
+        padding: 3px 8px !important;
+        height: 26px !important;
+        font-size: 11px !important;
+    }
+
+    .dashboardanalyticsdrpdwn {
+        padding: 3px 4px !important;
+        height: 26px !important;
+        font-size: 11px !important;
+    }
+
+    .dashboardanalyticsbellicon {
+        width: 15px !important;
+        height: 15px !important;
+
+    }
+
+    .dashboardanalyticsoverviewgrid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+        gap: 10px !important;
+    }
+
+    .dashboardanalyticsoverviewcard {
+        padding: 16px !important;
+    }
+
+    .dashboardanalyticsoverviewcardchange {
+        font-size: 13px !important;
+    }
+
+    .dashboardanalyticsoverviewcardtitle {
+        font-size: 13px !important;
+    }
+
+    .dashboardanalyticsoverviewcardvalue {
+        font-size: 18px !important;
+    }
+
+    .dashboardanalyticschartgrid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+        gap: 15px !important;
+    }
+
+    .dashboardanalyticscharttitle {
+        font-size: 16px !important;
+    }
+
+    .dashboardanalyticsactivity-status {
+        order: 3 !important;
+        margin-left: 48px !important;
+    }
+
+    .dashboardanalyticsactivitydescription {
+        font-size: 14px !important;
+    }
+
+    .dashboardanalyticsactivityitemtitle {
+        font-size: 16px !important;
+    }
+
+}
