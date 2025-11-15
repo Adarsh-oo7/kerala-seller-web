@@ -3,18 +3,19 @@
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { 
-  CheckCircle, 
-  Star, 
-  Package, 
-  Calendar, 
-  AlertCircle, 
-  Loader, 
-  CreditCard,
-  RefreshCw,
-  Crown,
-  Zap,
-  Shield
+import "../../../../styles/DashboardSubscription.css"
+import {
+    CheckCircle,
+    Star,
+    Package,
+    Calendar,
+    AlertCircle,
+    Loader,
+    CreditCard,
+    RefreshCw,
+    Crown,
+    Zap,
+    Shield
 } from 'lucide-react';
 
 
@@ -50,7 +51,7 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
     // ✅ NEW: Load store operational status
     const loadStoreStatus = useCallback(async () => {
         if (!storeId) return;
-        
+
         setStatusLoading(true);
         try {
             const response = await axios.get(`${STORE_STATUS_API}/${storeId}/status/`);
@@ -66,15 +67,15 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
     // Load store status when component mounts or storeId changes
     useEffect(() => {
         loadStoreStatus();
-        
+
         // Auto-refresh store status every 2 minutes
         const interval = setInterval(loadStoreStatus, 2 * 60 * 1000);
         return () => clearInterval(interval);
     }, [loadStoreStatus]);
-    
+
     if (isLoading) {
         return (
-            <div style={{...styles.card, ...styles.loadingCard}}>
+            <div style={{ ...styles.card1, ...styles.loadingCard }}>
                 <div style={styles.loadingContent}>
                     <div style={styles.spinner}></div>
                     <p>Loading subscription details...</p>
@@ -85,8 +86,8 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
 
     if (error) {
         return (
-            <div style={{...styles.card, ...styles.errorCard}}>
-                <AlertCircle size={32} style={{color: '#dc3545', marginBottom: '16px'}} />
+            <div style={{ ...styles.card1, ...styles.errorCard }}>
+                <AlertCircle size={32} style={{ color: '#dc3545', marginBottom: '16px' }} />
                 <h2 style={styles.errorTitle}>Unable to load subscription</h2>
                 <p style={styles.errorText}>{error}</p>
                 <button onClick={onRefresh} style={styles.retryButton}>
@@ -96,14 +97,14 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
             </div>
         );
     }
-    
+
     if (!subscription || !subscription.is_active) {
         return (
-            <div style={{...styles.card, ...styles.noPlanCard}}>
-                <Crown size={32} style={{color: '#f59e0b', marginBottom: '16px'}} />
+            <div style={{ ...styles.card1, ...styles.noPlanCard }}>
+                <Crown size={32} style={{ color: '#f59e0b', marginBottom: '16px' }} />
                 <h2>No Active Plan</h2>
                 <p>Choose a plan below to unlock the full potential of your online store.</p>
-                
+
                 {/* ✅ NEW: Show store status even without subscription */}
                 {storeStatus && (
                     <div style={styles.storeStatusInfo}>
@@ -125,15 +126,15 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
             </div>
         );
     }
-    
+
     // ✅ ENHANCED: Current plan with store status
     const remainingDays = subscription.days_remaining || 0;
     const isExpiringSoon = remainingDays <= 7;
-    
+
     // Determine status style based on store status
     const getStatusStyle = () => {
         if (!storeStatus) return {};
-        
+
         const status = storeStatus.subscription.status;
         switch (status) {
             case 'ACTIVE':
@@ -148,10 +149,10 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
                 return {};
         }
     };
-    
+
     return (
         <div style={{
-            ...styles.card, 
+            ...styles.card1,
             ...styles.currentPlanCard,
             ...(isExpiringSoon ? styles.expiringCard : {}),
             ...getStatusStyle()
@@ -165,33 +166,33 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
                     <Shield size={24} color="#4f46e5" />
                 </div>
             </div>
-            
+
             <div style={styles.currentPlanDetails}>
                 <div style={styles.detailItem}>
                     <Calendar size={20} />
                     <span style={isExpiringSoon ? styles.expiringText : {}}>
-                        {remainingDays > 0 
-                            ? `${remainingDays} days remaining` 
+                        {remainingDays > 0
+                            ? `${remainingDays} days remaining`
                             : 'Expires today'}
                     </span>
                 </div>
                 <div style={styles.detailItem}>
                     <Package size={20} />
                     <span>
-                        {subscription.plan.product_limit 
-                            ? `Up to ${subscription.plan.product_limit} products online` 
+                        {subscription.plan.product_limit
+                            ? `Up to ${subscription.plan.product_limit} products online`
                             : 'Unlimited products online'
                         }
                     </span>
                 </div>
             </div>
-            
+
             {/* ✅ NEW: Enhanced Store Status Section */}
             {storeStatus && (
                 <div style={styles.storeStatusSection}>
                     <div style={styles.statusDivider}></div>
                     <h3 style={styles.storeStatusTitle}>Store Status</h3>
-                    
+
                     <div style={{
                         ...styles.storeStatusBanner,
                         ...(storeStatus.subscription.can_sell ? styles.storeOnline : styles.storeOffline)
@@ -204,27 +205,27 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
                                 {storeStatus.subscription.message}
                             </span>
                             <span style={styles.orderStatus}>
-                                {storeStatus.subscription.can_sell 
-                                    ? '✅ Accepting Orders' 
+                                {storeStatus.subscription.can_sell
+                                    ? '✅ Accepting Orders'
                                     : '❌ Orders Disabled'
                                 }
                             </span>
                         </div>
-                        
+
                         {/* Show archive countdown for offline stores */}
-                        {storeStatus.subscription.status === 'OFFLINE' && 
-                         storeStatus.subscription.days_until_archive > 0 && (
-                            <div style={styles.archiveWarning}>
-                                <span style={styles.archiveText}>
-                                    Archive in {storeStatus.subscription.days_until_archive} days
-                                </span>
-                            </div>
-                        )}
+                        {storeStatus.subscription.status === 'OFFLINE' &&
+                            storeStatus.subscription.days_until_archive > 0 && (
+                                <div style={styles.archiveWarning}>
+                                    <span style={styles.archiveText}>
+                                        Archive in {storeStatus.subscription.days_until_archive} days
+                                    </span>
+                                </div>
+                            )}
                     </div>
-                    
+
                     {/* Refresh button */}
-                    <button 
-                        onClick={loadStoreStatus} 
+                    <button
+                        onClick={loadStoreStatus}
                         disabled={statusLoading}
                         style={styles.refreshButton}
                     >
@@ -235,7 +236,7 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
                     </button>
                 </div>
             )}
-            
+
             {isExpiringSoon && (
                 <div style={styles.expiringWarning}>
                     <AlertCircle size={16} />
@@ -308,7 +309,7 @@ export default function SubscriptionPage() {
     const loadStoreId = useCallback(async () => {
         const headers = getAuthHeaders();
         if (!headers) return;
-        
+
         try {
             const response = await axios.get(`${API_BASE_URL}/api/store/profile/`, { headers });
             setStoreId(response.data.id);
@@ -322,10 +323,10 @@ export default function SubscriptionPage() {
     const loadSubscriptionData = useCallback(async () => {
         setSubscriptionLoading(true);
         setSubscriptionError(null);
-        
+
         const headers = getAuthHeaders();
         if (!headers) return;
-        
+
         try {
             console.log('🔍 Fetching current subscription...');
             const subResponse = await axios.get(CURRENT_SUB_API_URL, { headers });
@@ -334,7 +335,7 @@ export default function SubscriptionPage() {
         } catch (subErr) {
             console.log('⚠️ No active subscription found:', subErr.response?.status);
             setCurrentSubscription(null);
-            
+
             if (subErr.response?.status === 401) {
                 setSubscriptionError('Session expired. Please log in again.');
                 setTimeout(() => router.push('/login/seller'), 2000);
@@ -353,16 +354,16 @@ export default function SubscriptionPage() {
         try {
             console.log('🔍 Fetching plans from:', PLANS_API_URL);
             const plansResponse = await axios.get(PLANS_API_URL);
-            
+
             const plansData = plansResponse.data.results || plansResponse.data || [];
             console.log('✅ Plans loaded:', plansData);
-            
+
             const sortedPlans = plansData.sort((a, b) => {
                 const priceA = parseFloat(a.price) || 0;
                 const priceB = parseFloat(b.price) || 0;
                 return priceA - priceB;
             });
-            
+
             setPlans(sortedPlans);
         } catch (err) {
             console.error('❌ Failed to load plans:', err);
@@ -380,15 +381,15 @@ export default function SubscriptionPage() {
         const loadData = async () => {
             setIsLoading(true);
             setError('');
-            
+
             await Promise.all([
                 loadPlansData(),
                 loadSubscriptionData()
             ]);
-            
+
             setIsLoading(false);
         };
-        
+
         loadData();
     }, [loadPlansData, loadSubscriptionData]);
 
@@ -426,10 +427,10 @@ export default function SubscriptionPage() {
 
         try {
             console.log('🔄 Creating order for plan:', planId, 'billing cycle:', billingCycle);
-            
+
             const orderResponse = await axios.post(CREATE_ORDER_API, {
                 plan_id: planId,
-                billing_cycle: billingCycle 
+                billing_cycle: billingCycle
             }, { headers });
 
             console.log('✅ Order created:', orderResponse.data);
@@ -452,7 +453,7 @@ export default function SubscriptionPage() {
                 },
                 handler: async function (response) {
                     console.log('✅ Payment successful:', response);
-                    
+
                     const verificationData = {
                         razorpay_payment_id: response.razorpay_payment_id,
                         razorpay_order_id: response.razorpay_order_id,
@@ -460,33 +461,33 @@ export default function SubscriptionPage() {
                         plan_id: planId,
                         billing_cycle: billingCycle,
                     };
-                    
+
                     try {
                         const verifyResponse = await axios.post(VERIFY_PAYMENT_API, verificationData, { headers });
                         console.log('✅ Payment verified:', verifyResponse.data);
-                        
+
                         setError('');
                         alert('🎉 Payment Successful!\n\nYour subscription is now active! You can now sell products online with Kerala Sellers Premium features.');
-                        
+
                         await loadSubscriptionData();
-                        
+
                     } catch (verifyError) {
                         console.error('❌ Payment verification failed:', verifyError);
-                        
+
                         if (verifyError.response?.status === 401) {
                             alert('❌ Session expired. Please log in again.');
                             setTimeout(() => router.push('/login/seller'), 2000);
                         } else {
-                            const errorMessage = verifyError.response?.data?.error || 
-                                               verifyError.response?.data?.message ||
-                                               'Payment verification failed. Please contact support if money was deducted.';
+                            const errorMessage = verifyError.response?.data?.error ||
+                                verifyError.response?.data?.message ||
+                                'Payment verification failed. Please contact support if money was deducted.';
                             alert(`❌ ${errorMessage}`);
                         }
                     } finally {
                         setIsProcessing(null);
                     }
                 },
-                modal: { 
+                modal: {
                     ondismiss: () => {
                         console.log('Payment modal dismissed');
                         setIsProcessing(null);
@@ -495,25 +496,25 @@ export default function SubscriptionPage() {
             };
 
             const rzp = new window.Razorpay(options);
-            
+
             rzp.on('payment.failed', function (response) {
                 console.error('❌ Payment failed:', response.error);
                 alert(`❌ Payment failed: ${response.error.description}`);
                 setIsProcessing(null);
             });
-            
+
             rzp.open();
 
         } catch (error) {
             console.error('❌ Subscription error:', error);
-            
+
             if (error.response?.status === 401) {
                 alert('❌ Session expired. Please log in again.');
                 setTimeout(() => router.push('/login/seller'), 2000);
             } else {
-                const errorMessage = error.response?.data?.error || 
-                                   error.response?.data?.message ||
-                                   'Failed to process subscription. Please try again.';
+                const errorMessage = error.response?.data?.error ||
+                    error.response?.data?.message ||
+                    'Failed to process subscription. Please try again.';
                 alert(`❌ ${errorMessage}`);
             }
             setIsProcessing(null);
@@ -530,11 +531,11 @@ export default function SubscriptionPage() {
     }
 
     return (
-        <div style={styles.container}>
+        <div className='dashboardsubscriptionpagecontainer' style={styles.container}>
             {/* Header */}
             <div style={styles.header}>
-                <h1 style={styles.title}>Your Subscription</h1>
-                <p style={styles.subtitle}>
+                <h1 className='dashboardsubscriptiontitle' style={styles.title}>Your Subscription</h1>
+                <p className='dashboardsubscriptionsubtitle' style={styles.subtitle}>
                     Manage your plan and unlock premium features for your online store
                 </p>
             </div>
@@ -559,146 +560,154 @@ export default function SubscriptionPage() {
             )}
 
             {/* Billing Cycle Toggle */}
-            <div style={styles.toggleContainer}>
-                <button 
+            <div className='toggleContainer' style={styles.toggleContainer}>
+                <button
                     onClick={() => setBillingCycle('monthly')}
                     style={billingCycle === 'monthly' ? styles.activeToggle : styles.toggleButton}
                 >
                     Monthly
                 </button>
-                <button 
+                <button
                     onClick={() => setBillingCycle('yearly')}
                     style={billingCycle === 'yearly' ? styles.activeToggle : styles.toggleButton}
                 >
                     <span>Yearly</span>
-                    <span style={styles.savingsBadge}>Save 10%</span>
+                    <span className='savingsBadge' style={styles.savingsBadge}>Save 10%</span>
                 </button>
             </div>
-            
+
             {/* ✅ ENHANCED: Current Plan Card with Store Status */}
-            <CurrentPlanCard 
-                subscription={currentSubscription} 
+            <CurrentPlanCard
+                subscription={currentSubscription}
                 isLoading={subscriptionLoading}
                 error={subscriptionError}
                 onRefresh={loadSubscriptionData}
                 storeId={storeId}
             />
-            
+
             {/* Plans Grid */}
-            <div style={styles.planGrid}>
+            <div className='plan-grid ' style={styles.planGrid}>
                 {plans.map((plan, index) => {
                     const basePrice = parseFloat(plan.price) || 0;
                     const yearlyPrice = parseFloat(plan.yearly_price || '') || (basePrice * 12 * 0.90);
                     const displayPrice = billingCycle === 'yearly' ? yearlyPrice : basePrice;
-                    
+
                     const isCurrentPlan = currentSubscription?.plan?.id === plan.id && currentSubscription?.is_active;
-                    
-                    const isPopular = plan.name.toLowerCase().includes('pro') || 
-                                     plan.name.toLowerCase().includes('professional') ||
-                                     index === Math.floor(plans.length / 2);
-                    
+
+                    const isPopular = plan.name.toLowerCase().includes('pro') ||
+                        plan.name.toLowerCase().includes('professional') ||
+                        index === Math.floor(plans.length / 2);
+
                     return (
-                        <div key={plan.id} style={{
-                            ...styles.card,
-                            ...(isCurrentPlan ? styles.currentPlanHighlight : {}),
-                            ...(isPopular ? styles.popularCard : {})
-                        }}>
+                        <div className="plan-card-wrapper">
+
                             {isPopular && (
-                                <div style={styles.popularBadge}>
+                                <div className='popularBadge' style={styles.popularBadge}>
                                     <Star size={16} />
                                     Most Popular
                                 </div>
                             )}
-                            
-                            <div style={styles.planHeader}>
-                                <h2 style={styles.planName}>{plan.name}</h2>
-                                <div style={styles.priceContainer}>
-                                    <span style={styles.price}>
-                                        ₹{Math.round(displayPrice).toLocaleString('en-IN')}
-                                    </span>
-                                    <span style={styles.duration}>
-                                        /{billingCycle === 'yearly' ? 'year' : 'month'}
-                                    </span>
-                                </div>
-                                
-                                {billingCycle === 'yearly' && (
-                                    <div style={styles.savings}>
-                                        <p>Billed as ₹{Math.round(yearlyPrice).toLocaleString('en-IN')} annually</p>
-                                        <p style={styles.savingsAmount}>
-                                            Save ₹{Math.round((basePrice * 12) - yearlyPrice).toLocaleString('en-IN')} per year
-                                        </p>
-                                    </div>
-                                )}
+                            <div className="glossy-layer"></div>
+                            <div
+                                className='dashboardsubscriptionplancard'
+                                key={plan.id} style={{
+                                    ...styles.card,
+                                    ...(isCurrentPlan ? styles.currentPlanHighlight : {}),
+                                    ...(isPopular ? styles.popularCard : {})
+                                }}>
 
-                                {plan.description && (
-                                    <p style={styles.planDescription}>{plan.description}</p>
-                                )}
-                            </div>
-                            
-                            <div style={styles.featuresContainer}>
-                                <ul style={styles.featureList}>
-                                    <li style={styles.featureItem}>
-                                        <CheckCircle size={16} style={styles.checkIcon} /> 
-                                        <span>
-                                            {plan.product_limit 
-                                                ? `${plan.product_limit} Online Products` 
-                                                : 'Unlimited Online Products'
-                                            }
+
+
+                                <div style={styles.planHeader}>
+                                    <h2 style={styles.planName}>{plan.name}</h2>
+                                    <div style={styles.priceContainer}>
+                                        <span style={styles.price}>
+                                            ₹{Math.round(displayPrice).toLocaleString('en-IN')}
                                         </span>
-                                    </li>
-                                    <li style={styles.featureItem}>
-                                        <CheckCircle size={16} style={styles.checkIcon} /> 
-                                        <span>Unlimited Products for Stock Management</span>
-                                    </li>
-                                    <li style={styles.featureItem}>
-                                        <CheckCircle size={16} style={styles.checkIcon} /> 
-                                        <span>Professional Storefront</span>
-                                    </li>
-                                    <li style={styles.featureItem}>
-                                        <CheckCircle size={16} style={styles.checkIcon} /> 
-                                        <span>WhatsApp Integration</span>
-                                    </li>
-                                    <li style={styles.featureItem}>
-                                        <CheckCircle size={16} style={styles.checkIcon} /> 
-                                        <span>24/7 Customer Support</span>
-                                    </li>
-                                    {isPopular && (
-                                        <li style={styles.featureItem}>
-                                            <Zap size={16} style={{...styles.checkIcon, color: '#f59e0b'}} /> 
-                                            <span>Priority Support</span>
-                                        </li>
+                                        <span style={styles.duration}>
+                                            /{billingCycle === 'yearly' ? 'year' : 'month'}
+                                        </span>
+                                    </div>
+
+                                    {billingCycle === 'yearly' && (
+                                        <div style={styles.savings}>
+                                            <p>Billed as ₹{Math.round(yearlyPrice).toLocaleString('en-IN')} annually</p>
+                                            <p style={styles.savingsAmount}>
+                                                Save ₹{Math.round((basePrice * 12) - yearlyPrice).toLocaleString('en-IN')} per year
+                                            </p>
+                                        </div>
                                     )}
-                                </ul>
+
+                                    {plan.description && (
+                                        <p style={styles.planDescription}>{plan.description}</p>
+                                    )}
+                                </div>
+
+                                <div style={styles.featuresContainer}>
+                                    <ul style={styles.featureList}>
+                                        <li style={styles.featureItem}>
+                                            <CheckCircle size={16} style={styles.checkIcon} />
+                                            <span>
+                                                {plan.product_limit
+                                                    ? `${plan.product_limit} Online Products`
+                                                    : 'Unlimited Online Products'
+                                                }
+                                            </span>
+                                        </li>
+                                        <li style={styles.featureItem}>
+                                            <CheckCircle size={16} style={styles.checkIcon} />
+                                            <span>Unlimited stock Products </span>
+                                        </li>
+                                        <li style={styles.featureItem}>
+                                            <CheckCircle size={16} style={styles.checkIcon} />
+                                            <span>Professional Storefront</span>
+                                        </li>
+                                        <li style={styles.featureItem}>
+                                            <CheckCircle size={16} style={styles.checkIcon} />
+                                            <span>WhatsApp Integration</span>
+                                        </li>
+                                        <li style={styles.featureItem}>
+                                            <CheckCircle size={16} style={styles.checkIcon} />
+                                            <span>24/7 Customer Support</span>
+                                        </li>
+                                        {isPopular && (
+                                            <li style={styles.featureItem}>
+                                                <Zap size={16} style={{ ...styles.checkIcon, color: '#f59e0b' }} />
+                                                <span>Priority Support</span>
+                                            </li>
+                                        )}
+                                    </ul>
+                                </div>
+
+                                <button
+                                    style={{
+                                        ...styles.button,
+                                        ...(isCurrentPlan ? styles.currentPlanButton : {}),
+                                        ...(isProcessing === plan.id ? styles.processingButton : {}),
+                                        ...(isPopular && !isCurrentPlan ? styles.popularButton : {}),
+                                        ...(!razorpayLoaded ? styles.disabledButton : {})
+                                    }}
+                                    onClick={() => handleChoosePlan(plan.id, plan.name)}
+                                    disabled={isProcessing === plan.id || isCurrentPlan || !razorpayLoaded}
+                                >
+                                    {isProcessing === plan.id ? (
+                                        <div style={styles.buttonContent}>
+                                            <div style={styles.buttonSpinner}></div>
+                                            Processing...
+                                        </div>
+                                    ) : isCurrentPlan ? (
+                                        <div style={styles.buttonContent}>
+                                            <CheckCircle size={16} />
+                                            Current Plan
+                                        </div>
+                                    ) : (
+                                        <div style={styles.buttonContent}>
+                                            <CreditCard size={16} />
+                                            Choose Plan
+                                        </div>
+                                    )}
+                                </button>
                             </div>
-                            
-                            <button 
-                                style={{
-                                    ...styles.button,
-                                    ...(isCurrentPlan ? styles.currentPlanButton : {}),
-                                    ...(isProcessing === plan.id ? styles.processingButton : {}),
-                                    ...(isPopular && !isCurrentPlan ? styles.popularButton : {}),
-                                    ...(!razorpayLoaded ? styles.disabledButton : {})
-                                }}
-                                onClick={() => handleChoosePlan(plan.id, plan.name)}
-                                disabled={isProcessing === plan.id || isCurrentPlan || !razorpayLoaded}
-                            >
-                                {isProcessing === plan.id ? (
-                                    <div style={styles.buttonContent}>
-                                        <div style={styles.buttonSpinner}></div>
-                                        Processing...
-                                    </div>
-                                ) : isCurrentPlan ? (
-                                    <div style={styles.buttonContent}>
-                                        <CheckCircle size={16} />
-                                        Current Plan
-                                    </div>
-                                ) : (
-                                    <div style={styles.buttonContent}>
-                                        <CreditCard size={16} />
-                                        Choose Plan
-                                    </div>
-                                )}
-                            </button>
                         </div>
                     );
                 })}
@@ -721,20 +730,20 @@ export default function SubscriptionPage() {
                     50% { opacity: 0.7; }
                 }
             `}</style>
-        </div>
+        </div >
     );
 }
 
 // ✅ ENHANCED STYLES with Store Status Support
 const styles = {
-    container: { 
+    container: {
         padding: '24px',
-        maxWidth: '1200px',
+        maxWidth: '1100px',
         margin: '0 auto',
         fontFamily: 'system-ui, -apple-system, sans-serif',
         animation: 'fadeIn 0.6s ease-out'
     },
-    
+
     // Loading
     loadingContainer: {
         display: 'flex',
@@ -744,7 +753,7 @@ const styles = {
         minHeight: '400px',
         gap: '20px'
     },
-    
+
     spinner: {
         width: '32px',
         height: '32px',
@@ -753,7 +762,7 @@ const styles = {
         borderRadius: '50%',
         animation: 'spin 1s linear infinite'
     },
-    
+
     buttonSpinner: {
         width: '16px',
         height: '16px',
@@ -762,7 +771,7 @@ const styles = {
         borderRadius: '50%',
         animation: 'spin 1s linear infinite'
     },
-    
+
     loadingText: {
         fontSize: '16px',
         color: '#6b7280'
@@ -781,27 +790,27 @@ const styles = {
         marginBottom: '24px',
         justifyContent: 'center'
     },
-    
+
     // Header
     header: {
         textAlign: 'center',
         marginBottom: '32px'
     },
-    
-    title: { 
+
+    title: {
         fontSize: '2.5rem',
         fontWeight: '700',
-        color: '#1f2937',
+        color: 'rgb(59, 130, 246)',
         marginBottom: '12px'
     },
-    
-    subtitle: { 
-        color: '#6b7280', 
-        fontSize: '18px',
+
+    subtitle: {
+        color: '#6b7280',
+        fontSize: '17px',
         maxWidth: '600px',
         margin: '0 auto'
     },
-    
+
     // Error Alert
     errorAlert: {
         display: 'flex',
@@ -814,7 +823,7 @@ const styles = {
         color: '#991b1b',
         marginBottom: '24px'
     },
-    
+
     closeAlert: {
         marginLeft: 'auto',
         background: 'none',
@@ -824,50 +833,50 @@ const styles = {
         fontSize: '18px',
         padding: '4px 8px'
     },
-    
+
     // Toggle
-    toggleContainer: { 
-        display: 'flex', 
-        justifyContent: 'center', 
-        marginBottom: '32px', 
-        backgroundColor: '#f3f4f6', 
-        padding: '6px', 
-        borderRadius: '12px', 
-        width: 'fit-content', 
+    toggleContainer: {
+        display: 'flex',
+        justifyContent: 'center',
+        marginBottom: '32px',
+        backgroundColor: '#f3f4f6',
+        padding: '6px',
+        borderRadius: '12px',
+        width: 'fit-content',
         margin: '0 auto 32px auto',
-        border: '1px solid #e5e7eb'
+        border: '1px solid  rgb(59, 130, 246)'
     },
-    
-    toggleButton: { 
+
+    toggleButton: {
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-        padding: '12px 24px', 
-        border: 'none', 
-        background: 'transparent', 
-        cursor: 'pointer', 
-        fontSize: '14px', 
+        padding: '12px 24px',
+        border: 'none',
+        background: 'transparent',
+        cursor: 'pointer',
+        fontSize: '14px',
         fontWeight: '500',
         borderRadius: '8px',
         transition: 'all 0.2s',
         color: '#6b7280'
     },
-    
-    activeToggle: { 
+
+    activeToggle: {
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-        padding: '12px 24px', 
-        border: 'none', 
-        backgroundColor: 'white', 
-        borderRadius: '8px', 
-        cursor: 'pointer', 
-        fontSize: '14px', 
-        fontWeight: '600', 
+        padding: '12px 24px',
+        border: 'none',
+        background: 'linear-gradient(135deg, rgb(59, 130, 246), rgb(0, 0, 0))',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: '600',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        color: '#3b82f6'
+        color: 'white',
     },
-    
+
     savingsBadge: {
         padding: '2px 6px',
         backgroundColor: '#10b981',
@@ -876,25 +885,47 @@ const styles = {
         fontSize: '11px',
         fontWeight: '600'
     },
-    
+
     // Cards
-    card: { 
-        border: '1px solid #e5e7eb', 
-        borderRadius: '16px', 
-        padding: '32px', 
-        backgroundColor: '#fff', 
+    card: {
+        width: '100%',
+        maxWidth: '320px',
+        border: '1px solid #e5e7eb',
+        borderRadius: '16px',
+        padding: '24px',
+        background: 'linear-gradient(135deg, #3b82f6, #000)',
+        position: 'relative',
+        color: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        margin: '0 auto',
+        boxSizing: 'border-box',
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", // ⭐ put this back
+    },
+
+
+
+    card1: {
+        border: '1px solid #e5e7eb',
+        borderRadius: '16px',
+        padding: '32px',
+        backgroundColor: '#fff',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         position: 'relative',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        boxSizing: 'border-box',
     },
-    
+
+
     // Current Plan Card Styles
     loadingCard: {
         textAlign: 'center',
         maxWidth: '800px',
         margin: '0 auto 48px auto'
     },
-    
+
     loadingContent: {
         display: 'flex',
         flexDirection: 'column',
@@ -902,7 +933,7 @@ const styles = {
         gap: '16px',
         color: '#6b7280'
     },
-    
+
     errorCard: {
         backgroundColor: '#fef2f2',
         border: '2px solid #ef4444',
@@ -910,19 +941,19 @@ const styles = {
         maxWidth: '800px',
         margin: '0 auto 48px auto'
     },
-    
+
     errorTitle: {
         fontSize: '18px',
         fontWeight: '600',
         color: '#991b1b',
         margin: '0 0 8px 0'
     },
-    
+
     errorText: {
         color: '#991b1b',
         marginBottom: '16px'
     },
-    
+
     retryButton: {
         display: 'flex',
         alignItems: 'center',
@@ -936,35 +967,35 @@ const styles = {
         fontSize: '14px',
         fontWeight: '500'
     },
-    
-    currentPlanCard: { 
-        backgroundColor: '#eff6ff', 
-        border: '2px solid #3b82f6', 
-        maxWidth: '800px', 
+
+    currentPlanCard: {
+        backgroundColor: '#eff6ff',
+        border: '2px solid #3b82f6',
+        maxWidth: '800px',
         margin: '0 auto 48px auto'
     },
-    
+
     expiringCard: {
         backgroundColor: '#fef3c7',
         border: '2px solid #f59e0b'
     },
-    
-    noPlanCard: { 
-        backgroundColor: '#fefce8', 
-        border: '2px solid #f59e0b', 
-        textAlign: 'center', 
-        maxWidth: '800px', 
+
+    noPlanCard: {
+        backgroundColor: '#fefce8',
+        border: '2px solid #f59e0b',
+        textAlign: 'center',
+        maxWidth: '800px',
         margin: '0 auto 48px auto',
         color: '#92400e'
     },
-    
+
     currentPlanHeader: {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         marginBottom: '24px'
     },
-    
+
     planIcon: {
         width: '48px',
         height: '48px',
@@ -974,40 +1005,40 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'center'
     },
-    
-    currentPlanTitle: { 
-        fontSize: '16px', 
+
+    currentPlanTitle: {
+        fontSize: '15px',
         fontWeight: '500',
         color: '#6b7280',
         margin: '0 0 8px 0'
     },
-    
-    currentPlanName: { 
-        fontSize: '24px', 
-        fontWeight: '700', 
-        color: '#1f2937', 
+
+    currentPlanName: {
+        fontSize: '30px',
+        fontWeight: '700',
+        color: '#e5ce4bff',
         margin: 0
     },
-    
-    currentPlanDetails: { 
+
+    currentPlanDetails: {
         display: 'flex',
         flexDirection: 'column',
         gap: '12px'
     },
-    
-    detailItem: { 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '12px', 
+
+    detailItem: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
         fontSize: '14px',
         color: '#374151'
     },
-    
+
     expiringText: {
         color: '#dc2626',
         fontWeight: '600'
     },
-    
+
     expiringWarning: {
         display: 'flex',
         alignItems: 'center',
@@ -1026,25 +1057,25 @@ const styles = {
         marginTop: '24px',
         paddingTop: '24px'
     },
-    
+
     storeStatusInfo: {
         marginTop: '24px',
         paddingTop: '24px'
     },
-    
+
     statusDivider: {
         height: '1px',
         backgroundColor: '#e5e7eb',
         marginBottom: '16px'
     },
-    
+
     storeStatusTitle: {
         fontSize: '16px',
         fontWeight: '600',
         color: '#374151',
         marginBottom: '12px'
     },
-    
+
     storeStatusBanner: {
         display: 'flex',
         alignItems: 'center',
@@ -1053,55 +1084,55 @@ const styles = {
         border: '2px solid',
         marginBottom: '12px'
     },
-    
+
     storeOnline: {
         backgroundColor: '#dcfce7',
         borderColor: '#22c55e',
         color: '#166534'
     },
-    
+
     storeOffline: {
         backgroundColor: '#fee2e2',
         borderColor: '#ef4444',
         color: '#991b1b'
     },
-    
+
     statusIcon: {
         fontSize: '20px',
         marginRight: '12px'
     },
-    
+
     statusDetails: {
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
         gap: '4px'
     },
-    
+
     statusMessage: {
         fontSize: '14px',
         fontWeight: '600'
     },
-    
+
     orderStatus: {
         fontSize: '12px',
         fontWeight: '500',
         opacity: 0.8
     },
-    
+
     archiveWarning: {
         padding: '8px 12px',
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         borderRadius: '6px',
         border: '1px solid rgba(239, 68, 68, 0.2)'
     },
-    
+
     archiveText: {
         fontSize: '12px',
         fontWeight: '600',
         color: '#991b1b'
     },
-    
+
     refreshButton: {
         display: 'flex',
         alignItems: 'center',
@@ -1116,30 +1147,29 @@ const styles = {
         cursor: 'pointer',
         transition: 'all 0.2s'
     },
-    
+
     // Plan Cards
-    planGrid: { 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', 
-        gap: '32px', 
-        alignItems: 'stretch'
+    planGrid: {
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '24px',
     },
-    
+
+
     currentPlanHighlight: {
         border: '2px solid #3b82f6',
         transform: 'scale(1.02)',
         boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)'
     },
-    
+
     popularCard: {
         border: '2px solid #3b82f6',
         transform: 'scale(1.05)',
         zIndex: 1
     },
-    
+
     popularBadge: {
         position: 'absolute',
-        top: '-12px',
+        top: '-23px',
         left: '50%',
         transform: 'translateX(-50%)',
         backgroundColor: '#3b82f6',
@@ -1151,115 +1181,117 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
-        boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
+        boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)',
+        zIndex: 5  // ⭐ add this
     },
-    
+
+
     planHeader: {
         textAlign: 'center',
         marginBottom: '32px'
     },
-    
-    planName: { 
-        fontSize: '20px', 
+
+    planName: {
+        fontSize: '18px',
         margin: '0 0 16px 0',
         fontWeight: '700',
-        color: '#1f2937'
+        color: '#e5ce4bff'
     },
 
     planDescription: {
-        fontSize: '14px',
+        fontSize: '13px',
         color: '#6b7280',
         textAlign: 'center',
         lineHeight: 1.5,
         marginTop: '8px'
     },
-    
+
     priceContainer: {
         marginBottom: '16px'
     },
-    
-    price: { 
-        fontSize: '36px', 
+
+    price: {
+        fontSize: '28px',
         fontWeight: '700',
-        color: '#1f2937'
+        color: 'white'
     },
-    
-    duration: { 
-        fontSize: '16px', 
-        color: '#6b7280', 
+
+    duration: {
+        fontSize: '14px',
+        color: 'white',
         fontWeight: '500'
     },
-    
-    savings: { 
-        color: '#6b7280', 
+
+    savings: {
+        color: '#f4ee5aff',
         fontSize: '14px',
         lineHeight: '1.4'
     },
-    
+
     savingsAmount: {
         color: '#10b981',
         fontWeight: '600'
     },
-    
+
     featuresContainer: {
         marginBottom: '32px'
     },
-    
-    featureList: { 
-        listStyle: 'none', 
-        padding: 0, 
+
+    featureList: {
+        listStyle: 'none',
+        padding: 0,
         margin: 0,
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: '12px'
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px'
     },
-    
+
     featureItem: {
         display: 'flex',
         alignItems: 'center',
         gap: '12px'
     },
-    
+
     checkIcon: {
         color: '#10b981',
         flexShrink: 0
     },
-    
+
     // Buttons
-    button: { 
-        width: '100%', 
-        padding: '16px 24px', 
-        border: '2px solid #3b82f6', 
-        borderRadius: '12px', 
-        backgroundColor: 'white', 
-        color: '#3b82f6', 
-        cursor: 'pointer', 
-        fontSize: '16px', 
+    button: {
+        width: '75%',
+        padding: '10px 24px',
+        border: '2px solid #3b82f6',
+        borderRadius: '12px',
+        backgroundColor: 'white',
+        color: '#3b82f6',
+        cursor: 'pointer',
+        fontSize: '15px',
         fontWeight: '600',
         transition: 'all 0.2s',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
     },
-    
+
     buttonContent: {
         display: 'flex',
         alignItems: 'center',
         gap: '8px'
     },
-    
+
     popularButton: {
         backgroundColor: '#3b82f6',
         color: 'white'
     },
-    
+
     currentPlanButton: {
         backgroundColor: '#f3f4f6',
         border: '2px solid #d1d5db',
         color: '#6b7280',
         cursor: 'not-allowed'
     },
-    
+
     processingButton: {
         backgroundColor: '#f9fafb',
         border: '2px solid #d1d5db',

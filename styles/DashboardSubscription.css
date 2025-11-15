@@ -1,0 +1,140 @@
+.dashboardsubscriptionplancard {
+    position: relative !important;
+    /* IMPORTANT */
+    overflow: hidden !important;
+    z-index: 1 !important;
+}
+
+.plan-card-wrapper {
+    position: relative;
+}
+
+
+/* Shine effect */
+.dashboardsubscriptionplancard::after {
+    content: "";
+    position: absolute !important;
+    /* FIXED → ABSOLUTE */
+    top: 0;
+    left: -150%;
+    width: 100%;
+    height: 100%;
+    z-index: 0 !important;
+    /* stays behind content */
+
+    background: linear-gradient(120deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.28) 50%,
+            rgba(255, 255, 255, 0) 100%);
+
+    transform: skewX(-20deg);
+    animation: glossySweep 2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.popularBadge {
+    position: absolute;
+
+    z-index: 999;
+    /* above card pseudo-element */
+}
+
+
+@keyframes glossySweep {
+    0% {
+        left: -150%;
+    }
+
+    60% {
+        left: 150%;
+    }
+
+    100% {
+        left: 150%;
+    }
+}
+
+@media (max-width: 1200px) {
+    .dashboardsubscriptionpagecontainer {
+        padding: 0px !important;
+    }
+}
+
+@media (max-width: 991px) {
+    .dashboardsubscriptiontitle {
+        font-size: 35px !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .toggleContainer button {
+        padding: 10px 16px !important;
+        /* smaller padding */
+        font-size: 14px !important;
+        /* slightly smaller text */
+    }
+
+    .toggleContainer {
+        gap: 6px !important;
+        /* reduce gap for small screens */
+    }
+
+    .savingsBadge {
+        font-size: 10px !important;
+        /* smaller badge text */
+        padding: 2px 6px !important;
+    }
+}
+
+
+@media (max-width: 576px) {
+    .dashboardsubscriptionpagecontainer {
+        padding: 0px !important;
+    }
+
+    .dashboardsubscriptiontitle {
+        font-size: 28px !important;
+    }
+
+    .dashboardsubscriptionsubtitle {
+        font-size: 14px !important;
+    }
+
+    .toggleContainer button {
+        padding: 8px 16px !important;
+        /* smaller padding */
+        font-size: 13px !important;
+        /* slightly smaller text */
+    }
+
+    .toggleContainer {
+        gap: 4px !important;
+        /* reduce gap for small screens */
+    }
+
+    .savingsBadge {
+        font-size: 10px !important;
+        /* smaller badge text */
+        padding: 2px 6px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .plan-grid {
+        grid-template-columns: 1fr !important;
+        /* single column on tiny screens */
+        gap: 12px !important;
+    }
+
+    .dashboardsubscriptionpagecontainer {
+        padding: 0px !important;
+    }
+
+    .dashboardsubscriptiontitle {
+        font-size: 22px !important;
+    }
+
+    .dashboardsubscriptionsubtitle {
+        font-size: 14px !important;
+    }
+}
