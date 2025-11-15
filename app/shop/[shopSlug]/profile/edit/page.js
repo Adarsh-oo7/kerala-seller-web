@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Save, User, Phone, MapPin, AlertTriangle } from 'lucide-react';
 import SHeader from '../../../../../components/common/SHeader';
 import "../../../../../styles/ShopProfileEdit.css";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
 export default function ShopEditProfilePage() {
@@ -19,11 +20,8 @@ export default function ShopEditProfilePage() {
   const [saving, setSaving] = useState(false);
   const [storeData, setStoreData] = useState(null);
   const [urlError, setUrlError] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ ADD: Login state for SHeader
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-
-
-  // ✅ ADD: Check login status for SHeader
   useEffect(() => {
     try {
       const token = localStorage.getItem('buyerAccessToken') ||
@@ -36,8 +34,6 @@ export default function ShopEditProfilePage() {
     }
   }, []);
 
-
-  // Get actual store ID from URL parameters (matching profile page logic)
   const getActualStoreId = () => {
     console.log('🔍 Getting store ID for edit profile...');
     console.log('- shopSlug from params:', shopSlug);
@@ -64,7 +60,6 @@ export default function ShopEditProfilePage() {
   const actualStoreId = getActualStoreId();
   console.log('✏️ Edit profile store ID:', actualStoreId);
 
-  // Generate shop URLs (matching profile page logic)
   const getShopUrl = (path = '') => {
     if (!actualStoreId) {
       console.error('❌ Cannot generate URL - no store ID available');
@@ -79,9 +74,10 @@ export default function ShopEditProfilePage() {
     }
   };
 
-  // Check authentication
   const checkAuth = () => {
-    const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
+    const token = localStorage.getItem('access_token') || 
+                  localStorage.getItem('buyerAccessToken') ||
+                  localStorage.getItem('accessToken');
     if (!token) {
       const loginUrl = getShopUrl('/login');
       const currentUrl = getShopUrl('/profile/edit');
@@ -93,7 +89,6 @@ export default function ShopEditProfilePage() {
     return { 'Authorization': `Bearer ${token}` };
   };
 
-  // Redirect if invalid URL
   useEffect(() => {
     if (urlError || !actualStoreId) {
       console.log('🔍 Invalid edit profile URL, redirecting to home...');
@@ -102,7 +97,6 @@ export default function ShopEditProfilePage() {
     }
   }, [urlError, actualStoreId, router]);
 
-  // Fetch profile data
   useEffect(() => {
     const fetchProfile = async () => {
       const headers = checkAuth();
@@ -158,7 +152,7 @@ export default function ShopEditProfilePage() {
     }
   }, [actualStoreId]);
 
-  // Handle save profile - FIXED TO USE PATCH
+  // ✅ FIXED: Only send editable fields, exclude read-only fields
   const handleSave = async () => {
     const headers = checkAuth();
     if (!headers) return;
@@ -172,15 +166,33 @@ export default function ShopEditProfilePage() {
     setSaving(true);
     try {
       console.log('💾 Saving profile data...');
-      console.log('📤 Profile data to save:', profileData);
+      
+      // ✅ FIX: Only send editable fields (exclude id, email, phone_verified)
+      const cleanData = {
+        full_name: (profileData.full_name || '').trim(),
+        phone_number: (profileData.phone_number || '').trim(),
+        address_line_1: (profileData.address_line_1 || '').trim(),
+        address_line_2: (profileData.address_line_2 || '').trim(),
+        city: (profileData.city || '').trim(),
+        pincode: (profileData.pincode || '').trim()
+      };
+
+      // ✅ FIX: Remove empty fields
+      Object.keys(cleanData).forEach(key => {
+        if (cleanData[key] === '' || cleanData[key] === null) {
+          delete cleanData[key];
+        }
+      });
+
+      console.log('📤 Clean profile data to save:', cleanData);
 
       const response = await fetch(`${API_BASE_URL}/api/buyer/profile/`, {
-        method: 'PATCH', // ✅ FIXED: Changed from PUT to PATCH
+        method: 'PATCH',
         headers: {
           ...headers,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(profileData)
+        body: JSON.stringify(cleanData)
       });
 
       console.log('📥 Save response status:', response.status);
@@ -190,26 +202,45 @@ export default function ShopEditProfilePage() {
         console.log('✅ Profile updated successfully:', responseData);
 
         // Update local state with server response
-        if (responseData.data) {
-          setProfileData(responseData.data);
-        }
+        setProfileData(prev => ({
+          ...prev,
+          ...responseData
+        }));
 
         alert('Profile updated successfully!');
         const profileUrl = getShopUrl('/profile');
         router.push(profileUrl);
       } else {
         console.error('❌ Profile update failed:', response.status);
-        const errorData = await response.text().catch(() => 'Unable to read error');
-        console.error('❌ Error details:', errorData);
+        
+        let errorMessage = 'Failed to update profile. Please try again.';
+        
+        try {
+          const errorData = await response.json();
+          console.error('❌ Error details:', errorData);
+          
+          if (errorData.details) {
+            // Show field-specific errors
+            const errors = Object.entries(errorData.details)
+              .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+              .join('\n');
+            errorMessage = `Validation errors:\n${errors}`;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (jsonError) {
+          const textError = await response.text().catch(() => 'Unable to read error');
+          console.error('❌ Error details (text):', textError);
+        }
 
         if (response.status === 400) {
-          alert('Please check your input data and try again');
+          alert(errorMessage);
         } else if (response.status === 401) {
           alert('Please login again');
           const loginUrl = getShopUrl('/login');
           router.push(loginUrl);
         } else {
-          alert('Failed to update profile. Please try again.');
+          alert(errorMessage);
         }
       }
     } catch (error) {
@@ -220,19 +251,16 @@ export default function ShopEditProfilePage() {
     }
   };
 
-  // Handle back navigation
   const handleBack = () => {
     const profileUrl = getShopUrl('/profile');
     console.log('🔙 Back to profile:', profileUrl);
     router.push(profileUrl);
   };
 
-  // Handle input changes with validation
   const handleInputChange = (field, value) => {
     setProfileData({ ...profileData, [field]: value });
   };
 
-  // Loading state
   if (loading || urlError) {
     return (
       <div style={styles.loadingContainer}>
@@ -256,7 +284,6 @@ export default function ShopEditProfilePage() {
     );
   }
 
-  // Error state
   if (!actualStoreId) {
     return (
       <div style={styles.loadingContainer}>
@@ -271,24 +298,13 @@ export default function ShopEditProfilePage() {
   }
 
   return (
-    <div  style={styles.pagecontainer}>
-      {/* ✅ ADD: SHeader during loading */}
+    <div style={styles.pagecontainer}>
       <SHeader
         store={storeData}
         isLoggedIn={isLoggedIn}
       />
 
       <div className='shopprofileeditpagecont' style={styles.container}>
-
-
-
-
-        {/* Store Context Info */}
-        {/* <div style={styles.storeContext}>
-        <p>Editing your profile for <strong>{storeData?.name || `Store ${actualStoreId}`}</strong></p>
-        <p style={{fontSize: '12px', color: '#6b7280'}}>Store ID: {actualStoreId}</p>
-      </div> */}
-
         <div style={styles.form}>
           <div style={styles.section}>
             <h2 className='shopprofiledittitle' style={styles.sectionTitle}>
@@ -297,7 +313,6 @@ export default function ShopEditProfilePage() {
             </h2>
 
             <div style={styles.inputGroup}>
-              {/* <label style={styles.label}>Full Name *</label> */}
               <input
                 type="text"
                 className='shopprofileditinput'
@@ -316,7 +331,6 @@ export default function ShopEditProfilePage() {
             </div>
 
             <div style={styles.inputGroup}>
-              {/* <label style={styles.label}>Email Address *</label> */}
               <input
                 type="email"
                 className='shopprofileditinput'
@@ -324,18 +338,20 @@ export default function ShopEditProfilePage() {
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 style={{
                   ...styles.input,
-                  borderColor: !profileData.email ? '#ef4444' : '#e5e7eb'
+                  borderColor: !profileData.email ? '#ef4444' : '#e5e7eb',
+                  backgroundColor: '#f3f4f6',
+                  cursor: 'not-allowed'
                 }}
                 placeholder="Enter your email"
-                required
+                disabled
+                readOnly
               />
-              {!profileData.email && (
-                <p style={styles.errorText}>Email is required</p>
-              )}
+              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                Email cannot be changed
+              </p>
             </div>
 
             <div style={styles.inputGroup}>
-              {/* <label style={styles.label}>Phone Number</label> */}
               <input
                 type="tel"
                 className='shopprofileditinput'
@@ -343,6 +359,7 @@ export default function ShopEditProfilePage() {
                 onChange={(e) => handleInputChange('phone_number', e.target.value)}
                 style={styles.input}
                 placeholder="Enter your phone number"
+                maxLength="10"
               />
             </div>
           </div>
@@ -354,7 +371,6 @@ export default function ShopEditProfilePage() {
             </h2>
 
             <div style={styles.inputGroup}>
-              {/* <label style={styles.label}>Address Line 1</label> */}
               <input
                 type="text"
                 className='shopprofileditinput'
@@ -366,7 +382,6 @@ export default function ShopEditProfilePage() {
             </div>
 
             <div style={styles.inputGroup}>
-              {/* <label style={styles.label}>Address Line 2 (Optional)</label> */}
               <input
                 type="text"
                 className='shopprofileditinput'
@@ -379,7 +394,6 @@ export default function ShopEditProfilePage() {
 
             <div style={styles.inputRow}>
               <div style={styles.inputGroup}>
-                {/* <label style={styles.label}>City</label> */}
                 <input
                   type="text"
                   className='shopprofileditinput'
@@ -391,7 +405,6 @@ export default function ShopEditProfilePage() {
               </div>
 
               <div style={styles.inputGroup}>
-                {/* <label style={styles.label}>Pincode</label> */}
                 <input
                   type="text"
                   className='shopprofileditinput'
@@ -402,44 +415,27 @@ export default function ShopEditProfilePage() {
                   maxLength="6"
                 />
               </div>
-
             </div>
-
           </div>
-          <div  style={styles.buttonWrapper}>
-          <button
-            onClick={handleSave}
-            className='shopprofilesavebtn'
-            disabled={saving || !profileData.full_name || !profileData.email}
-            style={{
-              ...styles.saveButton,
-              opacity: (saving || !profileData.full_name || !profileData.email) ? 0.6 : 1,
-              cursor: (saving || !profileData.full_name || !profileData.email) ? 'not-allowed' : 'pointer'
-            }}
-          >
-            <Save size={18} />
-            {saving ? 'Saving...' : 'Save'}
-          </button>
+
+          <div style={styles.buttonWrapper}>
+            <button
+              onClick={handleSave}
+              className='shopprofilesavebtn'
+              disabled={saving || !profileData.full_name || !profileData.email}
+              style={{
+                ...styles.saveButton,
+                opacity: (saving || !profileData.full_name || !profileData.email) ? 0.6 : 1,
+                cursor: (saving || !profileData.full_name || !profileData.email) ? 'not-allowed' : 'pointer'
+              }}
+            >
+              <Save size={18} />
+              {saving ? 'Saving...' : 'Save'}
+            </button>
           </div>
         </div>
-
-        {/* Debug Info */}
-        {/* <div style={{
-        backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '8px',
-        marginTop: '20px', fontSize: '12px', color: '#666', fontFamily: 'monospace'
-      }}>
-        <div style={{fontWeight: 'bold', marginBottom: '8px', color: '#333'}}>🔍 Edit Profile Debug:</div>
-        <div><strong>Store ID:</strong> {actualStoreId}</div>
-        <div><strong>Store Name:</strong> {storeData?.name || 'Loading...'}</div>
-        <div><strong>URL Pattern:</strong> {searchParams.get('id') ? 'new+id' : 'direct'}</div>
-        <div><strong>Current URL:</strong> {typeof window !== 'undefined' ? window.location.pathname : 'SSR'}</div>
-        <div><strong>Profile Email:</strong> {profileData.email || 'Not loaded'}</div>
-        <div><strong>HTTP Method:</strong> PATCH (Fixed from PUT)</div>
-        <div><strong>Save Disabled:</strong> {!profileData.full_name || !profileData.email ? 'Yes (missing required fields)' : 'No'}</div>
-      </div> */}
       </div>
     </div>
-
   );
 }
 
@@ -455,45 +451,24 @@ const styles = {
     borderTop: '3px solid #3b82f6', borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   },
-  header: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    marginBottom: '20px', backgroundColor: '#FDFFF0', borderRadius: '12px',
-    padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+  buttonWrapper: {
+    display: 'flex',
+    justifyContent: 'center',
   },
-  backButton: {
-    background: 'none', border: 'none', cursor: 'pointer',
-    color: '#3b82f6', padding: '8px', borderRadius: '6px',
-    transition: 'all 0.2s'
-  },
-  title: {
-    fontSize: '20px', fontWeight: '700', color: '#1f2937',
-    flex: 1, textAlign: 'center', margin: '0 16px'
-  },
-buttonWrapper: {
-  display: 'flex',
-  justifyContent: 'center',
-},
-
-saveButton: {
-  backgroundColor: '#10b981',
-  color: '#fff',
-  border: 'none',
-  borderRadius: '8px',
-  padding: '10px 20px',
-  fontSize: '16px',
-  fontWeight: '500',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '8px',
-  minWidth: '220px',    // ✅ ensures consistent size
-  transition: 'background 0.3s ease',
-},
-
-  storeContext: {
-    backgroundColor: '#ecfdf5', border: '2px solid #10b981',
-    borderRadius: '12px', padding: '16px', marginBottom: '20px',
-    textAlign: 'center'
+  saveButton: {
+    backgroundColor: '#10b981',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '10px 20px',
+    fontSize: '16px',
+    fontWeight: '500',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    minWidth: '220px',
+    transition: 'background 0.3s ease',
   },
   form: { display: 'flex', flexDirection: 'column', gap: '24px' },
   section: {
@@ -507,12 +482,8 @@ saveButton: {
   },
   inputGroup: { marginBottom: '16px' },
   inputRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' },
-  label: {
-    display: 'block', fontSize: '14px', fontWeight: '600',
-    color: '#1a4845', marginBottom: '6px'
-  },
   input: {
-    width: '100%', padding: '12px 16px', backgroundColor:'#FDFFF0' ,color:'#1a4845', border: '2px solid #e5e7eb',
+    width: '100%', padding: '12px 16px', backgroundColor:'#FDFFF0', color:'#1a4845', border: '2px solid #e5e7eb',
     borderRadius: '8px', fontSize: '16px', transition: 'all 0.2s',
     boxSizing: 'border-box'
   },
