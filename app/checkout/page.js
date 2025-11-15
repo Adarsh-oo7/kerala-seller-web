@@ -94,7 +94,6 @@ export default function CheckoutPage() {
     const debugCartContents = useCallback(async () => {
         console.log('🔍 DETAILED CART DEBUG for seller:', sellerPhone);
         
-        // Check cart data sources
         const cartItems = getCartBySeller ? getCartBySeller(sellerPhone) : [];
         const localStorage_multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
         const localStorage_cart = JSON.parse(localStorage.getItem('cart') || '[]');
@@ -117,7 +116,6 @@ export default function CheckoutPage() {
         console.log('🔍 CART DEBUG DATA:', debugData);
         setDebugInfo(debugData);
         
-        // ✅ NEW: Test each product individually
         if (cartItems.length > 0) {
             console.log('🧪 Testing individual products...');
             
@@ -125,7 +123,6 @@ export default function CheckoutPage() {
                 try {
                     console.log(`🔍 Testing product ${item.id} for seller ${sellerPhone}`);
                     
-                    // Test if product exists at all
                     const productTestUrl = `${API_BASE_URL}/api/products/${item.id}/`;
                     const productResponse = await fetch(productTestUrl);
                     
@@ -138,7 +135,6 @@ export default function CheckoutPage() {
                             store_id: productData.store?.id || 'No store info'
                         });
                         
-                        // Check if seller matches
                         if (productData.seller?.phone_number !== sellerPhone) {
                             console.error(`❌ MISMATCH: Product ${item.id} belongs to seller ${productData.seller?.phone_number}, not ${sellerPhone}`);
                         }
@@ -169,7 +165,6 @@ export default function CheckoutPage() {
                 return [];
             }
 
-            // ✅ NEW: Enhanced validation with detailed request logging
             const validationPayload = {
                 product_ids: items.map(item => item.id),
                 seller_phone: sellerPhone
@@ -181,7 +176,6 @@ export default function CheckoutPage() {
                 headers: headers
             });
             
-            // Try validation API
             try {
                 const response = await axios.post(`${API_BASE_URL}/api/products/validate/`, validationPayload, {
                     headers,
@@ -198,7 +192,6 @@ export default function CheckoutPage() {
                     message: validationError.message
                 });
                 
-                // ✅ NEW: Manual validation as fallback
                 console.log('🔄 Attempting manual validation...');
                 const validProducts = [];
                 
@@ -210,7 +203,6 @@ export default function CheckoutPage() {
                         if (productResponse.ok) {
                             const productData = await productResponse.json();
                             
-                            // Check if product belongs to this seller
                             if (productData.seller?.phone_number === sellerPhone) {
                                 validProducts.push({
                                     id: productData.id,
@@ -240,7 +232,6 @@ export default function CheckoutPage() {
         }
     }, [sellerPhone, getCartBySeller]);
 
-    // ✅ Shop context detection
     const getShopContext = useCallback(() => {
         if (typeof window === 'undefined') return { shopId: null, isInShop: false, pattern: 'none' };
         
@@ -285,7 +276,6 @@ export default function CheckoutPage() {
         return { 'Authorization': `Bearer ${token}` };
     }, [router, sellerPhone, getShopContext]);
 
-    // ✅ Enhanced data loading with comprehensive debugging
     useEffect(() => {
         const loadCheckoutData = async () => {
             console.log(`🔍 Loading checkout data for seller: ${sellerPhone}`);
@@ -293,7 +283,6 @@ export default function CheckoutPage() {
             const headers = getAuthHeaders();
             if (!headers) return;
 
-            // Get cart items
             let items = [];
             if (getCartBySeller) {
                 items = getCartBySeller(sellerPhone) || [];
@@ -308,11 +297,9 @@ export default function CheckoutPage() {
             console.log(`🛒 Found ${items.length} items for seller ${sellerPhone}`);
             setCartItems(items);
 
-            // ✅ Run detailed cart debugging
             await debugCartContents();
 
             try {
-                // Load profile and store data
                 const [profileRes, storeRes] = await Promise.all([
                     axios.get(PROFILE_API, { headers, timeout: 15000 }),
                     axios.get(`${STORE_API_URL}${sellerPhone}/`, { timeout: 10000 })
@@ -328,7 +315,6 @@ export default function CheckoutPage() {
                 const storeData = storeRes.data.store || storeRes.data;
                 setStore(storeData);
 
-                // ✅ Run product validation
                 const validatedProducts = await validateProductsDetailed();
                 
                 const isComplete = Boolean(
@@ -366,7 +352,7 @@ export default function CheckoutPage() {
         loadCheckoutData();
     }, [sellerPhone, getCartBySeller, getAuthHeaders, router, debugCartContents, validateProductsDetailed]);
 
-    // ✅ ENHANCED: Order placement with detailed error handling
+    // ✅ COMPLETE: Order placement with cart clearing for BOTH payment methods
     const handlePlaceOrder = async () => {
         console.log('🔍 ENHANCED ORDER PLACEMENT - Starting...');
         
@@ -392,7 +378,6 @@ export default function CheckoutPage() {
             setIsSubmitting(true);
             setErrors({});
             
-            // ✅ NEW: Validate products before creating order
             console.log('🔍 Pre-order product validation...');
             const validatedProducts = await validateProductsDetailed();
             
@@ -407,13 +392,12 @@ export default function CheckoutPage() {
             
             const finalAddress = `${shippingInfo.address}, ${shippingInfo.city}, ${shippingInfo.pincode}`;
             
-            // ✅ NEW: Enhanced order data with validation
             const orderData = {
                 customer_name: shippingInfo.name.trim(),
                 customer_phone: shippingInfo.phone.trim(),
                 shipping_address: finalAddress,
                 items: validatedProducts.map(item => ({ 
-                    id: parseInt(item.id), // ✅ Ensure ID is integer
+                    id: parseInt(item.id),
                     quantity: parseInt(item.quantity),
                     name: item.name,
                     price: parseFloat(item.price)
@@ -426,7 +410,7 @@ export default function CheckoutPage() {
 
             if (selectedPaymentMethod === 'COD') {
                 try {
-                    console.log(`🔍 Creating COD order with enhanced validation...`);
+                    console.log(`🔍 Creating COD order...`);
                     
                     const response = await axios.post(CREATE_ORDER_API, orderData, { 
                         headers,
@@ -435,8 +419,10 @@ export default function CheckoutPage() {
                     
                     console.log('✅ COD order created successfully:', response.data);
                     
+                    // ✅ CRITICAL: Clear cart after successful COD order
                     if (clearCartForSeller) {
                         clearCartForSeller(sellerPhone);
+                        console.log('🗑️ Cart cleared for seller:', sellerPhone);
                     }
                     
                     router.push(`/order-confirmation/${response.data.order_id}`);
@@ -464,8 +450,85 @@ export default function CheckoutPage() {
                 } finally {
                     setIsSubmitting(false);
                 }
+                
+            } else if (selectedPaymentMethod === 'ONLINE') {
+                // ✅ ONLINE PAYMENT WITH CART CLEARING
+                try {
+                    console.log('🔍 Creating online payment order...');
+                    
+                    const paymentOrderResponse = await axios.post(CREATE_PAYMENT_ORDER_API, orderData, { 
+                        headers,
+                        timeout: 20000
+                    });
+                    
+                    console.log('✅ Payment order created:', paymentOrderResponse.data);
+                    
+                    const options = {
+                        key: RAZORPAY_KEY_ID,
+                        amount: paymentOrderResponse.data.amount,
+                        currency: 'INR',
+                        order_id: paymentOrderResponse.data.razorpay_order_id,
+                        handler: async function (response) {
+                            try {
+                                console.log('🔍 Verifying payment...');
+                                
+                                const verifyResponse = await axios.post(VERIFY_PAYMENT_API, {
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    order_data: orderData
+                                }, { headers });
+                                
+                                console.log('✅ Online payment successful:', verifyResponse.data);
+                                
+                                // ✅ CRITICAL: Clear cart after successful online payment
+                                if (clearCartForSeller) {
+                                    clearCartForSeller(sellerPhone);
+                                    console.log('🗑️ Cart cleared for seller:', sellerPhone);
+                                }
+                                
+                                router.push(`/order-confirmation/${verifyResponse.data.order_id}`);
+                                
+                            } catch (verifyError) {
+                                console.error('❌ Payment verification failed:', verifyError);
+                                alert('Payment verification failed. Please contact support.');
+                                setIsSubmitting(false);
+                            }
+                        },
+                        prefill: {
+                            name: shippingInfo.name,
+                            contact: shippingInfo.phone
+                        },
+                        modal: {
+                            ondismiss: function() {
+                                console.log('Payment cancelled by user');
+                                setIsSubmitting(false);
+                            }
+                        }
+                    };
+                    
+                    if (typeof window.Razorpay === 'undefined') {
+                        console.error('❌ Razorpay not loaded');
+                        alert('Payment gateway not loaded. Please refresh and try again.');
+                        setIsSubmitting(false);
+                        return;
+                    }
+                    
+                    const razorpay = new window.Razorpay(options);
+                    razorpay.open();
+                    
+                } catch (error) {
+                    console.error('❌ Online payment error:', error);
+                    
+                    let errorMessage = 'Failed to initiate payment. Please try again.';
+                    if (error.response?.data?.error) {
+                        errorMessage = error.response.data.error;
+                    }
+                    
+                    alert(errorMessage);
+                    setIsSubmitting(false);
+                }
             }
-            // ... rest of online payment logic
             
         } catch (error) {
             console.error('❌ Order placement error:', error);
@@ -517,7 +580,6 @@ export default function CheckoutPage() {
         setSelectedPaymentMethod(method);
     };
 
-    // Loading state
     if (isLoading) {
         return (
             <div>
@@ -537,7 +599,7 @@ export default function CheckoutPage() {
             <Header />
             
             <div style={styles.container}>
-                {/* ✅ ENHANCED DEBUG PANEL */}
+                {/* Debug Panel */}
                 <div style={styles.debugPanel}>
                     <h4>🔍 Enhanced Debug Panel</h4>
                     <button 
@@ -580,7 +642,6 @@ export default function CheckoutPage() {
                     )}
                 </div>
 
-                {/* Enhanced header */}
                 <div style={styles.checkoutHeader}>
                     <h1 style={styles.title}>Enhanced Debug Checkout</h1>
                     <div style={styles.sellerInfo}>
@@ -612,7 +673,6 @@ export default function CheckoutPage() {
                     </div>
                 ) : (
                     <div style={styles.checkoutLayout}>
-                        {/* Simplified form for debugging */}
                         <div style={styles.formSection}>
                             <h2>Shipping Information</h2>
                             
@@ -678,7 +738,6 @@ export default function CheckoutPage() {
                             </button>
                         </div>
 
-                        {/* Order Summary */}
                         <div style={styles.summarySection}>
                             <h2>Order Summary</h2>
                             
@@ -712,6 +771,9 @@ export default function CheckoutPage() {
         </div>
     );
 }
+
+// Enhanced styles
+
 
 // Enhanced styles for debugging
 const styles = {
