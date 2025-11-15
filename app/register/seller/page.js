@@ -403,15 +403,15 @@ export default function RegisterSellerPage() {
         }
     };
 
-    const handleBackToStep1 = () => {
-        setStep(1);
-        setFormData(prev => ({ ...prev, otp: '' }));
-        setError('');
-        if (recaptchaVerifier) {
-            recaptchaVerifier.clear();
-            setRecaptchaVerifier(null);
-        }
-    };
+    // const handleBackToStep1 = () => {
+    //     setStep(1);
+    //     setFormData(prev => ({ ...prev, otp: '' }));
+    //     setError('');
+    //     if (recaptchaVerifier) {
+    //         recaptchaVerifier.clear();
+    //         setRecaptchaVerifier(null);
+    //     }
+    // };
 
     return (
         <div style={styles.pageContainer}>
@@ -701,7 +701,7 @@ export default function RegisterSellerPage() {
                                 )}
                             </button>
 
-                            <button
+                            {/* <button
                                 type="button"
                                 className='sellerregisterbacktodetailbtn'
                                 onClick={handleBackToStep1}
@@ -710,7 +710,7 @@ export default function RegisterSellerPage() {
                             >
                                 <ArrowLeft size={16} />
                                 Back to Details
-                            </button>
+                            </button> */}
                         </form>
                     )}
 
