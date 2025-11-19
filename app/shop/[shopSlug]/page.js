@@ -425,9 +425,19 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
 
   return (
     <div className="enhanced-filter-section" style={styles.filterSection} ref={filterRef}>
-      <div className="shopshopslugfiltercontainer" style={styles.container}>
+      <div className="shopshopslugfiltercontainer" style={styles.Filtercontainer}>
         <div className="filter-header" style={styles.filterHeader}>
           <div className="filter-search-row" style={styles.filterSearchRow}>
+
+            <div className="search-right" style={styles.searchRight}>
+              <input
+                className='search-input'
+                type="text"
+                placeholder="Search products..."
+                style={styles.searchInput}
+              />
+            </div>
+
             <div className="filter-left" style={styles.filterLeft}>
               <button
                 className="filter-toggle-button"
@@ -441,42 +451,57 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
                 )}
                 <ChevronDown size={16} className={showFilters ? 'rotated' : ''} />
               </button>
-              {getActiveFilterCount() > 0 && (
-                <button
-                  className="clear-filters-button"
-                  style={styles.clearFiltersButton}
-                  onClick={handleClearFilters}
-                >
-                  <X size={14} />
-                  Clear All
-                </button>
-              )}
+
             </div>
-            <div className="search-right" style={styles.searchRight}>
-              <input
-                className='search-input'
-                type="text"
-                placeholder="Search products..."
-                style={styles.searchInput}
-              />
-            </div>
+
           </div>
         </div>
+
         {showFilters && (
-          <div className="filter-panel" style={styles.filterPanel}>
+          <div
+            style={styles.sidebarOverlay}
+            onClick={() => setShowFilters(false)}
+          ></div>
+        )}
+
+        <div
+        className='shopshopslugsibebar'
+          style={{
+            ...styles.filterSidebar,
+            transform: showFilters ? "translateX(0)" : "translateX(100%)",
+          }}
+        >
+
+          <div style={styles.sidebarHeader}>
+            <h3 style={styles.sidebarTitle}>Filters</h3>
+            <button
+              onClick={() => setShowFilters(false)}
+              style={styles.sidebarCloseButton}
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <div style={styles.sidebarInnerBox}>
             <div className="filter-group" style={styles.filterGroup}>
               <h4>Sort By</h4>
               <div className="filter-options" style={styles.filterOptions}>
                 {sortOptions.map((option) => (
-                  <label key={option.value} className="filter-option" style={styles.filterOption}>
+                  <label key={option.value} className="shopslugfilter-option" style={styles.filterOption}>
                     <input
+                      className="custom-radio"
                       type="radio"
                       name="sortBy"
                       value={option.value}
                       checked={tempFilters.sortBy === option.value}
                       onChange={(e) => setTempFilters({ ...tempFilters, sortBy: e.target.value })}
                     />
-                    <span className="checkmark" style={styles.checkmark}></span>
+                    <span
+                      className="checkmark"
+                      style={{
+                        ...styles.checkmark,
+                        ...(tempFilters.sortBy === option.value ? styles.checkmarkActive : {})
+                      }}
+                    >✓</span>
                     {option.label}
                   </label>
                 ))}
@@ -486,8 +511,9 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
               <h4>Price Range</h4>
               <div className="filter-options" style={styles.filterOptions}>
                 {priceRanges.map((range, index) => (
-                  <label key={index} className="filter-option" style={styles.filterOption}>
+                  <label key={index} className="shopslugfilter-option" style={styles.filterOption}>
                     <input
+                      className="custom-radio"
                       type="radio"
                       name="priceRange"
                       checked={
@@ -497,7 +523,19 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
                       }
                       onChange={() => setTempFilters({ ...tempFilters, priceRange: range })}
                     />
-                    <span className="checkmark" style={styles.checkmark}></span>
+                    <span
+                      className="checkmark"
+                      style={{
+                        ...styles.checkmark,
+                        ...(tempFilters.priceRange &&
+                          tempFilters.priceRange.min === range.min &&
+                          tempFilters.priceRange.max === range.max
+                          ? styles.checkmarkActive
+                          : {})
+                      }}
+                    >
+                      ✓
+                    </span>
                     {range.label}
                   </label>
                 ))}
@@ -512,16 +550,20 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
                 <Check size={16} />
                 Apply Filters
               </button>
-              <button
-                className="cancel-filters-button"
-                style={styles.cancelFiltersButton}
-                onClick={() => setShowFilters(false)}
-              >
-                Cancel
-              </button>
+              {getActiveFilterCount() > 0 && (
+                <button
+                  className="clear-filters-button"
+                  style={styles.clearFiltersButton}
+                  onClick={handleClearFilters}
+                >
+                  <X size={14} />
+                  Clear All
+                </button>
+              )}
             </div>
           </div>
-        )}
+        </div>
+
       </div>
     </div>
   );
@@ -906,8 +948,16 @@ const styles = {
     flex: 1,
     maxWidth: '1200px',
     margin: '0 auto',
-    maxWidth: '100vw',
     padding: '20px 20px', // default padding
+    boxSizing: 'border-box',
+    overflowX: 'hidden',
+  },
+
+  Filtercontainer: {
+    flex: 1,
+    maxWidth: '1100px',
+    margin: '0 auto',
+    padding: '10px 70px', // default padding
     boxSizing: 'border-box',
     overflowX: 'hidden',
   },
@@ -1107,15 +1157,14 @@ const styles = {
     alignItems: 'center',
   },
   searchRight: {
-    marginLeft: 'auto',
+    marginRight: 'auto',
     display: 'flex',
     alignItems: 'center',
   },
   searchInput: {
     padding: '0.5rem 1rem',
     borderRadius: '8px',
-    border: '2px solid #e5e7eb',
-    boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.3)',
+    border: '1px solid #1a4845',
     minWidth: '200px',
     maxWidth: '400px',
     background: '#FDFFF0',
@@ -1126,10 +1175,9 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
     padding: '8px 16px',
-    color: "#1a4845",
-    backgroundColor: '#FDFFF0',
-    border: '2px solid #e5e7eb',
-    boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.3)',
+    color: "white",
+    backgroundColor: '#1a4845',
+    border: '1px solid #1a4845',
     borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '14px'
@@ -1146,13 +1194,13 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    padding: '8px 12px',
-    backgroundColor: '#f3f4f6',
-    border: '1px solid #d1d5db',
+    padding: '8px 16px',
+    backgroundColor: '#f94b4bff',
+    border: '1px solid #f94b4bff',
     borderRadius: '6px',
     cursor: 'pointer',
     fontSize: '13px',
-    color: '#374151'
+    color: '#ffffffff'
   },
   filterPanel: {
     marginTop: '16px',
@@ -1161,6 +1209,66 @@ const styles = {
     borderRadius: '8px',
     border: '1px solid #e5e7eb'
   },
+
+  filterSidebar: {
+    position: "fixed",
+    top: 0,
+    right: 0,
+    height: "100vh",
+    width: "320px",
+    background: "#FDFFF0",
+    padding: "20px",
+    overflowY: "auto",
+    zIndex: 2000,
+    transform: "translateX(100%)", // default hidden
+    transition: "transform 0.3s ease",
+  },
+
+  sidebarHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "20px",
+    paddingBottom: "10px",
+  },
+
+  sidebarTitle: {
+    fontSize: "18px",
+    fontWeight: "600",
+    color: "#1a4845",
+    margin: 0,
+  },
+
+  sidebarCloseButton: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "4px",
+    display: "flex",
+    alignItems: "center",
+  },
+
+  sidebarOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    height: "100vh",
+    background: "rgba(0,0,0,0.5)",
+    zIndex: 1500,
+  },
+
+  sidebarInnerBox: {
+    border: "1px solid #1a4845",
+    borderRadius: "10px",
+    padding: "16px",
+    background: "#FDFFF0",
+    marginTop: "10px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+  },
+
   filterGroup: {
     marginBottom: '20px'
   },
@@ -1178,11 +1286,25 @@ const styles = {
     fontSize: '14px'
   },
   checkmark: {
-    width: '16px',
-    height: '16px',
-    border: '2px solid #d1d5db',
-    borderRadius: '3px'
+    width: "18px",
+    height: "18px",
+    border: "2px solid #d1d5db",
+    borderRadius: "4px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    fontSize: "14px",
+    color: "transparent",   // hidden by default
+    transition: "0.2s ease",
+    pointerEvents: "none"
   },
+
+  checkmarkActive: {
+    borderColor: "#175e54", // green border
+    color: "#175e54",        // tick visible in green
+    background: "transparent" // no solid fill!
+  },
+
   filterActions: {
     display: 'flex',
     gap: '12px',
@@ -1192,19 +1314,19 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
-    padding: '10px 20px',
-    backgroundColor: '#3b82f6',
+    padding: '8px 16px',
+    backgroundColor: '#175e54',
     color: 'white',
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
-    fontSize: '14px',
+    fontSize: '13px',
     fontWeight: '500'
   },
   cancelFiltersButton: {
     padding: '10px 20px',
     backgroundColor: 'white',
-    color: '#374151',
+    color: '#f13838ff',
     border: '1px solid #d1d5db',
     borderRadius: '6px',
     cursor: 'pointer',

@@ -442,8 +442,11 @@ export default function BuyerOrdersPage() {
                                                             </li>
                                                         )}
                                                     </ul>
+                                                    <div className='profileorderdate' style={styles.orderDate}>{formatDate(order.created_at)}</div>
+
                                                 </div>
                                             )}
+
 
                                             <div style={styles.statusSectionBody}>
                                                 <span className='keralasellersprofileorderstatustext' style={{
@@ -454,26 +457,10 @@ export default function BuyerOrdersPage() {
                                                     {order.status}
                                                 </span>
                                             </div>
+
                                         </div>
 
-                                        {(order.shipping_provider || order.tracking_id) && (
-                                            <div style={styles.shippingInfo}>
-                                                {order.shipping_provider && (
-                                                    <div style={styles.shippingItem}>
-                                                        <Truck size={14} />
-                                                        <span>Via {order.shipping_provider}</span>
-                                                    </div>
-                                                )}
-                                                {order.tracking_id && (
-                                                    <div style={styles.shippingItem}>
-                                                        <span style={styles.trackingLabel}>Tracking:</span>
-                                                        <span style={styles.trackingId}>
-                                                            {order.tracking_id}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
+
                                     </div>
 
                                     <div className='keralasellersprofileordercardbody' style={styles.cardFooter}>
@@ -594,6 +581,25 @@ export default function BuyerOrdersPage() {
                                                     <div style={styles.infoLabel}>Customer</div>
                                                     <div style={styles.infoValue}>{selectedOrder.customer_name}</div>
                                                 </div>
+                                            </div>
+                                        )}
+
+                                        {(selectedOrder.shipping_provider || selectedOrder.tracking_id) && (
+                                            <div style={styles.shippingInfo}>
+                                                {selectedOrder.shipping_provider && (
+                                                    <div style={styles.shippingItem}>
+                                                        <Truck size={16} />
+                                                        <span>Via {selectedOrder.shipping_provider}</span>
+                                                    </div>
+                                                )}
+                                                {selectedOrder.tracking_id && (
+                                                    <div style={styles.shippingItem}>
+                                                        <span style={styles.trackingLabel}>Tracking:</span>
+                                                        <span style={styles.trackingId}>
+                                                            {selectedOrder.tracking_id}
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
 
@@ -963,7 +969,7 @@ const styles = {
         border: '2px dashed #d1d5db',
         color: '#6b7280'
     },
-    
+
     // ✅ NEW: Cancel Modal Styles
     cancelWarning: {
         display: 'flex',
@@ -1067,6 +1073,8 @@ const styles = {
         gap: '1rem',
         width: '100%',
     },
+    orderDate: { fontSize: '13px', color: '#1a4845', marginTop: '4px' },
+
     card: {
         width: '100%',
         boxSizing: 'border-box',
@@ -1182,16 +1190,17 @@ const styles = {
         flexDirection: 'column',
         gap: '6px',
         padding: '12px',
-        backgroundColor: '#f0fdf4',
+        backgroundColor: 'transparent',
+        border: '1px solid rgba(255, 255, 255, 0.38)',
+        color: 'rgb(26, 72, 69)',
         borderRadius: '8px',
-        border: '1px solid #bbf7d0'
     },
     shippingItem: {
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
         fontSize: '14px',
-        color: '#166534'
+        color: 'rgb(26, 72, 69)'
     },
     trackingLabel: {
         fontWeight: '500'

@@ -32,9 +32,9 @@ function AdvancedFilters({ statusFilter, setStatusFilter, paymentFilter, setPaym
         <label style={styles.filterLabel}>Sort By</label>
         <div style={styles.filterButtonGroup}>
           {[
-            { value: '-created_at', label: '🕐 Latest Orders' },
-            { value: '-total_amount', label: '💰 Highest Amount' },
-            { value: 'total_amount', label: '💵 Lowest Amount' },
+            { value: '-created_at', label: 'Latest Orders' },
+            { value: '-total_amount', label: 'Highest Amount' },
+            { value: 'total_amount', label: 'Lowest Amount' },
           ].map(option => (
             <button
               key={option.value}
@@ -70,15 +70,6 @@ function AdvancedFilters({ statusFilter, setStatusFilter, paymentFilter, setPaym
               {method === 'ONLINE' ? 'Online Payment' : 'Cash on Delivery'}
             </button>
           ))}
-        </div>
-      </div>
-
-      <div style={styles.filterGroup}>
-        <label style={styles.filterLabel}>Amount Range</label>
-        <div style={styles.amountFilterGroup}>
-          <input type="number" placeholder="Min ₹" value={minAmount} onChange={(e) => setMinAmount(e.target.value)} style={styles.amountInput} />
-          <span>to</span>
-          <input type="number" placeholder="Max ₹" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} style={styles.amountInput} />
         </div>
       </div>
 
@@ -130,7 +121,7 @@ function OrderCard({ order, getStatusStyle, getPaymentStatusStyle }) {
     >
       {/* Header Section */}
       <div
-      className='dashboardorderpageorderheader'
+        className='dashboardorderpageorderheader'
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -657,9 +648,8 @@ export default function OrdersListPage() {
 
         {/* ✅ Clear button when searching */}
         {searchTerm && (
-          <button onClick={() => setSearchTerm('')} style={styles.clearSearchBtn}>
+          <button className='dashboardorderclearsearchicon' onClick={() => setSearchTerm('')} style={styles.clearInsideInput}>
             <X size={16} />
-            Clear
           </button>
         )}
 
@@ -672,17 +662,50 @@ export default function OrdersListPage() {
         </div>
       )}
 
-      {showAdvancedFilters && (
-        <AdvancedFilters
-          statusFilter={statusFilter} setStatusFilter={setStatusFilter}
-          paymentFilter={paymentFilter} setPaymentFilter={setPaymentFilter}
-          dateFilter={dateFilter} setDateFilter={setDateFilter}
-          minAmount={minAmount} setMinAmount={setMinAmount}
-          maxAmount={maxAmount} setMaxAmount={setMaxAmount}
-          sortBy={sortBy} setSortBy={setSortBy}
-          orderStats={orderStats} onClearFilters={clearAllFilters}
-        />
-      )}
+      <div className="desktop-filters">
+        {showAdvancedFilters && (
+          <AdvancedFilters
+            statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+            paymentFilter={paymentFilter} setPaymentFilter={setPaymentFilter}
+            dateFilter={dateFilter} setDateFilter={setDateFilter}
+            minAmount={minAmount} setMinAmount={setMinAmount}
+            maxAmount={maxAmount} setMaxAmount={setMaxAmount}
+            sortBy={sortBy} setSortBy={setSortBy}
+            orderStats={orderStats} onClearFilters={clearAllFilters}
+          />
+        )}
+      </div>
+
+      {/* Mobile Sidebar Drawer */}
+      <div
+        className="mobile-filter-sidebar"
+        style={{
+          ...styles.mobileSidebar,
+          transform: showAdvancedFilters ? "translateX(0)" : "translateX(100%)",
+        }}
+      >
+
+        <div style={styles.sidebarHeader}>
+          <h3 style={{ margin: 0 }}>Filters</h3>
+          <button
+            onClick={() => setShowAdvancedFilters(false)}
+            style={styles.closeBtn}
+          >
+            ✕
+          </button>
+        </div>
+        <div className="mobile-filter-wrapper">
+          <AdvancedFilters
+            statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+            paymentFilter={paymentFilter} setPaymentFilter={setPaymentFilter}
+            dateFilter={dateFilter} setDateFilter={setDateFilter}
+            minAmount={minAmount} setMinAmount={setMinAmount}
+            maxAmount={maxAmount} setMaxAmount={setMaxAmount}
+            sortBy={sortBy} setSortBy={setSortBy}
+            orderStats={orderStats} onClearFilters={clearAllFilters}
+          />
+        </div>
+      </div>
 
       <div className='dashboardorderpageordercardgrid' style={styles.orderGrid}>
         {displayedOrders.length > 0 ? (
@@ -772,16 +795,16 @@ const styles = {
   clearSearchBtn: { display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 14px', backgroundColor: '#f3f4f6', color: '#ef4444', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' },
   filterToggle: { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', backgroundColor: 'rgb(23, 94, 84)', color: 'white', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' },
   searchResultsInfo: { padding: '12px 16px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', color: '#065f46', fontSize: '13px', fontWeight: '500', marginBottom: '16px' },
-  advancedFilters: { backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '20px', marginBottom: '20px' },
+  advancedFilters: { backgroundColor: 'rgb(159 191 166 / 21%)', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '20px', marginBottom: '20px' },
   filterGroup: { marginBottom: '16px' },
   filterLabel: { display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' },
   filterButtonGroup: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   amountFilterGroup: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' },
   amountInput: { padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px', width: '120px' },
-  dateSelect: { padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px', backgroundColor: 'white' },
+  dateSelect: { padding: '8px 12px', border: '1px solid rgb(23, 94, 84)', borderRadius: '6px', fontSize: '14px', backgroundColor: '#FDFFF0' },
   clearFiltersBtn: { display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' },
-  filterButton: { padding: '10px 16px', border: '1px solid #d1d5db', borderRadius: '20px', background: '#fff', cursor: 'pointer', fontWeight: '500', fontSize: '14px', color: '#374151', transition: 'all 0.2s' },
-  activeFilter: { padding: '10px 16px', border: '1px solid #3b82f6', borderRadius: '20px', background: '#3b82f6', color: 'white', cursor: 'pointer', fontWeight: '500', fontSize: '14px' },
+  filterButton: { padding: '6px 12px', border: '1px solid rgb(23, 94, 84)', borderRadius: '20px', background: '#FDFFF0', cursor: 'pointer', fontWeight: '500', fontSize: '13px', color: '#374151', transition: 'all 0.2s', height: '35px' },
+  activeFilter: { padding: '6px 12px', border: '1px solid rgb(23, 94, 84)', borderRadius: '20px', background: 'rgb(23, 94, 84)', color: 'white', cursor: 'pointer', fontWeight: '500', fontSize: '13px', height: '35px' },
   orderGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
@@ -810,5 +833,51 @@ const styles = {
   cardFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderTop: '1px solid #f3f4f6', backgroundColor: '#f8fafc' },
   actionButton: { display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none', padding: '10px 16px', borderRadius: '8px', backgroundColor: '#3b82f6', color: 'white', fontSize: '14px', fontWeight: '500', transition: 'background-color 0.2s' },
   emptyState: { textAlign: 'center', padding: '60px 40px', backgroundColor: '#FDFFF0', borderRadius: '12px', border: '1px dashed #d1d5db', color: '#6b7280' },
-  clearFiltersButton: { padding: '10px 20px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', marginTop: '12px' }
+  clearFiltersButton: { padding: '10px 20px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', marginTop: '12px' },
+  mobileSidebar: {
+    position: "fixed",
+    top: 0,
+    right: 0,
+    height: "100vh",
+    width: "60%",
+    maxWidth: "240px",
+    background: "#FDFFF0",
+    zIndex: 9999,
+    padding: "20px",
+    boxShadow: "-2px 0 12px rgba(0,0,0,0.25)",
+    overflowY: "auto",
+    transition: "transform 0.3s ease",
+    transform: "translateX(100%)", // start hidden on right
+  },
+
+  sidebarHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "12px",
+  },
+
+  closeBtn: {
+    background: "#ffe6e6ff",
+    border: "none",
+    padding: "6px 12px",
+    borderRadius: "6px",
+    cursor: "pointer",
+    color: "red",
+  },
+ clearInsideInput: {
+  position: 'absolute',
+  right: '120px',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  background: 'transparent',
+  border: 'none',
+  cursor: 'pointer',
+  padding: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  opacity: 0.7,
+},
+
 };

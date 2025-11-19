@@ -8,7 +8,7 @@ import SHeader from '../../../../../components/common/SHeader';
 
 import {
   ArrowLeft, Package, Clock, CheckCircle, XCircle, Store, AlertTriangle, X, User,
-  MapPin, Phone, Calendar, CreditCard, AlertOctagon, Star, RefreshCw, Check
+  MapPin, Phone, Calendar, CreditCard, AlertOctagon, Star, RefreshCw, Check, Truck
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
@@ -636,9 +636,9 @@ export default function ShopOrdersPage() {
     switch (status?.toLowerCase()) {
       case 'pending': return <Clock size={20} className='profileordericonsize' color="#f59e0b" />;
       case 'processing': return <Package size={20} className='profileordericonsize' color="#3b82f6" />;
-      case 'delivered': return <CheckCircle size={20} className='profileordericonsize' color="#10b981" />;
+      case 'delivered': return <CheckCircle size={20} className='profileordericonsize' color="rgb(6, 95, 70)" />;
       case 'cancelled': return <XCircle size={20} className='profileordericonsize' color="#ef4444" />;
-      default: return <Package size={20} className='profileordericonsize' color="#6b7280" />;
+      default: return <Package size={20} className='profileordericonsize' color="#b4d573ff" />;
     }
   };
 
@@ -646,9 +646,9 @@ export default function ShopOrdersPage() {
     switch (status?.toLowerCase()) {
       case 'pending': return '#f59e0b';
       case 'processing': return '#3b82f6';
-      case 'delivered': return '#10b981';
+      case 'delivered': return 'rgb(6, 95, 70)';
       case 'cancelled': return '#ef4444';
-      default: return '#6b7280';
+      default: return '#b4d573ff';
     }
   };
 
@@ -917,6 +917,25 @@ export default function ShopOrdersPage() {
                           <div style={styles.infoLabel}>Customer</div>
                           <div style={styles.infoValue}>{selectedOrder.customer_name}</div>
                         </div>
+                      </div>
+                    )}
+
+                    {(selectedOrder.shipping_provider || selectedOrder.tracking_id) && (
+                      <div style={styles.shippingInfo}>
+                        {selectedOrder.shipping_provider && (
+                          <div style={styles.shippingItem}>
+                            <Truck size={16} />
+                            <span>Via {selectedOrder.shipping_provider}</span>
+                          </div>
+                        )}
+                        {selectedOrder.tracking_id && (
+                          <div style={styles.shippingItem}>
+                            <span style={styles.trackingLabel}>Tracking:</span>
+                            <span style={styles.trackingId}>
+                              {selectedOrder.tracking_id}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1319,7 +1338,7 @@ const styles = {
     padding: '24px', borderBottom: '1px solid #e5e7eb'
   },
   modalTitle: {
-    fontSize: '20px', fontWeight: '700', color: '#1a4845', margin: 0,
+    fontSize: '20px', fontWeight: '700', color: 'white', margin: 0,
     display: 'flex', alignItems: 'center'
   },
   closeButton: {
@@ -1629,6 +1648,34 @@ const styles = {
     fontSize: '14px',
     color: '#374151',
     marginBottom: '16px',
+  },
+
+  shippingInfo: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    padding: '12px',
+    backgroundColor: 'transparent',
+    border: '1px solid rgba(255, 255, 255, 0.38)',
+    color: 'rgb(26, 72, 69)',
+    borderRadius: '8px',
+  },
+  shippingItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '14px',
+    color: 'rgb(26, 72, 69)'
+  },
+  trackingLabel: {
+    fontWeight: '500'
+  },
+  trackingId: {
+    fontFamily: 'monospace',
+    backgroundColor: '#dcfce7',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    fontSize: '13px'
   },
 
   // Error / Success messages

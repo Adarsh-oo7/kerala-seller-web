@@ -101,9 +101,9 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
     if (!subscription || !subscription.is_active) {
         return (
             <div style={{ ...styles.card1, ...styles.noPlanCard }}>
-                <Crown size={32} style={{ color: '#f59e0b', marginBottom: '16px' }} />
-                <h2>No Active Plan</h2>
-                <p>Choose a plan below to unlock the full potential of your online store.</p>
+                <Crown className='dashboardsubscribenoactiveplanicon' size={32} style={{ color: '#f59e0b', marginBottom: '16px' }} />
+                <h2 className='dashboardsubscribenoactiveplan'>No Active Plan</h2>
+                <p className='dashboardsubscribenoactiveplansub'>Choose a plan below to unlock the full potential of your online store.</p>
 
                 {/* ✅ NEW: Show store status even without subscription */}
                 {storeStatus && (
@@ -160,7 +160,7 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
             <div style={styles.currentPlanHeader}>
                 <div>
                     <h2 style={styles.currentPlanTitle}>Your Current Plan</h2>
-                    <p style={styles.currentPlanName}>{subscription.plan.name}</p>
+                    <p className='dashboardsubscribecurrentplan' style={styles.currentPlanName}>{subscription.plan.name}</p>
                 </div>
                 <div style={styles.planIcon}>
                     <Shield size={24} color="#4f46e5" />
@@ -238,8 +238,8 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
             )}
 
             {isExpiringSoon && (
-                <div style={styles.expiringWarning}>
-                    <AlertCircle size={16} />
+                <div className='dashboardsubscribeexpiretext' style={styles.expiringWarning}>
+                    <AlertCircle style={{flexShrink:'0'}} size={16} />
                     <span>Your plan expires soon. Renew to continue selling online.</span>
                 </div>
             )}
@@ -618,10 +618,10 @@ export default function SubscriptionPage() {
 
 
 
-                                <div style={styles.planHeader}>
+                                <div className='dashboardsubscribeplanheader' style={styles.planHeader}>
                                     <h2 style={styles.planName}>{plan.name}</h2>
-                                    <div style={styles.priceContainer}>
-                                        <span style={styles.price}>
+                                    <div className='dashboardsubscribeplanheaderpricecontainer' style={styles.priceContainer}>
+                                        <span className='dashboardsubscribeplanheaderprice' style={styles.price}>
                                             ₹{Math.round(displayPrice).toLocaleString('en-IN')}
                                         </span>
                                         <span style={styles.duration}>
@@ -644,7 +644,7 @@ export default function SubscriptionPage() {
                                 </div>
 
                                 <div style={styles.featuresContainer}>
-                                    <ul style={styles.featureList}>
+                                    <ul className='dashboardsubscribelistfont' style={styles.featureList}>
                                         <li style={styles.featureItem}>
                                             <CheckCircle size={16} style={styles.checkIcon} />
                                             <span>
@@ -680,6 +680,7 @@ export default function SubscriptionPage() {
                                 </div>
 
                                 <button
+                                className='dashboardsubscribechooseplanbtn'
                                     style={{
                                         ...styles.button,
                                         ...(isCurrentPlan ? styles.currentPlanButton : {}),
@@ -1193,7 +1194,7 @@ const styles = {
 
     planName: {
         fontSize: '18px',
-        margin: '0 0 16px 0',
+        margin: '12px 0 12px 0',
         fontWeight: '700',
         color: '#e5ce4bff'
     },

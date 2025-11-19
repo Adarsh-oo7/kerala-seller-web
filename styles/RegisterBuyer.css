@@ -1,4 +1,3 @@
-
 @media (max-width: 576px) {
     .buyerregistericoncontainer {
         width: 55px !important;
@@ -93,6 +92,16 @@
     .buyerforgotpasswordspet2input {
         padding: 10px 14px 10px 15px !important;
         font-size: 12px !important;
+    }
+
+    .shopshopslugregistererrorcontainer {
+        gap: 5px !important;
+        padding: 9px 8px !important;
+        align-items: normal !important;
+    }
+
+    .shopshopslugregisterotpinfo {
+        gap: 6px !important;
     }
 
 }
