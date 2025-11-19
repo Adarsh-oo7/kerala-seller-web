@@ -474,6 +474,7 @@ export default function VerificationPage() {
                       />
                       {!isPhoneEditable && (
                         <button
+                        className='keralasellerprofileverificationeditbtn'
                           onClick={() => setIsPhoneEditable(true)}
                           style={styles.editPhoneButton}
                           type="button"
@@ -958,7 +959,8 @@ const styles = {
     border: '2px solid #e5e7eb',
     borderRadius: '12px',
     overflow: 'hidden',
-    transition: 'all 0.2s'
+    transition: 'all 0.2s',
+    position: 'relative',
   },
 
   countryCode: {
@@ -974,6 +976,7 @@ const styles = {
   phoneInput: {
     flex: 1,
     padding: '12px 16px',
+    paddingRight: '60px',
     border: 'none',
     fontSize: '16px',
     outline: 'none',
@@ -981,13 +984,19 @@ const styles = {
   },
 
   editPhoneButton: {
+    position: 'absolute',
+    right: '10px',
+    top: '50%',
+    transform: 'translateY(-50%)',
     padding: '8px 12px',
-    backgroundColor: '#3b82f6',
+    backgroundColor: 'rgb(26, 72, 69)',
     color: 'white',
     border: 'none',
-    fontSize: '14px',
+    borderRadius: '6px',
+    fontSize: '13px',
+    fontWeight: '500',
     cursor: 'pointer',
-    fontWeight: '500'
+    whiteSpace: 'nowrap', // prevents breaking
   },
 
   otpInput: {

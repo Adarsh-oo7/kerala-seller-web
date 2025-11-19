@@ -2,7 +2,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { Upload, Check, AlertCircle, Star, Building, Save, Image as ImageIcon, Trash2, X } from 'lucide-react';
+import "../../../../styles/DashboardSettings.css"
+import { Upload, Check, AlertCircle, Star, Building, Save, Image as ImageIcon, Trash2, X, Settings } from 'lucide-react';
 
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
@@ -228,19 +229,19 @@ export default function SettingsPage() {
     e.preventDefault();
     setSuccessMessage('');
     setErrorMessage('');
-  
+
     if (!store.name?.trim() || !store.description?.trim() || !store.whatsappnumber?.trim()) {
       setErrorMessage('Fill all required fields');
       return;
     }
-  
+
     setIsSaving(true);
     const headers = getAuthHeaders();
     if (!headers) {
       setIsSaving(false);
       return;
     }
-  
+
     try {
       const requestData = {
         ...store,
@@ -248,17 +249,17 @@ export default function SettingsPage() {
         predefined_banner_2: selectedPredefinedBanners[1] || null,
         predefined_banner_3: selectedPredefinedBanners[2] || null,
       };
-  
+
       if (newLogo) {
         requestData.cloudinary_logo = { public_id: newLogo.publicid, url: newLogo.url };
       }
-  
+
       if (newBanner) {
         requestData.cloudinary_banner_1 = { public_id: newBanner.publicid, url: newBanner.url };
       }
-  
+
       const response = await axios.patch(API_URL, requestData, { headers });
-  
+
       if (response.data.store_profile) {
         setStore((prev) => ({ ...prev, ...response.data.store_profile }));
         setNewLogo(null);
@@ -268,13 +269,13 @@ export default function SettingsPage() {
         if (response.data.store_profile.logo_url) setCurrentLogoUrl(response.data.store_profile.logo_url);
         if (response.data.store_profile.banner_1_url) setCurrentBannerUrl(response.data.store_profile.banner_1_url);
       }
-  
+
       setSuccessMessage('✅ Settings updated! Redirecting...');
-  
+
       setTimeout(() => {
         router.push('/dashboard/seller/payments');
       }, 1500);
-  
+
     } catch (error) {
       console.error('❌ Update error:', error);
       setErrorMessage(error.response?.data?.error || 'Update failed');
@@ -284,7 +285,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (isLoading) 
+  if (isLoading)
     return (
       <div style={s.load}>
         <div style={s.spin}></div>
@@ -293,13 +294,19 @@ export default function SettingsPage() {
     );
 
   return (
-    <div style={s.c}>
+    <div className='dashboardsettingspagecontainer' style={s.c}>
       <div style={s.h}>
         <div>
-          <h1 style={s.t}>Store Settings</h1>
-          <p style={s.st}>Manage your store info & media</p>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Settings className='dashboardsettingspackageicon' style={{ marginBottom: '5px' }} size={28} color="#1a4845" />
+            <h1 className='dashboardsettingspagetitle' style={s.t}>Store Settings</h1>
+          </div>
+          <p className='dashboardsettingspagesubtitle' style={s.st}>Manage your store info & media</p>
         </div>
       </div>
+
+
+
 
       {successMessage && (
         <div style={s.sa}>
@@ -321,17 +328,20 @@ export default function SettingsPage() {
             <Star size={18} />
             Store Images
           </h3>
-          <div style={s.ig}>
-            <div>
-              <label style={s.l}>
+          <div className='dashboardsettingsbannerlogogrid' style={s.ig}>
+            <div style={{ width: '160px', minWidth: '160px', justifySelf: 'start' }}>
+              <label style={s.l1}>
                 Logo
                 {(logoPreview || currentLogoUrl) && (
-                  <span style={{ color: '#10b981', fontSize: '11px', marginLeft: '6px' }}>
-                    ✓ Set
+                  <span style={{ color: '#144f27ff', fontSize: '11px', marginLeft: '6px' }}>
+                    ✓
                   </span>
                 )}
               </label>
-              <div style={s.iu}>
+              <div className='dashboardsettingslogocontainersize' style={{
+                ...s.logoiu, width: '160px',
+                justifySelf: 'start',
+              }}>
                 {logoPreview || currentLogoUrl ? (
                   <>
                     <img src={logoPreview || currentLogoUrl} alt="Logo" style={s.lp} />
@@ -358,7 +368,7 @@ export default function SettingsPage() {
                     </button>
                   </>
                 ) : (
-                  <div style={s.ph}>
+                  <div className='dashboardsettingsnologopadding' style={s.ph}>
                     <Upload size={20} />
                     <span>No Logo</span>
                   </div>
@@ -391,213 +401,218 @@ export default function SettingsPage() {
               )}
             </div>
 
-            <div>
-              <label style={s.l}>Banner</label>
-              <button
-                type="button"
-                onClick={() => setShowBannerGallery(!showBannerGallery)}
-                style={{
-                  ...s.gb,
-                  backgroundColor: selectedPredefinedBanners.length > 0 ? '#10b981' : '#8b5cf6',
-                }}
-              >
-                <ImageIcon size={14} />
-                {selectedPredefinedBanners.length > 0
-                  ? `✅ ${selectedPredefinedBanners.length} Selected`
-                  : '🎨 Choose (Max 3)'}
-              </button>
-              {showBannerGallery && (
-                <div style={s.bg}>
-                  <h4
-                    style={{
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      marginBottom: '10px',
-                      color: '#374151',
-                    }}
-                  >
-                    {predefinedBanners.length > 0
-                      ? `Select Banners (${selectedPredefinedBanners.length}/3)`
-                      : 'No banners. Contact admin.'}
-                  </h4>
-                  {predefinedBanners.length > 0 ? (
-                    <div style={s.gg}>
-                      {predefinedBanners.map((b) => (
+            <div >
+              <label style={s.l1}>
+                Custom Banner
+                {(bannerPreview || currentBannerUrl) && (
+                  <span style={{ color: '#144f27ff', fontSize: '11px', marginLeft: '6px' }}>✓</span>
+                )}
+              </label>
+              <div className='dashboardsettingsbannercontainersize' style={s.iu}>
+                {bannerPreview || currentBannerUrl ? (
+                  <>
+                    <img src={bannerPreview || currentBannerUrl} alt="Banner" style={s.bp} />
+                    <button
+                      type="button"
+                      onClick={handleDeleteBanner}
+                      disabled={isDeleting.banner}
+                      style={s.db}
+                    >
+                      {isDeleting.banner ? (
                         <div
-                          key={b.id}
-                          onClick={() => handleBannerSelect(b.id, b.image_url)}
                           style={{
-                            ...s.gi,
-                            ...(selectedPredefinedBanners.includes(b.id) ? s.gis : {}),
+                            width: '12px',
+                            height: '12px',
+                            border: '2px solid white',
+                            borderTop: '2px solid transparent',
+                            borderRadius: '50%',
+                            animation: 'spin 0.6s linear infinite',
                           }}
-                        >
-                          <img src={b.image_url} alt={b.name} style={s.gim} />
-                          {selectedPredefinedBanners.includes(b.id) && (
-                            <div style={s.sb}>
-                              <Check size={12} />
-                              #{selectedPredefinedBanners.indexOf(b.id) + 1}
-                            </div>
-                          )}
-                          <div style={s.bn}>{b.name}</div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p
+                        />
+                      ) : (
+                        <Trash2 size={14} />
+                      )}
+                    </button>
+                  </>
+                ) : (
+                  <div className='dashboardsettingsnologopadding' style={s.ph}>
+                    <Upload size={20} />
+                    <span>No Banner</span>
+                  </div>
+                )}
+                <div style={s.io}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileChange('banner', e.target.files[0])}
+                    style={s.hi}
+                    id="ban-up"
+                    disabled={isUploading}
+                  />
+                  <label htmlFor="ban-up" style={s.ub}>
+                    {isUploading ? 'Uploading...' : currentBannerUrl || bannerPreview ? '📷 Change' : '📤 Upload'}
+                  </label>
+                </div>
+              </div>
+              {bannerPreview && (
+                <p
+                  style={{
+                    fontSize: '11px',
+                    color: '#f59e0b',
+                    marginTop: '6px',
+                    fontWeight: 600,
+                  }}
+                >
+                  ⚠️ Click Save to apply
+                </p>
+              )}
+              <div style={{ marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowBannerGallery(!showBannerGallery)}
+                  style={{
+                    ...s.gb,
+                    backgroundColor: selectedPredefinedBanners.length > 0 ? '#10b981' : 'rgb(255, 238, 175)',
+                  }}
+                >
+                  <ImageIcon size={14} />
+                  {selectedPredefinedBanners.length > 0
+                    ? `${selectedPredefinedBanners.length} Selected`
+                    : 'Choose (Max 3)'}
+                </button>
+                {showBannerGallery && (
+                  <div className='dashboardsettingscustombannerheight' style={s.bg}>
+                    <h4
                       style={{
-                        color: '#6b7280',
                         fontSize: '13px',
-                        textAlign: 'center',
-                        padding: '15px',
+                        fontWeight: 600,
+                        marginBottom: '10px',
+                        color: '#374151',
                       }}
                     >
-                      No banners. Contact admin.
-                    </p>
-                  )}
-                </div>
-              )}
-              {currentBannerUrls.length > 0 && (
-                <div style={{ marginTop: '10px', marginBottom: '10px' }}>
-                  <label style={s.l}>Selected ({currentBannerUrls.length})</label>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))',
-                      gap: '6px',
-                      marginTop: '6px',
-                    }}
-                  >
-                    {currentBannerUrls.map((url, i) => {
-                      const bannerId = selectedPredefinedBanners[i];
-                      return (
-                        <div
-                          key={i}
-                          style={{
-                            position: 'relative',
-                            borderRadius: '6px',
-                            overflow: 'hidden',
-                            border: '2px solid #10b981',
-                          }}
-                        >
-                          <img
-                            src={url}
-                            alt={`Banner ${i + 1}`}
-                            style={{ width: '100%', height: '70px', objectFit: 'cover' }}
-                          />
+                      {predefinedBanners.length > 0
+                        ? `Select Banners (${selectedPredefinedBanners.length}/3)`
+                        : 'No banners. Contact admin.'}
+                    </h4>
+                    {predefinedBanners.length > 0 ? (
+                      <div className='dashboardsettingcustombannergrid' style={s.gg}>
+                        {predefinedBanners.map((b) => (
                           <div
+                            key={b.id}
+                            onClick={() => handleBannerSelect(b.id, b.image_url)}
                             style={{
-                              position: 'absolute',
-                              top: '3px',
-                              left: '3px',
-                              backgroundColor: '#10b981',
-                              color: 'white',
-                              borderRadius: '3px',
-                              padding: '2px 5px',
-                              fontSize: '10px',
-                              fontWeight: 600,
+                              ...s.gi,
+                              ...(selectedPredefinedBanners.includes(b.id) ? s.gis : {}),
                             }}
                           >
-                            #{i + 1}
+                            <img src={b.image_url} alt={b.name} style={s.gim} />
+                            {selectedPredefinedBanners.includes(b.id) && (
+                              <div style={s.sb}>
+                                <Check size={12} />
+                                {selectedPredefinedBanners.indexOf(b.id) + 1}
+                              </div>
+                            )}
+                            <div style={s.bn}>{b.name}</div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePredefinedBanner(bannerId, url)}
+                        ))}
+                      </div>
+                    ) : (
+                      <p
+                        style={{
+                          color: '#6b7280',
+                          fontSize: '13px',
+                          textAlign: 'center',
+                          padding: '15px',
+                        }}
+                      >
+                        No banners. Contact admin.
+                      </p>
+                    )}
+                  </div>
+                )}
+                {currentBannerUrls.length > 0 && (
+                  <div style={{ marginTop: '10px', marginBottom: '10px' }}>
+                    <label style={s.l}>Selected ({currentBannerUrls.length})</label>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill,minmax(110px,1fr))',
+                        gap: '6px',
+                        marginTop: '6px',
+                      }}
+                    >
+                      {currentBannerUrls.map((url, i) => {
+                        const bannerId = selectedPredefinedBanners[i];
+                        return (
+                          <div
+                            key={i}
                             style={{
-                              position: 'absolute',
-                              top: '3px',
-                              right: '3px',
-                              backgroundColor: '#ef4444',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '3px',
-                              padding: '3px',
-                              cursor: 'pointer',
+                              position: 'relative',
+                              borderRadius: '6px',
+                              overflow: 'hidden',
+                              border: '2px solid #10b981',
+                              background: '#FDFFF0',
+                              aspectRatio: '16 / 9', // <-- makes it responsive and consistent
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                             }}
                           >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              <div style={{ marginTop: '10px' }}>
-                <label style={s.l}>
-                  Custom Banner
-                  {(bannerPreview || currentBannerUrl) && (
-                    <span style={{ color: '#10b981', fontSize: '11px', marginLeft: '6px' }}>✓ Set</span>
-                  )}
-                </label>
-                <div style={s.iu}>
-                  {bannerPreview || currentBannerUrl ? (
-                    <>
-                      <img src={bannerPreview || currentBannerUrl} alt="Banner" style={s.bp} />
-                      <button
-                        type="button"
-                        onClick={handleDeleteBanner}
-                        disabled={isDeleting.banner}
-                        style={s.db}
-                      >
-                        {isDeleting.banner ? (
-                          <div
-                            style={{
-                              width: '12px',
-                              height: '12px',
-                              border: '2px solid white',
-                              borderTop: '2px solid transparent',
-                              borderRadius: '50%',
-                              animation: 'spin 0.6s linear infinite',
-                            }}
-                          />
-                        ) : (
-                          <Trash2 size={14} />
-                        )}
-                      </button>
-                    </>
-                  ) : (
-                    <div style={s.ph}>
-                      <Upload size={20} />
-                      <span>No Banner</span>
+                            <img
+                              src={url}
+                              alt={`Banner ${i + 1}`}
+                              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                            />
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: '3px',
+                                left: '3px',
+                                backgroundColor: '#10b981',
+                                color: 'white',
+                                borderRadius: '3px',
+                                padding: '2px 5px',
+                                fontSize: '10px',
+                                fontWeight: 600,
+                              }}
+                            >
+                              {i + 1}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePredefinedBanner(bannerId, url)}
+                              style={{
+                                position: 'absolute',
+                                top: '3px',
+                                right: '3px',
+                                backgroundColor: '#ef4444',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '3px',
+                                padding: '3px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
-                  <div style={s.io}>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange('banner', e.target.files[0])}
-                      style={s.hi}
-                      id="ban-up"
-                      disabled={isUploading}
-                    />
-                    <label htmlFor="ban-up" style={s.ub}>
-                      {isUploading ? 'Uploading...' : currentBannerUrl || bannerPreview ? '📷 Change' : '📤 Upload'}
-                    </label>
                   </div>
-                </div>
-                {bannerPreview && (
-                  <p
-                    style={{
-                      fontSize: '11px',
-                      color: '#f59e0b',
-                      marginTop: '6px',
-                      fontWeight: 600,
-                    }}
-                  >
-                    ⚠️ Click Save to apply
-                  </p>
                 )}
               </div>
+
             </div>
           </div>
         </div>
 
         {/* Basic Info Section */}
-        <div style={s.sec}>
-          <h3 style={s.sh}>
+        <div style={s.sec2}>
+          <h3 style={s.sh2}>
             <Building size={18} />
             Basic Info
           </h3>
@@ -689,7 +704,7 @@ export default function SettingsPage() {
         </div>
 
         <div style={s.ss}>
-          <button type="submit" disabled={isSaving} style={s.sb2}>
+          <button className='dashboardsettingssavebtn' type="submit" disabled={isSaving} style={s.sb2}>
             {isSaving ? 'Saving...' : <><Save size={16} />Save & Continue to Payments</>}
           </button>
         </div>
@@ -720,36 +735,119 @@ export default function SettingsPage() {
 }
 
 const s = {
-  c: { minHeight: '100vh', backgroundColor: '#f9fafb', padding: '16px', maxWidth: '900px', margin: '0 auto' },
+  c: { minHeight: '100vh', backgroundColor: '#FDFFF0', padding: '16px', maxWidth: '1100px', margin: '0 auto' },
   load: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '15px' },
   spin: { width: '28px', height: '28px', border: '3px solid #f3f3f3', borderTop: '3px solid #3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' },
-  h: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' },
-  t: { fontSize: '24px', fontWeight: 700, color: '#1f2937', margin: 0 },
-  st: { color: '#6b7280', fontSize: '13px', marginTop: '3px' },
-  sa: { display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', backgroundColor: '#ecfdf5', border: '2px solid #10b981', borderRadius: '10px', color: '#065f46', marginBottom: '16px', fontSize: '14px', fontWeight: 600, boxShadow: '0 3px 10px rgba(16,185,129,0.2)', animation: 'slideDown 0.3s' },
-  ea: { display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', backgroundColor: '#fef2f2', border: '2px solid #ef4444', borderRadius: '10px', color: '#991b1b', marginBottom: '16px', fontSize: '14px', fontWeight: 600, boxShadow: '0 3px 10px rgba(239,68,68,0.2)', animation: 'slideDown 0.3s' },
+  h: {
+    display: 'flex',
+    justifyContent: 'flex-start',  // or 'center' if you want entire block centered
+    alignItems: 'center',
+    marginBottom: '20px',
+    flexWrap: 'wrap',
+    gap: '12px'
+  },
+  t: {
+    fontSize: '2rem',
+    fontWeight: '700',
+    color: 'rgb(23, 94, 84)',
+    margin: '0 0 8px 0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px'
+  },
+  st: {
+    fontSize: '1rem',
+    color: '#6b7280',
+    margin: 0
+  },
+  sa: { display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', backgroundColor: '#FDFFF0', border: '2px solid #10b981', borderRadius: '10px', color: '#065f46', marginBottom: '16px', fontSize: '14px', fontWeight: 600, boxShadow: '0 3px 10px rgba(16,185,129,0.2)', animation: 'slideDown 0.3s' },
+  ea: { display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', backgroundColor: '#FDFFF0', border: '2px solid #ef4444', borderRadius: '10px', color: '#991b1b', marginBottom: '16px', fontSize: '14px', fontWeight: 600, boxShadow: '0 3px 10px rgba(239,68,68,0.2)', animation: 'slideDown 0.3s' },
   f: { display: 'flex', flexDirection: 'column', gap: '16px' },
-  sec: { backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' },
-  sh: { display: 'flex', alignItems: 'center', gap: '10px', fontSize: '16px', fontWeight: 700, color: '#1f2937', marginBottom: '16px', paddingBottom: '12px', borderBottom: '2px solid #f3f4f6' },
+  sec: { backgroundColor: 'rgb(62, 117, 114)', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' },
+  sec2: { backgroundColor: '#FDFFF0', borderRadius: '12px', padding: '20px', boxShadow: 'rgba(42, 108, 72, 0.3) 0px 4px 12px', border: '1px solid rgba(42, 108, 72, 0.3)' },
+
+  sh: { display: 'flex', alignItems: 'center', gap: '10px', fontSize: '16px', fontWeight: 700, color: 'rgb(255, 238, 175)', marginBottom: '16px', paddingBottom: '12px', borderBottom: '2px solid #f3f4f6' },
+  sh2: { display: 'flex', alignItems: 'center', gap: '10px', fontSize: '16px', fontWeight: 700, color: '#1a4845', marginBottom: '16px', paddingBottom: '12px', borderBottom: '2px solid #f3f4f6' },
+
   fg: { display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' },
   gr: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '12px', marginBottom: '12px' },
-  l: { fontSize: '13px', fontWeight: 600, color: '#374151' },
-  in: { padding: '10px 14px', border: '2px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', outline: 'none' },
-  ta: { padding: '10px 14px', border: '2px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' },
+  l1: {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: 'white',
+    display: 'flex',
+    marginBottom: '6px' // ← FIX
+  },
+  l: {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: 'black',
+    display: 'flex',
+    marginBottom: '6px' // ← FIX
+  },
+  in: { padding: '10px 14px', border: '1px solid #cececeff', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#FDFFF0' },
+  ta: { padding: '10px 14px', border: '1px solid #cececeff', borderRadius: '6px', fontSize: '13px', outline: 'none', resize: 'vertical', fontFamily: 'inherit', backgroundColor: '#FDFFF0' },
   cl: { display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' },
   cb2: { width: '14px', height: '14px', cursor: 'pointer' },
-  ig: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: '16px' },
-  gb: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', padding: '10px', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer', marginBottom: '10px', transition: 'all 0.2s' },
-  bg: { padding: '12px', backgroundColor: '#f9fafb', borderRadius: '10px', border: '2px solid #e5e7eb', marginBottom: '10px' },
-  gg: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: '10px' },
+  ig: {
+    display: 'grid',
+    gridTemplateColumns: '160px 1fr', // Left fixed, right flexible
+    gap: '20px',
+    alignItems: 'start',
+  },
+  gb: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', padding: '10px', border: 'none', borderRadius: '6px', color: '#1a4845', fontSize: '13px', fontWeight: 600, cursor: 'pointer', marginBottom: '10px', transition: 'all 0.2s' },
+  bg: {
+    padding: '12px',
+    backgroundColor: '#FDFFF0',
+    borderRadius: '10px',
+    border: '2px solid #e5e7eb',
+    marginBottom: '10px',
+    maxHeight: '280px',
+    overflowY: 'auto',
+    scrollbarWidth: 'thin',
+    scrollbarColor: '#d1d5db transparent',
+  },
+  gg: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(230px,1fr))', gap: '10px' },
   gi: { position: 'relative', border: '2px solid #e5e7eb', borderRadius: '6px', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s' },
   gis: { border: '3px solid #10b981', boxShadow: '0 3px 10px rgba(16,185,129,0.3)' },
   gim: { width: '100%', height: '85px', objectFit: 'cover' },
   sb: { position: 'absolute', top: '4px', right: '4px', display: 'flex', alignItems: 'center', gap: '3px', padding: '3px 6px', backgroundColor: '#10b981', color: 'white', borderRadius: '4px', fontSize: '10px', fontWeight: 600 },
-  bn: { padding: '6px', backgroundColor: 'white', fontSize: '11px', fontWeight: 500, color: '#374151', textAlign: 'center' },
-  iu: { position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '2px dashed #d1d5db', backgroundColor: '#f9fafb' },
-  lp: { width: '100%', height: '160px', objectFit: 'contain', backgroundColor: 'white' },
-  bp: { width: '100%', height: '160px', objectFit: 'cover' },
+  bn: { padding: '6px', backgroundColor: '#FDFFF0', fontSize: '11px', fontWeight: 500, color: '#374151', textAlign: 'center' },
+  logoiu: {
+    position: 'relative',
+    borderRadius: '10px',
+    width: '160px',
+    height: '160px',
+
+    minWidth: '160px',   // ← FIX 1
+    maxWidth: '160px',   // ← FIX 2
+    justifySelf: 'start', // ← FIX 3 (prevents grid centering/stretch)
+
+    overflow: 'hidden',
+    border: '2px dashed #d1d5db',
+    backgroundColor: 'white',
+  },
+  iu: {
+    position: 'relative',
+    height: '160px',   // ← MATCH LOGO HEIGHT
+    borderRadius: '10px',
+    overflow: 'hidden',
+    border: '2px dashed #d1d5db',
+    backgroundColor: 'white',
+  },
+  lp: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    backgroundColor: '#FDFFF0'
+  },
+  bp: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    backgroundColor: '#FDFFF0'
+  },
+
   ph: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '160px', color: '#6b7280', gap: '6px', fontSize: '13px' },
   io: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s' },
   hi: { display: 'none' },

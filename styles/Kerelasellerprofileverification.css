@@ -30,21 +30,30 @@
         padding: 10px 16px !important;
         font-size: 14px !important;
     }
-    .keralasellerprofileverificationconftext{
+
+    .keralasellerprofileverificationconftext {
         font-size: 15px !important;
     }
-     .keralasellerprofileverificationconftitle{
+
+    .keralasellerprofileverificationconftitle {
         font-size: 22px !important;
     }
-    .keralasellerprofileverificationbenefitsTitle{
+
+    .keralasellerprofileverificationbenefitsTitle {
         font-size: 16px !important;
     }
-    .keralasellerprofileverificationbenefitslist{
+
+    .keralasellerprofileverificationbenefitslist {
         font-size: 14px !important;
     }
-    .keralasellerprofileverificationiconcontainer{
+
+    .keralasellerprofileverificationiconcontainer {
         width: 50px !important;
         height: 50px !important;
+    }
+
+    .keralasellerprofileverificationeditbtn {
+        padding: 6px 10px !important;
     }
 }
 
@@ -109,20 +118,29 @@
     }
 
 
-     .keralasellerprofileverificationconftext{
+    .keralasellerprofileverificationconftext {
         font-size: 14px !important;
     }
-     .keralasellerprofileverificationconftitle{
+
+    .keralasellerprofileverificationconftitle {
         font-size: 20px !important;
     }
-    .keralasellerprofileverificationbenefitsTitle{
+
+    .keralasellerprofileverificationbenefitsTitle {
         font-size: 15px !important;
     }
-    .keralasellerprofileverificationbenefitslist{
+
+    .keralasellerprofileverificationbenefitslist {
         font-size: 14px !important;
     }
-    .keralasellerprofileverificationiconcontainer{
+
+    .keralasellerprofileverificationiconcontainer {
         width: 50px !important;
         height: 50px !important;
+    }
+
+    .keralasellerprofileverificationeditbtn {
+        padding: 4px 8px !important;
+        font-size: 12px !important;
     }
 }

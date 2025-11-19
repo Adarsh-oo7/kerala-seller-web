@@ -1,0 +1,356 @@
+ .creditcard-wrapper {
+     display: flex;
+     align-items: center;
+     gap: 10px;
+     width: 100%;
+     max-width: 420px;
+ }
+
+ .creditcard-header {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     width: 100%;
+ }
+
+ .creditcard-status {
+     display: flex;
+     align-items: center;
+     gap: 6px;
+     font-size: 14px;
+     font-weight: 600;
+     color: #58f58c;
+ }
+
+ .green-dot {
+     width: 8px;
+     height: 8px;
+     background-color: #58f58c;
+     border-radius: 50%;
+     animation: pulse 1.2s infinite;
+ }
+
+ /* Smooth pulsing animation */
+ @keyframes pulse {
+     0% {
+         transform: scale(0.9);
+         opacity: 0.7;
+     }
+
+     50% {
+         transform: scale(1.2);
+         opacity: 1;
+     }
+
+     100% {
+         transform: scale(0.9);
+         opacity: 0.7;
+     }
+ }
+
+
+
+ .creditcard-card {
+     position: relative;
+     width: 100%;
+     min-height: 200px;
+     background: linear-gradient(to right,
+             rgba(0, 0, 0, 0.9),
+             rgba(53, 99, 225, 0.9),
+             rgba(28, 91, 194, 0.8));
+     border-radius: 20px;
+     padding: 24px;
+     color: white;
+     overflow: hidden;
+     backdrop-filter: blur(12px);
+     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+     isolation: isolate;
+
+ }
+
+
+ .creditcard-glow {
+     position: absolute;
+     width: 160px;
+     height: 160px;
+     border-radius: 50%;
+     filter: blur(40px);
+     opacity: 0.3;
+ }
+
+
+
+ .creditcard-glow-top {
+     top: -80px;
+     right: -80px;
+     background: rgba(59, 130, 246);
+ }
+
+ .creditcard-glow-bottom {
+     bottom: -80px;
+     left: -80px;
+     background: rgb(88, 103, 240);
+ }
+
+ .creditcard-content {
+     position: relative;
+     z-index: 10;
+     display: flex;
+     flex-direction: column;
+ }
+
+
+ .creditcard-title {
+     font-size: 20px;
+     font-weight: 700;
+     letter-spacing: 1px;
+ }
+
+ .creditcard-bold {
+     font-weight: 900;
+ }
+
+ .creditcard-circle-wrapper {
+     position: relative;
+     width: 56px;
+     height: 32px;
+ }
+
+
+ .creditcard-chip svg {
+     width: 48px;
+     height: 48px;
+     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+ }
+
+
+ .dashboardpaymentrfrshicon {
+     width: 18px !important;
+     height: 18px !important;
+ }
+
+ @media (max-width: 1200px) {
+     .dashboardpaymenttitle {
+         font-size: 30px !important;
+     }
+
+     .dashboardpaymentsubtitle {
+         font-size: 15px !important;
+     }
+
+     .dashboardpaymentbarbtn {
+         padding: 7px 11px !important;
+         height: 33px !important;
+         font-size: 13px !important;
+     }
+
+     .dashboardpaymentpagecontainer {
+         padding: 0px !important;
+     }
+
+     .dashboardpaymentscardgrid {
+         display: grid !important;
+         grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
+     }
+ }
+
+
+
+ @media (max-width: 991px) {
+
+     .dashboardpaymenttitle {
+         font-size: 28px !important;
+     }
+
+     .dashboardpaymentsubtitle {
+         font-size: 15px !important;
+     }
+
+     .dashboardpaymentbarbtn {
+         padding: 7px 11px !important;
+         height: 33px !important;
+         font-size: 13px !important;
+     }
+
+     .dashboardpaymentscardgrid {
+         display: grid !important;
+         grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
+         justify-items: center !important;
+     }
+ }
+
+
+ @media (max-width: 830px) {
+     .dashboardpaymentheader {
+         display: grid !important;
+         justify-content: flex-start !important;
+         flex-wrap: wrap !important;
+     }
+
+     .dashboardpaymentbarbtn {
+         padding: 7px 11px !important;
+         height: 33px !important;
+         font-size: 13px !important;
+         width: fit-content !important;
+     }
+ }
+
+ @media (max-width: 767px) {
+
+     .dashboardpaymenttitle {
+         font-size: 28px !important;
+     }
+
+ }
+
+ @media (max-width: 576px) {
+     .dashboardpaymenttitle {
+         font-size: 24px !important;
+     }
+
+
+     .dashboardpaymentbarbtn {
+         padding: 3px 9px !important;
+         height: 31px !important;
+         font-size: 12px !important;
+     }
+
+     /* /////////// */
+     .dashboardpaymentconnectbtn {
+         padding: 8px !important;
+         height: 35px !important;
+         font-size: 13px !important;
+     }
+
+     .dashboardpaymentconnectbtnediticon {
+         width: 14px !important;
+         height: 14px !important;
+     }
+
+     .dashboardpaymentstatusvalue {
+         font-size: 14px !important;
+     }
+
+     .creditcard-chip svg {
+         width: 40px;
+         height: 40px;
+         filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+     }
+
+     .dashboardpaymentinfo {
+         padding: 10px !important;
+     }
+
+     .creditcard-card {
+         min-height: 140px !important;
+     }
+
+     .creditcard-header {
+         height: 30px !important;
+     }
+
+     .creditcard-status {
+         gap: 6px !important;
+         font-size: 14px !important;
+     }
+
+     .creditcard-title {
+         font-size: 18px !important;
+     }
+
+ }
+
+ @media (max-width: 480px) {
+     .dashboardpaymenttitle {
+         font-size: 22px !important;
+     }
+
+     .dashboardpaymentsubtitle {
+         font-size: 14px !important;
+     }
+
+     .dashboardpaymentbarbtn {
+         padding: 3px 7px !important;
+         height: 26px !important;
+         font-size: 11px !important;
+     }
+
+     .dashboardpaymentrfrshicon {
+         width: 14px !important;
+         height: 14px !important;
+     }
+
+     .dashboardpaymentpagecontainer {
+         padding: 0px !important;
+     }
+
+     .dashboardpaymentscardgrid {
+         display: grid !important;
+         grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)) !important;
+         justify-items: center !important;
+     }
+
+     .dashboardpaymentconnectbtn {
+         padding: 5px !important;
+         height: 26px !important;
+         font-size: 12px !important;
+     }
+
+     .dashboardpaymentconnectbtnediticon {
+         width: 12px !important;
+         height: 12px !important;
+     }
+
+     .dashboardpaymentstatusvalue {
+         font-size: 13px !important;
+     }
+
+     .creditcard-chip svg {
+         width: 38px;
+         height: 38px;
+         filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+     }
+
+     .dashboardpaymentinfo {
+         padding: 5px !important;
+     }
+
+     .creditcard-card {
+         min-height: 120px !important;
+         box-shadow: none;
+
+     }
+
+     .creditcard-header {
+         height: 20px !important;
+     }
+
+     .creditcard-status {
+         gap: 6px !important;
+         font-size: 13px !important;
+     }
+
+     .creditcard-title {
+         font-size: 16px !important;
+     }
+
+     .creditcard-svg svg {
+         width: 20px !important;
+         height: 20px !important;
+     }
+
+     .creditcard-svg img {
+         width: 20px !important;
+         height: 20px !important;
+     }
+
+     .dashboardpaymentmodalbtn {
+         padding: 6px 12px !important;
+         height: 35px !important;
+         font-size: 12px !important;
+     }
+     .dashboardpaymentmodalwidth{
+        max-width: 300px !important;
+     }
+
+ }

@@ -286,7 +286,7 @@ function ShopRegisterForm({ onRegisterSuccess, storeInfo }) {
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
-                                placeholder="Enter password (min 8 characters)"
+                                placeholder="Enter password"
                                 required
                                 style={{
                                     ...styles.passwordInput,
@@ -374,7 +374,7 @@ function ShopRegisterForm({ onRegisterSuccess, storeInfo }) {
             ) : (
                 /* Step 2: OTP Verification */
                 <form onSubmit={handleRegister} style={styles.form}>
-                    <div style={styles.otpInfo}>
+                    <div className='shopshopslugregisterotpinfo' style={styles.otpInfo}>
                         <Mail size={20} color='#1a4845' />
                         <div style={styles.otpDetails}>
                             <p style={styles.otpText}>
@@ -417,7 +417,7 @@ function ShopRegisterForm({ onRegisterSuccess, storeInfo }) {
                     </div>
 
                     {error && (
-                        <div style={styles.errorContainer}>
+                        <div className='shopshopslugregistererrorcontainer' style={styles.errorContainer}>
                             <AlertCircle size={16} />
                             <span>{error}</span>
                         </div>
@@ -814,7 +814,8 @@ const styles = {
         borderRadius: '8px',
         fontSize: '15px',
         backgroundColor: '#FDFFF0',
-        outline: 'none'
+        outline: 'none',
+        boxSizing: 'border-box'
     },
     passwordInput: {
         width: '100%',
@@ -875,7 +876,8 @@ const styles = {
         textAlign: 'center',
         letterSpacing: '0.5em',
         fontSize: '1.2rem',
-        fontWeight: '600'
+        fontWeight: '600',
+        boxSizing: 'border-box'
     },
     otpActions: {
         display: 'flex',
