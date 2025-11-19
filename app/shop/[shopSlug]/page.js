@@ -214,7 +214,6 @@ function EnhancedStoreBanner({ store, shopSlug }) {
     return url;
   };
 
-  // Collect all available banner URLs
   const banners = [];
 
   if (store.banner_1_url) {
@@ -231,13 +230,12 @@ function EnhancedStoreBanner({ store, shopSlug }) {
     banners.push({ id: 'legacy', url: store.banner_image_url, label: 'Store Banner' });
   }
 
-  // ✅ Auto-slide effect
   useEffect(() => {
-    if (banners.length <= 1) return; // Don't auto-slide if only one banner
+    if (banners.length <= 1) return;
 
     slideIntervalRef.current = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % banners.length);
-    }, 4000); // Change slide every 4 seconds
+    }, 4000);
 
     return () => {
       if (slideIntervalRef.current) {
@@ -246,10 +244,8 @@ function EnhancedStoreBanner({ store, shopSlug }) {
     };
   }, [banners.length]);
 
-  // Manual navigation
   const goToSlide = (index) => {
     setCurrentSlide(index);
-    // Reset auto-slide timer
     if (slideIntervalRef.current) {
       clearInterval(slideIntervalRef.current);
       slideIntervalRef.current = setInterval(() => {
@@ -258,15 +254,6 @@ function EnhancedStoreBanner({ store, shopSlug }) {
     }
   };
 
-  const nextSlide = () => {
-    goToSlide((currentSlide + 1) % banners.length);
-  };
-
-  const prevSlide = () => {
-    goToSlide((currentSlide - 1 + banners.length) % banners.length);
-  };
-
-  // If no banners, show fallback
   if (banners.length === 0) {
     return (
       <div style={styles.mainWrapper}>
@@ -285,7 +272,6 @@ function EnhancedStoreBanner({ store, shopSlug }) {
   return (
     <div style={styles.mainWrapper}>
       <div className="banner-slider-container" style={styles.sliderContainer}>
-        {/* Slides */}
         <div className="banner-slides-wrapper" style={styles.slidesWrapper}>
           {banners.map((banner, index) => (
             <div
@@ -312,60 +298,25 @@ function EnhancedStoreBanner({ store, shopSlug }) {
                       e.target.style.display = 'none';
                     }}
                   />
-                  {/* <div className="banner-overlay" style={styles.bannerOverlay}></div> */}
                 </div>
               </div>
             </div>
           ))}
         </div>
-
-        {/* Navigation arrows (only show if multiple banners) */}
-        {/* {banners.length > 1 && (
-          <>
-            <button
-              onClick={prevSlide}
-              style={styles.navButton}
-              className="banner-nav-prev"
-              aria-label="Previous banner"
-            >
-              ‹
-            </button>
-            <button
-              onClick={nextSlide}
-              style={styles.navButtonNext}
-              className="banner-nav-next"
-              aria-label="Next banner"
-            >
-              ›
-            </button>
-
-            <div style={styles.dotsContainer}>
-              {banners.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => goToSlide(index)}
-                  style={{
-                    ...styles.dot,
-                    backgroundColor: index === currentSlide ? '#fff' : 'rgba(255,255,255,0.5)'
-                  }}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
-          </>
-        )} */}
       </div>
     </div>
   );
 }
 
-// Enhanced Filter Component
+// ✅ Enhanced Filter Component with Search
 function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
   const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [tempFilters, setTempFilters] = useState(activeFilters || {
     priceRange: null,
     stockStatus: [],
-    sortBy: 'name-asc'
+    sortBy: 'name-asc',
+    searchQuery: ''
   });
   const filterRef = useRef(null);
 
@@ -384,6 +335,18 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
     { label: 'Name: Z to A', value: 'name-desc' }
   ];
 
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    const updatedFilters = {
+      ...tempFilters,
+      searchQuery: query
+    };
+    setTempFilters(updatedFilters);
+    onFilterChange(updatedFilters);
+  };
+
   const handleApplyFilters = () => {
     onFilterChange(tempFilters);
     setShowFilters(false);
@@ -393,9 +356,11 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
     const clearFilters = {
       priceRange: null,
       stockStatus: [],
-      sortBy: 'name-asc'
+      sortBy: 'name-asc',
+      searchQuery: ''
     };
     setTempFilters(clearFilters);
+    setSearchQuery('');
     onFilterChange(clearFilters);
   };
 
@@ -404,6 +369,7 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
     if (activeFilters?.priceRange) count++;
     if (activeFilters?.stockStatus?.length > 0) count += activeFilters.stockStatus.length;
     if (activeFilters?.sortBy && activeFilters.sortBy !== 'name-asc') count++;
+    if (activeFilters?.searchQuery && activeFilters.searchQuery.trim() !== '') count++;
     return count;
   };
 
@@ -420,6 +386,7 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
   useEffect(() => {
     if (activeFilters) {
       setTempFilters(activeFilters);
+      setSearchQuery(activeFilters.searchQuery || '');
     }
   }, [activeFilters]);
 
@@ -434,6 +401,8 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
                 className='search-input'
                 type="text"
                 placeholder="Search products..."
+                value={searchQuery}
+                onChange={handleSearchChange}
                 style={styles.searchInput}
               />
             </div>
@@ -465,13 +434,12 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
         )}
 
         <div
-        className='shopshopslugsibebar'
+          className='shopshopslugsibebar'
           style={{
             ...styles.filterSidebar,
             transform: showFilters ? "translateX(0)" : "translateX(100%)",
           }}
         >
-
           <div style={styles.sidebarHeader}>
             <h3 style={styles.sidebarTitle}>Filters</h3>
             <button
@@ -582,7 +550,8 @@ function EnhancedSellerStorefrontPage() {
   const [filters, setFilters] = useState({
     priceRange: null,
     stockStatus: [],
-    sortBy: 'name-asc'
+    sortBy: 'name-asc',
+    searchQuery: ''
   });
   const [wishlistProducts, setWishlistProducts] = useState(new Set());
   const [wishlistLoading, setWishlistLoading] = useState(false);
@@ -596,9 +565,11 @@ function EnhancedSellerStorefrontPage() {
   const { addToCart, cartItems } = cartContext || { addToCart: null, cartItems: [] };
   const abortControllerRef = useRef(null);
 
+  // ✅ Fixed fetchWishlist with 401 handling
   const fetchWishlist = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
+    
     try {
       setWishlistLoading(true);
       const response = await axios.get(WISHLIST_API, { headers, timeout: 10000 });
@@ -631,7 +602,13 @@ function EnhancedSellerStorefrontPage() {
       });
       setWishlistProducts(wishlistedProductIds);
     } catch (error) {
-      console.error('❌ Failed to fetch wishlist:', error);
+      // ✅ Handle 401 (unauthorized) silently
+      if (error.response?.status === 401) {
+        console.log('User not authenticated - wishlist not loaded');
+        setWishlistProducts(new Set());
+        return;
+      }
+      console.error('❌ Failed to fetch wishlist:', error.message || error);
     } finally {
       setWishlistLoading(false);
     }
@@ -661,39 +638,62 @@ function EnhancedSellerStorefrontPage() {
     }
   }, []);
 
+  // ✅ Fixed applyFilters with proper type checking
   const applyFilters = useCallback(() => {
     if (!Array.isArray(products)) {
       setFilteredProducts([]);
       return;
     }
+    
     let filtered = [...products];
+    
+    // ✅ Apply search filter with proper type checking
+    if (filters?.searchQuery && filters.searchQuery.trim() !== '') {
+      const query = filters.searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((product) => {
+        const name = String(product?.name || '').toLowerCase();
+        const description = String(product?.description || '').toLowerCase();
+        const category = String(product?.category || '').toLowerCase();
+        
+        return name.includes(query) || 
+               description.includes(query) || 
+               category.includes(query);
+      });
+    }
+    
+    // ✅ Apply price range filter
     if (filters?.priceRange) {
       filtered = filtered.filter((product) => {
-        const price = product?.price || 0;
+        const price = Number(product?.price) || 0;
         return price >= filters.priceRange.min && price <= filters.priceRange.max;
       });
     }
+    
+    // ✅ Apply stock status filter
     if (filters?.stockStatus?.length > 0) {
       filtered = filtered.filter((product) => {
-        const stock = product?.online_stock || 0;
+        const stock = Number(product?.online_stock) || 0;
         const stockStatus = stock === 0 ? 'out-of-stock' : stock <= 5 ? 'low-stock' : 'in-stock';
         return filters.stockStatus.includes(stockStatus);
       });
     }
+    
+    // ✅ Apply sorting with safe type conversion
     filtered.sort((a, b) => {
       switch (filters?.sortBy) {
         case 'price-asc':
-          return (a?.price || 0) - (b?.price || 0);
+          return (Number(a?.price) || 0) - (Number(b?.price) || 0);
         case 'price-desc':
-          return (b?.price || 0) - (a?.price || 0);
+          return (Number(b?.price) || 0) - (Number(a?.price) || 0);
         case 'name-asc':
-          return (a?.name || '').localeCompare(b?.name || '');
+          return String(a?.name || '').localeCompare(String(b?.name || ''));
         case 'name-desc':
-          return (b?.name || '').localeCompare(a?.name || '');
+          return String(b?.name || '').localeCompare(String(a?.name || ''));
         default:
           return 0;
       }
     });
+    
     setFilteredProducts(filtered);
   }, [products, filters]);
 
@@ -703,6 +703,7 @@ function EnhancedSellerStorefrontPage() {
       setIsLoading(false);
       return;
     }
+    
     const fetchStoreData = async () => {
       try {
         setIsLoading(true);
@@ -736,10 +737,22 @@ function EnhancedSellerStorefrontPage() {
         setIsLoading(false);
       }
     };
+    
     fetchStoreData();
+    
+    // ✅ Only fetch wishlist if user is logged in
     const timeoutId = setTimeout(() => {
-      fetchWishlist();
+      const token = localStorage.getItem('buyerAccessToken') ||
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('accessToken');
+      
+      if (token) {
+        fetchWishlist();
+      } else {
+        console.log('User not logged in - skipping wishlist fetch');
+      }
     }, 1500);
+    
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -789,7 +802,8 @@ function EnhancedSellerStorefrontPage() {
     setFilters(newFilters || {
       priceRange: null,
       stockStatus: [],
-      sortBy: 'name-asc'
+      sortBy: 'name-asc',
+      searchQuery: ''
     });
   }, []);
 
@@ -885,10 +899,12 @@ function EnhancedSellerStorefrontPage() {
                 <Filter size={40} className="keralasellersemptyicon" />
               </div>
               <h3 className="keralasellersemptytext">No products found</h3>
-              <p className="keralasellersemptysubtext">No products match the selected filters.</p>
+              <p className="keralasellersemptysubtext">
+                {filters.searchQuery ? `No products match "${filters.searchQuery}"` : 'No products match the selected filters.'}
+              </p>
               <button
                 onClick={() => {
-                  const defaultFilters = { priceRange: null, stockStatus: [], sortBy: 'name-asc' };
+                  const defaultFilters = { priceRange: null, stockStatus: [], sortBy: 'name-asc', searchQuery: '' };
                   setFilters(defaultFilters);
                 }}
                 className="clear-filters-button-enhanced"
@@ -943,25 +959,22 @@ const styles = {
     minHeight: '100vh',
     backgroundColor: '#FDFFF0',
   },
-
   container: {
     flex: 1,
     maxWidth: '1200px',
     margin: '0 auto',
-    padding: '20px 20px', // default padding
+    padding: '20px 20px',
     boxSizing: 'border-box',
     overflowX: 'hidden',
   },
-
   Filtercontainer: {
     flex: 1,
     maxWidth: '1100px',
     margin: '0 auto',
-    padding: '10px 70px', // default padding
+    padding: '10px 70px',
     boxSizing: 'border-box',
     overflowX: 'hidden',
   },
-
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -1016,11 +1029,9 @@ const styles = {
     fontSize: '16px',
     fontWeight: '500'
   },
-
   mainWrapper: {
     paddingTop: '10px',
   },
-  // ✅ SLIDER STYLES
   sliderContainer: {
     position: 'relative',
     width: '100%',
@@ -1077,65 +1088,6 @@ const styles = {
     right: 0,
     bottom: 0,
   },
-  // Navigation buttons
-  navButton: {
-    position: 'absolute',
-    left: '20px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '50%',
-    width: '50px',
-    height: '50px',
-    fontSize: '24px',
-    cursor: 'pointer',
-    zIndex: 10,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'background-color 0.3s',
-  },
-  navButtonNext: {
-    position: 'absolute',
-    right: '20px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '50%',
-    width: '50px',
-    height: '50px',
-    fontSize: '24px',
-    cursor: 'pointer',
-    zIndex: 10,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'background-color 0.3s',
-  },
-  // Dots indicator
-  dotsContainer: {
-    position: 'absolute',
-    bottom: '20px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    display: 'flex',
-    gap: '10px',
-    zIndex: 10,
-  },
-  dot: {
-    width: '12px',
-    height: '12px',
-    borderRadius: '50%',
-    border: '2px solid white',
-    cursor: 'pointer',
-    transition: 'background-color 0.3s',
-    padding: 0,
-  },
-  // Filter Section
   filterSection: {
     backgroundColor: '#FDFFF0',
     paddingBottom: "30px",
@@ -1202,14 +1154,6 @@ const styles = {
     fontSize: '13px',
     color: '#ffffffff'
   },
-  filterPanel: {
-    marginTop: '16px',
-    padding: '20px',
-    backgroundColor: '#f8fafc',
-    borderRadius: '8px',
-    border: '1px solid #e5e7eb'
-  },
-
   filterSidebar: {
     position: "fixed",
     top: 0,
@@ -1220,10 +1164,9 @@ const styles = {
     padding: "20px",
     overflowY: "auto",
     zIndex: 2000,
-    transform: "translateX(100%)", // default hidden
+    transform: "translateX(100%)",
     transition: "transform 0.3s ease",
   },
-
   sidebarHeader: {
     display: "flex",
     justifyContent: "space-between",
@@ -1231,14 +1174,12 @@ const styles = {
     marginBottom: "20px",
     paddingBottom: "10px",
   },
-
   sidebarTitle: {
     fontSize: "18px",
     fontWeight: "600",
     color: "#1a4845",
     margin: 0,
   },
-
   sidebarCloseButton: {
     background: "none",
     border: "none",
@@ -1247,7 +1188,6 @@ const styles = {
     display: "flex",
     alignItems: "center",
   },
-
   sidebarOverlay: {
     position: "fixed",
     top: 0,
@@ -1257,7 +1197,6 @@ const styles = {
     background: "rgba(0,0,0,0.5)",
     zIndex: 1500,
   },
-
   sidebarInnerBox: {
     border: "1px solid #1a4845",
     borderRadius: "10px",
@@ -1268,7 +1207,6 @@ const styles = {
     flexDirection: "column",
     gap: "20px",
   },
-
   filterGroup: {
     marginBottom: '20px'
   },
@@ -1294,17 +1232,15 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     fontSize: "14px",
-    color: "transparent",   // hidden by default
+    color: "transparent",
     transition: "0.2s ease",
     pointerEvents: "none"
   },
-
   checkmarkActive: {
-    borderColor: "#175e54", // green border
-    color: "#175e54",        // tick visible in green
-    background: "transparent" // no solid fill!
+    borderColor: "#175e54",
+    color: "#175e54",
+    background: "transparent"
   },
-
   filterActions: {
     display: 'flex',
     gap: '12px',
@@ -1323,16 +1259,6 @@ const styles = {
     fontSize: '13px',
     fontWeight: '500'
   },
-  cancelFiltersButton: {
-    padding: '10px 20px',
-    backgroundColor: 'white',
-    color: '#f13838ff',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '14px'
-  },
-  // Products Section
   productsHeader: {
     display: 'flex',
     justifyContent: 'space-between',
