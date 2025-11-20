@@ -8,10 +8,11 @@ import SHeader from '../../../../../components/common/SHeader';
 
 import {
   ArrowLeft, Package, Clock, CheckCircle, XCircle, Store, AlertTriangle, X, User,
-  MapPin, Phone, Calendar, CreditCard, AlertOctagon, Star, RefreshCw, Check, Truck
+  MapPin, Phone, Calendar, CreditCard, AlertOctagon, Star, RefreshCw, Check, Truck, Download
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const INVOICE_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/invoice/`;
 
 
 
@@ -603,7 +604,7 @@ export default function ShopOrdersPage() {
   // ✅ Check if order can be cancelled
   const canCancelOrder = (order) => {
     const status = order.status?.toLowerCase();
-    const cancelableStatuses = ['pending', 'processing', 'confirmed'];
+    const cancelableStatuses = ['pending'];
     return cancelableStatuses.includes(status);
   };
 
@@ -689,6 +690,32 @@ export default function ShopOrdersPage() {
     const shopUrl = getShopUrl('');
     console.log('🛍️ Start shopping:', shopUrl);
     router.push(shopUrl);
+  };
+
+  const handleDownloadInvoice = async (orderId) => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
+    try {
+      const response = await axios.get(INVOICE_API_URL(orderId), {
+        headers,
+        responseType: 'blob',
+        timeout: 20000
+      });
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Invoice download failed', err);
+      alert(err.response?.data?.message || 'Failed to download invoice. Please try again.');
+    }
   };
 
   // ✅ Handle review submitted callback
@@ -842,6 +869,17 @@ export default function ShopOrdersPage() {
                       >
                         View Details
                       </button>
+                      {order.status?.toLowerCase() === 'delivered' && (
+                        <button
+                          className='profileorderactionbtn'
+                          onClick={() => handleDownloadInvoice(order.id)}
+                          style={styles.invoiceButton}
+                          title="Download invoice (PDF)"
+                        >
+                          <Download size={16} />
+                          Invoice
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -1011,9 +1049,18 @@ export default function ShopOrdersPage() {
               </div>
 
               <div style={styles.modalFooter}>
-                <button style={styles.closeModalButton} onClick={closeOrderDetails}>
-                  Close
-                </button>
+                {selectedOrder.status?.toLowerCase() === 'delivered' && (
+                  <button
+                    className='profileorderactionbtn'
+                    onClick={() => handleDownloadInvoice(selectedOrder.id)}
+                    style={styles.invoiceButton}
+                    title="Download invoice (PDF)"
+                  >
+                    <Download size={16} />
+                    Invoice
+                  </button>
+                )}
+
                 {canCancelOrder(selectedOrder) && (
                   <button
                     style={styles.cancelModalButton}
@@ -1109,6 +1156,7 @@ export default function ShopOrdersPage() {
 
               <div style={styles.modalFooter}>
                 <button
+                  className='profileorderkeeporderbtn'
                   style={styles.closeModalButton}
                   onClick={closeCancelModal}
                   disabled={cancelLoading}
@@ -1116,6 +1164,7 @@ export default function ShopOrdersPage() {
                   Keep Order
                 </button>
                 <button
+                  className='profileorderkeeporderbtn'
                   style={styles.confirmCancelButton}
                   onClick={handleCancelOrder}
                   disabled={cancelLoading || !cancelReason || (cancelReason === 'other' && !customReason.trim())}
@@ -1798,5 +1847,19 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
+  },
+  invoiceButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '10px 16px',
+    backgroundColor: '#868686ff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'all 0.2s'
   },
 };

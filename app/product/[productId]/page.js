@@ -8,6 +8,7 @@ import WhatsAppButton from '../../../components/common/WhatsAppButton';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
 import "../../../styles/Keralasellersproductpage.css";
+import { toast } from "react-toastify";
 
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw, ChevronLeft, Minus, Plus, ChevronRight, Zap, CreditCard } from 'lucide-react';
 
@@ -83,20 +84,20 @@ function ProductImageGallery({ product }) {
 
     // Combine main image and sub-images
     // ✅ FIXED: Combine main image and sub-images with Cloudinary priority
-const allImages = [
-    {
-        url: product.cloudinary_url || getBestImageUrl(product, 'main'),
-        thumbnail: product.cloudinary_url || getBestImageUrl(product, 'thumbnail'),
-        large: product.cloudinary_url || getBestImageUrl(product, 'large'),
-        alt: product.name
-    },
-    ...(product.sub_images || []).map((subImage, index) => ({
-        url: subImage.cloudinary_image_url || subImage.image_url || subImage.thumbnail_url || getBestImageUrl({ main_image_url: subImage.image }),
-        thumbnail: subImage.cloudinary_image_url || subImage.thumbnail_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
-        large: subImage.cloudinary_image_url || subImage.large_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
-        alt: `${product.name} - Image ${index + 2}`
-    }))
-];
+    const allImages = [
+        {
+            url: product.cloudinary_url || getBestImageUrl(product, 'main'),
+            thumbnail: product.cloudinary_url || getBestImageUrl(product, 'thumbnail'),
+            large: product.cloudinary_url || getBestImageUrl(product, 'large'),
+            alt: product.name
+        },
+        ...(product.sub_images || []).map((subImage, index) => ({
+            url: subImage.cloudinary_image_url || subImage.image_url || subImage.thumbnail_url || getBestImageUrl({ main_image_url: subImage.image }),
+            thumbnail: subImage.cloudinary_image_url || subImage.thumbnail_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
+            large: subImage.cloudinary_image_url || subImage.large_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
+            alt: `${product.name} - Image ${index + 2}`
+        }))
+    ];
 
 
     const handlePrevious = () => {
@@ -423,10 +424,7 @@ function WishlistButton({ productId, isLoggedIn, router }) {
     const handleWishlistToggle = async () => {
         const headers = getAuthHeaders();
         if (!headers) {
-            const shouldLogin = window.confirm('Please login to add items to your wishlist. Would you like to login now?');
-            if (shouldLogin) {
-                router.push('/login/buyer');
-            }
+            router.push('/login/buyer');
             return;
         }
 
@@ -668,7 +666,12 @@ export default function ProductDetailPage() {
             return;
         }
         if (!buyerStatus.isVerified) {
-            alert('Please verify your phone number on your profile page before purchasing.');
+            // alert('Please verify your phone number on your profile page before purchasing.');
+            toast.warn('Please verify your phone number on your profile page before purchasing.', {
+                position: "top-right",
+                autoClose: 5000,
+                theme: "colored",
+            });
             router.push('/profile');
             return;
         }

@@ -12,7 +12,10 @@ import TopCategory from "../components/home/TopCategory";
 import ProductCard from "../components/common/ProductCard";
 import ProductFilters from "../components/products/ProductFilters";
 import Skeleton from "../components/common/Skeleton";
+import { toast } from "react-toastify";
 import { Search, X, Filter, Grid, AlertCircle, Package, Heart } from 'lucide-react';
+import { useRouter } from "next/navigation";
+
 
 const bannerImages = [
   { src: "/assets/images/Banner/5.png", alt: "Kerala Sellers - Local Products" },
@@ -106,9 +109,9 @@ function useInfiniteScroll(callback, hasMore, isLoading) {
       const scrollHeight = document.documentElement.scrollHeight;
       const scrollTop = document.documentElement.scrollTop;
       const clientHeight = window.innerHeight;
-      
+
       const nearBottom = scrollHeight - scrollTop - clientHeight < 200;
-      
+
       if (nearBottom && hasMore && !isLoading) {
         console.log('📜 Near bottom - loading more products...');
         callback();
@@ -144,6 +147,7 @@ export default function Home() {
   const [showFilters, setShowFilters] = useState(false);
   const [error, setError] = useState('');
   const [wishlistLoading, setWishlistLoading] = useState(new Set());
+  const router = useRouter();
 
   const { addToCart } = useCart();
 
@@ -319,7 +323,8 @@ export default function Home() {
 
     const headers = getAuthHeaders();
     if (!headers) {
-      alert('Please login to add items to wishlist');
+      // alert('Please login to add items to wishlist');
+      router.push("/login/buyer");
       return;
     }
 
@@ -401,6 +406,12 @@ export default function Home() {
 
     // Optional: Show toast notification (you can implement a toast system)
     const action = isWishlisted ? 'added to' : 'removed from';
+
+    toast.success(`Item ${action} wishlist`, {
+      position: "top-right",
+      autoClose: 1500,
+      theme: "colored",
+    });
     console.log(`💖 ${productName} ${action} wishlist!`);
   };
 
@@ -559,19 +570,29 @@ export default function Home() {
 
     if (sellerPhone) {
       addToCart(sellerPhone, product);
+      toast.success("Added to cart!", {
+        position: "top-right",
+        autoClose: 1500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
+
 
       // Show success feedback
-      const button = e.target.closest('button');
-      if (button) {
-        const originalText = button.textContent;
-        const originalBg = button.style.backgroundColor;
-        button.textContent = 'Added!';
-        button.style.backgroundColor = '#10b981';
-        setTimeout(() => {
-          button.textContent = originalText;
-          button.style.backgroundColor = originalBg;
-        }, 1500);
-      }
+      // const button = e.target.closest('button');
+      // if (button) {
+      //   const originalText = button.textContent;
+      //   const originalBg = button.style.backgroundColor;
+      //   button.textContent = 'Added!';
+      //   button.style.backgroundColor = '#10b981';
+      //   setTimeout(() => {
+      //     button.textContent = originalText;
+      //     button.style.backgroundColor = originalBg;
+      //   }, 1500);
+      // }
     } else {
       alert("Could not add to cart: seller information is missing.");
       console.log('Product data:', product);

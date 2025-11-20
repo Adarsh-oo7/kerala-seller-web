@@ -57,8 +57,14 @@
     .keralasellersprofileordercardbody {
         padding: 12px 10px !important;
     }
+
     .keralasellersprofileordertitle {
         font-size: 18px !important;
+    }
+
+    .keralasellersprofilekeeporderbtn {
+        font-size: 12px !important;
+        padding: 8px 16px !important;
     }
 }
 
@@ -84,11 +90,22 @@
 
         justify-content: center !important;
     }
+
     .keralasellersprofileordertitle {
         font-size: 16px !important;
     }
-    
+
     .keralasellersprofileordertotalprice {
         font-size: 15px !important;
+    }
+
+    .keralasellersprofileorderactionbtnicon {
+        width: 13px !important;
+        height: 13px !important;
+    }
+
+    .keralasellersprofilekeeporderbtn {
+        font-size: 12px !important;
+        padding: 8px 16px !important;
     }
 }
