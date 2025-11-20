@@ -881,6 +881,7 @@ export default function ProductDetailPage() {
         } catch (error) {
             console.error('❌ Buy now error:', error);
 
+            
             if (error.response?.status === 401) {
                 localStorage.removeItem('buyerAccessToken');
                 // alert('Session expired. Please login again.');
