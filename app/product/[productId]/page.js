@@ -671,6 +671,12 @@ export default function ProductDetailPage() {
                 position: "top-right",
                 autoClose: 5000,
                 theme: "colored",
+                style: {
+                    width: "440px",
+                    height: "70px",
+                    padding: "12px",
+                    borderRadius: "12px",
+                },
             });
             router.push('/profile');
             return;
@@ -710,7 +716,18 @@ export default function ProductDetailPage() {
             return;
         }
         if (!buyerStatus.isVerified) {
-            alert('Please verify your phone number on your profile page before purchasing.');
+            // alert('Please verify your phone number on your profile page before purchasing.');
+            toast.warn('Please verify your phone number on your profile page before purchasing.', {
+                position: "top-right",
+                autoClose: 5000,
+                theme: "colored",
+                style: {
+                    width: "440px",
+                    height: "70px",
+                    padding: "12px",
+                    borderRadius: "12px",
+                },
+            });
             router.push('/profile');
             return;
         }
@@ -796,7 +813,18 @@ export default function ProductDetailPage() {
                         console.log('✅ Payment verified and order created:', verifyResponse.data);
 
                         // ✅ Show success message
-                        alert(`🎉 Payment successful! Your order #${verifyResponse.data.order_id} has been placed.`);
+                        // alert(`🎉 Payment successful! Your order #${verifyResponse.data.order_id} has been placed.`);
+                        toast.success(`🎉 Payment successful! Your order #${verifyResponse.data.order_id} has been placed.`, {
+                            position: "top-right",
+                            autoClose: 2500,
+                            theme: "colored",
+                            style: {
+                                width: "440px",
+                                height: "70px",
+                                padding: "12px",
+                                borderRadius: "12px",
+                            },
+                        });
 
                         // ✅ Redirect to orders page
                         router.push('/profile/orders');
@@ -855,7 +883,7 @@ export default function ProductDetailPage() {
 
             if (error.response?.status === 401) {
                 localStorage.removeItem('buyerAccessToken');
-                alert('Session expired. Please login again.');
+                // alert('Session expired. Please login again.');
                 router.push('/login/buyer');
             } else if (error.response?.data?.error) {
                 alert(`Error: ${error.response.data.error}`);
@@ -882,14 +910,24 @@ export default function ProductDetailPage() {
             } else {
                 // Fallback: copy to clipboard
                 await navigator.clipboard.writeText(window.location.href);
-                alert('Product link copied to clipboard!');
+                // alert('Product link copied to clipboard!');
+                toast.success("Product link copied to clipboard!", {
+                    position: "top-right",
+                    autoClose: 1500,
+                    theme: "colored",
+                });
             }
         } catch (error) {
             console.error('Error sharing:', error);
             // Final fallback: copy to clipboard
             try {
                 await navigator.clipboard.writeText(window.location.href);
-                alert('Product link copied to clipboard!');
+                // alert('Product link copied to clipboard!');
+                toast.success("Product link copied to clipboard!", {
+                    position: "top-right",
+                    autoClose: 1500,
+                    theme: "colored",
+                });
             } catch (clipboardError) {
                 console.error('Clipboard error:', clipboardError);
             }
