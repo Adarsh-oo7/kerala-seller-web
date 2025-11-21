@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
 import "../../../styles/keralasellerscheckout.css";
+import { toast } from "react-toastify";
+
 
 import { ArrowLeft, CreditCard, User, AlertTriangle, Package, CheckCircle } from 'lucide-react';
 
@@ -190,7 +192,11 @@ export default function CheckoutPage() {
               localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
 
               console.log('✅ Payment verified and order created');
-              alert(`Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`);
+              // alert(`Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`);
+              toast.success(`Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`, {
+                position: "top-right",
+                autoClose: 4500,
+              });
 
               router.push(`/profile/orders`);
             } else {
@@ -246,7 +252,18 @@ export default function CheckoutPage() {
     // ✅ FIXED: Enhanced validation
     if (!shippingInfo.name || !shippingInfo.phone || !shippingInfo.address ||
       !shippingInfo.city || !shippingInfo.pincode || !paymentMethod) {
-      alert('Please fill all required fields and select a payment method');
+      // alert('Please fill all required fields and select a payment method');
+      toast.warn('Please fill all required fields and select a payment method.', {
+        position: "top-right",
+        autoClose: 5000,
+        theme: "colored",
+        style: {
+          width: "440px",
+          height: "70px",
+          padding: "12px",
+          borderRadius: "12px",
+        },
+      });
       return;
     }
 
@@ -307,7 +324,11 @@ export default function CheckoutPage() {
           delete multiCarts[sellerPhone];
           localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
 
-          alert(`Order placed successfully! Order #${responseData.order_id} 🎉`);
+          // alert(`Order placed successfully! Order #${responseData.order_id} 🎉`);
+          toast.success(`Order placed successfully! Order #${responseData.order_id} 🎉`, {
+            position: "top-right",
+            autoClose: 4500,
+          });
           router.push(`/profile/orders`);
         } else {
           const errorMessage = responseData.error || responseData.detail || 'Unknown error';

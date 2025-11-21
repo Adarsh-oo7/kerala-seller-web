@@ -42,6 +42,8 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react';
+import { toast } from "react-toastify";
+
 
 // ✅ Helper function to get API base URL
 const getApiBaseUrl = () => {
@@ -338,7 +340,7 @@ function EnhancedFilterSection({ products, onFilterChange, activeFilters }) {
   const handleSearchChange = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
-    
+
     const updatedFilters = {
       ...tempFilters,
       searchQuery: query
@@ -569,7 +571,7 @@ function EnhancedSellerStorefrontPage() {
   const fetchWishlist = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
-    
+
     try {
       setWishlistLoading(true);
       const response = await axios.get(WISHLIST_API, { headers, timeout: 10000 });
@@ -644,9 +646,9 @@ function EnhancedSellerStorefrontPage() {
       setFilteredProducts([]);
       return;
     }
-    
+
     let filtered = [...products];
-    
+
     // ✅ Apply search filter with proper type checking
     if (filters?.searchQuery && filters.searchQuery.trim() !== '') {
       const query = filters.searchQuery.toLowerCase().trim();
@@ -654,13 +656,13 @@ function EnhancedSellerStorefrontPage() {
         const name = String(product?.name || '').toLowerCase();
         const description = String(product?.description || '').toLowerCase();
         const category = String(product?.category || '').toLowerCase();
-        
-        return name.includes(query) || 
-               description.includes(query) || 
-               category.includes(query);
+
+        return name.includes(query) ||
+          description.includes(query) ||
+          category.includes(query);
       });
     }
-    
+
     // ✅ Apply price range filter
     if (filters?.priceRange) {
       filtered = filtered.filter((product) => {
@@ -668,7 +670,7 @@ function EnhancedSellerStorefrontPage() {
         return price >= filters.priceRange.min && price <= filters.priceRange.max;
       });
     }
-    
+
     // ✅ Apply stock status filter
     if (filters?.stockStatus?.length > 0) {
       filtered = filtered.filter((product) => {
@@ -677,7 +679,7 @@ function EnhancedSellerStorefrontPage() {
         return filters.stockStatus.includes(stockStatus);
       });
     }
-    
+
     // ✅ Apply sorting with safe type conversion
     filtered.sort((a, b) => {
       switch (filters?.sortBy) {
@@ -693,7 +695,7 @@ function EnhancedSellerStorefrontPage() {
           return 0;
       }
     });
-    
+
     setFilteredProducts(filtered);
   }, [products, filters]);
 
@@ -703,7 +705,7 @@ function EnhancedSellerStorefrontPage() {
       setIsLoading(false);
       return;
     }
-    
+
     const fetchStoreData = async () => {
       try {
         setIsLoading(true);
@@ -737,22 +739,22 @@ function EnhancedSellerStorefrontPage() {
         setIsLoading(false);
       }
     };
-    
+
     fetchStoreData();
-    
+
     // ✅ Only fetch wishlist if user is logged in
     const timeoutId = setTimeout(() => {
       const token = localStorage.getItem('buyerAccessToken') ||
         localStorage.getItem('access_token') ||
         localStorage.getItem('accessToken');
-      
+
       if (token) {
         fetchWishlist();
       } else {
         console.log('User not logged in - skipping wishlist fetch');
       }
     }, 1500);
-    
+
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();

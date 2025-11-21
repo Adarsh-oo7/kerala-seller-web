@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
 import "../../../styles/Keralasellersprofileedit.css";
+import { toast } from "react-toastify";
+
 
 import Link from 'next/link';
 import {
@@ -199,6 +201,11 @@ export default function EditProfilePage() {
     if (!validateForm()) return;
     if (!hasChanges) {
       setSuccessMessage('No changes to save.');
+      toast.error("No changes to save.", {
+        position: "top-right",
+        autoClose: 2000,
+        theme: "colored",
+      });
       return;
     }
 
@@ -215,6 +222,11 @@ export default function EditProfilePage() {
       setOriginalData(formData);
       setHasChanges(false);
       setSuccessMessage('Profile updated successfully!');
+      toast.success("Profile updated successfully!", {
+        position: "top-right",
+        autoClose: 2000,
+        theme: "colored",
+      });
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -522,7 +534,7 @@ export default function EditProfilePage() {
                 Cancel
               </button>
               <button
-              className='keralasellersprofilesavebtn'
+                className='keralasellersprofilesavebtn'
                 type="submit"
                 disabled={isSaving || !hasChanges}
                 style={{
