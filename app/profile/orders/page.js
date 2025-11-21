@@ -482,12 +482,12 @@ export default function BuyerOrdersPage() {
 
                                             {canCancelOrder(order) && (
                                                 <button
-                                                    className="keralasellers-profile-order-action-btn"
+                                                    className="keralasellersprofileorderactionbtn"
                                                     onClick={() => openCancelModal(order)}
                                                     style={styles.cancelButton}
                                                     title="Cancel this order"
                                                 >
-                                                    <XCircle size={16} />
+                                                    <XCircle size={16} className='keralasellersprofileorderactionbtnicon' />
                                                     Cancel Order
                                                 </button>
                                             )}
@@ -499,7 +499,7 @@ export default function BuyerOrdersPage() {
                                                     style={styles.invoiceButton}
                                                     title="Download invoice (PDF)"
                                                 >
-                                                    <Download size={16} />
+                                                    <Download size={16} className='keralasellersprofileorderactionbtnicon' />
                                                     Invoice
                                                 </button>
                                             )}
@@ -678,12 +678,15 @@ export default function BuyerOrdersPage() {
                             </div>
 
                             <div style={styles.modalFooter}>
-                                <button
-                                    style={styles.invoiceButton}
-                                    onClick={() => handleDownloadInvoice(selectedOrder.id)}
-                                >
-                                    Download Invoice
-                                </button>
+                                {selectedOrder.status?.toLowerCase() === 'delivered' && (
+                                    <button
+                                        style={styles.invoiceButton}
+                                        onClick={() => handleDownloadInvoice(selectedOrder.id)}
+                                    >
+                                        Download Invoice
+                                    </button>
+                                )}
+
 
                                 {canCancelOrder(selectedOrder) && (
                                     <button
@@ -781,6 +784,7 @@ export default function BuyerOrdersPage() {
                             {/* Footer */}
                             <div style={styles.modalFooter}>
                                 <button
+                                    className='keralasellersprofilekeeporderbtn'
                                     style={styles.closeModalButton}
                                     onClick={closeCancelModal}
                                     disabled={cancellingOrderId === orderToCancel.id}
@@ -788,6 +792,7 @@ export default function BuyerOrdersPage() {
                                     Keep Order
                                 </button>
                                 <button
+                                    className='keralasellersprofilekeeporderbtn'
                                     style={{
                                         ...styles.confirmCancelButton,
                                         ...(cancellingOrderId === orderToCancel.id || !cancelReason.trim() ? styles.disabledButton : {})
@@ -802,7 +807,6 @@ export default function BuyerOrdersPage() {
                                         </span>
                                     ) : (
                                         <span style={styles.buttonContent}>
-                                            <XCircle size={16} />
                                             Confirm Cancellation
                                         </span>
                                     )}
@@ -1008,6 +1012,7 @@ const styles = {
         padding: '16px',
         borderRadius: '8px',
         border: '1px solid rgba(255, 255, 255, 0.1)',
+        color: 'rgb(26, 72, 69)'
     },
     summaryRow: {
         display: 'flex',
@@ -1015,7 +1020,7 @@ const styles = {
         alignItems: 'center',
         padding: '10px 0',
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        color: 'white',
+        color: 'rgb(26, 72, 69)',
     },
     summaryAmount: {
         fontWeight: '700',
@@ -1327,16 +1332,16 @@ const styles = {
     },
     cancelModalContent: {
         borderRadius: '16px',
-        maxWidth: '500px',
+        maxWidth: '600px',
         width: '100%',
         maxHeight: '90vh',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        backgroundColor: 'rgba(49, 47, 47, 0.95)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+        backgroundColor: 'rgba(49, 47, 47, 0.2)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         color: 'white',
     },
