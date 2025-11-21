@@ -625,42 +625,67 @@ export default function OrderDetailPage() {
           <span>{error}</span>
         </div>
       )}
+<div className='dashboardorderidpageheader' style={styles.header}>
+  <div style={styles.headerInfo}>
+    <h1 className='dashboardordertitle' style={styles.pageTitle}>Order #{order.id}</h1>
+{order.status === 'CANCELLED' && (
+  <div style={{
+    marginTop: '12px',
+    background: '#ffefef',
+    border: '1px solid #ef4444',
+    borderRadius: '6px',
+    padding: '10px 16px',
+    color: '#b91c1c',
+    fontWeight: 500,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  }}>
+    <AlertCircle size={18} color='#ef4444' />
+    <span>
+      <strong>Cancelled:</strong> {order.cancelreason || 'No reason provided'}
+    </span>
+  </div>
+)}
 
-      <div className='dashboardorderidpageheader' style={styles.header}>
-        <div style={styles.headerInfo}>
-          <h1 className='dashboardordertitle' style={styles.pageTitle}>Order #{order.id}</h1>
-          <div className='dashboardorderidsubtitle' style={styles.orderMeta}>
-            <Calendar size={16} />
-            <span >Placed on {formatDate(order.created_at)}</span>
-          </div>
-        </div>
-        <div style={styles.headerActions}>
-          <button className='dashboardorderexportbtn' onClick={handleDownloadBill} style={styles.buttonTertiary}>
-            <Download className='dashboardordernotificationbellicon' size={16} />
-            Download PDF
-          </button>
-          <button className='dashboardorderexportbtn' onClick={handleGenerateBill} style={styles.buttonSecondary}>
-            <FileText className='dashboardordernotificationbellicon' size={16} />
-            View Bill
-          </button>
 
-          {/* ✅ FIXED: Only show Update Status button for non-cancelled, non-delivered orders */}
-          {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
-            <button className='dashboardorderexportbtn' onClick={() => setIsModalOpen(true)} style={styles.buttonPrimary}>
-              <Edit className='dashboardordernotificationbellicon' size={16} />
-              Update Status
-            </button>
-          )}
+    <div className='dashboardorderidsubtitle' style={styles.orderMeta}>
+      <Calendar size={16} />
+      <span>Placed on {formatDate(order.created_at)}</span>
+    </div>
+  </div>
+  <div style={styles.headerActions}>
+    {/* Only show Download/View Bill if not CANCELLED */}
+    {order.status !== 'CANCELLED' && (
+      <>
+        <button className='dashboardorderexportbtn' onClick={handleDownloadBill} style={styles.buttonTertiary}>
+          <Download className='dashboardordernotificationbellicon' size={16} />
+          Download PDF
+        </button>
+        <button className='dashboardorderexportbtn' onClick={handleGenerateBill} style={styles.buttonSecondary}>
+          <FileText className='dashboardordernotificationbellicon' size={16} />
+          View Bill
+        </button>
+      </>
+    )}
 
-          {/* ✅ NEW: Show "View Details" button for cancelled/delivered orders */}
-          {(order.status === 'CANCELLED' || order.status === 'DELIVERED') && (
-            <button className='dashboardorderexportbtn' onClick={() => setIsModalOpen(true)} style={styles.buttonInfo}>
-              <Eye className='dashboardordernotificationbellicon' size={16} />
-              View Details
-            </button>
-          )}
-        </div>
-      </div>
+    {/* Show Update Status for ongoing orders only */}
+    {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
+      <button className='dashboardorderexportbtn' onClick={() => setIsModalOpen(true)} style={styles.buttonPrimary}>
+        <Edit className='dashboardordernotificationbellicon' size={16} />
+        Update Status
+      </button>
+    )}
+
+    {/* Show View Details for delivered/cancelled orders */}
+    {(order.status === 'CANCELLED' || order.status === 'DELIVERED') && (
+      <button className='dashboardorderexportbtn' disabled style={styles.buttonInfo}>
+        <Eye className='dashboardordernotificationbellicon' size={16} />
+        View Details
+      </button>
+    )}
+  </div>
+</div>
 
       {/* ✅ Order Timeline */}
       <div style={styles.timelineCard}>

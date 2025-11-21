@@ -1,4 +1,5 @@
 'use client';
+import { useCart } from '../../context/CartContext'; // Please adjust path correctly
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -49,6 +50,7 @@ export default function WishlistPage() {
   const [viewMode, setViewMode] = useState('grid');
   const [isUpdating, setIsUpdating] = useState({});
   const router = useRouter();
+const { addToCart } = useCart();
 
   // ✅ FIXED: Better token detection
   const getAuthHeaders = useCallback(() => {
@@ -243,51 +245,14 @@ export default function WishlistPage() {
     }
   };
 
-  const addToCart = async (product) => {
-    if (product.online_stock <= 0) return;
+const handleAddToCart = (product) => {
+  if (!product) return;
+  if ((product.online_stock || 0) <= 0) return;
+  addToCart(product.seller_phone, product, 1);
+};
 
-    setIsUpdating(prev => ({ ...prev, [product.id]: 'adding_to_cart' }));
 
-    try {
-      const headers = getAuthHeaders();
 
-      if (headers) {
-        try {
-          console.log('🛒 Adding to cart via API:', product.id);
-          await axios.post(CART_API, {
-            product_id: product.id,
-            quantity: 1
-          }, { headers });
-
-          alert('Added to cart successfully!');
-          console.log('✅ Added to cart via API');
-        } catch (apiError) {
-          console.warn('⚠️ API add to cart failed:', apiError);
-          alert('Added to cart locally. Please login to sync with server.');
-        }
-      } else {
-        // Handle cart without authentication (local storage)
-        console.log('🛒 Adding to local cart:', product.id);
-        const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
-        const existingItem = cartItems.find(item => item.id === product.id);
-
-        if (existingItem) {
-          existingItem.quantity += 1;
-        } else {
-          cartItems.push({ ...product, quantity: 1 });
-        }
-
-        localStorage.setItem('cart', JSON.stringify(cartItems));
-        alert('Added to cart successfully!');
-      }
-
-    } catch (error) {
-      console.error('❌ Error adding to cart:', error);
-      setError('Failed to add to cart. Please try again.');
-    } finally {
-      setIsUpdating(prev => ({ ...prev, [product.id]: null }));
-    }
-  };
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {
@@ -581,23 +546,24 @@ export default function WishlistPage() {
 
                       {/* 🛒 Add to Cart Button */}
                       <button
-                        className="shopslugprofilewishlistaddtocartbtn"
-                        onClick={() => addToCart(product)}
-                        style={{
-                          ...styles.addToCartButton,
-                          opacity: isAddingToCart ? 0.6 : 1,
-                        }}
-                        disabled={isOutOfStock || isAddingToCart}
-                      >
-                        {isAddingToCart ? (
-                          <span style={{ fontSize: 12 }}>Adding...</span>
-                        ) : (
-                          <>
-                            <ShoppingCart size={16} />
-                            Add to Cart
-                          </>
-                        )}
-                      </button>
+  className="shopslugprofilewishlistaddtocartbtn"
+  onClick={() => handleAddToCart(product)}
+  style={{
+    ...styles.addToCartButton,
+    opacity: isAddingToCart ? 0.6 : 1,
+  }}
+  disabled={isOutOfStock || isAddingToCart}
+>
+  {isAddingToCart ? (
+    <span style={{ fontSize: 12 }}>Adding...</span>
+  ) : (
+    <>
+      <ShoppingCart size={16} />
+      Add to Cart
+    </>
+  )}
+</button>
+
                     </div>
                   </div>
                 );

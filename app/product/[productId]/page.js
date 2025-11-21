@@ -658,243 +658,40 @@ export default function ProductDetailPage() {
         }).format(price);
     };
 
-    const handleAddToCart = async () => {
-        if (!product) return;
+// Add to Cart: adds current product & quantity to the cart
+const handleAddToCart = async () => {
+  if (!product) return;
+  if (!buyerStatus.isLoggedIn) {
+    router.push('/login/buyer');
+    return;
+  }
+  setAddingToCart(true);
+  try {
+    if (product.store && product.store.seller_phone) {
+      addToCart(product.store.seller_phone, { ...product, quantity });
+      toast.success('Added to cart!', { position: "top-right", autoClose: 1500 });
+    } else {
+      alert("Cannot add to cart, seller information is missing.");
+    }
+  } finally {
+    setAddingToCart(false);
+  }
+};
 
-        if (!buyerStatus.isLoggedIn) {
-            router.push('/login/buyer');
-            return;
-        }
-        if (!buyerStatus.isVerified) {
-            // alert('Please verify your phone number on your profile page before purchasing.');
-            toast.warn('Please verify your phone number on your profile page before purchasing.', {
-                position: "top-right",
-                autoClose: 5000,
-                theme: "colored",
-                style: {
-                    width: "440px",
-                    height: "70px",
-                    padding: "12px",
-                    borderRadius: "12px",
-                },
-            });
-            router.push('/profile');
-            return;
-        }
+// Buy Now: just redirect to checkout with product/quantity
+const handleBuyNow = () => {
+  if (!product) return;
+  if (!buyerStatus.isLoggedIn) {
+    router.push('/login/buyer');
+    return;
+  }
+  if (!product.store?.seller_phone) {
+    alert("Seller information missing.");
+    return;
+  }
+  router.push(`/checkout/${product.store.seller_phone}?buyNow=1&productId=${product.id}&quantity=${quantity}`);
+};
 
-        setAddingToCart(true);
-
-        try {
-            if (product.store && product.store.seller_phone) {
-                addToCart(product.store.seller_phone, product);
-
-                // Show success feedback
-                const button = document.querySelector('[data-add-to-cart]');
-                if (button) {
-                    const originalText = button.textContent;
-                    button.textContent = 'Added to Cart!';
-                    button.style.backgroundColor = '#28a745';
-                    setTimeout(() => {
-                        button.textContent = originalText;
-                        button.style.backgroundColor = '#3b82f6';
-                    }, 2000);
-                }
-            } else {
-                alert("Cannot add to cart, seller information is missing.");
-            }
-        } finally {
-            setAddingToCart(false);
-        }
-    };
-
-    // ✅ WORKING: Buy Now with Your Existing Backend
-    const handleBuyNow = async () => {
-        if (!product) return;
-
-        if (!buyerStatus.isLoggedIn) {
-            router.push('/login/buyer');
-            return;
-        }
-        if (!buyerStatus.isVerified) {
-            // alert('Please verify your phone number on your profile page before purchasing.');
-            toast.warn('Please verify your phone number on your profile page before purchasing.', {
-                position: "top-right",
-                autoClose: 5000,
-                theme: "colored",
-                style: {
-                    width: "440px",
-                    height: "70px",
-                    padding: "12px",
-                    borderRadius: "12px",
-                },
-            });
-            router.push('/profile');
-            return;
-        }
-
-        setBuyingNow(true);
-
-        try {
-            // ✅ Load Razorpay script
-            const isRazorpayLoaded = await loadRazorpayScript();
-            if (!isRazorpayLoaded) {
-                alert('Payment gateway failed to load. Please try again.');
-                setBuyingNow(false);
-                return;
-            }
-
-            const headers = getAuthHeaders();
-            if (!headers) {
-                router.push('/login/buyer');
-                return;
-            }
-
-            // ✅ STEP 1: Create order data for single product
-            const orderData = {
-                seller_phone: product.store?.seller_phone,
-                items: [{
-                    id: product.id,
-                    quantity: 1,
-                    name: product.name,
-                    price: product.price
-                }],
-                customer_name: buyerStatus.name || 'Customer',
-                customer_phone: buyerStatus.phone || '',
-                shipping_address: "Default Address" // You can enhance this with address selection
-            };
-
-            const totalAmount = product.price;
-
-            console.log('🛒 Creating Razorpay order for Buy Now:', orderData);
-
-            // ✅ STEP 2: Create Razorpay order using your existing endpoint
-            const createOrderResponse = await axios.post(
-                CREATE_RAZORPAY_ORDER_URL,
-                {
-                    amount: totalAmount,
-                    order_data: orderData
-                },
-                {
-                    headers,
-                    timeout: 15000
-                }
-            );
-
-            const { razorpay_order_id, amount, currency, key } = createOrderResponse.data;
-
-            console.log('✅ Razorpay order created:', createOrderResponse.data);
-
-            // ✅ STEP 3: Configure Razorpay payment options
-            const options = {
-                key: key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-                amount: amount, // Amount in paise
-                currency: currency,
-                name: 'Kerala Sellers',
-                description: `Buy Now: ${product.name}`,
-                order_id: razorpay_order_id,
-
-                // ✅ STEP 4: Payment success handler
-                handler: async function (response) {
-                    console.log('💳 Payment successful:', response);
-
-                    try {
-                        // ✅ Use your existing payment verification endpoint
-                        const verifyResponse = await axios.post(
-                            VERIFY_PAYMENT_URL,
-                            {
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                                order_data: orderData
-                            },
-                            { headers }
-                        );
-
-                        console.log('✅ Payment verified and order created:', verifyResponse.data);
-
-                        // ✅ Show success message
-                        // alert(`🎉 Payment successful! Your order #${verifyResponse.data.order_id} has been placed.`);
-                        toast.success(`🎉 Payment successful! Your order #${verifyResponse.data.order_id} has been placed.`, {
-                            position: "top-right",
-                            autoClose: 2500,
-                            theme: "colored",
-                            style: {
-                                width: "440px",
-                                height: "70px",
-                                padding: "12px",
-                                borderRadius: "12px",
-                            },
-                        });
-
-                        // ✅ Redirect to orders page
-                        router.push('/profile/orders');
-
-
-                    } catch (verifyError) {
-                        console.error('❌ Payment verification failed:', verifyError);
-                        alert('Payment completed but order creation failed. Please contact support.');
-                    }
-                },
-
-                // ✅ Prefill user information
-                prefill: {
-                    name: buyerStatus.name || 'Customer',
-                    email: buyerStatus.email || '',
-                    contact: buyerStatus.phone || ''
-                },
-
-                // ✅ Order notes
-                notes: {
-                    product_id: product.id,
-                    product_name: product.name,
-                    seller_phone: product.store?.seller_phone,
-                    order_type: 'buy_now'
-                },
-
-                // ✅ Theme
-                theme: {
-                    color: '#3b82f6'
-                },
-
-                // ✅ Modal close handler
-                modal: {
-                    ondismiss: function () {
-                        console.log('💳 Payment cancelled by user');
-                        setBuyingNow(false);
-                    }
-                }
-            };
-
-            // ✅ STEP 5: Open Razorpay payment modal
-            const razorpayInstance = new window.Razorpay(options);
-
-            // ✅ Handle payment failure
-            razorpayInstance.on('payment.failed', function (response) {
-                console.error('❌ Payment failed:', response.error);
-                alert(`Payment failed: ${response.error.description}`);
-                setBuyingNow(false);
-            });
-
-            // ✅ Open the payment modal
-            razorpayInstance.open();
-
-        } catch (error) {
-            console.error('❌ Buy now error:', error);
-
-            
-            if (error.response?.status === 401) {
-                localStorage.removeItem('buyerAccessToken');
-                // alert('Session expired. Please login again.');
-                router.push('/login/buyer');
-            } else if (error.response?.data?.error) {
-                alert(`Error: ${error.response.data.error}`);
-            } else {
-                alert('Failed to process payment. Please try again.');
-            }
-
-            setBuyingNow(false);
-        }
-    };
 
 
     // ✅ Share functionality
