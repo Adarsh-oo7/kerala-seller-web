@@ -207,6 +207,7 @@ export default function WishlistPage() {
   const removeFromWishlist = async (productId) => {
     setIsUpdating(prev => ({ ...prev, [productId]: 'removing' }));
 
+    
     try {
       const headers = getAuthHeaders();
 
