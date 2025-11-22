@@ -1319,4 +1319,4 @@ const styles = {
     fontSize: '0.9rem',
     fontWeight: '500'
   },
-};c
+};

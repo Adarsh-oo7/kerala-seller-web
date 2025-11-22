@@ -228,6 +228,13 @@ export default function EditProfilePage() {
         theme: "colored",
       });
 
+      if (currentStoreInfo?.isInStore && currentStoreInfo?.storeId) {
+        router.push(`/store/${currentStoreInfo.storeId}/profile`);
+      } else {
+        router.push('/profile');
+      }
+
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
 

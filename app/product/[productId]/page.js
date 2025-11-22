@@ -476,7 +476,8 @@ function WishlistButton({ productId, isLoggedIn, router }) {
             if (error.response?.status === 401) {
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('buyerAccessToken');
-                alert('Session expired. Please login again.');
+                // alert('Session expired. Please login again.');
+                router.push('/login/buyer');
             } else {
                 const errorMessage = error.response?.data?.error || 'Failed to update wishlist. Please try again.';
                 alert(errorMessage);
@@ -658,39 +659,39 @@ export default function ProductDetailPage() {
         }).format(price);
     };
 
-// Add to Cart: adds current product & quantity to the cart
-const handleAddToCart = async () => {
-  if (!product) return;
-  if (!buyerStatus.isLoggedIn) {
-    router.push('/login/buyer');
-    return;
-  }
-  setAddingToCart(true);
-  try {
-    if (product.store && product.store.seller_phone) {
-      addToCart(product.store.seller_phone, { ...product, quantity });
-      toast.success('Added to cart!', { position: "top-right", autoClose: 1500 });
-    } else {
-      alert("Cannot add to cart, seller information is missing.");
-    }
-  } finally {
-    setAddingToCart(false);
-  }
-};
+    // Add to Cart: adds current product & quantity to the cart
+    const handleAddToCart = async () => {
+        if (!product) return;
+        if (!buyerStatus.isLoggedIn) {
+            router.push('/login/buyer');
+            return;
+        }
+        setAddingToCart(true);
+        try {
+            if (product.store && product.store.seller_phone) {
+                addToCart(product.store.seller_phone, { ...product, quantity });
+                toast.success('Added to cart!', { position: "top-right", autoClose: 1500 });
+            } else {
+                alert("Cannot add to cart, seller information is missing.");
+            }
+        } finally {
+            setAddingToCart(false);
+        }
+    };
 
-// Buy Now: just redirect to checkout with product/quantity
-const handleBuyNow = () => {
-  if (!product) return;
-  if (!buyerStatus.isLoggedIn) {
-    router.push('/login/buyer');
-    return;
-  }
-  if (!product.store?.seller_phone) {
-    alert("Seller information missing.");
-    return;
-  }
-  router.push(`/checkout/${product.store.seller_phone}?buyNow=1&productId=${product.id}&quantity=${quantity}`);
-};
+    // Buy Now: just redirect to checkout with product/quantity
+    const handleBuyNow = () => {
+        if (!product) return;
+        if (!buyerStatus.isLoggedIn) {
+            router.push('/login/buyer');
+            return;
+        }
+        if (!product.store?.seller_phone) {
+            alert("Seller information missing.");
+            return;
+        }
+        router.push(`/checkout/${product.store.seller_phone}?buyNow=1&productId=${product.id}&quantity=${quantity}`);
+    };
 
 
 

@@ -8,6 +8,8 @@ import axios from 'axios';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
 import "../../../styles/Keralasellerprofilewishlist.css";
+import { toast } from "react-toastify";
+
 import {
   Heart,
   ArrowLeft,
@@ -50,7 +52,7 @@ export default function WishlistPage() {
   const [viewMode, setViewMode] = useState('grid');
   const [isUpdating, setIsUpdating] = useState({});
   const router = useRouter();
-const { addToCart } = useCart();
+  const { addToCart } = useCart();
 
   // ✅ FIXED: Better token detection
   const getAuthHeaders = useCallback(() => {
@@ -236,6 +238,7 @@ const { addToCart } = useCart();
       setWishlistItems(updatedWishlist);
       localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
       console.log('✅ Item removed from wishlist');
+      toast.error("Removed from wishlist");
 
     } catch (error) {
       console.error('❌ Error removing from wishlist:', error);
@@ -245,11 +248,18 @@ const { addToCart } = useCart();
     }
   };
 
-const handleAddToCart = (product) => {
-  if (!product) return;
-  if ((product.online_stock || 0) <= 0) return;
-  addToCart(product.seller_phone, product, 1);
-};
+  const handleAddToCart = (product) => {
+    if (!product) return;
+
+    if ((product.online_stock || 0) <= 0) {
+      toast.error("Out of stock!");
+      return;
+    }
+
+    addToCart(product.seller_phone, product, 1);
+    toast.success("Added to cart!");
+  };
+
 
 
 
@@ -546,23 +556,23 @@ const handleAddToCart = (product) => {
 
                       {/* 🛒 Add to Cart Button */}
                       <button
-  className="shopslugprofilewishlistaddtocartbtn"
-  onClick={() => handleAddToCart(product)}
-  style={{
-    ...styles.addToCartButton,
-    opacity: isAddingToCart ? 0.6 : 1,
-  }}
-  disabled={isOutOfStock || isAddingToCart}
->
-  {isAddingToCart ? (
-    <span style={{ fontSize: 12 }}>Adding...</span>
-  ) : (
-    <>
-      <ShoppingCart size={16} />
-      Add to Cart
-    </>
-  )}
-</button>
+                        className="shopslugprofilewishlistaddtocartbtn"
+                        onClick={() => handleAddToCart(product)}
+                        style={{
+                          ...styles.addToCartButton,
+                          opacity: isAddingToCart ? 0.6 : 1,
+                        }}
+                        disabled={isOutOfStock || isAddingToCart}
+                      >
+                        {isAddingToCart ? (
+                          <span style={{ fontSize: 12 }}>Adding...</span>
+                        ) : (
+                          <>
+                            <ShoppingCart size={16} />
+                            Add to Cart
+                          </>
+                        )}
+                      </button>
 
                     </div>
                   </div>
@@ -928,7 +938,7 @@ const styles = {
     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
     gap: '6px', backgroundColor: '#10b981', color: 'white', border: 'none',
     borderRadius: '6px', padding: '10px 12px', cursor: 'pointer', fontSize: '14px',
-    fontWeight: '500', transition: 'all 0.2s'
+    fontWeight: '500', transition: 'all 0.2s', width: "100%",
   },
   viewButton: {
     backgroundColor: '#f3f4f6', color: '#374151', border: 'none',
