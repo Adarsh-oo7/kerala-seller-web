@@ -1540,7 +1540,7 @@
 }
 
 /* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   .sheader {
     --glassy-white: rgba(30, 30, 30, 0.9);
     --glassy-white-dark: rgba(30, 30, 30, 0.95);
@@ -1565,7 +1565,7 @@
         rgba(59, 130, 246, 0.15),
         rgba(147, 197, 253, 0.1));
   }
-}
+} */
 
 /* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
