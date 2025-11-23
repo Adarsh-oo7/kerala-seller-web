@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Header from '../../../components/common/Header';
-import Footer from '../../../components/common/Footer';
-import "../../../styles/Kerelasellerprofileverification.css";
+import SHeader from '../../../../../components/common/SHeader';
+import "../../../../../styles/Kerelasellerprofileverification.css";
 
 // ✅ Import Firebase
-import { auth } from '../../../firebase';
+import { auth } from '../../../../../firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 
 import {
@@ -21,7 +20,8 @@ import {
   Clock,
   Lock,
   MessageCircle,
-  X
+  X,
+  Globe
 } from 'lucide-react';
 
 const getApiBaseUrl = () => {
@@ -39,8 +39,13 @@ const API_BASE_URL = getApiBaseUrl();
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;
 
-export default function VerificationPage() {
+export default function ShopVerificationPage() {
+  const { shopSlug } = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
   const [buyer, setBuyer] = useState(null);
+  const [storeData, setStoreData] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
@@ -51,37 +56,70 @@ export default function VerificationPage() {
   const [resendTimer, setResendTimer] = useState(0);
   const [otpAttempts, setOtpAttempts] = useState(0);
   const [isPhoneEditable, setIsPhoneEditable] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
+  // ✅ Firebase state
   const [confirmationResult, setConfirmationResult] = useState(null);
-  
-  const router = useRouter();
 
-  const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
-    if (!token) {
-      console.error('❌ No authentication token found');
-      router.push('/login/buyer');
+  const getActualStoreId = useCallback(() => {
+    if (shopSlug === 'undefined' || shopSlug === undefined) {
       return null;
     }
-    return { 'Authorization': `Bearer ${token}` };
-  }, [router]);
 
-  // ✅ ALTERNATIVE: Setup reCAPTCHA with setTimeout to ensure DOM is ready
+    const queryId = searchParams.get('id');
+    if (queryId && queryId !== 'undefined' && queryId.trim() !== '') {
+      return queryId.trim();
+    }
+
+    if (shopSlug && shopSlug !== 'new' && shopSlug !== 'undefined') {
+      return shopSlug;
+    }
+
+    return null;
+  }, [shopSlug, searchParams]);
+
+  const actualStoreId = getActualStoreId();
+
+  const getShopUrl = useCallback((path = '') => {
+    if (!actualStoreId) {
+      return '/';
+    }
+
+    if (searchParams.get('id') && shopSlug === 'new') {
+      const basePath = `/shop/new${path}`;
+      return `${basePath}?id=${actualStoreId}`;
+    } else {
+      return `/shop/${actualStoreId}${path}`;
+    }
+  }, [actualStoreId, searchParams, shopSlug]);
+
+  const getAuthHeaders = useCallback(() => {
+    const token = localStorage.getItem('access_token') ||
+      localStorage.getItem('buyerAccessToken');
+
+    if (!token) {
+      console.error('❌ No authentication token found');
+      const loginUrl = getShopUrl('/login');
+      router.push(loginUrl);
+      return null;
+    }
+
+    return { 'Authorization': `Bearer ${token}` };
+  }, [router, getShopUrl]);
+
+  // ✅ Setup Firebase reCAPTCHA
   useEffect(() => {
     const setupRecaptcha = () => {
       if (typeof window === 'undefined') return;
       
-      // Wait for DOM to be fully ready
       setTimeout(() => {
         try {
-          // Check if container exists
           const container = document.getElementById('recaptcha-container');
           if (!container) {
             console.error('❌ reCAPTCHA container not found');
             return;
           }
 
-          // Clear any existing verifier
           if (window.recaptchaVerifier) {
             try {
               window.recaptchaVerifier.clear();
@@ -90,14 +128,13 @@ export default function VerificationPage() {
             }
           }
 
-          // Create new verifier with correct parameters
           window.recaptchaVerifier = new RecaptchaVerifier(
             auth,
             'recaptcha-container',
             {
               size: 'invisible',
               callback: (response) => {
-                console.log('✅ reCAPTCHA solved:', response);
+                console.log('✅ reCAPTCHA solved');
               },
               'expired-callback': () => {
                 console.log('⚠️ reCAPTCHA expired');
@@ -108,10 +145,8 @@ export default function VerificationPage() {
           console.log('✅ reCAPTCHA initialized successfully');
         } catch (error) {
           console.error('❌ reCAPTCHA initialization error:', error);
-          console.error('Error code:', error.code);
-          console.error('Error message:', error.message);
         }
-      }, 1000); // Wait 1 second for DOM
+      }, 1000);
     };
 
     setupRecaptcha();
@@ -126,6 +161,18 @@ export default function VerificationPage() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('buyerAccessToken') ||
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('accessToken');
+      setIsLoggedIn(!!token);
+    } catch (error) {
+      console.warn('localStorage access error:', error);
+      setIsLoggedIn(false);
+    }
+  }, [buyer]);
 
   useEffect(() => {
     let interval = null;
@@ -145,34 +192,57 @@ export default function VerificationPage() {
     setError('');
 
     try {
-      const response = await axios.get(PROFILE_API, { headers, timeout: 15000 });
-      setBuyer(response.data);
-      const profilePhone = response.data.phone_number || '';
-      setPhoneNumber(profilePhone);
-      setIsPhoneEditable(!profilePhone);
+      const [profileRes, storeRes] = await Promise.allSettled([
+        axios.get(PROFILE_API, { headers, timeout: 15000 }),
+        axios.get(`${API_BASE_URL}/shop/${actualStoreId}/`)
+      ]);
+
+      if (profileRes.status === 'fulfilled' && profileRes.value.data) {
+        setBuyer(profileRes.value.data);
+        setIsLoggedIn(true);
+        const profilePhone = profileRes.value.data.phone_number || '';
+        setPhoneNumber(profilePhone);
+        setIsPhoneEditable(!profilePhone);
+      }
+
+      if (storeRes.status === 'fulfilled' && storeRes.value.data) {
+        const storeResData = storeRes.value.data;
+        setStoreData(storeResData.store || storeResData);
+      } else {
+        setStoreData({
+          name: `Store ${actualStoreId}`,
+          seller_phone: actualStoreId,
+          id: actualStoreId
+        });
+      }
+
     } catch (error) {
       console.error("❌ Failed to fetch profile:", error);
       if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('buyerAccessToken');
-        router.push('/login/buyer');
+        const loginUrl = getShopUrl('/login');
+        router.push(loginUrl);
       } else {
         setError('Failed to load profile. Please try again.');
       }
     } finally {
       setIsLoading(false);
     }
-  }, [getAuthHeaders, router]);
+  }, [getAuthHeaders, router, actualStoreId, getShopUrl]);
 
   useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+    if (actualStoreId) {
+      fetchProfile();
+    }
+  }, [fetchProfile, actualStoreId]);
 
   const validatePhoneNumber = (phone) => {
     const phoneRegex = /^[6-9]\d{9}$/;
     return phoneRegex.test(phone.replace(/\s+/g, ''));
   };
 
+  // ✅ Send OTP via Firebase
   const handleSendOtp = async () => {
     if (!phoneNumber || !validatePhoneNumber(phoneNumber)) {
       setError('Please enter a valid 10-digit mobile number starting with 6-9');
@@ -180,7 +250,7 @@ export default function VerificationPage() {
     }
 
     if (!window.recaptchaVerifier) {
-      setError('Verification system not ready. Please wait a moment or refresh the page.');
+      setError('Verification system not ready. Please wait a moment.');
       return;
     }
 
@@ -204,15 +274,11 @@ export default function VerificationPage() {
     } catch (error) {
       console.error('❌ Firebase OTP error:', error);
       
-      let errorMessage = 'Failed to send OTP. ';
+      let errorMessage = 'Failed to send OTP.';
       if (error.code === 'auth/invalid-phone-number') {
         errorMessage = 'Invalid phone number format';
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = 'Too many requests. Try again later';
-      } else if (error.code === 'auth/captcha-check-failed') {
-        errorMessage = 'Verification failed. Please refresh the page';
-      } else {
-        errorMessage = error.message || 'Please try again';
       }
       setError(errorMessage);
     } finally {
@@ -220,6 +286,7 @@ export default function VerificationPage() {
     }
   };
 
+  // ✅ Verify OTP with Firebase
   const handleVerifyOtp = async () => {
     if (otp.length !== 6) {
       setError('Please enter a valid 6-digit OTP');
@@ -257,7 +324,8 @@ export default function VerificationPage() {
       await fetchProfile();
       
       setTimeout(() => {
-        router.push('/profile');
+        const profileUrl = getShopUrl('/profile');
+        router.push(profileUrl);
       }, 2000);
 
     } catch (error) {
@@ -272,7 +340,8 @@ export default function VerificationPage() {
       } else if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('buyerAccessToken');
-        router.push('/login/buyer');
+        const loginUrl = getShopUrl('/login');
+        router.push(loginUrl);
         return;
       } else if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
@@ -319,18 +388,26 @@ export default function VerificationPage() {
 
   if (isLoading) {
     return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.spinner}></div>
-        <p>Loading...</p>
+      <div style={styles.pageContainer}>
+        <SHeader store={storeData} isLoggedIn={isLoggedIn} />
+        <div style={styles.loadingContainer}>
+          <div style={styles.spinner}></div>
+          <p>Loading...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div style={styles.pageContainer}>
-      <Header />
+      <SHeader store={storeData} isLoggedIn={isLoggedIn} />
 
       <div style={styles.container}>
+        <div style={styles.storeIndicator}>
+          <Globe size={16} />
+          <span>Verifying from {storeData?.name || `Store ${actualStoreId}`}</span>
+        </div>
+
         {successMessage && (
           <div style={styles.successAlert}>
             <Check size={16} />
@@ -386,7 +463,7 @@ export default function VerificationPage() {
                 </div>
 
                 <div style={styles.verifiedActions}>
-                  <Link href="/profile" className='keralasellerprofileverificationbtn' style={styles.backToProfileButton}>
+                  <Link href={getShopUrl('/profile')} className='keralasellerprofileverificationbtn' style={styles.backToProfileButton}>
                     Back to Profile
                   </Link>
                 </div>
@@ -565,10 +642,8 @@ export default function VerificationPage() {
         </div>
       </div>
 
-      {/* ✅ reCAPTCHA container - MUST exist in DOM */}
+      {/* ✅ reCAPTCHA container */}
       <div id="recaptcha-container"></div>
-
-      <Footer />
 
       <style jsx>{`
         @keyframes spin {
@@ -590,48 +665,381 @@ export default function VerificationPage() {
 
 // Keep all your existing styles
 const styles = {
-  pageContainer: { minHeight: '100vh', backgroundColor: '#FDFFF0' },
-  loadingContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '20px' },
-  spinner: { width: '32px', height: '32px', border: '3px solid #f3f3f3', borderTop: '3px solid #3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' },
-  buttonSpinner: { width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 1s linear infinite' },
-  container: { maxWidth: '500px', margin: '0 auto', padding: '32px 24px' },
-  successAlert: { display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '12px', color: '#065f46', marginBottom: '24px', animation: 'slideIn 0.3s ease-out' },
-  errorAlert: { display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', backgroundColor: '#fef2f2', border: '1px solid #ef4444', borderRadius: '12px', color: '#991b1b', marginBottom: '24px', animation: 'slideIn 0.3s ease-out' },
-  closeAlert: { marginLeft: 'auto', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: '4px' },
-  verificationCard: { backgroundColor: '#FDFFF0', borderRadius: '16px', padding: '32px', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', border: '1px solid #1a4845', animation: 'fadeIn 0.6s ease-out' },
-  verifiedSection: { textAlign: 'center' },
-  verifiedIcon: { width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'transparent', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px auto', border: '3px solid #bbf7d0' },
-  verifiedContent: { textAlign: 'center' },
-  verifiedTitle: { fontSize: '24px', fontWeight: '700', color: '#1a4845', marginBottom: '12px' },
-  verifiedText: { fontSize: '16px', color: '#6b7280', marginBottom: '24px', lineHeight: '1.5' },
-  benefits: { textAlign: 'left', marginTop: '24px', padding: '24px', backgroundColor: '#f0fdf4', borderRadius: '12px', border: '1px solid #1a4845' },
-  benefitsTitle: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '17px', fontWeight: '600', color: '#166534', marginBottom: '16px' },
-  benefitsList: { listStyle: 'none', padding: '3px', margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' },
-  verifiedActions: { marginTop: '32px' },
-  backToProfileButton: { display: 'inline-flex', alignItems: 'center', padding: '12px 24px', backgroundColor: '#1a4845', color: 'white', textDecoration: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '500', transition: 'all 0.2s' },
-  verificationSection: { display: 'flex', flexDirection: 'column', gap: '24px', backgroundColor: '#FDFFF0' },
-  verificationHeader: { display: 'flex', alignItems: 'flex-start', gap: '16px', textAlign: 'left' },
-  headerIcon: { color: '#f63b3bff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  sectionTitle: { fontSize: '20px', fontWeight: '700', color: '#1f2937' },
-  sectionDescription: { fontSize: '14px', color: '#6b7280', lineHeight: '1.5', margin: 0 },
-  warningBox: { display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '16px', backgroundColor: '#fef3c7', borderRadius: '12px', border: '1px solid #f59e0b' },
-  phoneSection: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  otpSection: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  otpSentInfo: { display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontSize: '14px', fontWeight: '500', padding: '12px', backgroundColor: '#ecfdf5', borderRadius: '8px', border: '1px solid #bbf7d0' },
-  formGroup: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  label: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' },
-  phoneInputContainer: { display: 'flex', alignItems: 'center', border: '2px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', transition: 'all 0.2s', position: 'relative' },
-  countryCode: { padding: '12px 16px', backgroundColor: '#FDFFF0', border: 'none', fontSize: '16px', color: '#374151', fontWeight: '500', borderRight: '1px solid #e5e7eb' },
-  phoneInput: { flex: 1, padding: '12px 16px', paddingRight: '60px', border: 'none', fontSize: '16px', outline: 'none', backgroundColor: '#FDFFF0' },
-  editPhoneButton: { position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', padding: '8px 12px', backgroundColor: 'rgb(26, 72, 69)', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: '500', cursor: 'pointer', whiteSpace: 'nowrap' },
-  otpInput: { padding: '16px', border: '2px solid #e5e7eb', borderRadius: '12px', fontSize: '24px', textAlign: 'center', letterSpacing: '8px', fontWeight: '700', outline: 'none', transition: 'all 0.2s', backgroundColor: '#FDFFF0' },
-  helpText: { fontSize: '12px', color: '#6b7280', margin: 0 },
-  sendButton: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 24px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '16px', fontWeight: '600', transition: 'all 0.2s' },
-  verifyButton: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 24px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '16px', fontWeight: '600', transition: 'all 0.2s', width: '100%' },
-  disabledButton: { backgroundColor: '#9ca3af', cursor: 'not-allowed', opacity: 0.7 },
-  otpFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' },
-  changeNumberButton: { padding: '8px 16px', backgroundColor: '#FDFFF0', border: '1px solid #e93434ff', borderRadius: '6px', color: '#f43131ff', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' },
-  resendButton: { display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', backgroundColor: '#1a4845', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' },
-  timerInfo: { display: 'flex', alignItems: 'center', gap: '6px', color: '#1a4845', fontSize: '14px' },
-  attemptsWarning: { display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', backgroundColor: '#fef3c7', borderRadius: '8px', color: '#92400e', fontSize: '14px', fontWeight: '500' }
+  // ... (all your existing styles - paste them here)
+  storeIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 16px',
+    backgroundColor: '#dbeafe',
+    border: '1px solid #3b82f6',
+    borderRadius: '8px',
+    fontSize: '14px',
+    color: '#1e40af',
+    fontWeight: '500',
+    marginBottom: '24px'
+  },
+  pageContainer: {
+    minHeight: 'calc(100vh - 130px)',
+    backgroundColor: '#FDFFF0',
+    paddingTop: '130px',
+    paddingBottom: '35px'
+  },
+  loadingContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '60vh',
+    gap: '20px'
+  },
+  spinner: {
+    width: '32px',
+    height: '32px',
+    border: '3px solid #f3f3f3',
+    borderTop: '3px solid #3b82f6',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  },
+  buttonSpinner: {
+    width: '16px',
+    height: '16px',
+    border: '2px solid rgba(255,255,255,0.3)',
+    borderTop: '2px solid white',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  },
+  container: {
+    maxWidth: '500px',
+    margin: '0 auto',
+    padding: '32px 24px'
+  },
+  successAlert: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '16px 20px',
+    backgroundColor: '#ecfdf5',
+    border: '1px solid #10b981',
+    borderRadius: '12px',
+    color: '#065f46',
+    marginBottom: '24px',
+    animation: 'slideIn 0.3s ease-out'
+  },
+  errorAlert: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '16px 20px',
+    backgroundColor: '#fef2f2',
+    border: '1px solid #ef4444',
+    borderRadius: '12px',
+    color: '#991b1b',
+    marginBottom: '24px',
+    animation: 'slideIn 0.3s ease-out'
+  },
+  closeAlert: {
+    marginLeft: 'auto',
+    background: 'none',
+    border: 'none',
+    color: 'inherit',
+    cursor: 'pointer',
+    padding: '4px'
+  },
+  verificationCard: {
+    backgroundColor: '#FDFFF0',
+    borderRadius: '16px',
+    padding: '32px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+    border: '1px solid #1a4845',
+    animation: 'fadeIn 0.6s ease-out'
+  },
+  verifiedSection: {
+    textAlign: 'center'
+  },
+  verifiedIcon: {
+    width: '80px',
+    height: '80px',
+    borderRadius: '50%',
+    backgroundColor: 'transparent',
+    color: '#10b981',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 24px auto',
+    border: '3px solid #bbf7d0'
+  },
+  verifiedContent: {
+    textAlign: 'center'
+  },
+  verifiedTitle: {
+    fontSize: '24px',
+    fontWeight: '700',
+    color: '#1a4845',
+    marginBottom: '12px'
+  },
+  verifiedText: {
+    fontSize: '16px',
+    color: '#6b7280',
+    marginBottom: '24px',
+    lineHeight: '1.5'
+  },
+  benefits: {
+    textAlign: 'left',
+    marginTop: '24px',
+    padding: '24px',
+    backgroundColor: '#f0fdf4',
+    borderRadius: '12px',
+    border: '1px solid #1a4845'
+  },
+  benefitsTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '17px',
+    fontWeight: '600',
+    color: '#166534',
+    marginBottom: '16px'
+  },
+  benefitsList: {
+    listStyle: 'none',
+    padding: '3px',
+    margin: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  verifiedActions: {
+    marginTop: '32px'
+  },
+  backToProfileButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '12px 24px',
+    backgroundColor: '#1a4845',
+    color: 'white',
+    textDecoration: 'none',
+    borderRadius: '8px',
+    fontSize: '16px',
+    fontWeight: '500',
+    transition: 'all 0.2s'
+  },
+  verificationSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px',
+    backgroundColor: '#FDFFF0',
+  },
+  verificationHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '16px',
+    textAlign: 'left'
+  },
+  headerIcon: {
+    color: '#f63b3bff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  sectionTitle: {
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#1f2937',
+  },
+  sectionDescription: {
+    fontSize: '14px',
+    color: '#6b7280',
+    lineHeight: '1.5',
+    margin: 0
+  },
+  warningBox: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px',
+    padding: '16px',
+    backgroundColor: '#fef3c7',
+    borderRadius: '12px',
+    border: '1px solid #f59e0b'
+  },
+  phoneSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px'
+  },
+  otpSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px'
+  },
+  otpSentInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    color: '#10b981',
+    fontSize: '14px',
+    fontWeight: '500',
+    padding: '12px',
+    backgroundColor: '#ecfdf5',
+    borderRadius: '8px',
+    border: '1px solid #bbf7d0'
+  },
+  formGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+  label: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#374151'
+  },
+  phoneInputContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    border: '2px solid #e5e7eb',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    transition: 'all 0.2s',
+    position: 'relative',
+  },
+  countryCode: {
+    padding: '12px 16px',
+    backgroundColor: '#FDFFF0',
+    border: 'none',
+    fontSize: '16px',
+    color: '#374151',
+    fontWeight: '500',
+    borderRight: '1px solid #e5e7eb'
+  },
+  phoneInput: {
+    flex: 1,
+    padding: '12px 16px',
+    paddingRight: '60px',
+    border: 'none',
+    fontSize: '16px',
+    outline: 'none',
+    backgroundColor: '#FDFFF0'
+  },
+  editPhoneButton: {
+    position: 'absolute',
+    right: '10px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    padding: '8px 12px',
+    backgroundColor: 'rgb(26, 72, 69)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '13px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+  otpInput: {
+    padding: '16px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '12px',
+    fontSize: '24px',
+    textAlign: 'center',
+    letterSpacing: '8px',
+    fontWeight: '700',
+    outline: 'none',
+    transition: 'all 0.2s',
+    backgroundColor: '#FDFFF0'
+  },
+  helpText: {
+    fontSize: '12px',
+    color: '#6b7280',
+    margin: 0
+  },
+  sendButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '14px 24px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: '600',
+    transition: 'all 0.2s'
+  },
+  verifyButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '14px 24px',
+    backgroundColor: '#10b981',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: '600',
+    transition: 'all 0.2s',
+    width: '100%'
+  },
+  disabledButton: {
+    backgroundColor: '#9ca3af',
+    cursor: 'not-allowed',
+    opacity: 0.7
+  },
+  otpFooter: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  changeNumberButton: {
+    padding: '8px 16px',
+    backgroundColor: '#FDFFF0',
+    border: '1px solid #e93434ff',
+    borderRadius: '6px',
+    color: '#f43131ff',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'all 0.2s'
+  },
+  resendButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 16px',
+    backgroundColor: '#1a4845',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'all 0.2s'
+  },
+  timerInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    color: '#1a4845',
+    fontSize: '14px'
+  },
+  attemptsWarning: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px',
+    backgroundColor: '#fef3c7',
+    borderRadius: '8px',
+    color: '#92400e',
+    fontSize: '14px',
+    fontWeight: '500'
+  }
 };
