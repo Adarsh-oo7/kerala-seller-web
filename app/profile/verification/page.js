@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { auth } from '../../../lib/firebase'; // ✅ Import your Firebase config
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
 import "../../../styles/Kerelasellerprofileverification.css";
@@ -22,7 +24,7 @@ import {
   Globe
 } from 'lucide-react';
 
-// ✅ Enhanced API base URL handling with environment variables
+// ✅ API URLs
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
@@ -37,13 +39,13 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/send-otp/`;
-const VERIFY_OTP_API = `${API_BASE_URL}/user/buyer/verify-otp/`;
+const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;
 
 console.log('🌐 Verification API URLs configured:', {
   API_BASE_URL,
   PROFILE_API,
   SEND_OTP_API,
-  VERIFY_OTP_API,
+  VERIFY_FIREBASE_API,
   ENVIRONMENT: process.env.NODE_ENV
 });
 
@@ -60,9 +62,14 @@ export default function VerificationPage() {
   const [otpAttempts, setOtpAttempts] = useState(0);
   const [isPhoneEditable, setIsPhoneEditable] = useState(true);
   const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
+  
+  // ✅ Firebase state
+  const [verificationId, setVerificationId] = useState(null);
+  const [recaptchaVerifier, setRecaptchaVerifier] = useState(null);
+  
   const router = useRouter();
 
-  // ✅ Enhanced token handling - supports both Google login and regular login
+  // ✅ Enhanced token handling
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('access_token') ||
       localStorage.getItem('buyerAccessToken');
@@ -89,6 +96,30 @@ export default function VerificationPage() {
     };
   }, []);
 
+  // ✅ Initialize reCAPTCHA
+  const setupRecaptcha = useCallback(() => {
+    if (!recaptchaVerifier && typeof window !== 'undefined') {
+      try {
+        const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+          callback: () => {
+            console.log('✅ reCAPTCHA verified');
+          },
+          'expired-callback': () => {
+            console.log('⚠️ reCAPTCHA expired');
+          }
+        });
+        setRecaptchaVerifier(verifier);
+        console.log('✅ reCAPTCHA initialized');
+        return verifier;
+      } catch (error) {
+        console.error('❌ reCAPTCHA initialization failed:', error);
+        return null;
+      }
+    }
+    return recaptchaVerifier;
+  }, [recaptchaVerifier]);
+
   // Countdown timer for OTP resend
   useEffect(() => {
     let interval = null;
@@ -112,7 +143,6 @@ export default function VerificationPage() {
     try {
       console.log('🔄 Fetching profile from:', PROFILE_API);
 
-      // ✅ Get current store context
       const storeInfo = getCurrentStoreInfo();
       setCurrentStoreInfo(storeInfo);
 
@@ -130,7 +160,6 @@ export default function VerificationPage() {
     } catch (error) {
       console.error("❌ Failed to fetch profile:", error);
       if (error.response?.status === 401) {
-        // Clear tokens and redirect
         localStorage.removeItem('access_token');
         localStorage.removeItem('buyerAccessToken');
         router.push('/login/buyer');
@@ -164,6 +193,7 @@ export default function VerificationPage() {
     return true;
   };
 
+  // ✅ FIREBASE: Send OTP via Firebase Phone Auth
   const handleSendOtp = async () => {
     if (!phoneNumber || !validatePhoneNumber(phoneNumber)) {
       setError('Please enter a valid 10-digit mobile number starting with 6-9');
@@ -177,37 +207,58 @@ export default function VerificationPage() {
     setError('');
 
     try {
-      console.log('🔄 Sending OTP to:', phoneNumber);
+      // Step 1: Prepare backend
+      console.log('🔄 Step 1: Preparing backend for phone:', phoneNumber);
       await axios.post(SEND_OTP_API, { phone: phoneNumber }, {
         headers,
         timeout: 15000
       });
 
-      setOtpSent(true);
-      setResendTimer(60); // 60 seconds countdown
-      setOtpAttempts(0);
-      setSuccessMessage(`6-digit OTP sent to +91 ${phoneNumber}`);
+      console.log('✅ Backend prepared');
 
-      // Clear success message after 3 seconds
+      // Step 2: Send OTP via Firebase
+      console.log('🔄 Step 2: Sending Firebase SMS OTP...');
+      const formattedPhone = `+91${phoneNumber}`;
+      
+      const verifier = setupRecaptcha();
+      if (!verifier) {
+        throw new Error('Failed to initialize reCAPTCHA');
+      }
+
+      const confirmationResult = await signInWithPhoneNumber(
+        auth,
+        formattedPhone,
+        verifier
+      );
+
+      console.log('✅ Firebase OTP sent successfully!');
+      setVerificationId(confirmationResult);
+      setOtpSent(true);
+      setResendTimer(60);
+      setOtpAttempts(0);
+      setSuccessMessage(`SMS OTP sent to ${formattedPhone}`);
+
       setTimeout(() => setSuccessMessage(''), 3000);
 
     } catch (error) {
       console.error('❌ OTP sending failed:', error);
 
       let errorMessage = 'Failed to send OTP. Please try again.';
-      if (error.response?.status === 401) {
+      
+      // Firebase-specific errors
+      if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many requests. Please try again later.';
+      } else if (error.code === 'auth/invalid-phone-number') {
+        errorMessage = 'Invalid phone number format.';
+      } else if (error.code === 'auth/quota-exceeded') {
+        errorMessage = 'SMS quota exceeded. Please try again later.';
+      } else if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('buyerAccessToken');
         router.push('/login/buyer');
         return;
-      } else if (error.code === 'ECONNABORTED') {
-        errorMessage = 'Server timeout - please check your connection and try again.';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
       } else if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
-      } else if (error.request) {
-        errorMessage = 'Unable to connect to server. Please check your internet connection.';
       }
 
       setError(errorMessage);
@@ -216,9 +267,14 @@ export default function VerificationPage() {
     }
   };
 
+  // ✅ FIREBASE: Verify OTP with Firebase
   const handleVerifyOtp = async () => {
-    // ✅ Updated to validate 6-digit OTP
     if (!validateOTP(otp)) {
+      return;
+    }
+
+    if (!verificationId) {
+      setError('Verification session expired. Please request a new OTP.');
       return;
     }
 
@@ -229,21 +285,29 @@ export default function VerificationPage() {
     setError('');
 
     try {
-      console.log('🔄 Verifying 6-digit OTP:', otp);
-      await axios.post(VERIFY_OTP_API, {
-        otp,
-        phone: phoneNumber
-      }, {
-        headers,
-        timeout: 15000
-      });
+      console.log('🔄 Step 1: Verifying Firebase OTP...');
+      
+      // Confirm OTP with Firebase
+      const result = await verificationId.confirm(otp);
+      const idToken = await result.user.getIdToken();
 
+      console.log('✅ Firebase OTP verified! ID Token received.');
+      console.log('🔄 Step 2: Verifying with backend...');
+
+      // Send Firebase ID token to backend
+      await axios.post(
+        VERIFY_FIREBASE_API,
+        { firebase_id_token: idToken },
+        { headers, timeout: 15000 }
+      );
+
+      console.log('✅ Backend verification successful!');
       setSuccessMessage('Phone verified successfully! 🎉');
 
-      // Refresh profile data
+      // Refresh profile
       await fetchProfile();
 
-      // ✅ Store-aware redirect
+      // Redirect
       setTimeout(() => {
         const redirectUrl = currentStoreInfo.isInStore && currentStoreInfo.storeId
           ? `/store/${currentStoreInfo.storeId}/profile`
@@ -256,29 +320,30 @@ export default function VerificationPage() {
       setOtpAttempts(prev => prev + 1);
 
       let errorMessage = 'Invalid OTP. Please try again.';
-      if (error.response?.status === 401) {
+      
+      // Firebase-specific errors
+      if (error.code === 'auth/invalid-verification-code') {
+        errorMessage = 'Invalid OTP code. Please check and try again.';
+      } else if (error.code === 'auth/code-expired') {
+        errorMessage = 'OTP has expired. Please request a new one.';
+      } else if (error.code === 'auth/session-expired') {
+        errorMessage = 'Session expired. Please request a new OTP.';
+      } else if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('buyerAccessToken');
         router.push('/login/buyer');
         return;
-      } else if (error.code === 'ECONNABORTED') {
-        errorMessage = 'Server timeout - please try verifying again.';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
       } else if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
-      } else if (error.request) {
-        errorMessage = 'Unable to connect to server. Please check your connection.';
       }
 
       setError(errorMessage);
-
-      // Clear OTP input on failure
       setOtp('');
 
-      // After 3 failed attempts, reset the process
+      // After 3 failed attempts, reset
       if (otpAttempts >= 2) {
         setOtpSent(false);
+        setVerificationId(null);
         setResendTimer(0);
         setOtpAttempts(0);
         setError('Too many failed attempts. Please request a new OTP.');
@@ -291,6 +356,8 @@ export default function VerificationPage() {
 
   const handleResendOtp = async () => {
     if (resendTimer > 0) return;
+    setOtp('');
+    setVerificationId(null);
     await handleSendOtp();
   };
 
@@ -302,6 +369,7 @@ export default function VerificationPage() {
     setResendTimer(0);
     setOtpAttempts(0);
     setIsPhoneEditable(true);
+    setVerificationId(null);
   };
 
   const formatTime = (seconds) => {
@@ -310,7 +378,6 @@ export default function VerificationPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // ✅ Store-aware back URL
   const getBackUrl = () => {
     return currentStoreInfo.isInStore && currentStoreInfo.storeId
       ? `/store/${currentStoreInfo.storeId}/profile`
@@ -321,10 +388,7 @@ export default function VerificationPage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p>Loading verification details from server...</p>
-        <p style={{ fontSize: '12px', color: '#666' }}>
-          🌐 Connected to: {API_BASE_URL}
-        </p>
+        <p>Loading verification details...</p>
       </div>
     );
   }
@@ -332,22 +396,11 @@ export default function VerificationPage() {
   return (
     <div style={styles.pageContainer}>
       <Header />
-      {/* <header style={styles.header}>
-        <div style={styles.headerContainer}>
-          <Link href={getBackUrl()} style={styles.backLink}>
-            <ArrowLeft size={18} />
-            <span>
-              {currentStoreInfo.isInStore ? 'Back to Store Profile' : 'Back to Profile'}
-            </span>
-          </Link>
-          <h1 style={styles.headerTitle}>Phone Verification</h1>
-          <div style={styles.headerSpacer}></div>
-        </div>
-      </header> */}
-
+      
+      {/* ✅ IMPORTANT: reCAPTCHA container (invisible) */}
+      <div id="recaptcha-container"></div>
 
       <div style={styles.container}>
-        {/* ✅ Show store context indicator */}
         {currentStoreInfo.isInStore && (
           <div style={styles.storeIndicator}>
             <Globe size={16} />
@@ -355,11 +408,6 @@ export default function VerificationPage() {
           </div>
         )}
 
-        {/* <p style={{ fontSize: '12px', color: '#666', textAlign: 'center', marginBottom: '16px' }}>
-          🌐 Connected to: {API_BASE_URL}
-        </p> */}
-
-        {/* Success Message */}
         {successMessage && (
           <div style={styles.successAlert}>
             <Check size={16} />
@@ -367,7 +415,6 @@ export default function VerificationPage() {
           </div>
         )}
 
-        {/* Error Message */}
         {error && (
           <div style={styles.errorAlert}>
             <AlertCircle size={16} />
@@ -413,9 +460,7 @@ export default function VerificationPage() {
                       <span className='keralasellerprofileverificationbenefitslist'>Account recovery options</span>
                     </li>
                   </ul>
-
                 </div>
-
 
                 <div style={styles.verifiedActions}>
                   <Link href={getBackUrl()} className='keralasellerprofileverificationbtn' style={styles.backToProfileButton}>
@@ -435,17 +480,16 @@ export default function VerificationPage() {
                     Verify Your Phone Number
                   </h2>
                   <p className='keralasellerprofileverificationpagetext' style={styles.sectionDescription}>
-                    Secure your account and enable shopping by verifying your phone number with a 6-digit OTP.
+                    Secure your account and enable shopping by verifying your phone number with SMS OTP.
                   </p>
                 </div>
               </div>
-
 
               <div style={styles.warningBox}>
                 <AlertCircle size={20} />
                 <div>
                   <strong className='keralasellerprofileverificationpagetext'>Account Security Required</strong>
-                  <p className='keralasellerprofileverificationpagetext'> Phone verification is required for placing orders and account security.</p>
+                  <p className='keralasellerprofileverificationpagetext'>Phone verification is required for placing orders and account security.</p>
                 </div>
               </div>
 
@@ -474,7 +518,7 @@ export default function VerificationPage() {
                       />
                       {!isPhoneEditable && (
                         <button
-                        className='keralasellerprofileverificationeditbtn'
+                          className='keralasellerprofileverificationeditbtn'
                           onClick={() => setIsPhoneEditable(true)}
                           style={styles.editPhoneButton}
                           type="button"
@@ -484,7 +528,7 @@ export default function VerificationPage() {
                       )}
                     </div>
                     <p style={styles.helpText}>
-                      Enter your mobile number to receive a 6-digit verification OTP
+                      You will receive an SMS with a 6-digit verification code
                     </p>
                   </div>
 
@@ -500,12 +544,12 @@ export default function VerificationPage() {
                     {isSubmitting ? (
                       <>
                         <div style={styles.buttonSpinner}></div>
-                        Sending 6-digit OTP...
+                        Sending SMS OTP...
                       </>
                     ) : (
                       <>
                         <MessageCircle size={16} />
-                        Send 6-digit OTP
+                        Send SMS OTP
                       </>
                     )}
                   </button>
@@ -514,7 +558,7 @@ export default function VerificationPage() {
                 <div style={styles.otpSection}>
                   <div className='keralasellerprofileverificationotpbadgeinfo' style={styles.otpSentInfo}>
                     <MessageCircle className='keralasellerprofileverificationotpbadgeinfoicon' size={16} />
-                    <span className='keralasellerprofileverificationotpbadgetext'> 6-digit OTP sent to +91 {phoneNumber}</span>
+                    <span className='keralasellerprofileverificationotpbadgetext'>SMS OTP sent to +91 {phoneNumber}</span>
                   </div>
 
                   <div style={styles.formGroup}>
@@ -524,7 +568,6 @@ export default function VerificationPage() {
                       type="text"
                       value={otp}
                       onChange={(e) => {
-                        // ✅ Updated to handle 6-digit input
                         const value = e.target.value.replace(/\D/g, '');
                         if (value.length <= 6) {
                           setOtp(value);
@@ -554,12 +597,12 @@ export default function VerificationPage() {
                       {isSubmitting ? (
                         <>
                           <div style={styles.buttonSpinner}></div>
-                          Verifying 6-digit OTP...
+                          Verifying OTP...
                         </>
                       ) : (
                         <>
                           <Check size={16} />
-                          Verify 6-digit OTP
+                          Verify OTP
                         </>
                       )}
                     </button>
@@ -610,7 +653,6 @@ export default function VerificationPage() {
 
       <Footer />
 
-      {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -630,7 +672,6 @@ export default function VerificationPage() {
     </div>
   );
 }
-
 const styles = {
   // ✅ NEW: Store context indicator
   storeIndicator: {
