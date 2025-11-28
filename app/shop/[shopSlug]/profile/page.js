@@ -5,7 +5,6 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import "../../../../styles/BuyerProfile.css";
 
-<<<<<<< HEAD
 import { 
   User, 
   Package, 
@@ -18,10 +17,6 @@ import {
   AlertTriangle,
   Phone // ✅ ADD: Phone icon for verification menu
 } from 'lucide-react';
-=======
-import { User, Package, Edit3, Heart, ArrowLeft, LogOut, Store, RefreshCw, AlertTriangle, Shield } from 'lucide-react';
-// ✅ ADD: Import Shield icon for verify number
->>>>>>> newupdate
 import SHeader from '../../../../components/common/SHeader';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
@@ -40,10 +35,6 @@ export default function ShopProfilePage() {
   const [authChecked, setAuthChecked] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-<<<<<<< HEAD
-=======
-  // Check login status for SHeader
->>>>>>> newupdate
   useEffect(() => {
     try {
       const token = localStorage.getItem('buyerAccessToken') ||
@@ -96,15 +87,11 @@ export default function ShopProfilePage() {
     }
   };
 
-<<<<<<< HEAD
   // ✅ ADD: Phone verification URL helper
   const getPhoneVerificationUrl = () => {
     return getShopUrl('/profile/verify-phone');
   };
 
-=======
-  // Enhanced authentication check with token validation
->>>>>>> newupdate
   const checkAuthWithValidation = async () => {
     const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
 
@@ -173,10 +160,6 @@ export default function ShopProfilePage() {
       if (response.ok) {
         const data = await response.json();
         console.log('✅ Orders count response:', data);
-<<<<<<< HEAD
-=======
-
->>>>>>> newupdate
         let count = 0;
         if (typeof data === 'object' && data !== null) {
           count = data.count || data.orders_count || data.total || 0;
@@ -203,10 +186,6 @@ export default function ShopProfilePage() {
       if (response.ok) {
         const data = await response.json();
         console.log('✅ Wishlist response:', data);
-<<<<<<< HEAD
-=======
-
->>>>>>> newupdate
         let count = 0;
         if (Array.isArray(data)) {
           count = data.length;
@@ -229,10 +208,6 @@ export default function ShopProfilePage() {
     }
   };
 
-<<<<<<< HEAD
-=======
-  // Main data fetching function with proper auth check
->>>>>>> newupdate
   const fetchData = async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -313,10 +288,6 @@ export default function ShopProfilePage() {
     }
   };
 
-<<<<<<< HEAD
-=======
-  // Load data only after auth is checked
->>>>>>> newupdate
   useEffect(() => {
     if (actualStoreId && !urlError && !authChecked) {
       fetchData();
@@ -330,13 +301,7 @@ export default function ShopProfilePage() {
       localStorage.removeItem('buyerAccessToken');
       localStorage.removeItem('refresh_token');
       sessionStorage.clear();
-<<<<<<< HEAD
       setIsLoggedIn(false);
-=======
-
-      setIsLoggedIn(false);
-
->>>>>>> newupdate
       const loginUrl = getShopUrl('/login');
       router.push(loginUrl);
     }
@@ -353,10 +318,6 @@ export default function ShopProfilePage() {
     fetchData(true);
   };
 
-<<<<<<< HEAD
-=======
-  // Loading state
->>>>>>> newupdate
   if (loading || urlError || !authChecked) {
     return (
       <div style={styles.pageContainer}>
@@ -399,10 +360,6 @@ export default function ShopProfilePage() {
     );
   }
 
-<<<<<<< HEAD
-=======
-  // Login required state
->>>>>>> newupdate
   if (!buyer) {
     return (
       <div style={styles.pageContainer}>
@@ -521,33 +478,12 @@ export default function ShopProfilePage() {
             </div>
             <div style={styles.menuArrow}>→</div>
           </Link>
-<<<<<<< HEAD
-=======
-
-          {/* ✅ NEW: Verify Number Menu Item */}
-          <Link href={getShopUrl('/profile/verify-number')} style={styles.menuItem}>
-            <Shield size={24} color="#10b981" />
-            <div>
-              <div className='buyerprofilemenulabel' style={styles.menuLabel}>Verify Number</div>
-              <div className='buyerprofilemenudesc' style={styles.menuDesc}>
-                {buyer.phone_number 
-                  ? (buyer.phone_verified ? '✅ Verified' : '⚠️ Not verified yet')
-                  : 'Add and verify your phone'}
-              </div>
-            </div>
-            <div style={styles.menuArrow}>→</div>
-          </Link>
->>>>>>> newupdate
         </div>
       </div>
     </div>
   );
 }
 
-<<<<<<< HEAD
-=======
-// Styles
->>>>>>> newupdate
 const styles = {
   pageContainer: {
     minHeight: 'calc(100vh - 130px)',
