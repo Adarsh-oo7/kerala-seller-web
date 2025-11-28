@@ -5,8 +5,18 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import "../../../../styles/BuyerProfile.css";
 
-import { User, Package, Edit3, Heart, ArrowLeft, LogOut, Store, RefreshCw, AlertTriangle } from 'lucide-react';
-// ✅ ADD: Import the SHeader component
+import { 
+  User, 
+  Package, 
+  Edit3, 
+  Heart, 
+  ArrowLeft, 
+  LogOut, 
+  Store, 
+  RefreshCw, 
+  AlertTriangle,
+  Phone // ✅ ADD: Phone icon for verification menu
+} from 'lucide-react';
 import SHeader from '../../../../components/common/SHeader';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
@@ -23,9 +33,8 @@ export default function ShopProfilePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [urlError, setUrlError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ ADD: Login state for SHeader
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // ✅ ADD: Check login status for SHeader
   useEffect(() => {
     try {
       const token = localStorage.getItem('buyerAccessToken') ||
@@ -36,9 +45,8 @@ export default function ShopProfilePage() {
       console.warn('localStorage access error:', error);
       setIsLoggedIn(false);
     }
-  }, [buyer]); // Update when buyer state changes
+  }, [buyer]);
 
-  // Get actual store ID from URL parameters
   const getActualStoreId = () => {
     console.log('🔍 Getting store ID for profile...');
     console.log('- shopSlug from params:', shopSlug);
@@ -65,7 +73,6 @@ export default function ShopProfilePage() {
   const actualStoreId = getActualStoreId();
   console.log('👤 Profile store ID:', actualStoreId);
 
-  // Generate shop URLs
   const getShopUrl = (path = '') => {
     if (!actualStoreId) {
       console.error('❌ Cannot generate URL - no store ID available');
@@ -80,7 +87,11 @@ export default function ShopProfilePage() {
     }
   };
 
-  // ✅ FIXED: Enhanced authentication check with token validation
+  // ✅ ADD: Phone verification URL helper
+  const getPhoneVerificationUrl = () => {
+    return getShopUrl('/profile/verify-phone');
+  };
+
   const checkAuthWithValidation = async () => {
     const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
 
@@ -90,7 +101,6 @@ export default function ShopProfilePage() {
       return null;
     }
 
-    // ✅ VALIDATE: Try to validate token by making a simple API call
     try {
       console.log('🔍 Validating token...');
       const response = await fetch(`${API_BASE_URL}/api/buyer/profile/`, {
@@ -106,11 +116,10 @@ export default function ShopProfilePage() {
         return { 'Authorization': `Bearer ${token}` };
       } else if (response.status === 401) {
         console.log('🔐 Token is invalid/expired, removing and redirecting...');
-        // Clear invalid tokens
         localStorage.removeItem('access_token');
         localStorage.removeItem('buyerAccessToken');
         localStorage.removeItem('refresh_token');
-        setIsLoggedIn(false); // ✅ UPDATE: Update login state
+        setIsLoggedIn(false);
         redirectToLogin();
         return null;
       } else {
@@ -120,14 +129,13 @@ export default function ShopProfilePage() {
       }
     } catch (error) {
       console.error('❌ Token validation error:', error);
-      // On network error, assume token is valid and continue
       setAuthChecked(true);
       return { 'Authorization': `Bearer ${token}` };
     }
   };
 
   const redirectToLogin = () => {
-    if (!authChecked) { // ✅ PREVENT: Only redirect once
+    if (!authChecked) {
       const loginUrl = getShopUrl('/login');
       const currentUrl = getShopUrl('/profile');
       const redirectUrl = `${loginUrl}?redirect=${encodeURIComponent(currentUrl)}`;
@@ -136,7 +144,6 @@ export default function ShopProfilePage() {
     }
   };
 
-  // Redirect if invalid URL
   useEffect(() => {
     if (urlError || !actualStoreId) {
       console.log('🔍 Invalid profile URL, redirecting to home...');
@@ -145,26 +152,20 @@ export default function ShopProfilePage() {
     }
   }, [urlError, actualStoreId, router]);
 
-  // Fetch orders count using the working endpoint
   const fetchOrdersCount = async (storeId, headers) => {
     const endpoint = `${API_BASE_URL}/user/orders/count/?store_id=${storeId}`;
-
     try {
       console.log('📊 Fetching orders count from:', endpoint);
       const response = await fetch(endpoint, { headers });
-
       if (response.ok) {
         const data = await response.json();
         console.log('✅ Orders count response:', data);
-
-        // Extract count from response
         let count = 0;
         if (typeof data === 'object' && data !== null) {
           count = data.count || data.orders_count || data.total || 0;
         } else if (typeof data === 'number') {
           count = data;
         }
-
         console.log('📊 Final orders count:', count);
         return count;
       } else {
@@ -177,19 +178,14 @@ export default function ShopProfilePage() {
     }
   };
 
-  // Fetch wishlist count
   const fetchWishlistCount = async (storeId, headers) => {
     const endpoint = `${API_BASE_URL}/api/wishlist/?store_id=${storeId}`;
-
     try {
       console.log('❤️ Fetching wishlist count from:', endpoint);
       const response = await fetch(endpoint, { headers });
-
       if (response.ok) {
         const data = await response.json();
         console.log('✅ Wishlist response:', data);
-
-        // Extract count from response
         let count = 0;
         if (Array.isArray(data)) {
           count = data.length;
@@ -200,7 +196,6 @@ export default function ShopProfilePage() {
             data.total_items ||
             data.total || 0;
         }
-
         console.log('❤️ Final wishlist count:', count);
         return count;
       } else {
@@ -213,7 +208,6 @@ export default function ShopProfilePage() {
     }
   };
 
-  // ✅ FIXED: Main data fetching function with proper auth check
   const fetchData = async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -221,8 +215,8 @@ export default function ShopProfilePage() {
       setLoading(true);
     }
 
-    const headers = await checkAuthWithValidation(); // ✅ Use async validation
-    if (!headers) return; // Will redirect to login if no valid token
+    const headers = await checkAuthWithValidation();
+    if (!headers) return;
 
     if (!actualStoreId) {
       console.error('❌ No valid store ID found');
@@ -234,24 +228,20 @@ export default function ShopProfilePage() {
     try {
       console.log('📡 Fetching profile data for store ID:', actualStoreId);
 
-      // Fetch profile and store data in parallel
       const [profileRes, storeRes] = await Promise.allSettled([
         fetch(`${API_BASE_URL}/api/buyer/profile/`, { headers }),
         fetch(`${API_BASE_URL}/shop/${actualStoreId}/`)
       ]);
 
-      // Handle profile response
       if (profileRes.status === 'fulfilled' && profileRes.value.ok) {
         const profileData = await profileRes.value.json();
         setBuyer(profileData);
-        setIsLoggedIn(true); // ✅ UPDATE: Update login state when buyer is loaded
+        setIsLoggedIn(true);
         console.log('✅ Profile data loaded');
       } else {
         console.warn('⚠️ Profile API failed');
-        // Don't redirect here, token was already validated
       }
 
-      // Handle store response
       if (storeRes.status === 'fulfilled' && storeRes.value.ok) {
         const storeResData = await storeRes.value.json();
         setStoreData(storeResData.store || storeResData);
@@ -265,7 +255,6 @@ export default function ShopProfilePage() {
         });
       }
 
-      // Fetch counts
       console.log('📊 Fetching counts for store:', actualStoreId);
 
       const [ordersCountResult, wishlistCountResult] = await Promise.allSettled([
@@ -273,7 +262,6 @@ export default function ShopProfilePage() {
         fetchWishlistCount(actualStoreId, headers)
       ]);
 
-      // Set orders count
       if (ordersCountResult.status === 'fulfilled') {
         setOrdersCount(ordersCountResult.value);
         console.log('✅ Orders count set to:', ordersCountResult.value);
@@ -282,7 +270,6 @@ export default function ShopProfilePage() {
         console.warn('⚠️ Orders count failed');
       }
 
-      // Set wishlist count
       if (wishlistCountResult.status === 'fulfilled') {
         setWishlistCount(wishlistCountResult.value);
         console.log('✅ Wishlist count set to:', wishlistCountResult.value);
@@ -301,52 +288,40 @@ export default function ShopProfilePage() {
     }
   };
 
-  // ✅ FIXED: Load data only after auth is checked
   useEffect(() => {
     if (actualStoreId && !urlError && !authChecked) {
       fetchData();
     }
   }, [actualStoreId, authChecked]);
 
-  // Handle logout
   const handleLogout = () => {
     if (window.confirm(`Logout from ${storeData?.name || 'this store'}?\n\nYou'll need to login again to access your account.`)) {
       console.log('🔐 Logging out from store:', actualStoreId);
-
       localStorage.removeItem('access_token');
       localStorage.removeItem('buyerAccessToken');
       localStorage.removeItem('refresh_token');
       sessionStorage.clear();
-
-      setIsLoggedIn(false); // ✅ UPDATE: Update login state
-
+      setIsLoggedIn(false);
       const loginUrl = getShopUrl('/login');
       router.push(loginUrl);
     }
   };
 
-  // Handle back navigation
   const handleBackClick = () => {
     const backUrl = getShopUrl('');
     console.log('🔙 Back to shop:', backUrl);
     router.push(backUrl);
   };
 
-  // Handle refresh
   const handleRefresh = () => {
     console.log('🔄 Refreshing profile data...');
     fetchData(true);
   };
 
-  // ✅ FIXED: Loading state - show loading until auth is checked
   if (loading || urlError || !authChecked) {
     return (
       <div style={styles.pageContainer}>
-        {/* ✅ ADD: SHeader during loading */}
-        <SHeader
-          store={storeData}
-          isLoggedIn={isLoggedIn}
-        />
+        <SHeader store={storeData} isLoggedIn={isLoggedIn} />
         <div style={styles.loadingContainer}>
           {urlError ? (
             <>
@@ -369,15 +344,10 @@ export default function ShopProfilePage() {
     );
   }
 
-  // Error state
   if (!actualStoreId) {
     return (
       <div style={styles.pageContainer}>
-        {/* ✅ ADD: SHeader for error state */}
-        <SHeader
-          store={null}
-          isLoggedIn={isLoggedIn}
-        />
+        <SHeader store={null} isLoggedIn={isLoggedIn} />
         <div style={styles.errorContainer}>
           <Store size={48} color="#ef4444" />
           <h2>Store Not Found</h2>
@@ -390,15 +360,10 @@ export default function ShopProfilePage() {
     );
   }
 
-  // Login required state (shouldn't reach here now with proper validation)
   if (!buyer) {
     return (
       <div style={styles.pageContainer}>
-        {/* ✅ ADD: SHeader for login required state */}
-        <SHeader
-          store={storeData}
-          isLoggedIn={false}
-        />
+        <SHeader store={storeData} isLoggedIn={false} />
         <div style={styles.errorContainer}>
           <User size={48} color="#3b82f6" />
           <h2>Please Login</h2>
@@ -411,31 +376,11 @@ export default function ShopProfilePage() {
     );
   }
 
-  // Main profile page
   return (
     <div className='profilepagecontainer' style={styles.pageContainer}>
-      {/* ✅ ADD: SHeader - Navigation Bar */}
-      <SHeader
-        store={storeData}
-        isLoggedIn={isLoggedIn}
-      />
+      <SHeader store={storeData} isLoggedIn={isLoggedIn} />
 
       <div style={styles.container}>
-
-
-        {/* Store Indicator */}
-        {/* <div style={styles.storeIndicator}>
-          <Store size={20} />
-          <div>
-            <div style={styles.storeTitle}>
-              Shopping at {storeData?.name || `Store ${actualStoreId}`}
-            </div>
-            <div style={styles.storeSubtitle}>
-              Your account data is store-specific • Store ID: {actualStoreId}
-            </div>
-          </div>
-        </div> */}
-
         {/* Profile Card */}
         <div style={styles.profileCard}>
           <div className='buyerprofileavatar' style={styles.avatar}>
@@ -459,7 +404,7 @@ export default function ShopProfilePage() {
               <RefreshCw size={16} className={refreshing ? 'spinning' : ''} />
             </button>
             <button onClick={handleLogout} className='buyerprofilelogoutbtn' style={styles.logoutButton} title="Logout">
-              <LogOut  className='buyerprofilelogouticon' />
+              <LogOut className='buyerprofilelogouticon' />
             </button>
           </div>
         </div>
@@ -469,7 +414,7 @@ export default function ShopProfilePage() {
           <div style={styles.statCard}>
             <Package size={24} color="#1a4845" />
             <div>
-              <div className='buyerprofilestatnum'style={styles.statNumber}>{ordersCount}</div>
+              <div className='buyerprofilestatnum' style={styles.statNumber}>{ordersCount}</div>
               <div className='buyerprofilestatlabel' style={styles.statLabel}>Orders from Store</div>
             </div>
           </div>
@@ -485,10 +430,29 @@ export default function ShopProfilePage() {
         {/* Menu */}
         <div style={styles.menuSection}>
           <Link href={getShopUrl('/profile/edit')} style={styles.menuItem}>
-            <Edit3 size={24} color="#3b82f6 " />
+            <Edit3 size={24} color="#3b82f6" />
             <div>
               <div className='buyerprofilemenulabel' style={styles.menuLabel}>Edit Profile</div>
               <div className='buyerprofilemenudesc' style={styles.menuDesc}>Update your information</div>
+            </div>
+            <div style={styles.menuArrow}>→</div>
+          </Link>
+
+          {/* ✅ ADD: Phone Verification Menu Item */}
+          <Link href={getPhoneVerificationUrl()} style={styles.menuItem}>
+            <Phone
+              size={24}
+              color={buyer.phone_verified ? '#10b981' : '#f59e0b'}
+            />
+            <div>
+              <div className='buyerprofilemenulabel' style={styles.menuLabel}>
+                {buyer.phone_verified ? 'Phone Verified' : 'Verify Phone Number'}
+              </div>
+              <div className='buyerprofilemenudesc' style={styles.menuDesc}>
+                {buyer.phone_verified
+                  ? `+91 ${buyer.phone_number || 'Not available'}`
+                  : 'Secure your account with SMS OTP verification'}
+              </div>
             </div>
             <div style={styles.menuArrow}>→</div>
           </Link>
@@ -515,45 +479,26 @@ export default function ShopProfilePage() {
             <div style={styles.menuArrow}>→</div>
           </Link>
         </div>
-
-        {/* Enhanced Debug Info */}
-        {/* <div style={{
-          backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '8px',
-          marginTop: '20px', fontSize: '12px', color: '#666', fontFamily: 'monospace'
-        }}>
-          <div style={{fontWeight: 'bold', marginBottom: '8px', color: '#333'}}>🔍 Debug Information:</div>
-          <div><strong>Store ID:</strong> {actualStoreId}</div>
-          <div><strong>Auth Checked:</strong> {authChecked ? '✅ Yes' : '⏳ Checking...'}</div>
-          <div><strong>Is Logged In:</strong> {isLoggedIn ? '✅ Yes' : '❌ No'}</div>
-          <div><strong>Orders Count:</strong> {ordersCount} (Endpoint: /user/orders/count/)</div>
-          <div><strong>Wishlist Count:</strong> {wishlistCount} (Endpoint: /api/wishlist/)</div>
-          <div><strong>User:</strong> {buyer?.full_name || buyer?.email || 'N/A'}</div>
-          <div><strong>Store Name:</strong> {storeData?.name || 'Loading...'}</div>
-          <div><strong>URL Pattern:</strong> {searchParams.get('id') ? 'new+id' : 'direct'}</div>
-          <div><strong>Refreshing:</strong> {refreshing ? 'Yes' : 'No'}</div>
-        </div> */}
       </div>
     </div>
   );
 }
 
-// ✅ UPDATED: Styles with proper spacing for SHeader
 const styles = {
   pageContainer: {
-    minHeight: 'calc(100vh - 130px)',  // fills remaining space below header
+    minHeight: 'calc(100vh - 130px)',
     backgroundColor: '#FDFFF0',
     paddingTop: '130px',
-    paddingBottom: '35px',              // ensures breathing room
+    paddingBottom: '35px',
     overflowX: 'hidden',
     width: '100%',
     boxSizing: 'border-box'
   },
-
   container: {
     padding: '20px',
     maxWidth: '800px',
     margin: '0 auto',
-    width: '100%',            // ✅ Ensure child fits parent width
+    width: '100%',
     boxSizing: 'border-box'
   },
   loadingContainer: {
@@ -578,25 +523,11 @@ const styles = {
     padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white',
     textDecoration: 'none', borderRadius: '8px', fontWeight: '600'
   },
-  header: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    marginBottom: '20px', backgroundColor: 'white', borderRadius: '12px',
-    padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-  },
-  backButton: {
-    background: 'none', border: 'none', cursor: 'pointer',
-    color: '#3b82f6', padding: '8px', borderRadius: '6px',
-    transition: 'all 0.2s'
-  },
-  title: {
-    fontSize: '20px', fontWeight: '700', color: '#1f2937',
-    flex: 1, textAlign: 'center', margin: '0 16px'
-  },
   headerActions: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    flexWrap: 'wrap', // ✅ allows wrapping when needed
+    flexWrap: 'wrap',
   },
   refreshButton: {
     background: 'none', border: '1px solid #d1d5db', borderRadius: '6px',
@@ -610,13 +541,6 @@ const styles = {
     display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px',
     transition: 'all 0.2s'
   },
-  storeIndicator: {
-    display: 'flex', alignItems: 'center', gap: '12px',
-    backgroundColor: '#ecfdf5', border: '2px solid #10b981',
-    borderRadius: '12px', padding: '16px', marginBottom: '20px'
-  },
-  storeTitle: { fontSize: '16px', fontWeight: '700', color: '#047857' },
-  storeSubtitle: { fontSize: '13px', color: '#059669', marginTop: '2px' },
   profileCard: {
     display: 'flex', alignItems: 'center', gap: '16px',
     backgroundColor: '#FDFFF0', borderRadius: '12px',
@@ -659,7 +583,7 @@ const styles = {
     position: 'relative',
     boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
     transition: 'all 0.2s',
-    width: '100%',             // ✅ Prevent flex items from expanding horizontally
+    width: '100%',
     boxSizing: 'border-box'
   },
   menuLabel: { fontSize: '16px', fontWeight: '600', color: '#1f2937' },
