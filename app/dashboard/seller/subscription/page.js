@@ -15,9 +15,9 @@ import {
     RefreshCw,
     Crown,
     Zap,
-    Shield
+    Shield,
+    Clock // ✅ ADD: Clock icon for Coming Soon
 } from 'lucide-react';
-
 
 // ✅ Enhanced API URLs with subscription lifecycle support
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.4:8000';
@@ -576,6 +576,17 @@ export default function SubscriptionPage() {
                 </button>
             </div>
 
+            {/* ✅ ADD: Coming Soon Notice for Yearly */}
+            {billingCycle === 'yearly' && (
+                <div style={styles.comingSoonNotice}>
+                    <Clock size={18} />
+                    <div>
+                        <strong>Yearly Plans Coming Soon!</strong>
+                        <p style={{margin: '4px 0 0 0'}}>We're preparing annual subscriptions with exclusive discounts. Switch to monthly to subscribe now.</p>
+                    </div>
+                </div>
+            )}
+
             {/* ✅ ENHANCED: Current Plan Card with Store Status */}
             <CurrentPlanCard
                 subscription={currentSubscription}
@@ -586,37 +597,47 @@ export default function SubscriptionPage() {
             />
 
             {/* Plans Grid */}
-            <div className='plan-grid ' style={styles.planGrid}>
+            <div className='plan-grid' style={styles.planGrid}>
                 {plans.map((plan, index) => {
                     const basePrice = parseFloat(plan.price) || 0;
                     const yearlyPrice = parseFloat(plan.yearly_price || '') || (basePrice * 12 * 0.90);
                     const displayPrice = billingCycle === 'yearly' ? yearlyPrice : basePrice;
 
                     const isCurrentPlan = currentSubscription?.plan?.id === plan.id && currentSubscription?.is_active;
-
                     const isPopular = plan.name.toLowerCase().includes('pro') ||
                         plan.name.toLowerCase().includes('professional') ||
                         index === Math.floor(plans.length / 2);
+                    
+                    // ✅ ADD: Check if coming soon
+                    const isComingSoon = billingCycle === 'yearly';
 
                     return (
-                        <div className="plan-card-wrapper">
-
-                            {isPopular && (
+                        <div className="plan-card-wrapper" key={plan.id}>
+                            {/* ✅ UPDATED: Show "Most Popular" only if not coming soon */}
+                            {isPopular && !isComingSoon && (
                                 <div className='popularBadge' style={styles.popularBadge}>
                                     <Star size={16} />
                                     Most Popular
                                 </div>
                             )}
+
+                            {/* ✅ ADD: Coming Soon Badge */}
+                            {isComingSoon && (
+                                <div className='comingSoonBadge' style={styles.comingSoonBadge}>
+                                    <Clock size={16} />
+                                    Coming Soon
+                                </div>
+                            )}
+
                             <div className="glossy-layer"></div>
                             <div
                                 className='dashboardsubscriptionplancard'
-                                key={plan.id} style={{
+                                style={{
                                     ...styles.card,
                                     ...(isCurrentPlan ? styles.currentPlanHighlight : {}),
-                                    ...(isPopular ? styles.popularCard : {})
+                                    ...(isPopular && !isComingSoon ? styles.popularCard : {}),
+                                    ...(isComingSoon ? styles.comingSoonCard : {}) // ✅ ADD: Dim coming soon cards
                                 }}>
-
-
 
                                 <div className='dashboardsubscribeplanheader' style={styles.planHeader}>
                                     <h2 style={styles.planName}>{plan.name}</h2>
@@ -656,7 +677,7 @@ export default function SubscriptionPage() {
                                         </li>
                                         <li style={styles.featureItem}>
                                             <CheckCircle size={16} style={styles.checkIcon} />
-                                            <span>Unlimited stock Products </span>
+                                            <span>Unlimited stock Products</span>
                                         </li>
                                         <li style={styles.featureItem}>
                                             <CheckCircle size={16} style={styles.checkIcon} />
@@ -679,19 +700,25 @@ export default function SubscriptionPage() {
                                     </ul>
                                 </div>
 
+                                {/* ✅ UPDATED: Button logic for coming soon */}
                                 <button
-                                className='dashboardsubscribechooseplanbtn'
+                                    className='dashboardsubscribechooseplanbtn'
                                     style={{
                                         ...styles.button,
                                         ...(isCurrentPlan ? styles.currentPlanButton : {}),
                                         ...(isProcessing === plan.id ? styles.processingButton : {}),
-                                        ...(isPopular && !isCurrentPlan ? styles.popularButton : {}),
-                                        ...(!razorpayLoaded ? styles.disabledButton : {})
+                                        ...(isPopular && !isCurrentPlan && !isComingSoon ? styles.popularButton : {}),
+                                        ...(!razorpayLoaded || isComingSoon ? styles.disabledButton : {})
                                     }}
                                     onClick={() => handleChoosePlan(plan.id, plan.name)}
-                                    disabled={isProcessing === plan.id || isCurrentPlan || !razorpayLoaded}
+                                    disabled={isProcessing === plan.id || isCurrentPlan || !razorpayLoaded || isComingSoon}
                                 >
-                                    {isProcessing === plan.id ? (
+                                    {isComingSoon ? (
+                                        <div style={styles.buttonContent}>
+                                            <Clock size={16} />
+                                            Coming Soon
+                                        </div>
+                                    ) : isProcessing === plan.id ? (
                                         <div style={styles.buttonContent}>
                                             <div style={styles.buttonSpinner}></div>
                                             Processing...
@@ -731,11 +758,11 @@ export default function SubscriptionPage() {
                     50% { opacity: 0.7; }
                 }
             `}</style>
-        </div >
+        </div>
     );
 }
 
-// ✅ ENHANCED STYLES with Store Status Support
+// ✅ ENHANCED STYLES with Coming Soon Support
 const styles = {
     container: {
         padding: '24px',
@@ -845,7 +872,7 @@ const styles = {
         borderRadius: '12px',
         width: 'fit-content',
         margin: '0 auto 32px auto',
-        border: '1px solid  rgb(59, 130, 246)'
+        border: '1px solid rgb(59, 130, 246)'
     },
 
     toggleButton: {
@@ -887,6 +914,21 @@ const styles = {
         fontWeight: '600'
     },
 
+    // ✅ ADD: Coming Soon Notice
+    comingSoonNotice: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '16px 20px',
+        backgroundColor: '#fef3c7',
+        border: '2px solid #f59e0b',
+        borderRadius: '12px',
+        color: '#92400e',
+        marginBottom: '32px',
+        maxWidth: '800px',
+        margin: '0 auto 32px auto'
+    },
+
     // Cards
     card: {
         width: '100%',
@@ -903,10 +945,8 @@ const styles = {
         textAlign: 'center',
         margin: '0 auto',
         boxSizing: 'border-box',
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", // ⭐ put this back
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     },
-
-
 
     card1: {
         border: '1px solid #e5e7eb',
@@ -918,7 +958,6 @@ const styles = {
         transition: 'all 0.3s ease',
         boxSizing: 'border-box',
     },
-
 
     // Current Plan Card Styles
     loadingCard: {
@@ -1155,7 +1194,6 @@ const styles = {
         gap: '24px',
     },
 
-
     currentPlanHighlight: {
         border: '2px solid #3b82f6',
         transform: 'scale(1.02)',
@@ -1183,9 +1221,33 @@ const styles = {
         alignItems: 'center',
         gap: '6px',
         boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)',
-        zIndex: 5  // ⭐ add this
+        zIndex: 5
     },
 
+    // ✅ ADD: Coming Soon Badge and Card Style
+    comingSoonBadge: {
+        position: 'absolute',
+        top: '-23px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        backgroundColor: '#f59e0b',
+        color: 'white',
+        padding: '8px 16px',
+        borderRadius: '20px',
+        fontSize: '12px',
+        fontWeight: '600',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
+        zIndex: 5
+    },
+
+    comingSoonCard: {
+        opacity: 0.7,
+        border: '2px dashed #d1d5db',
+        position: 'relative'
+    },
 
     planHeader: {
         textAlign: 'center',
