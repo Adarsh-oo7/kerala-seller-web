@@ -17,7 +17,9 @@ const getBaseUrl = () => {
   }
   
   // 3. Production default - using your current backend
-  return 'https://keralaseller-backend.onrender.com';
+// 3. Production default - using your LIVE production API
+console.log('📦 Production mode: Using api.keralasellers.in');
+return 'https://api.keralasellers.in';
 };
 
 // ✅ Enhanced axios instance with better configuration

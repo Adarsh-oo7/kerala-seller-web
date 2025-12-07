@@ -27,14 +27,36 @@ const bannerImages = [
 
 // ✅ Enhanced API base URL handling with environment variables
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
+  // ✅ First check explicit env var
+  if (process.env.NEXT_PUBLIC_API_BASE_URL && 
+      process.env.NEXT_PUBLIC_API_BASE_URL.trim() !== '' && 
+      process.env.NEXT_PUBLIC_API_BASE_URL !== 'undefined') {
+    console.log('✅ Using NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+    return process.env.NEXT_PUBLIC_API_BASE_URL.trim();
   }
+  
+  // ✅ Second check fallback env var
+  if (process.env.NEXT_PUBLIC_API_URL && 
+      process.env.NEXT_PUBLIC_API_URL.trim() !== '' && 
+      process.env.NEXT_PUBLIC_API_URL !== 'undefined') {
+    console.log('✅ Using NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+    // Remove /api/ suffix if present to get base URL
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/$/, '');
+  }
+  
+  // ✅ Environment-based fallback
+  if (process.env.NODE_ENV === 'production') {
+    console.log('📦 Production: Using api.keralasellers.in');
+    return 'https://api.keralasellers.in';
+  }
+  
   if (process.env.NODE_ENV === 'development') {
+    console.log('💻 Development: Using localhost:8000');
     return 'http://localhost:8000';
   }
-  return 'https://keralaseller-backend.onrender.com';
+  
+  console.log('🔍 Fallback: Using api.keralasellers.in');
+  return 'https://api.keralasellers.in';
 };
 
 const API_BASE_URL = getApiBaseUrl();

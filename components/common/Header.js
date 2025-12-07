@@ -1,10 +1,9 @@
 "use client"
-
 import { useState, useEffect } from "react";
 import Link from 'next/link';
 import { useCart } from '../../app/context/CartContext';
 import { ShoppingCart, User, Menu, X as CloseIcon, ChevronRight } from 'lucide-react';
-import BottomNav from "/components/common/BottomNav";
+import BottomNav from "./BottomNav";
 
 // ==============================================================================
 // SUB-COMPONENTS (for better organization)  
