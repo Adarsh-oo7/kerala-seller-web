@@ -33,11 +33,12 @@ const getApiBaseUrl = () => {
     return envUrl;
   }
 
-  // Updated fallback with your hosted backend URL
+  // Updated fallback with your LIVE VPS backend
   return process.env.NODE_ENV === 'development'
     ? 'http://localhost:8000'
-    : 'https://keralaseller-backend.onrender.com';  // ✅ Your hosted backend
+    : 'https://api.keralasellers.in';  // ✅ LIVE PRODUCTION API
 };
+
 
 const API_BASE_URL = getApiBaseUrl();
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
