@@ -60,7 +60,7 @@ const getApiBaseUrl = () => {
 };
 
 const API_BASE_URL = getApiBaseUrl();
-const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
+const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;

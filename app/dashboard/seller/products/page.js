@@ -30,7 +30,7 @@ import {
 
 // ✅ Add the subscription API URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const API_URL = `${API_BASE_URL}/user/store/products/`;
+const API_URL = `${API_BASE_URL}/api/products/`;
 const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`; // ✅ Add this
 
 export default function ProductsPage() {

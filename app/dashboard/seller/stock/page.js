@@ -22,7 +22,7 @@ import {
 
 // ✅ Using environment variables for API URLs
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const API_URL = `${API_BASE_URL}/user/store/products/`;
+const API_URL = `${API_BASE_URL}/api/products/`;
 
 // Enhanced Confirmation Modal Component
 function ConfirmationModal({ message, onConfirm, onCancel, isLoading }) {

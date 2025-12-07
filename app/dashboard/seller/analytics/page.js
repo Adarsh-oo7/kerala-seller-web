@@ -28,7 +28,7 @@ import {
 // ✅ Using environment variables for API URLs
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
-const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
+const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState({
