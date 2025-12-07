@@ -50,7 +50,7 @@ const getApiBaseUrl = () => {
     return 'http://localhost:8000';
   }
 
-  return 'https://keralaseller-backend.onrender.com';
+  return 'https://api.keralasellers.in';
 };
 
 // ✅ Helper function to extract phone from slug or query params

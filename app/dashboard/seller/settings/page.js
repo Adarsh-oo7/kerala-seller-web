@@ -8,7 +8,7 @@ import { Upload, Check, AlertCircle, Star, Building, Save, Image as ImageIcon, T
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
   if (envUrl && envUrl !== 'undefined') return envUrl;
-  return process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://keralaseller-backend.onrender.com';
+  return process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://api.keralasellers.in';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -856,3 +856,4 @@ const s = {
   ss: { display: 'flex', justifyContent: 'flex-end', paddingTop: '16px' },
   sb2: { display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 28px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '15px', fontWeight: 600 },
 };
+

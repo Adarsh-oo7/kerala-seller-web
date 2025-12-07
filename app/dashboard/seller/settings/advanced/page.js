@@ -13,7 +13,7 @@ const getApiBaseUrl = () => {
   if (envUrl && envUrl !== 'undefined') return envUrl;
   return process.env.NODE_ENV === 'development'
     ? 'http://localhost:8000'
-    : 'https://keralaseller-backend.onrender.com';
+    : 'https://api.keralasellers.in';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -597,3 +597,4 @@ const styles = {
     fontWeight: 600,
   },
 };
+

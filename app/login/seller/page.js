@@ -34,7 +34,7 @@ const getApiBaseUrl = () => {
   if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:8000';
   }
-  return 'https://keralaseller-backend.onrender.com';
+  return 'https://api.keralasellers.in';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -685,3 +685,4 @@ const styles = {
   buyerText: { fontSize: '0.9rem', color: '#6b7280', margin: '0 0 8px 0' },
   buyerLinkButton: { display: 'inline-block', padding: '8px 16px', backgroundColor: '#059669', color: 'white', textDecoration: 'none', borderRadius: '6px', fontSize: '0.9rem', fontWeight: '500', transition: 'background-color 0.2s' }
 };
+

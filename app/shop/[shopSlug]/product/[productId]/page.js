@@ -46,7 +46,7 @@ const getApiBaseUrl = () => {
     return 'http://localhost:8000';
   }
 
-  return 'https://keralaseller-backend.onrender.com';
+  return 'https://api.keralasellers.in';
 };
 
 // ✅ API URLs
