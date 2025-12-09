@@ -31,7 +31,7 @@ const getApiBaseUrl = () => {
     return envUrl.trim();
   }
   if (process.env.NODE_ENV === 'development') {
-    return ''https://api.keralasellers.in'';
+    return 'https://api.keralasellers.in';
   }
   return 'https://api.keralasellers.in';
 };

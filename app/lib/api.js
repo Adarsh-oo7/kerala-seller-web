@@ -16,7 +16,7 @@ const getBaseUrl = () => {
     const hostname = window.location.hostname;
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '127.0.0.1') {
       console.log('🌐 Local dev: Using localhost:8000');
-      return ''https://api.keralasellers.in'';
+      return 'https://api.keralasellers.in';
     }
     console.log('📦 Production: Using api.keralasellers.in');
     return 'https://api.keralasellers.in';

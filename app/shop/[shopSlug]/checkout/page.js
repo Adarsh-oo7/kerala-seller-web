@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, CreditCard, User, Phone, MapPin, Package, Store, AlertTriangle, CheckCircle, Shield } from 'lucide-react';
 import "../../../../styles/Shopslugcheckout.css";
 import SHeader from '../../../../components/common/SHeader';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'process.env.NEXT_PUBLIC_API_BASE_URL';
+const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY_HERE';
 
 // ✅ ENHANCED: Razorpay script loader with retry mechanism

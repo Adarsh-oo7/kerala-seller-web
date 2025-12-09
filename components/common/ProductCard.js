@@ -7,7 +7,7 @@ import "../../styles/ProductCard.css";
 
 // ✅ Enhanced API base URL function
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
     return envUrl.trim();
   }
@@ -210,7 +210,7 @@ export default function ProductCard({
 
     // ✅ Handle local media URLs
     if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
-      return `${getApiBaseUrl()}${imageUrl}`
+      return `${'https://api.keralasellers.in'}${imageUrl}`
     }
 
     // ✅ Handle full URLs
@@ -220,7 +220,7 @@ export default function ProductCard({
 
     // ✅ Handle relative URLs
     if (imageUrl.startsWith('/')) {
-      return `${getApiBaseUrl()}${imageUrl}`
+      return `${'https://api.keralasellers.in'}${imageUrl}`
     }
 
     return imageUrl || "/placeholder.svg"

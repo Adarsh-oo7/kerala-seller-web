@@ -13,7 +13,7 @@ import { toast } from "react-toastify";
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw, ChevronLeft, Minus, Plus, ChevronRight, Zap, CreditCard } from 'lucide-react';
 
 // ✅ API configuration - matches your existing backend
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'process.env.NEXT_PUBLIC_API_BASE_URL';
+const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
 const API_URL = `${API_BASE_URL}/api/products/`;
 const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;
 

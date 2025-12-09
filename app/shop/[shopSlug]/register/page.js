@@ -25,18 +25,18 @@ import SHeader from '../../../../components/common/SHeader';
 
 // ✅ API Configuration
 const getApiBaseUrl = () => {
-    const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+    const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
     if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
         return envUrl.trim();
     }
     if (process.env.NODE_ENV === 'development') {
-        return 'process.env.NEXT_PUBLIC_API_BASE_URL';
+        return 'https://api.keralasellers.in';
     }
     return 'https://api.keralasellers.in';
 };
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://api.keralasellers.in';
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/register/send-otp/`;
 const REGISTER_API = `${API_BASE_URL}/user/buyer/register/`;
 const GOOGLE_REGISTER_API = `${API_BASE_URL}/user/buyer/register/google/`;

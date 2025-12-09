@@ -32,14 +32,14 @@ const getApiBaseUrl = () => {
   console.log('Shop API Environment check:', {
     NEXT_PUBLIC_API_BASE_URL: 'https://api.keralasellers.in',
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    resolved: envUrl || ''https://api.keralasellers.in''
+    resolved: envUrl || 'https://api.keralasellers.in'
   });
 
   if (envUrl && envUrl !== 'undefined') {
     return envUrl;
   }
 
-  return ''https://api.keralasellers.in'';
+  return 'https://api.keralasellers.in';
 };
 
 const API_BASE_URL = 'https://api.keralasellers.in';

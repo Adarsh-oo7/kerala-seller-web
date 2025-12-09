@@ -12,7 +12,7 @@ import {
   ShoppingCart, Bell, BellRing, X,
 } from 'lucide-react';
 
-const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || ''https://api.keralasellers.in'';
+const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
 const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/`;
 

@@ -1,7 +1,7 @@
 // lib/api/payments.js - Payment API Integration (JavaScript)
 import axios from 'axios';
 
-const API_BASE_URL = 'https://api.keralasellers.in' || ''https://api.keralasellers.in'';
+const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
 
 export const paymentAPI = {
   // Bank Account Management

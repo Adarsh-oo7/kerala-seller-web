@@ -17,7 +17,7 @@ import {
 
 // ✅ Helper function to get API base URL
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
     return envUrl.trim();
@@ -30,7 +30,7 @@ const getApiBaseUrl = () => {
   return 'https://keralaseller-backend.onrender.com';
 };
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://api.keralasellers.in';
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 

@@ -6,7 +6,7 @@ import { ArrowLeft, ShoppingCart, Plus, Minus, Trash2, CreditCard, Store, AlertT
 import "../../../../styles/Shopslugcart.css";
 import SHeader from '../../../../components/common/SHeader';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'process.env.NEXT_PUBLIC_API_BASE_URL';
+const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
 
 export default function ShopCartPage() {
   const { shopSlug } = useParams();

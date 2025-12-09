@@ -6,7 +6,7 @@ import { Package2, Edit, Cloud, Box, Globe, Folder, File, ArrowLeft, CheckCircle
 
 // ✅ Enhanced environment variable handling for your hosted backend
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 
   if (envUrl && envUrl !== 'undefined') {
     return envUrl;
@@ -17,7 +17,7 @@ const getApiBaseUrl = () => {
     : 'https://keralaseller-backend.onrender.com';
 };
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://api.keralasellers.in';
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 

@@ -26,52 +26,26 @@ const bannerImages = [
 ];
 
 // ✅ Enhanced API base URL handling with environment variables
-const getApiBaseUrl = () => {
-  // ✅ First check explicit env var
-  if ('https://api.keralasellers.in' && 
-      'https://api.keralasellers.in'.trim() !== '' && 
-      'https://api.keralasellers.in' !== 'undefined') {
-    console.log('✅ Using NEXT_PUBLIC_API_BASE_URL:', 'https://api.keralasellers.in');
-    return 'https://api.keralasellers.in'.trim();
-  }
+// ✅ BULLETPROOF - Works everywhere
+
+
   
   // ✅ Second check fallback env var
-  if (process.env.NEXT_PUBLIC_API_URL && 
-      process.env.NEXT_PUBLIC_API_URL.trim() !== '' && 
-      process.env.NEXT_PUBLIC_API_URL !== 'undefined') {
-    console.log('✅ Using NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
-    // Remove /api/ suffix if present to get base URL
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/$/, '');
-  }
-  
-  // ✅ Environment-based fallback
-  if (process.env.NODE_ENV === 'production') {
-    console.log('📦 Production: Using api.keralasellers.in');
-    return 'https://api.keralasellers.in';
-  }
-  
-  if (process.env.NODE_ENV === 'development') {
-    console.log('💻 Development: Using 'https://api.keralasellers.in'');
-    return ''https://api.keralasellers.in'';
-  }
-  
-  console.log('🔍 Fallback: Using api.keralasellers.in');
-  return 'https://api.keralasellers.in';
-};
-
+// ✅ HARDCODED - NO FUNCTIONS, NO ERRORS
 const API_BASE_URL = 'https://api.keralasellers.in';
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 
-console.log('API URLs configured:', {
+console.log('✅ API URLs configured:', {
   API_BASE_URL,
   PRODUCTS_API_URL,
   CATEGORIES_API_URL,
   WISHLIST_TOGGLE_API,
   WISHLIST_CHECK_API
 });
+
 
 // ✅ Enhanced token handling function
 const getAuthHeaders = () => {

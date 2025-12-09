@@ -36,21 +36,21 @@ import {
 
 // ✅ Helper function to get API base URL
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
     return envUrl.trim();
   }
 
   if (process.env.NODE_ENV === 'development') {
-    return 'process.env.NEXT_PUBLIC_API_BASE_URL';
+    return 'https://api.keralasellers.in';
   }
 
   return 'https://api.keralasellers.in';
 };
 
 // ✅ API URLs
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://api.keralasellers.in';
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
@@ -1055,7 +1055,7 @@ function RelatedProductCard({ product, shopSlug, sellerPhone }) {
   const getImageUrl = (url) => {
     if (!url) return 'https://placehold.co/200x200/e9ecef/6c757d?text=No+Image';
     if (url.startsWith('/media/')) {
-      return `${getApiBaseUrl()}${url}`;
+      return `${'https://api.keralasellers.in'}${url}`;
     }
     return url;
   };
@@ -1243,8 +1243,8 @@ function ShopProductPageContent() {
 
       // Fetch both product and store data
       const [productRes, storeRes] = await Promise.all([
-        axios.get(`${getApiBaseUrl()}/api/products/${productId}/`, { timeout: 15000 }),
-        axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/`, { timeout: 15000 })
+        axios.get(`${'https://api.keralasellers.in'}/api/products/${productId}/`, { timeout: 15000 }),
+        axios.get(`${'https://api.keralasellers.in'}/shop/${sellerPhone}/`, { timeout: 15000 })
       ]);
 
       console.log('✅ Product data received:', productRes.data);

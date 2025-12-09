@@ -22,17 +22,17 @@ import {
 } from 'lucide-react';
 
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const envUrl = 'https://api.keralasellers.in';
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
     return envUrl.trim();
   }
   if (process.env.NODE_ENV === 'development') {
-    return 'process.env.NEXT_PUBLIC_API_BASE_URL';
+    return 'https://api.keralasellers.in';
   }
   return 'https://api.keralasellers.in';
 };
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://api.keralasellers.in';
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/send-otp/`;
 const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;

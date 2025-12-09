@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 
 // ✅ Add the subscription API URL
-const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || ''https://api.keralasellers.in'';
+const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
 const API_URL = `${API_BASE_URL}/api/products/`;
 const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`; // ✅ Add this
 

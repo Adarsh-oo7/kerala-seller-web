@@ -10,7 +10,7 @@ import { toast } from "react-toastify";
 
 import { ArrowLeft, CreditCard, User, AlertTriangle, Package, CheckCircle } from 'lucide-react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'process.env.NEXT_PUBLIC_API_BASE_URL';
+const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
 
 // ✅ FIXED: Razorpay script loader
 const loadRazorpayScript = () => {

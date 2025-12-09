@@ -21,10 +21,10 @@ import axios from "axios";
 
 // ✅ Updated environment variable handling with your hosted backend
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 
   console.log('Environment check:', {
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    NEXT_PUBLIC_API_BASE_URL: 'https://api.keralasellers.in',
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NODE_ENV: process.env.NODE_ENV
   });
@@ -40,7 +40,7 @@ const getApiBaseUrl = () => {
 };
 
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://api.keralasellers.in';
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 

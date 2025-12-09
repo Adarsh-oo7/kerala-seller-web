@@ -16,7 +16,7 @@ export default function EnvDebug() {
     }}>
       <div><strong>Environment Debug:</strong></div>
       <div>NODE_ENV: {process.env.NODE_ENV}</div>
-      <div>API_BASE_URL: {process.env.NEXT_PUBLIC_API_BASE_URL || 'UNDEFINED'}</div>
+      <div>API_BASE_URL: {'https://api.keralasellers.in' || 'UNDEFINED'}</div>
       <div>API_URL: {process.env.NEXT_PUBLIC_API_URL || 'UNDEFINED'}</div>
       <div>Razorpay: {process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'UNDEFINED'}</div>
     </div>

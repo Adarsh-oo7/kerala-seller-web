@@ -47,17 +47,17 @@ import { toast } from "react-toastify";
 
 // ✅ Helper function to get API base URL
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
     return envUrl.trim();
   }
   if (process.env.NODE_ENV === 'development') {
-    return 'process.env.NEXT_PUBLIC_API_BASE_URL';
+    return 'https://api.keralasellers.in';
   }
   return 'https://api.keralasellers.in';
 };
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://api.keralasellers.in';
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 
@@ -211,7 +211,7 @@ function EnhancedStoreBanner({ store, shopSlug }) {
   const getBannerImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('/media/')) {
-      return `${getApiBaseUrl()}${url}`;
+      return `${'https://api.keralasellers.in'}${url}`;
     }
     return url;
   };
@@ -711,7 +711,7 @@ function EnhancedSellerStorefrontPage() {
         setIsLoading(true);
         setError(null);
         abortControllerRef.current = new AbortController();
-        const response = await axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/`, {
+        const response = await axios.get(`${'https://api.keralasellers.in'}/shop/${sellerPhone}/`, {
           signal: abortControllerRef.current.signal,
           timeout: 15000,
         });

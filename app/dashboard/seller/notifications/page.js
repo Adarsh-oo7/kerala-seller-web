@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
-const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || ''https://api.keralasellers.in'';
+const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
 const NOTIFICATIONS_API = `${API_BASE_URL}/api/notifications/`;
 
 export default function NotificationsPage() {

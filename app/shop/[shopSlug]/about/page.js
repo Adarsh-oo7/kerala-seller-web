@@ -40,14 +40,14 @@ import SHeader from '../../../../components/common/SHeader';
 
 // ✅ Enhanced environment variable handling
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
     return envUrl.trim();
   }
 
   if (process.env.NODE_ENV === 'development') {
-    return 'process.env.NEXT_PUBLIC_API_BASE_URL';
+    return 'https://api.keralasellers.in';
   }
 
   return 'https://api.keralasellers.in';
@@ -253,7 +253,7 @@ function StoreAboutContent() {
       let response;
       try {
         console.log('🔍 Trying main shop endpoint...');
-        response = await axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/`, {
+        response = await axios.get(`${'https://api.keralasellers.in'}/shop/${sellerPhone}/`, {
           timeout: 15000
         });
         console.log('✅ Main shop endpoint successful:', response.data);
@@ -279,7 +279,7 @@ function StoreAboutContent() {
       } catch (mainError) {
         console.log('⚠️ Main shop endpoint failed, trying about endpoint');
         try {
-          response = await axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/about/`, {
+          response = await axios.get(`${'https://api.keralasellers.in'}/shop/${sellerPhone}/about/`, {
             timeout: 15000
           });
           console.log('✅ About endpoint successful:', response.data);
@@ -289,7 +289,7 @@ function StoreAboutContent() {
         } catch (aboutError) {
           console.log('⚠️ About endpoint failed, trying profile endpoint');
           try {
-            response = await axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/profile/`, {
+            response = await axios.get(`${'https://api.keralasellers.in'}/shop/${sellerPhone}/profile/`, {
               timeout: 15000
             });
             console.log('✅ Profile endpoint successful:', response.data);
