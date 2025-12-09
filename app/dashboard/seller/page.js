@@ -27,22 +27,25 @@ const getApiBaseUrl = () => {
     // 1. Check explicit env vars first
     const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
     if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+        console.log('🌐 Env var:', envUrl);
         return envUrl.trim();
     }
     
-    // 2. In browser, detect based on hostname (safer than NODE_ENV)
+    // 2. ✅ FIXED: Smart hostname detection
     if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            return 'process.env.NEXT_PUBLIC_API_BASE_URL';
+            console.log('🌐 Local dev: Using localhost:8000');
+            return 'http://localhost:8000';
         }
-        // Production domains
+        console.log('📦 Production: Using api.keralasellers.in');
         return 'https://api.keralasellers.in';
     }
     
-    // 3. Server-side fallback to production
+    // 3. Server-side fallback
     return 'https://api.keralasellers.in';
 };
+
 
 const API_BASE_URL = getApiBaseUrl();
 const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
