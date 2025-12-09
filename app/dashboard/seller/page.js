@@ -36,7 +36,7 @@ const getApiBaseUrl = () => {
         const hostname = window.location.hostname;
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
             console.log('🌐 Local dev: Using localhost:8000');
-            return 'http://localhost:8000';
+            return 'process.env.NEXT_PUBLIC_API_BASE_URL';
         }
         console.log('📦 Production: Using api.keralasellers.in');
         return 'https://api.keralasellers.in';

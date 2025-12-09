@@ -21,10 +21,28 @@ import {
   LogOut
 } from 'lucide-react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'process.env.NEXT_PUBLIC_API_BASE_URL';
+// ✅ FIXED: Use hostname detection (same as your login page)
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+    return envUrl.trim();
+  }
+  
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8000';
+    }
+    return 'https://api.keralasellers.in';
+  }
+  return 'https://api.keralasellers.in';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
 const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
 const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/count/`;
+
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
