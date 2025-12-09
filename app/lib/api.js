@@ -28,7 +28,7 @@ const getBaseUrl = () => {
 
 // ✅ Pre-configured axios with interceptors
 const api = axios.create({
-  baseURL: getBaseUrl(),
+  baseURL: 'https://api.keralasellers.in',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ api.interceptors.response.use(
 );
 
 // ✅ Export everything
-export const API_BASE_URL = getBaseUrl();
+export const API_BASE_URL = 'https://api.keralasellers.in';
 export default api;
 export const API_ENDPOINTS = {
   // AUTH
@@ -138,6 +138,6 @@ export const apiUtils = {
 
 // ✅ Log config
 if (process.env.NODE_ENV === 'development') {
-  console.log('🌐 API Config:', { baseURL: getBaseUrl() });
+  console.log('🌐 API Config:', { baseURL: 'https://api.keralasellers.in' });
 }
 
