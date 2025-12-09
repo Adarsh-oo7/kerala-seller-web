@@ -13,7 +13,7 @@ const getBaseUrl = () => {
   
   // 2. Environment-based defaults
   if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:8000';
+    return 'process.env.NEXT_PUBLIC_API_BASE_URL';
   }
   
   // 3. Production default - using your current backend

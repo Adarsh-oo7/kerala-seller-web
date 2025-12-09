@@ -6,7 +6,7 @@ import { ArrowLeft, Save, User, Phone, MapPin, AlertTriangle } from 'lucide-reac
 import SHeader from '../../../../../components/common/SHeader';
 import "../../../../../styles/ShopProfileEdit.css";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'process.env.NEXT_PUBLIC_API_BASE_URL';
 
 export default function ShopEditProfilePage() {
   const { shopSlug } = useParams();

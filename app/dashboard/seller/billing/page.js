@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'process.env.NEXT_PUBLIC_API_BASE_URL';
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 const CREATE_BILL_URL = `${API_BASE_URL}/user/orders/create-local-bill/`; // ✅ CHANGED
 const GENERATE_BILL_URL = `${API_BASE_URL}/user/orders/generate-local-bill/`; // ✅ NEW

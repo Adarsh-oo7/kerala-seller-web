@@ -12,7 +12,7 @@ import {
   ShoppingCart, Bell, BellRing, X,
 } from 'lucide-react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'process.env.NEXT_PUBLIC_API_BASE_URL';
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
 const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/`;
 

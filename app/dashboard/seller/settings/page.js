@@ -8,7 +8,7 @@ import { Upload, Check, AlertCircle, Star, Building, Save, Image as ImageIcon, T
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
   if (envUrl && envUrl !== 'undefined') return envUrl;
-  return process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://api.keralasellers.in';
+  return process.env.NODE_ENV === 'development' ? 'process.env.NEXT_PUBLIC_API_BASE_URL' : 'https://api.keralasellers.in';
 };
 
 const API_BASE_URL = getApiBaseUrl();

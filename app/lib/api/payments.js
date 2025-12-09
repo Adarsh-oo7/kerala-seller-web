@@ -1,7 +1,7 @@
 // lib/api/payments.js - Payment API Integration (JavaScript)
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'process.env.NEXT_PUBLIC_API_BASE_URL';
 
 export const paymentAPI = {
   // Bank Account Management

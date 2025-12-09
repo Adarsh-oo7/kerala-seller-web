@@ -51,8 +51,8 @@ const getApiBaseUrl = () => {
   }
   
   if (process.env.NODE_ENV === 'development') {
-    console.log('💻 Development: Using localhost:8000');
-    return 'http://localhost:8000';
+    console.log('💻 Development: Using process.env.NEXT_PUBLIC_API_BASE_URL');
+    return 'process.env.NEXT_PUBLIC_API_BASE_URL';
   }
   
   console.log('🔍 Fallback: Using api.keralasellers.in');

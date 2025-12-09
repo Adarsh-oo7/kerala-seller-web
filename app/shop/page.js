@@ -32,14 +32,14 @@ const getApiBaseUrl = () => {
   console.log('Shop API Environment check:', {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    resolved: envUrl || 'http://localhost:8000'
+    resolved: envUrl || 'process.env.NEXT_PUBLIC_API_BASE_URL'
   });
 
   if (envUrl && envUrl !== 'undefined') {
     return envUrl;
   }
 
-  return 'http://localhost:8000';
+  return 'process.env.NEXT_PUBLIC_API_BASE_URL';
 };
 
 const API_BASE_URL = getApiBaseUrl();

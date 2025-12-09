@@ -21,7 +21,7 @@ import {
   LogOut
 } from 'lucide-react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'process.env.NEXT_PUBLIC_API_BASE_URL';
 const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
 const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
 const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/count/`;

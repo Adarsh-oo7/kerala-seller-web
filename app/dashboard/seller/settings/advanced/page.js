@@ -12,7 +12,7 @@ const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
   if (envUrl && envUrl !== 'undefined') return envUrl;
   return process.env.NODE_ENV === 'development'
-    ? 'http://localhost:8000'
+    ? 'process.env.NEXT_PUBLIC_API_BASE_URL'
     : 'https://api.keralasellers.in';
 };
 
