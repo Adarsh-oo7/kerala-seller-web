@@ -31,11 +31,19 @@ const getApiBaseUrl = () => {
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
     return envUrl.trim();
   }
-  if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:8000';
+  
+  // ✅ FIXED: Use hostname instead of NODE_ENV
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8000';
+    }
+    return 'https://api.keralasellers.in';
   }
+  
   return 'https://api.keralasellers.in';
 };
+
 
 const API_BASE_URL = getApiBaseUrl();
 const LOGIN_API_URL = `${API_BASE_URL}/user/login/`;
