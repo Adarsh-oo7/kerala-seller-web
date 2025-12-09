@@ -9,14 +9,14 @@ import {
 
 // API configuration
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
   if (envUrl && envUrl !== 'undefined') return envUrl;
   return process.env.NODE_ENV === 'development'
-    ? 'process.env.NEXT_PUBLIC_API_BASE_URL'
+    ? ''https://api.keralasellers.in''
     : 'https://api.keralasellers.in';
 };
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://api.keralasellers.in';
 const API_URL = `${API_BASE_URL}/user/store/profile/`;
 
 // Cloudinary Configuration
@@ -597,4 +597,5 @@ const styles = {
     fontWeight: 600,
   },
 };
+
 

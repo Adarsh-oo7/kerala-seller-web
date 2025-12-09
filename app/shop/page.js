@@ -27,22 +27,22 @@ import {
 
 // ✅ Enhanced environment variable handling
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 
   console.log('Shop API Environment check:', {
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    NEXT_PUBLIC_API_BASE_URL: 'https://api.keralasellers.in',
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    resolved: envUrl || 'process.env.NEXT_PUBLIC_API_BASE_URL'
+    resolved: envUrl || ''https://api.keralasellers.in''
   });
 
   if (envUrl && envUrl !== 'undefined') {
     return envUrl;
   }
 
-  return 'process.env.NEXT_PUBLIC_API_BASE_URL';
+  return ''https://api.keralasellers.in'';
 };
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://api.keralasellers.in';
 const API_URL = `${API_BASE_URL}/user/store/shops/`;
 
 console.log('Shop API URL configured:', API_URL);
@@ -508,3 +508,4 @@ export default function ShopPage() {
     </div>
   );
 }
+

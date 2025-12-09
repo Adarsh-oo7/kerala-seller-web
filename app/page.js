@@ -28,11 +28,11 @@ const bannerImages = [
 // ✅ Enhanced API base URL handling with environment variables
 const getApiBaseUrl = () => {
   // ✅ First check explicit env var
-  if (process.env.NEXT_PUBLIC_API_BASE_URL && 
-      process.env.NEXT_PUBLIC_API_BASE_URL.trim() !== '' && 
-      process.env.NEXT_PUBLIC_API_BASE_URL !== 'undefined') {
-    console.log('✅ Using NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
-    return process.env.NEXT_PUBLIC_API_BASE_URL.trim();
+  if ('https://api.keralasellers.in' && 
+      'https://api.keralasellers.in'.trim() !== '' && 
+      'https://api.keralasellers.in' !== 'undefined') {
+    console.log('✅ Using NEXT_PUBLIC_API_BASE_URL:', 'https://api.keralasellers.in');
+    return 'https://api.keralasellers.in'.trim();
   }
   
   // ✅ Second check fallback env var
@@ -51,15 +51,15 @@ const getApiBaseUrl = () => {
   }
   
   if (process.env.NODE_ENV === 'development') {
-    console.log('💻 Development: Using process.env.NEXT_PUBLIC_API_BASE_URL');
-    return 'process.env.NEXT_PUBLIC_API_BASE_URL';
+    console.log('💻 Development: Using 'https://api.keralasellers.in'');
+    return ''https://api.keralasellers.in'';
   }
   
   console.log('🔍 Fallback: Using api.keralasellers.in');
   return 'https://api.keralasellers.in';
 };
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://api.keralasellers.in';
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
@@ -1119,3 +1119,4 @@ const styles = {
     animation: 'spin 0.8s linear infinite'
   }
 };
+

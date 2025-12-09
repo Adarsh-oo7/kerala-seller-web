@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 // ✅ Enhanced API URLs with subscription lifecycle support
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.4:8000';
+const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.4:8000';
 const PLANS_API_URL = `${API_BASE_URL}/api/subscriptions/plans/`;
 const CURRENT_SUB_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
 const CREATE_ORDER_API = `${API_BASE_URL}/api/subscriptions/create-order/`;
@@ -1369,3 +1369,4 @@ const styles = {
         cursor: 'not-allowed'
     }
 };
+

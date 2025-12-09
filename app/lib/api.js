@@ -3,7 +3,7 @@ import axios from 'axios';
 // ✅ PERFECT dynamic base URL - WORKS EVERYWHERE
 const getBaseUrl = () => {
   // 1. Check env vars first
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 
+  const envUrl = 'https://api.keralasellers.in' || 
                  process.env.NEXT_PUBLIC_API_URL ||
                  process.env.REACT_APP_API_BASE_URL;
   
@@ -16,7 +16,7 @@ const getBaseUrl = () => {
     const hostname = window.location.hostname;
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '127.0.0.1') {
       console.log('🌐 Local dev: Using localhost:8000');
-      return 'process.env.NEXT_PUBLIC_API_BASE_URL';
+      return ''https://api.keralasellers.in'';
     }
     console.log('📦 Production: Using api.keralasellers.in');
     return 'https://api.keralasellers.in';
@@ -140,3 +140,4 @@ export const apiUtils = {
 if (process.env.NODE_ENV === 'development') {
   console.log('🌐 API Config:', { baseURL: getBaseUrl() });
 }
+

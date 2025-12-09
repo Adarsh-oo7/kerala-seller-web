@@ -436,3 +436,4 @@ function TrustCard({ icon, title, text, color }) {
   );
 }
 
+

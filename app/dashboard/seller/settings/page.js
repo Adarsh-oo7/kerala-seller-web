@@ -6,12 +6,12 @@ import "../../../../styles/DashboardSettings.css"
 import { Upload, Check, AlertCircle, Star, Building, Save, Image as ImageIcon, Trash2, X, Settings } from 'lucide-react';
 
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
   if (envUrl && envUrl !== 'undefined') return envUrl;
-  return process.env.NODE_ENV === 'development' ? 'process.env.NEXT_PUBLIC_API_BASE_URL' : 'https://api.keralasellers.in';
+  return process.env.NODE_ENV === 'development' ? ''https://api.keralasellers.in'' : 'https://api.keralasellers.in';
 };
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://api.keralasellers.in';
 const API_URL = `${API_BASE_URL}/user/store/profile/`;
 
 const CLOUDINARY_CONFIG = {
@@ -856,4 +856,5 @@ const s = {
   ss: { display: 'flex', justifyContent: 'flex-end', paddingTop: '16px' },
   sb2: { display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 28px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '15px', fontWeight: 600 },
 };
+
 

@@ -27,7 +27,7 @@ import {
 
 // ✅ API configuration
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
     return envUrl.trim();
   }
@@ -36,7 +36,7 @@ const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'process.env.NEXT_PUBLIC_API_BASE_URL';
+      return ''https://api.keralasellers.in'';
     }
     return 'https://api.keralasellers.in';
   }
@@ -45,7 +45,7 @@ const getApiBaseUrl = () => {
 };
 
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://api.keralasellers.in';
 const LOGIN_API_URL = `${API_BASE_URL}/user/login/`;
 
 console.log('🌐 Seller Login API URLs configured:', {
@@ -693,4 +693,5 @@ const styles = {
   buyerText: { fontSize: '0.9rem', color: '#6b7280', margin: '0 0 8px 0' },
   buyerLinkButton: { display: 'inline-block', padding: '8px 16px', backgroundColor: '#059669', color: 'white', textDecoration: 'none', borderRadius: '6px', fontSize: '0.9rem', fontWeight: '500', transition: 'background-color 0.2s' }
 };
+
 

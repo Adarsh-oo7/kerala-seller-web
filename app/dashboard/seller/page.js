@@ -25,7 +25,7 @@ import {
 
 const getApiBaseUrl = () => {
     // 1. Check explicit env vars first
-    const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+    const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
     if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
         console.log('🌐 Env var:', envUrl);
         return envUrl.trim();
@@ -36,7 +36,7 @@ const getApiBaseUrl = () => {
         const hostname = window.location.hostname;
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
             console.log('🌐 Local dev: Using localhost:8000');
-            return 'process.env.NEXT_PUBLIC_API_BASE_URL';
+            return ''https://api.keralasellers.in'';
         }
         console.log('📦 Production: Using api.keralasellers.in');
         return 'https://api.keralasellers.in';
@@ -47,7 +47,7 @@ const getApiBaseUrl = () => {
 };
 
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://api.keralasellers.in';
 const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
 const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
 const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`; // ✅ Added
@@ -1122,4 +1122,5 @@ const styles = {
         boxShadow: '0 4px 12px rgba(42, 108, 72, 0.3)',
     }
 };
+
 

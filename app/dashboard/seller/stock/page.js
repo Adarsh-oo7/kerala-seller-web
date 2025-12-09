@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'process.env.NEXT_PUBLIC_API_BASE_URL';
+const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || ''https://api.keralasellers.in'';
 const API_URL = `${API_BASE_URL}/api/products/`;
 
 // Enhanced Confirmation Modal Component
@@ -1221,3 +1221,4 @@ const styles = {
     fontWeight: 500,
   }),
 };
+
