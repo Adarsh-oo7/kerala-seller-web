@@ -4,6 +4,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
+
 const firebaseConfig = {
   apiKey: "AIzaSyACMVvqqeaUPEp6KoGina_NBoyVWYgoNcg",
   authDomain: "keralasellers.firebaseapp.com",
@@ -14,7 +15,9 @@ const firebaseConfig = {
   measurementId: "G-NQZ0NQEP71"
 };
 
-// Initialize Firebase App (only once)
+
+// Initialize Firebase
+
 const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase Auth

@@ -26,7 +26,28 @@ import {
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const getApiBaseUrl = () => {
+    // 1. Check explicit env vars first
+    const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+    if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+        return envUrl.trim();
+    }
+    
+    // 2. In browser, detect based on hostname (safer than NODE_ENV)
+    if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return 'http://localhost:8000';
+        }
+        // Production domains
+        return 'https://api.keralasellers.in';
+    }
+    
+    // 3. Server-side fallback to production
+    return 'https://api.keralasellers.in';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 
