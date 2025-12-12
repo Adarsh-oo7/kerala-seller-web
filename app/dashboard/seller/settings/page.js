@@ -835,6 +835,7 @@ const s = {
     border: '2px dashed #d1d5db',
     backgroundColor: 'white',
   },
+  
   lp: {
     width: '100%',
     height: '100%',
