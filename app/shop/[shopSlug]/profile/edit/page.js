@@ -5,6 +5,8 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Save, User, Phone, MapPin, AlertTriangle } from 'lucide-react';
 import SHeader from '../../../../../components/common/SHeader';
 import "../../../../../styles/ShopProfileEdit.css";
+import { toast } from "react-toastify";
+
 
 const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
 
@@ -75,9 +77,9 @@ export default function ShopEditProfilePage() {
   };
 
   const checkAuth = () => {
-    const token = localStorage.getItem('access_token') || 
-                  localStorage.getItem('buyerAccessToken') ||
-                  localStorage.getItem('accessToken');
+    const token = localStorage.getItem('access_token') ||
+      localStorage.getItem('buyerAccessToken') ||
+      localStorage.getItem('accessToken');
     if (!token) {
       const loginUrl = getShopUrl('/login');
       const currentUrl = getShopUrl('/profile/edit');
@@ -159,14 +161,21 @@ export default function ShopEditProfilePage() {
 
     // Basic validation
     if (!profileData.full_name || !profileData.email) {
-      alert('Please fill in at least your name and email');
+      // alert('Please fill in at least your name and email');
+      toast.warning('Please fill in at least your name and email', {
+        position: 'top-right',
+        autoClose: 3000,      // stays until user dismisses
+        closeOnClick: true,    // allows click to dismiss
+        draggable: true,
+        theme: "colored",
+      });
       return;
     }
 
     setSaving(true);
     try {
       console.log('💾 Saving profile data...');
-      
+
       // ✅ FIX: Only send editable fields (exclude id, email, phone_verified)
       const cleanData = {
         full_name: (profileData.full_name || '').trim(),
@@ -207,18 +216,25 @@ export default function ShopEditProfilePage() {
           ...responseData
         }));
 
-        alert('Profile updated successfully!');
+        // alert('Profile updated successfully!');
+        toast.success('Profile updated successfully!', {
+          position: 'top-right',
+          autoClose: 3000,      // stays until user dismisses
+          closeOnClick: true,    // allows click to dismiss
+          draggable: true,
+          theme: "colored",
+        });
         const profileUrl = getShopUrl('/profile');
         router.push(profileUrl);
       } else {
         console.error('❌ Profile update failed:', response.status);
-        
+
         let errorMessage = 'Failed to update profile. Please try again.';
-        
+
         try {
           const errorData = await response.json();
           console.error('❌ Error details:', errorData);
-          
+
           if (errorData.details) {
             // Show field-specific errors
             const errors = Object.entries(errorData.details)
@@ -440,7 +456,7 @@ export default function ShopEditProfilePage() {
 }
 
 const styles = {
-  pagecontainer: {backgroundColor: "#FDFFF0"},
+  pagecontainer: { backgroundColor: "#FDFFF0" },
   container: { minHeight: '100vh', backgroundColor: '#FDFFF0', padding: '20px', maxWidth: '800px', margin: '0 auto', paddingTop: "150px", paddingBottom: "60px" },
   loadingContainer: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -483,7 +499,7 @@ const styles = {
   inputGroup: { marginBottom: '16px' },
   inputRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' },
   input: {
-    width: '100%', padding: '12px 16px', backgroundColor:'#FDFFF0', color:'#1a4845', border: '2px solid #e5e7eb',
+    width: '100%', padding: '12px 16px', backgroundColor: '#FDFFF0', color: '#1a4845', border: '2px solid #e5e7eb',
     borderRadius: '8px', fontSize: '16px', transition: 'all 0.2s',
     boxSizing: 'border-box'
   },

@@ -7,8 +7,10 @@ import Link from 'next/link';
 import "../../../styles/Shopslugpage.css";
 import { useCart } from '../../context/CartContext';
 import SHeader from '../../../components/common/SHeader';
+import Whatsapp from '../../../components/common/Whatsapp'
 import Footer from '../../../components/common/Footer';
 import ShopProductCard from '../../../components/common/ShopProductCard';
+
 import {
   ShoppingCart,
   User,
@@ -771,7 +773,11 @@ function EnhancedSellerStorefrontPage() {
     e.preventDefault();
     e.stopPropagation();
     if (!product?.id || (product.online_stock || 0) <= 0) {
-      alert(product?.id ? 'Product is out of stock' : 'Invalid product');
+      toast.warning(product?.id ? 'Product is out of stock' : 'Invalid product', {
+        position: "top-right",
+        autoClose: 2000,
+        theme: "colored",
+      });
       return;
     }
     const token = localStorage.getItem('buyerAccessToken') ||
@@ -789,6 +795,11 @@ function EnhancedSellerStorefrontPage() {
     try {
       setLoadingProducts(prev => ({ ...prev, [productId]: true }));
       await Promise.resolve(addToCart(sellerPhone, product));
+      toast.success("Added to cart", {
+        position: "top-right",
+        autoClose: 2000,
+        theme: "colored",
+      });
     } catch (error) {
       alert('Failed to add to cart. Please try again.');
     } finally {
@@ -918,6 +929,7 @@ function EnhancedSellerStorefrontPage() {
             </div>
           )}
         </div>
+        <Whatsapp sellerPhone={sellerPhone} shopSlug={shopSlug} />
         <Footer />
       </div>
     </ErrorBoundary>

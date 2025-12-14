@@ -4,6 +4,70 @@
 
 }
 
+/* 🔽 Reduce entire toast size */
+.cart-remove-toast-wrapper {
+    min-height: auto !important;
+    /* 🔥 main width control */
+    border-radius: 10px !important;
+}
+
+
+/* Toast content */
+.cart-remove-toast {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Text */
+.cart-remove-text {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Buttons container */
+.cart-remove-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* Buttons */
+.cart-remove-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    min-width: 80px;
+}
+
+.cart-remove-btn.danger {
+    background: #ffffff;
+    color: #000000;
+}
+
+.cart-remove-btn.cancel {
+    background: #ffffff;
+}
+
+/* ✅ Mobile optimization */
+@media (max-width: 480px) {
+
+
+    .cart-remove-toast-wrapper {
+        max-width: 300px !important;
+    }
+
+    .cart-remove-btn {
+        padding: 7px;
+        font-size: 13px;
+    }
+
+
+}
+
+
 
 @media (min-width: 1200px) {
     .cart-items {
@@ -259,7 +323,8 @@
         width: 35px !important;
         height: 35px !important;
     }
-    .cart-summary-section{
+
+    .cart-summary-section {
         top: 0px !important;
     }
 }
@@ -316,7 +381,8 @@
         width: 35px !important;
         height: 35px !important;
     }
-    .shopslugcartpagecontainer{
+
+    .shopslugcartpagecontainer {
         padding-top: 70px !important;
     }
 }

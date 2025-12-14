@@ -4,16 +4,17 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import "../../../../styles/BuyerProfile.css";
+import { toast } from "react-toastify";
 
-import { 
-  User, 
-  Package, 
-  Edit3, 
-  Heart, 
-  ArrowLeft, 
-  LogOut, 
-  Store, 
-  RefreshCw, 
+import {
+  User,
+  Package,
+  Edit3,
+  Heart,
+  ArrowLeft,
+  LogOut,
+  Store,
+  RefreshCw,
   AlertTriangle,
   Phone // ✅ ADD: Phone icon for verification menu
 } from 'lucide-react';
@@ -295,16 +296,54 @@ export default function ShopProfilePage() {
   }, [actualStoreId, authChecked]);
 
   const handleLogout = () => {
-    if (window.confirm(`Logout from ${storeData?.name || 'this store'}?\n\nYou'll need to login again to access your account.`)) {
-      console.log('🔐 Logging out from store:', actualStoreId);
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('buyerAccessToken');
-      localStorage.removeItem('refresh_token');
-      sessionStorage.clear();
-      setIsLoggedIn(false);
-      const loginUrl = getShopUrl('/login');
-      router.push(loginUrl);
-    }
+    toast(
+      ({ closeToast }) => (
+        <div className="cart-remove-toast">
+          <p className="cart-remove-text">
+            Logout from {storeData?.name || 'this store'}?
+          </p>
+          <p className="cart-remove-text" style={{ fontSize: '12px', opacity: 0.8 }}>
+            You’ll need to login again to access your account.
+          </p>
+
+          <div className="cart-remove-actions">
+            <button
+              className="cart-remove-btn danger"
+              onClick={() => {
+                console.log('🔐 Logging out from store:', actualStoreId);
+
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('buyerAccessToken');
+                localStorage.removeItem('refresh_token');
+                sessionStorage.clear();
+                setIsLoggedIn(false);
+
+                const loginUrl = getShopUrl('/login');
+                router.push(loginUrl);
+
+                toast.success('Logged out successfully');
+                closeToast();
+              }}
+            >
+              Logout
+            </button>
+
+            <button
+              className="cart-remove-btn cancel"
+              onClick={closeToast}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        className: 'cart-remove-toast-wrapper',
+      }
+    );
   };
 
   const handleBackClick = () => {

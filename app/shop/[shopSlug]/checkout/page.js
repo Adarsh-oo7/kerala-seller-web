@@ -5,6 +5,8 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, CreditCard, User, Phone, MapPin, Package, Store, AlertTriangle, CheckCircle, Shield } from 'lucide-react';
 import "../../../../styles/Shopslugcheckout.css";
 import SHeader from '../../../../components/common/SHeader';
+import { toast } from "react-toastify";
+
 const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY_HERE';
 
@@ -259,131 +261,138 @@ export default function ShopCheckoutPage() {
   const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
 
   // ✅ ENHANCED: Handle online payment with better error handling
- // ✅ FIXED: Handle online payment matching working checkout
-const handleOnlinePayment = async (orderData) => {
-  if (!razorpayLoaded) {
-    alert('Payment system not loaded. Please refresh and try again.');
-    return false;
-  }
-
-  try {
-    console.log('💳 Starting online payment flow...');
-
-    const headers = checkAuth();
-    if (!headers) return false;
-
-    // Step 1: Create Razorpay order
-    const createOrderResponse = await fetch(`${API_BASE_URL}/user/orders/create-razorpay-order/`, {
-      method: 'POST',
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        amount: calculateTotal(),
-        order_data: orderData
-      })
-    });
-
-    if (!createOrderResponse.ok) {
-      const errorData = await createOrderResponse.json();
-      throw new Error(errorData.error || 'Failed to create payment order');
+  // ✅ FIXED: Handle online payment matching working checkout
+  const handleOnlinePayment = async (orderData) => {
+    if (!razorpayLoaded) {
+      alert('Payment system not loaded. Please refresh and try again.');
+      return false;
     }
 
-    // ✅ CRITICAL FIX: Use key_id instead of key (matching working code)
-    const { razorpay_order_id, amount, key_id } = await createOrderResponse.json();
-    
-    console.log('✅ Razorpay order created:', razorpay_order_id);
-    console.log('✅ Using key_id:', key_id);
+    try {
+      console.log('💳 Starting online payment flow...');
 
-    // ✅ Validate key_id exists
-    if (!key_id) {
-      throw new Error('Payment key not received from server');
-    }
+      const headers = checkAuth();
+      if (!headers) return false;
 
-    // Step 2: Initialize Razorpay payment
-    const options = {
-      key: key_id,  // ✅ FIXED: Use key_id from backend response
-      amount: amount,
-      currency: 'INR',
-      name: storeData?.name || `Store ${actualStoreId}`,
-      description: `Order from ${storeData?.name || 'Store'}`,
-      order_id: razorpay_order_id,
-      handler: async function (response) {
-        console.log('💳 Payment completed, verifying...');
+      // Step 1: Create Razorpay order
+      const createOrderResponse = await fetch(`${API_BASE_URL}/user/orders/create-razorpay-order/`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          amount: calculateTotal(),
+          order_data: orderData
+        })
+      });
 
-        try {
-          // Step 3: Verify payment and create order
-          const verifyResponse = await fetch(`${API_BASE_URL}/user/orders/verify-payment-and-create-order/`, {
-            method: 'POST',
-            headers: {
-              ...headers,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
-              order_data: orderData
-            })
-          });
-
-          const verifyData = await verifyResponse.json();
-
-          if (verifyResponse.ok && verifyData.success) {
-            // Clear cart
-            const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
-            delete multiCarts[actualStoreId];
-            localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
-
-            console.log('✅ Payment verified and order created');
-            alert(`Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`);
-
-            // Navigate to store-specific profile orders page
-            const profileUrl = getShopUrl('/profile/orders');
-            router.push(profileUrl);
-          } else {
-            throw new Error(verifyData.error || 'Payment verification failed');
-          }
-        } catch (verifyError) {
-          console.error('❌ Payment verification failed:', verifyError);
-          alert(`Payment completed but order creation failed: ${verifyError.message}. Please contact support with payment ID: ${response.razorpay_payment_id}`);
-        }
-
-        setSubmitting(false);
-      },
-      modal: {
-        ondismiss: function () {
-          console.log('💳 Payment modal closed');
-          setSubmitting(false);
-        }
-      },
-      prefill: {
-        name: shippingInfo.name,
-        email: '',
-        contact: shippingInfo.phone
-      },
-      theme: {
-        color: '#1a4845'  // Match your shop theme
+      if (!createOrderResponse.ok) {
+        const errorData = await createOrderResponse.json();
+        throw new Error(errorData.error || 'Failed to create payment order');
       }
-    };
 
-    const rzp = new window.Razorpay(options);
+      // ✅ CRITICAL FIX: Use key_id instead of key (matching working code)
+      const { razorpay_order_id, amount, key_id } = await createOrderResponse.json();
 
-    rzp.on('payment.failed', function (response) {
-      console.error('💳 Payment failed:', response.error);
-      alert(`Payment failed: ${response.error.description}`);
-      setSubmitting(false);
-    });
+      console.log('✅ Razorpay order created:', razorpay_order_id);
+      console.log('✅ Using key_id:', key_id);
 
-    rzp.open();
-    return true;
-  } catch (error) {
-    console.error('❌ Online payment error:', error);
-    alert(`Failed to initialize payment: ${error.message}`);
-    return false;
-  }
-};
+      // ✅ Validate key_id exists
+      if (!key_id) {
+        throw new Error('Payment key not received from server');
+      }
+
+      // Step 2: Initialize Razorpay payment
+      const options = {
+        key: key_id,  // ✅ FIXED: Use key_id from backend response
+        amount: amount,
+        currency: 'INR',
+        name: storeData?.name || `Store ${actualStoreId}`,
+        description: `Order from ${storeData?.name || 'Store'}`,
+        order_id: razorpay_order_id,
+        handler: async function (response) {
+          console.log('💳 Payment completed, verifying...');
+
+          try {
+            // Step 3: Verify payment and create order
+            const verifyResponse = await fetch(`${API_BASE_URL}/user/orders/verify-payment-and-create-order/`, {
+              method: 'POST',
+              headers: {
+                ...headers,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                order_data: orderData
+              })
+            });
+
+            const verifyData = await verifyResponse.json();
+
+            if (verifyResponse.ok && verifyData.success) {
+              // Clear cart
+              const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
+              delete multiCarts[actualStoreId];
+              localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+
+              console.log('✅ Payment verified and order created');
+              // alert(`Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`);
+              toast.success(
+                `Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`,
+                {
+                  position: 'top-center',
+                  autoClose: 3000,
+                }
+              );
+
+              // Navigate to store-specific profile orders page
+              const profileUrl = getShopUrl('/profile/orders');
+              router.push(profileUrl);
+            } else {
+              throw new Error(verifyData.error || 'Payment verification failed');
+            }
+          } catch (verifyError) {
+            console.error('❌ Payment verification failed:', verifyError);
+            alert(`Payment completed but order creation failed: ${verifyError.message}. Please contact support with payment ID: ${response.razorpay_payment_id}`);
+          }
+
+          setSubmitting(false);
+        },
+        modal: {
+          ondismiss: function () {
+            console.log('💳 Payment modal closed');
+            setSubmitting(false);
+          }
+        },
+        prefill: {
+          name: shippingInfo.name,
+          email: '',
+          contact: shippingInfo.phone
+        },
+        theme: {
+          color: '#1a4845'  // Match your shop theme
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+
+      rzp.on('payment.failed', function (response) {
+        console.error('💳 Payment failed:', response.error);
+        alert(`Payment failed: ${response.error.description}`);
+        setSubmitting(false);
+      });
+
+      rzp.open();
+      return true;
+    } catch (error) {
+      console.error('❌ Online payment error:', error);
+      alert(`Failed to initialize payment: ${error.message}`);
+      return false;
+    }
+  };
 
 
   // ✅ ENHANCED: Handle order placement with validation
@@ -395,7 +404,12 @@ const handleOnlinePayment = async (orderData) => {
 
     // Validate form
     if (!validateForm()) {
-      alert('Please fix the form errors and try again');
+      // alert('Please fix the form errors and try again');
+      toast.warning('Please fill the form', {
+        position: "top-center",
+        autoClose: 2000,
+        theme: "colored",
+      });
       return;
     }
 
@@ -466,8 +480,14 @@ const handleOnlinePayment = async (orderData) => {
           localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
 
           console.log('✅ COD Order placed successfully:', responseData);
-          alert(`Order placed successfully! Order #${responseData.order_id} 🎉`);
-
+          // alert(`Order placed successfully! Order #${responseData.order_id} 🎉`);
+          toast.success(
+            `Order placed successfully! Order #${responseData.order_id} 🎉`,
+            {
+              position: 'top-center',
+              autoClose: 3000,
+            }
+          );
           // ✅ FIXED: Navigate to store-specific profile orders page
           const profileUrl = getShopUrl('/profile/orders');
           router.push(profileUrl);
@@ -774,7 +794,7 @@ const handleOnlinePayment = async (orderData) => {
             </div>
 
             <button
-            className='shopslugcheckoutbtn'
+              className='shopslugcheckoutbtn'
               onClick={handlePlaceOrder}
               disabled={submitting || cartItems.length === 0}
               style={{

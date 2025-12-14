@@ -543,12 +543,28 @@ export default function ShopOrdersPage() {
     if (!orderToCancel) return;
 
     if (!cancelReason) {
-      alert('Please select a reason for cancellation');
+      // alert('Please select a reason for cancellation');
+      toast.warning('Please select a reason for cancellation', {
+        position: 'top-center',
+        autoClose: false,      // ✅ stays until user closes
+        closeOnClick: true,    // allows user to click to dismiss
+        draggable: true,
+        theme: 'colored',
+
+      });
       return;
     }
 
     if (cancelReason === 'other' && !customReason.trim()) {
-      alert('Please provide a specific reason for cancellation');
+      // alert('Please provide a specific reason for cancellation');
+      toast.warning('Please provide a specific reason for cancellation', {
+        position: 'top-center',
+        autoClose: false,      // ✅ stays until user closes
+        closeOnClick: true,    // allows user to click to dismiss
+        draggable: true,
+        theme: 'colored',
+
+      });
       return;
     }
 
@@ -585,7 +601,14 @@ export default function ShopOrdersPage() {
         );
 
         console.log('✅ Order cancelled successfully');
-        alert('Order cancelled successfully! The seller has been notified.');
+        // alert('Order cancelled successfully! The seller has been notified.');
+        toast.success('Order cancelled successfully! The seller has been notified.', {
+          position: 'top-center',
+          autoClose: true,      // stays until user closes
+          closeOnClick: true,    // allows click to dismiss
+          draggable: true,
+          theme: 'colored',
+        });
         closeCancelModal();
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -721,7 +744,17 @@ export default function ShopOrdersPage() {
   // ✅ Handle review submitted callback
   const handleReviewSubmitted = () => {
     console.log('🔄 Product review submitted successfully! Reviews will appear in product pages.');
-    alert('Review submitted successfully! Your review will appear on the product page.');
+    // alert('Review submitted successfully! Your review will appear on the product page.');
+    toast.success(
+      'Review submitted successfully! Your review will appear on the product page.',
+      {
+        position: 'top-right',
+        autoClose: true,      // stays until user closes
+        closeOnClick: true,    // allows click to dismiss
+        draggable: true,
+        theme: "colored",
+      }
+    );
   };
 
   // Show loading while redirecting or loading

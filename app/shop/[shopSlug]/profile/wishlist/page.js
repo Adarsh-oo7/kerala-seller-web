@@ -6,6 +6,7 @@ import { ArrowLeft, Heart, ShoppingCart, Trash2, Plus, Store, AlertTriangle, Sta
 import Link from 'next/link';
 import "../../../../../styles/ShopProfileWishlist.css";
 import SHeader from '../../../../../components/common/SHeader';
+import { toast } from "react-toastify";
 
 
 const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
@@ -212,6 +213,13 @@ export default function ShopWishlistPage() {
       if (response.ok) {
         setWishlist(prev => prev.filter(item => item.id !== productId));
         console.log('✅ Item removed from wishlist');
+        toast.success('Item removed from wishlist', {
+          position: 'top-right',
+          autoClose: 3000,      // stays until user dismisses
+          closeOnClick: true,    // allows click to dismiss
+          draggable: true,
+          theme: "colored",
+        });
       } else {
         console.error('❌ Failed to remove from wishlist');
         alert('Failed to remove item from wishlist. Please try again.');
@@ -252,7 +260,12 @@ export default function ShopWishlistPage() {
       cartData[actualStoreId] = storeCart;
       localStorage.setItem('multiCarts', JSON.stringify(cartData));
 
-      alert(`${product.name} added to cart! 🛒`);
+      // alert(`${product.name} added to cart! 🛒`);
+      toast.success(`${product.name} added to cart!`, {
+        position: 'top-center',
+        autoClose: 3000,
+        theme: "colored",
+      });
     } catch (error) {
       console.error('❌ Failed to add to cart:', error);
       alert('Failed to add item to cart. Please try again.');

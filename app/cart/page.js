@@ -8,6 +8,7 @@ import Footer from '../../components/common/Footer';
 import '../../styles/Keralasellerscart.css'
 import { Trash2 } from 'lucide-react';
 
+
 export default function CartPage() {
     const [loading, setLoading] = useState(true);
     const router = useRouter();

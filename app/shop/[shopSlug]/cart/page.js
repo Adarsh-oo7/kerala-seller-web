@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ShoppingCart, Plus, Minus, Trash2, CreditCard, Store, AlertTriangle, Loader } from 'lucide-react';
 import "../../../../styles/Shopslugcart.css";
 import SHeader from '../../../../components/common/SHeader';
+import { toast } from "react-toastify";
 
 const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
 
@@ -24,8 +25,8 @@ export default function ShopCartPage() {
   useEffect(() => {
     try {
       const token = localStorage.getItem('buyerAccessToken') ||
-          localStorage.getItem('access_token') ||
-          localStorage.getItem('accessToken');
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('accessToken');
       setIsLoggedIn(!!token);
     } catch (error) {
       console.warn('localStorage access error:', error);
@@ -254,16 +255,84 @@ export default function ShopCartPage() {
   };
 
   const removeItem = (productId) => {
-    if (window.confirm('Remove this item from cart?')) {
-      const updatedCart = cartItems.filter(item => item.id !== productId);
-      updateCart(updatedCart);
-    }
+    toast.error(
+      ({ closeToast }) => (
+        <div className="cart-remove-toast">
+          <p className="cart-remove-text">
+            Remove this item from cart?
+          </p>
+
+          <div className="cart-remove-actions">
+            <button
+              className="cart-remove-btn danger"
+              onClick={() => {
+                const updatedCart = cartItems.filter(
+                  item => item.id !== productId
+                );
+                updateCart(updatedCart);
+                toast.success('Item removed from cart');
+                closeToast();
+              }}
+            >
+              Remove
+            </button>
+
+            <button
+              className="cart-remove-btn cancel"
+              onClick={closeToast}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        theme: "colored",
+        className: 'cart-remove-toast-wrapper',
+      }
+    );
   };
 
   const clearCart = () => {
-    if (window.confirm('Clear all items from cart?')) {
-      updateCart([]);
-    }
+    toast.error(
+      ({ closeToast }) => (
+        <div className="cart-remove-toast">
+          <p className="cart-remove-text">
+            Clear all items from cart?
+          </p>
+
+          <div className="cart-remove-actions">
+            <button
+              className="cart-remove-btn danger"
+              onClick={() => {
+                updateCart([]);
+                toast.success('Cart cleared');
+                closeToast();
+              }}
+            >
+              Clear
+            </button>
+
+            <button
+              className="cart-remove-btn cancel"
+              onClick={closeToast}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        theme: 'colored',
+        className: 'cart-remove-toast-wrapper', // ✅ SAME wrapper
+      }
+    );
   };
 
   const calculateTotal = () => {
@@ -340,7 +409,7 @@ export default function ShopCartPage() {
   // ✅ ENHANCED: Better loading state with progress indication
   if (loading || urlError) {
     return (
-      <div className='shopslugcartpagecontainer'  style={styles.pageContainer}>
+      <div className='shopslugcartpagecontainer' style={styles.pageContainer}>
         {/* ✅ ADD: SHeader during loading */}
         <SHeader
           store={storeData}
@@ -376,7 +445,7 @@ export default function ShopCartPage() {
   // Show error if no store ID found (shouldn't reach here due to redirect)
   if (!actualStoreId) {
     return (
-      <div className='shopslugcartpagecontainer'  style={styles.pageContainer}>
+      <div className='shopslugcartpagecontainer' style={styles.pageContainer}>
         {/* ✅ ADD: SHeader for error state */}
         <SHeader
           store={null}
@@ -406,7 +475,7 @@ export default function ShopCartPage() {
         store={storeData}
         isLoggedIn={isLoggedIn}
       />
-      
+
       <div style={styles.container}>
         {/* Header - Keep the existing cart header for actions */}
         <div style={styles.header}>
@@ -543,7 +612,7 @@ export default function ShopCartPage() {
                   </div>
 
                   <button
-                  className='proceedbtn'
+                    className='proceedbtn'
                     onClick={handleCheckout}
                     style={{
                       ...styles.checkoutButton,
@@ -553,7 +622,7 @@ export default function ShopCartPage() {
                     disabled={cartItems.length === 0}
                   >
                     <CreditCard size={18} />
-                    Proceed to Checkout 
+                    Proceed to Checkout
                   </button>
 
                   <button className='continuebtn' onClick={handleContinueShopping} style={styles.continueButton}>
@@ -583,8 +652,8 @@ export default function ShopCartPage() {
 
 // ✅ UPDATED: Styles with proper spacing for SHeader
 const styles = {
-  pageContainer: { 
-    minHeight: '100vh', 
+  pageContainer: {
+    minHeight: '100vh',
     backgroundColor: '#FDFFF0',
     paddingTop: '130px', // ✅ ADD: Space for SHeader navigation bar
   },

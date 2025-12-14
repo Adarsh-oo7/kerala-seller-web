@@ -1,0 +1,223 @@
+/* CSS Multiple Whatsapp Chat */
+#whatsapp-chat {
+  position: fixed !important;
+  background: #fff !important;
+  width: 350px !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 15px rgba(32, 33, 36, .28) !important;
+  bottom: 90px !important;
+  right: 30px !important;
+  overflow: hidden !important;
+  z-index: 9999 !important;
+
+  /* transition for smooth open/close */
+  opacity: 0;
+  transform: translateY(20px) scale(0.9);
+  transition: all 0.4s ease-in-out;
+  pointer-events: none;
+  /* prevent click when hidden */
+}
+
+#whatsapp-chat.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  /* enable click when visible */
+}
+
+
+
+a.blantershow-chat {
+  background: linear-gradient(to right top, #53af47, #499b3e) !important;
+  color: #fff !important;
+  position: fixed !important;
+  z-index: 98 !important;
+  bottom: 25px !important;
+  right: 30px !important;
+  font-size: 15px !important;
+  padding: 10px 20px !important;
+  text-decoration: none !important;
+  border-radius: 30px !important;
+  box-shadow: 0 1px 15px rgba(32, 33, 36, .28) !important;
+}
+
+a.blantershow-chat:hover {
+  color: white !important
+}
+
+a.blantershow-chat i {
+  transform: scale(1.2) !important;
+  margin: 0 10px 0 0 !important;
+}
+
+.header-chat {
+  background: linear-gradient(to right top, #53af47, #53af47) !important;
+  color: #fff !important;
+  padding: 20px !important;
+}
+
+.header-chat h3 {
+  margin: 0 0 10px !important;
+  color: white !important;
+}
+
+.header-chat p {
+  font-size: 14px !important;
+  line-height: 1.7 !important;
+  margin: 0 !important;
+  color: white !important;
+}
+
+.info-avatar {
+  position: relative !important;
+}
+
+.info-avatar img {
+  border-radius: 100% !important;
+  width: 50px !important;
+  float: left !important;
+  margin: 0 10px 0 0 !important;
+}
+
+.info-avatar:before {
+  content: '\f232' !important;
+  z-index: 1 !important;
+  font-family: "Font Awesome 5 Brands" !important;
+  background: #23ab23 !important;
+  color: #fff !important;
+  padding: 4px 5px !important;
+  border-radius: 100% !important;
+  position: absolute !important;
+  top: 30px !important;
+  left: 30px !important;
+}
+
+a.informasi {
+  padding: 20px !important;
+  display: block !important;
+  overflow: hidden !important;
+  animation-name: showhide !important;
+  animation-duration: 2.5s !important;
+}
+
+a.informasi:hover {
+  background: #f1f1f1 !important;
+}
+
+.info-chat span {
+  display: block !important;
+}
+
+#get-label,
+span.chat-label {
+  font-size: 12px !important;
+  color: #888 !important;
+}
+
+#get-nama,
+span.chat-nama {
+  margin: 5px 0 0 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #222 !important;
+}
+
+#get-label,
+#get-nama {
+  color: #fff !important;
+}
+
+span.my-number {
+  display: none !important;
+}
+
+.blanter-msg {
+  color: #444 !important;
+  font-size: 12.5px !important;
+  text-align: center !important;
+  border-top: 1px solid #ddd !important;
+}
+
+textarea#chat-input {
+  border: none !important;
+  font-family: 'Arial', sans-serif !important;
+  width: 100% !important;
+  overflow-y: hidden !important;
+  outline: none !important;
+  resize: none !important;
+}
+
+a#send-it {
+  color: #555 !important;
+  margin: 10px !important;
+  font-weight: 700 !important;
+  padding: 8px !important;
+  background: #eee !important;
+  border-radius: 10px !important;
+}
+
+.first-msg {
+  background: #f5f5f5 !important;
+  padding: 30px !important;
+  text-align: center !important;
+}
+
+.first-msg span {
+  background: #e2e2e2 !important;
+  color: #333 !important;
+  font-size: 14.2px !important;
+  line-height: 1.7 !important;
+  border-radius: 10px !important;
+  padding: 15px 20px !important;
+  display: inline-block !important;
+}
+
+.start-chat .blanter-msg {
+  display: flex !important;
+}
+
+#get-number {
+  display: none !important;
+}
+
+a.close-chat {
+  position: absolute !important;
+  top: 5px !important;
+  right: 15px !important;
+  color: #fff !important;
+  font-size: 30px !important;
+  text-decoration: none !important;
+}
+
+@keyframes showhide {
+  from {
+    transform: scale(.5) !important;
+    opacity: 0 !important;
+  }
+}
+
+@keyframes showchat {
+  from {
+    transform: scale(0) !important;
+    opacity: 0 !important;
+  }
+}
+
+@media screen and (max-width:480px) {
+  #whatsapp-chat {
+    width: auto !important;
+    right: 20px !important;
+    /* 👈 250px from right */
+    /* make sure left doesn't override */
+    font-size: 80% !important;
+  }
+}
+
+
+.hide {
+  display: none !important;
+  animation-name: showhide !important;
+  animation-duration: 1.5s !important;
+  transform: scale(1) !important;
+  opacity: 1 !important;
+}
