@@ -20,9 +20,9 @@ export default function PaymentsDashboard() {
   });
   const [payoutHistory, setPayoutHistory] = useState([]);
   const [liveSettlements, setLiveSettlements] = useState([]);
-  const [liveTransactions, setLiveTransactions] = useState([]); // ✅ NEW
+  const [liveTransactions, setLiveTransactions] = useState([]);
   const [viewMode, setViewMode] = useState('stored');
-  const [activeTab, setActiveTab] = useState('settlements'); // ✅ NEW
+  const [activeTab, setActiveTab] = useState('settlements');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fetchingLive, setFetchingLive] = useState(false);
@@ -77,7 +77,7 @@ export default function PaymentsDashboard() {
       );
 
       setLiveSettlements(response.data.settlements || []);
-      setSuccessMsg('✅ Live data fetched from Razorpay!');
+      setSuccessMsg('✅ Live settlements fetched from Razorpay!');
     } catch (error) {
       console.error('Failed to fetch live settlements:', error);
       setErrorMsg(error.response?.data?.error || 'Failed to fetch live settlements');
@@ -130,6 +130,17 @@ export default function PaymentsDashboard() {
   useEffect(() => {
     fetchPaymentData();
   }, [fetchPaymentData]);
+
+  // ✅ NEW: Auto-fetch live data when switching to live mode
+  useEffect(() => {
+    if (viewMode === 'live' && gatewayStatus.razorpay?.connected) {
+      if (activeTab === 'settlements' && liveSettlements.length === 0) {
+        fetchLiveSettlements();
+      } else if (activeTab === 'transactions' && liveTransactions.length === 0) {
+        fetchLiveTransactions();
+      }
+    }
+  }, [viewMode, activeTab, gatewayStatus.razorpay?.connected, liveSettlements.length, liveTransactions.length, fetchLiveSettlements, fetchLiveTransactions]);
 
   useEffect(() => {
     if (successMsg) {
@@ -188,11 +199,11 @@ export default function PaymentsDashboard() {
 
         return {
           successCount: captured.length,
-          successAmount: captured.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0),
+          successAmount: captured.reduce((sum, t) => sum + parseFloat(t.amount || 0) / 100, 0), // ✅ Razorpay amounts are in paise
           pendingCount: authorized.length,
-          pendingAmount: authorized.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0),
+          pendingAmount: authorized.reduce((sum, t) => sum + parseFloat(t.amount || 0) / 100, 0),
           settledCount: captured.length,
-          settledAmount: captured.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0),
+          settledAmount: captured.reduce((sum, t) => sum + parseFloat(t.amount || 0) / 100, 0),
           pendingSettlementCount: 0,
           pendingSettlementAmount: 0,
         };
@@ -256,6 +267,7 @@ export default function PaymentsDashboard() {
               onClick={() => {
                 if (viewMode === 'stored') {
                   setViewMode('live');
+                  // ✅ Fetch data immediately when switching to live
                   if (activeTab === 'settlements') {
                     fetchLiveSettlements();
                   } else {
@@ -561,10 +573,10 @@ export default function PaymentsDashboard() {
                   {liveTransactions.map((txn) => (
                     <div key={txn.id} style={s.tableRow5}>
                       <div style={{ flex: 2, fontSize: '13px' }}>
-                        {txn.created_at ? new Date(txn.created_at).toLocaleDateString() : 'N/A'}
+                        {txn.created_at ? new Date(txn.created_at * 1000).toLocaleDateString() : 'N/A'}
                       </div>
                       <div style={{ flex: 2, fontWeight: 700, color: '#10b981', fontSize: '14px' }}>
-                        ₹{parseFloat(txn.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        ₹{(parseFloat(txn.amount) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </div>
                       <div style={{ flex: 2, fontSize: '13px', textTransform: 'capitalize' }}>
                         {txn.method || 'N/A'}
@@ -609,13 +621,13 @@ export default function PaymentsDashboard() {
                     liveSettlements.map((settlement) => (
                       <div key={settlement.id} style={s.tableRow5}>
                         <div style={{ flex: 2, fontSize: '13px' }}>
-                          {settlement.created_at ? new Date(settlement.created_at).toLocaleDateString() : 'N/A'}
+                          {settlement.created_at ? new Date(settlement.created_at * 1000).toLocaleDateString() : 'N/A'}
                         </div>
                         <div style={{ flex: 2, fontWeight: 700, color: '#10b981', fontSize: '14px' }}>
-                          ₹{parseFloat(settlement.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          ₹{(parseFloat(settlement.amount) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </div>
                         <div style={{ flex: 2, fontSize: '13px', color: '#ef4444' }}>
-                          -₹{parseFloat(settlement.fees || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          -₹{(parseFloat(settlement.fees || 0) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </div>
                         <div style={{ flex: 2 }}>
                           <span style={{
@@ -833,4 +845,3 @@ const s = {
     transition: 'all 0.2s',
   },
 };
-

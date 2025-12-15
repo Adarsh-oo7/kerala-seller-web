@@ -146,20 +146,26 @@ export default function ShopProductCard({
   };
 
   // ✅ FIXED: Proper wishlist toggle with better event handling
-  const handleWishlistToggle = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+const handleWishlistToggle = async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
 
-    console.log('🔍 Wishlist button clicked for product:', product.id);
+  console.log('🔍 Wishlist button clicked for product:', product.id);
 
-    const headers = getAuthHeaders();
-    if (!headers) {
-      const shouldLogin = window.confirm('Please login to add items to your wishlist. Would you like to login now?');
-      if (shouldLogin) {
-        window.location.href = '/login/buyer';
-      }
-      return;
+  const headers = getAuthHeaders();
+  if (!headers) {
+    const shouldLogin = window.confirm('Please login to add items to your wishlist. Would you like to login now?');
+    if (shouldLogin) {
+      // ✅ FIX: Redirect to shop-specific login page
+      const shopLoginUrl = shopSlug 
+        ? `/shop/${shopSlug}/login?redirect=${encodeURIComponent(window.location.pathname)}`
+        : `/shop/${sellerPhone}/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+      
+      window.location.href = shopLoginUrl;
     }
+    return;
+  }
+
 
     if (isWishlistLoading) {
       console.log('⏳ Wishlist request already in progress for product:', product.id);
@@ -410,22 +416,39 @@ export default function ShopProductCard({
             </div>
           </div>
 
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (onAddToCart) {
-                onAddToCart(e, product);
-              }
-            }}
-            className={`add-to-cart-btn ${(product.online_stock || 0) === 0 ? 'disabled' : ''} ${isLoading ? 'loading' : ''} ${isInCart ? 'in-cart' : ''}`}
-            style={styles.addToCartBtn}
-            disabled={(product.online_stock || 0) === 0 || isLoading}
-            aria-label={(product.online_stock || 0) > 0 ?
-              (isInCart ? `Add more ${product.name || 'product'} to cart (${getCartQuantity()} in cart)` : `Add ${product.name || 'product'} to cart`) :
-              'Out of stock'}
-            type="button"
-          >
+         <button
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // ✅ FIX: Check if user is logged in before adding to cart
+    const headers = getAuthHeaders();
+    if (!headers) {
+      const shouldLogin = window.confirm('Please login to add items to your cart. Would you like to login now?');
+      if (shouldLogin) {
+        // ✅ Redirect to shop-specific login page
+        const shopLoginUrl = shopSlug 
+          ? `/shop/${shopSlug}/login?redirect=${encodeURIComponent(window.location.pathname)}`
+          : `/shop/${sellerPhone}/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+        
+        window.location.href = shopLoginUrl;
+      }
+      return;
+    }
+    
+    // User is logged in, proceed with adding to cart
+    if (onAddToCart) {
+      onAddToCart(e, product);
+    }
+  }}
+  className={`add-to-cart-btn ${(product.online_stock || 0) === 0 ? 'disabled' : ''} ${isLoading ? 'loading' : ''} ${isInCart ? 'in-cart' : ''}`}
+  style={styles.addToCartBtn}
+  disabled={(product.online_stock || 0) === 0 || isLoading}
+  aria-label={(product.online_stock || 0) > 0 ?
+    (isInCart ? `Add more ${product.name || 'product'} to cart (${getCartQuantity()} in cart)` : `Add ${product.name || 'product'} to cart`) :
+    'Out of stock'}
+  type="button"
+>
             {isLoading ? (
               <>
                 <RefreshCw size={16} className="spinning" />

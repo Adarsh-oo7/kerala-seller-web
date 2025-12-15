@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
-import WhatsAppButton from '../../../components/common/WhatsAppButton';
+import WhatsAppButton from '../../../components/common/Whatsapp';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
 import "../../../styles/Keralasellersproductpage.css";
