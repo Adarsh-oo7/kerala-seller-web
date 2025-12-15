@@ -585,172 +585,56 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
   };
 
   // ✅ NEW: Buy Now Handler with Direct Payment
-  const handleBuyNow = async () => {
-    if (!product) return;
+ // NEW Buy Now Handler with Direct Payment
+// NEW Buy Now Handler with Direct Payment
+// ✅ FIXED: Buy Now - Redirect to Individual Shop's Checkout
+const handleBuyNow = () => {
+  if (!product) return;
 
-    if (!isLoggedIn) {
-      router.push('/login/buyer');
+  // ✅ Check if user is logged in
+  if (!isLoggedIn) {
+    if (!store) {
+      alert('Store information is loading. Please wait and try again.');
       return;
     }
-
-    setBuyingNow(true);
-
-    try {
-      // ✅ Load Razorpay script
-      const isRazorpayLoaded = await loadRazorpayScript();
-      if (!isRazorpayLoaded) {
-        alert('Payment gateway failed to load. Please try again.');
-        setBuyingNow(false);
-        return;
-      }
-
-      const headers = getAuthHeaders();
-      if (!headers) {
-        router.push('/login/buyer');
-        return;
-      }
-
-      // ✅ Get seller phone from store
-      const sellerPhone = store?.seller_phone || store?.phone;
-      if (!sellerPhone) {
-        alert('Store information missing. Cannot process payment.');
-        setBuyingNow(false);
-        return;
-      }
-
-      // ✅ Create order data for single product
-      const orderData = {
-        seller_phone: sellerPhone,
-        items: [{
-          id: product.id,
-          quantity: quantity,
-          name: product.name,
-          price: product.price
-        }],
-        customer_name: 'Customer', // You can get this from user profile
-        customer_phone: '', // You can get this from user profile
-        shipping_address: "Default Address" // You can enhance this with address selection
-      };
-
-      const totalAmount = product.price * quantity;
-
-      console.log('🛒 Creating Razorpay order for Buy Now:', orderData);
-
-      // ✅ Create Razorpay order using existing endpoint
-      const createOrderResponse = await axios.post(
-        `${API_BASE_URL}/api/orders/create-razorpay-order/`,
-        {
-          amount: totalAmount,
-          order_data: orderData
-        },
-        {
-          headers,
-          timeout: 15000
-        }
-      );
-
-      const { razorpay_order_id, amount, currency, key } = createOrderResponse.data;
-
-      console.log('✅ Razorpay order created:', createOrderResponse.data);
-
-      // ✅ Configure Razorpay payment options
-      const options = {
-        key: key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: amount, // Amount in paise
-        currency: currency,
-        name: 'Kerala Sellers',
-        description: `Buy Now: ${product.name}`,
-        order_id: razorpay_order_id,
-
-        // ✅ Payment success handler
-        handler: async function (response) {
-          console.log('💳 Payment successful:', response);
-
-          try {
-            // ✅ Use existing payment verification endpoint
-            const verifyResponse = await axios.post(
-              `${API_BASE_URL}/api/orders/verify-payment-and-create-order/`,
-              {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                order_data: orderData
-              },
-              { headers }
-            );
-
-            console.log('✅ Payment verified and order created:', verifyResponse.data);
-
-            // ✅ Show success message
-            alert(`🎉 Payment successful! Your order #${verifyResponse.data.order_id} has been placed.`);
-
-            // ✅ Redirect to orders page
-            router.push('/profile/orders');
-
-          } catch (verifyError) {
-            console.error('❌ Payment verification failed:', verifyError);
-            alert('Payment completed but order creation failed. Please contact support.');
-          }
-        },
-
-        // ✅ Prefill user information
-        prefill: {
-          name: 'Customer',
-          email: '',
-          contact: ''
-        },
-
-        // ✅ Order notes
-        notes: {
-          product_id: product.id,
-          product_name: product.name,
-          seller_phone: sellerPhone,
-          order_type: 'buy_now'
-        },
-
-        // ✅ Theme
-        theme: {
-          color: '#3b82f6'
-        },
-
-        // ✅ Modal close handler
-        modal: {
-          ondismiss: function () {
-            console.log('💳 Payment cancelled by user');
-            setBuyingNow(false);
-          }
-        }
-      };
-
-      // ✅ Open Razorpay payment modal
-      const razorpayInstance = new window.Razorpay(options);
-
-      // ✅ Handle payment failure
-      razorpayInstance.on('payment.failed', function (response) {
-        console.error('❌ Payment failed:', response.error);
-        alert(`Payment failed: ${response.error.description}`);
-        setBuyingNow(false);
-      });
-
-      // ✅ Open the payment modal
-      razorpayInstance.open();
-
-    } catch (error) {
-      console.error('❌ Buy now error:', error);
-
-      if (error.response?.status === 401) {
-        localStorage.removeItem('buyerAccessToken');
-        alert('Session expired. Please login again.');
-        router.push('/login/buyer');
-      } else if (error.response?.data?.error) {
-        alert(`Error: ${error.response.data.error}`);
-      } else {
-        alert('Failed to process payment. Please try again.');
-      }
-
-      setBuyingNow(false);
+    
+    const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+    const shopSlug = generateShopSlug(store);
+    const phone = store?.seller_phone || store?.phone;
+    
+    if (!phone) {
+      alert('Store information is incomplete. Please try again later.');
+      return;
     }
-  };
+    
+    console.log('🔄 Redirecting to seller login:', `/shop/${shopSlug}/login?redirect=${returnUrl}&id=${phone}`);
+    router.push(`/shop/${shopSlug}/login?redirect=${returnUrl}&id=${phone}`);
+    return;
+  }
+
+  // ✅ Get shop slug and seller phone
+  const shopSlug = generateShopSlug(store);
+  const sellerPhone = store?.seller_phone || store?.phone;
+  
+  if (!shopSlug || !sellerPhone) {
+    alert('Store information missing. Cannot proceed to checkout.');
+    return;
+  }
+
+  // ✅ Navigate to individual shop's checkout with Buy Now parameters
+  console.log('🛒 Buy Now: Redirecting to shop checkout', {
+    shopSlug,
+    sellerPhone,
+    productId: product.id,
+    quantity
+  });
+
+  // ✅ Redirect to: /shop/[shopSlug]/checkout?buyNow=1&productId=123&quantity=2
+  router.push(`/shop/${shopSlug}/checkout?buyNow=1&productId=${product.id}&quantity=${quantity}&id=${sellerPhone}`);
+};
+
+
+
 
   // ✅ NEW: Share Handler
   const handleShare = async () => {

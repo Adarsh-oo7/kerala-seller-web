@@ -1,18 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
 import "../../../styles/keralasellerscheckout.css";
 import { toast } from "react-toastify";
-
+import axios from 'axios';
 
 import { ArrowLeft, CreditCard, User, AlertTriangle, Package, CheckCircle } from 'lucide-react';
 
-const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
+const API_BASE_URL = 'https://api.keralasellers.in';
 
-// ✅ FIXED: Razorpay script loader
+// ✅ Razorpay script loader
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
     const script = document.createElement('script');
@@ -26,6 +26,7 @@ const loadRazorpayScript = () => {
 export default function CheckoutPage() {
   const { sellerPhone } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams(); // ✅ NEW: Get URL parameters
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -36,12 +37,13 @@ export default function CheckoutPage() {
     name: '', phone: '', address: '', city: '', pincode: ''
   });
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [isBuyNow, setIsBuyNow] = useState(false); // ✅ NEW: Track if it's Buy Now
 
   console.log('🔍 Checkout Debug:');
   console.log('- sellerPhone:', sellerPhone);
   console.log('- Current URL:', typeof window !== 'undefined' ? window.location.href : 'SSR');
 
-  // ✅ FIXED: Load Razorpay script
+  // ✅ Load Razorpay script
   useEffect(() => {
     const loadScript = async () => {
       const loaded = await loadRazorpayScript();
@@ -53,6 +55,7 @@ export default function CheckoutPage() {
     loadScript();
   }, []);
 
+  // ✅ NEW: Buy Now + Cart checkout logic
   useEffect(() => {
     const initializeCheckout = async () => {
       const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
@@ -67,61 +70,118 @@ export default function CheckoutPage() {
         return;
       }
 
-      const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
-      const sellerCart = multiCarts[sellerPhone] || [];
+      // ✅ CHECK FOR BUY NOW PARAMETERS
+      const buyNow = searchParams.get('buyNow') === '1';
+      const productId = searchParams.get('productId');
+      const quantity = parseInt(searchParams.get('quantity') || '1');
 
-      console.log('📦 Cart loaded for seller:', sellerPhone, sellerCart);
+      console.log('🔍 Buy Now Check:', { buyNow, productId, quantity });
 
-      if (!sellerCart || sellerCart.length === 0) {
-        console.warn('⚠️ No items in cart, redirecting...');
-        router.push(`/cart/${sellerPhone}`);
-        return;
-      }
-
-      setCartItems(sellerCart);
-
-      try {
-        const [storeRes, profileRes] = await Promise.allSettled([
-          fetch(`${API_BASE_URL}/shop/${sellerPhone}/`),
-          fetch(`${API_BASE_URL}/api/buyer/profile/`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
-        ]);
-
-        if (storeRes.status === 'fulfilled' && storeRes.value.ok) {
-          const storeResData = await storeRes.value.json();
-          setStoreData(storeResData.store || storeResData);
-        } else {
-          setStoreData({
-            name: `Store ${sellerPhone}`,
-            seller_phone: sellerPhone
-          });
-        }
-
-        if (profileRes.status === 'fulfilled' && profileRes.value.ok) {
-          const profileData = await profileRes.value.json();
-          setShippingInfo({
-            name: profileData.full_name || '',
-            phone: profileData.phone_number || '',
-            address: [profileData.address_line_1, profileData.address_line_2].filter(Boolean).join(', '),
-            city: profileData.city || '',
-            pincode: profileData.pincode || ''
-          });
-        }
-      } catch (error) {
-        console.error('❌ Failed to load data:', error);
-      } finally {
-        setLoading(false);
+      if (buyNow && productId) {
+        // ✅ BUY NOW FLOW: Fetch single product
+        setIsBuyNow(true);
+        await fetchSingleProduct(productId, quantity, token);
+      } else {
+        // ✅ CART CHECKOUT FLOW: Load cart items
+        setIsBuyNow(false);
+        await loadCartItems(token);
       }
     };
 
     initializeCheckout();
-  }, [sellerPhone, router]);
+  }, [sellerPhone, router, searchParams]);
+
+  // ✅ NEW: Fetch single product for Buy Now
+  const fetchSingleProduct = async (productId, quantity, token) => {
+    try {
+      console.log('🛒 Fetching product for Buy Now:', productId);
+      
+      const productResponse = await axios.get(`${API_BASE_URL}/api/products/${productId}/`);
+      const product = productResponse.data;
+
+      console.log('✅ Product fetched:', product.name);
+
+      // Set cart items with single product
+      setCartItems([{
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: quantity,
+        image: product.cloudinary_url || product.main_image_url,
+        store: product.store
+      }]);
+
+      // Fetch store and profile data
+      await loadStoreAndProfile(token);
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('❌ Failed to fetch product:', error);
+      toast.error('Failed to load product details', {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      router.push('/');
+    }
+  };
+
+  // ✅ Load cart items (existing flow)
+  const loadCartItems = async (token) => {
+    const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
+    const sellerCart = multiCarts[sellerPhone] || [];
+
+    console.log('📦 Cart loaded for seller:', sellerPhone, sellerCart);
+
+    if (!sellerCart || sellerCart.length === 0) {
+      console.warn('⚠️ No items in cart, redirecting...');
+      router.push(`/cart/${sellerPhone}`);
+      return;
+    }
+
+    setCartItems(sellerCart);
+    await loadStoreAndProfile(token);
+    setLoading(false);
+  };
+
+  // ✅ Load store and buyer profile
+  const loadStoreAndProfile = async (token) => {
+    try {
+      const [storeRes, profileRes] = await Promise.allSettled([
+        fetch(`${API_BASE_URL}/shop/${sellerPhone}/`),
+        fetch(`${API_BASE_URL}/api/buyer/profile/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
+
+      if (storeRes.status === 'fulfilled' && storeRes.value.ok) {
+        const storeResData = await storeRes.value.json();
+        setStoreData(storeResData.store || storeResData);
+      } else {
+        setStoreData({
+          name: `Store ${sellerPhone}`,
+          seller_phone: sellerPhone
+        });
+      }
+
+      if (profileRes.status === 'fulfilled' && profileRes.value.ok) {
+        const profileData = await profileRes.value.json();
+        setShippingInfo({
+          name: profileData.full_name || '',
+          phone: profileData.phone_number || '',
+          address: [profileData.address_line_1, profileData.address_line_2].filter(Boolean).join(', '),
+          city: profileData.city || '',
+          pincode: profileData.pincode || ''
+        });
+      }
+    } catch (error) {
+      console.error('❌ Failed to load data:', error);
+    }
+  };
 
   const calculateTotal = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
 
-  // ✅ FIXED: Enhanced online payment with Razorpay - SELLER ROUTING
+  // ✅ Enhanced online payment with Razorpay
   const handleOnlinePayment = async (orderData) => {
     if (!razorpayLoaded) {
       alert('Payment system not loaded. Please refresh and try again.');
@@ -151,14 +211,13 @@ export default function CheckoutPage() {
         throw new Error(errorData.error || 'Failed to create payment order');
       }
 
-      // ✅ CHANGE #1: key → key_id (SELLER'S KEY)
       const { razorpay_order_id, amount, key_id } = await createOrderResponse.json();
       console.log('✅ Razorpay order created:', razorpay_order_id);
       console.log('✅ Using seller key:', key_id);
 
       // Step 2: Initialize Razorpay payment
       const options = {
-        key: key_id,  // ✅ CHANGE #2: key → key_id (SELLER'S KEY)
+        key: key_id,
         amount: amount,
         currency: 'INR',
         name: storeData?.name || `Store ${sellerPhone}`,
@@ -186,13 +245,14 @@ export default function CheckoutPage() {
             const verifyData = await verifyResponse.json();
 
             if (verifyResponse.ok && verifyData.success) {
-              // ✅ Clear cart using sellerPhone
-              const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
-              delete multiCarts[sellerPhone];
-              localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+              // ✅ Clear cart ONLY if NOT Buy Now
+              if (!isBuyNow) {
+                const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
+                delete multiCarts[sellerPhone];
+                localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+              }
 
               console.log('✅ Payment verified and order created');
-              // alert(`Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`);
               toast.success(`Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`, {
                 position: "top-right",
                 autoClose: 4500,
@@ -242,27 +302,21 @@ export default function CheckoutPage() {
     }
   };
 
-  // ✅ FIXED: Enhanced order placement with proper validation
+  // ✅ Enhanced order placement
   const handlePlaceOrder = async () => {
     console.log('🔄 Place order clicked');
     console.log('- Payment method:', paymentMethod);
     console.log('- Cart items:', cartItems.length);
     console.log('- Seller phone:', sellerPhone);
+    console.log('- Is Buy Now:', isBuyNow);
 
-    // ✅ FIXED: Enhanced validation
+    // Validation
     if (!shippingInfo.name || !shippingInfo.phone || !shippingInfo.address ||
       !shippingInfo.city || !shippingInfo.pincode || !paymentMethod) {
-      // alert('Please fill all required fields and select a payment method');
       toast.warn('Please fill all required fields and select a payment method.', {
         position: "top-right",
         autoClose: 5000,
         theme: "colored",
-        style: {
-          width: "440px",
-          height: "70px",
-          padding: "12px",
-          borderRadius: "12px",
-        },
       });
       return;
     }
@@ -319,12 +373,13 @@ export default function CheckoutPage() {
         console.log('📤 COD Response:', responseData);
 
         if (response.ok) {
-          // ✅ Clear cart using sellerPhone
-          const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
-          delete multiCarts[sellerPhone];
-          localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+          // ✅ Clear cart ONLY if NOT Buy Now
+          if (!isBuyNow) {
+            const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
+            delete multiCarts[sellerPhone];
+            localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+          }
 
-          // alert(`Order placed successfully! Order #${responseData.order_id} 🎉`);
           toast.success(`Order placed successfully! Order #${responseData.order_id} 🎉`, {
             position: "top-right",
             autoClose: 4500,
@@ -397,7 +452,7 @@ export default function CheckoutPage() {
         <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(14, 69, 30, 0.145)', justifyContent: 'space-between', marginBottom: '30px', border: '1px solid rgba(14, 69, 30, 0.145)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', padding: '20px', borderRadius: '12px' }}>
 
           <button
-            onClick={() => router.push(`/cart/`)}
+            onClick={() => router.back()}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -414,10 +469,11 @@ export default function CheckoutPage() {
 
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontSize: '20px' }}>
             <Package size={20} />
-            Checkout
+            Checkout {isBuyNow && '- Buy Now'}
           </h1>
         </div>
 
+        {/* Rest of your checkout UI remains the same */}
         <div className='keralasellerscheckoutlayout' style={{
           display: 'grid',
           gridTemplateColumns: '1fr 350px',

@@ -680,18 +680,30 @@ export default function ProductDetailPage() {
     };
 
     // Buy Now: just redirect to checkout with product/quantity
-    const handleBuyNow = () => {
-        if (!product) return;
-        if (!buyerStatus.isLoggedIn) {
-            router.push('/login/buyer');
-            return;
-        }
-        if (!product.store?.seller_phone) {
-            alert("Seller information missing.");
-            return;
-        }
-        router.push(`/checkout/${product.store.seller_phone}?buyNow=1&productId=${product.id}&quantity=${quantity}`);
-    };
+// ✅ FIXED: Buy Now - Direct to checkout
+const handleBuyNow = () => {
+    if (!product) return;
+    
+    if (!buyerStatus.isLoggedIn) {
+        router.push('/login/buyer');
+        return;
+    }
+    
+    if (!product.store?.seller_phone) {
+        alert("Seller information missing.");
+        return;
+    }
+    
+    console.log('🛒 Buy Now clicked:', {
+        productId: product.id,
+        quantity,
+        sellerPhone: product.store.seller_phone
+    });
+    
+    // ✅ Navigate to checkout with Buy Now parameters
+    router.push(`/checkout/${product.store.seller_phone}?buyNow=1&productId=${product.id}&quantity=${quantity}`);
+};
+
 
 
 

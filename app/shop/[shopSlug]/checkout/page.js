@@ -6,14 +6,13 @@ import { ArrowLeft, CreditCard, User, Phone, MapPin, Package, Store, AlertTriang
 import "../../../../styles/Shopslugcheckout.css";
 import SHeader from '../../../../components/common/SHeader';
 import { toast } from "react-toastify";
+import axios from 'axios';
 
-const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
-const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY_HERE';
+const API_BASE_URL = 'https://api.keralasellers.in';
 
-// ✅ ENHANCED: Razorpay script loader with retry mechanism
+// ✅ Razorpay script loader
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
-    // Check if already loaded
     if (window.Razorpay) {
       resolve(true);
       return;
@@ -37,6 +36,7 @@ export default function ShopCheckoutPage() {
   const { shopSlug } = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
+  
   const [cartItems, setCartItems] = useState([]);
   const [storeData, setStoreData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,11 +48,10 @@ export default function ShopCheckoutPage() {
   const [urlError, setUrlError] = useState(null);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ ADD: Login state for SHeader
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isBuyNow, setIsBuyNow] = useState(false); // ✅ NEW: Track Buy Now mode
 
-
-
-  // ✅ ADD: Check login status for SHeader
+  // ✅ Check login status
   useEffect(() => {
     try {
       const token = localStorage.getItem('buyerAccessToken') ||
@@ -65,19 +64,17 @@ export default function ShopCheckoutPage() {
     }
   }, []);
 
-  // ✅ ENHANCED: Store ID detection with validation
+  // ✅ Get store ID from URL
   const getActualStoreId = () => {
     console.log('🔍 Getting store ID for checkout...');
     console.log('- shopSlug from params:', shopSlug);
     console.log('- id from search params:', searchParams.get('id'));
 
-    // Check for undefined values
     if (shopSlug === 'undefined' || shopSlug === undefined) {
       setUrlError('Invalid shop slug in URL');
       return null;
     }
 
-    // Get store ID from query parameter or slug
     const queryId = searchParams.get('id');
     if (queryId && queryId !== 'undefined' && queryId.trim() !== '') {
       return queryId.trim();
@@ -93,9 +90,7 @@ export default function ShopCheckoutPage() {
 
   const actualStoreId = getActualStoreId();
 
-  console.log('🛒 Checkout store ID:', actualStoreId);
-
-  // ✅ ENHANCED: Load Razorpay script with retry
+  // ✅ Load Razorpay script
   useEffect(() => {
     const loadScript = async () => {
       let attempts = 0;
@@ -122,7 +117,7 @@ export default function ShopCheckoutPage() {
     loadScript();
   }, []);
 
-  // ✅ ENHANCED: URL generation with validation
+  // ✅ Generate shop URLs
   const getShopUrl = (path = '') => {
     if (!actualStoreId) {
       console.error('❌ Cannot generate URL - no store ID available');
@@ -130,15 +125,14 @@ export default function ShopCheckoutPage() {
     }
 
     if (searchParams.get('id') && shopSlug === 'new') {
-      // Pattern: /shop/new/path?id=123
       const basePath = `/shop/new${path}`;
       return `${basePath}?id=${actualStoreId}`;
     } else {
-      // Pattern: /shop/123/path
       return `/shop/${actualStoreId}${path}`;
     }
   };
 
+  // ✅ Check authentication
   const checkAuth = () => {
     const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
     if (!token) {
@@ -152,7 +146,7 @@ export default function ShopCheckoutPage() {
     return { 'Authorization': `Bearer ${token}` };
   };
 
-  // ✅ REDIRECT: If we have an invalid URL, redirect to cart
+  // ✅ REDIRECT: If invalid URL
   useEffect(() => {
     if (urlError || !actualStoreId) {
       console.log('🔍 Invalid checkout URL, redirecting to cart...');
@@ -177,14 +171,103 @@ export default function ShopCheckoutPage() {
     }
   }, [urlError, actualStoreId, router]);
 
+  // ✅ NEW: Fetch single product for Buy Now
+  const fetchSingleProduct = async (productId, quantity, sellerPhone, token) => {
+    try {
+      console.log('🛒 Fetching product for Buy Now:', productId);
+      
+      const productResponse = await axios.get(`${API_BASE_URL}/api/products/${productId}/`);
+      const product = productResponse.data;
+
+      console.log('✅ Product fetched:', product.name);
+
+      // Set cart items with single product
+      setCartItems([{
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: quantity,
+        image: product.cloudinary_url || product.main_image_url,
+        store: product.store
+      }]);
+
+      console.log('✅ Buy Now cart item set:', cartItems);
+      
+    } catch (error) {
+      console.error('❌ Failed to fetch product:', error);
+      toast.error('Failed to load product details', {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      router.push(getShopUrl());
+    }
+  };
+
+  // ✅ Load store and profile data
+  const loadStoreAndProfile = async (sellerPhone, headers) => {
+    try {
+      const [storeRes, profileRes] = await Promise.allSettled([
+        fetch(`${API_BASE_URL}/shop/${sellerPhone}/`),
+        fetch(`${API_BASE_URL}/api/buyer/profile/`, { headers })
+      ]);
+
+      if (storeRes.status === 'fulfilled' && storeRes.value.ok) {
+        const storeResData = await storeRes.value.json();
+        setStoreData(storeResData.store || storeResData);
+        console.log('✅ Store data loaded');
+      } else {
+        console.warn('⚠️ Store API failed, using fallback');
+        setStoreData({
+          name: `Store ${sellerPhone}`,
+          seller_phone: sellerPhone,
+          id: sellerPhone
+        });
+      }
+
+      if (profileRes.status === 'fulfilled' && profileRes.value.ok) {
+        const profileData = await profileRes.value.json();
+        setShippingInfo({
+          name: profileData.full_name || '',
+          phone: profileData.phone_number || '',
+          address: [profileData.address_line_1, profileData.address_line_2].filter(Boolean).join(', '),
+          city: profileData.city || '',
+          pincode: profileData.pincode || ''
+        });
+        console.log('✅ Profile data loaded');
+      }
+    } catch (error) {
+      console.error('❌ Failed to load store/profile data:', error);
+    }
+  };
+
+  // ✅ MAIN CHECKOUT INITIALIZATION WITH BUY NOW SUPPORT
   useEffect(() => {
-    const headers = checkAuth();
-    if (!headers || !actualStoreId) return;
+    const initializeCheckout = async () => {
+      const headers = checkAuth();
+      if (!headers || !actualStoreId) return;
 
-    const loadData = async () => {
-      console.log('📦 Loading checkout data for store:', actualStoreId);
+      console.log('📦 Initializing checkout for store:', actualStoreId);
 
-      // ✅ FIXED: Load cart using actual store ID
+      // ✅ CHECK FOR BUY NOW PARAMETERS FIRST!
+      const buyNow = searchParams.get('buyNow') === '1';
+      const productId = searchParams.get('productId');
+      const quantity = parseInt(searchParams.get('quantity') || '1');
+
+      console.log('🔍 Checkout params:', { buyNow, productId, quantity });
+
+      if (buyNow && productId) {
+        // ✅ BUY NOW FLOW
+        console.log('🛒 Buy Now mode detected');
+        setIsBuyNow(true);
+        
+        await fetchSingleProduct(productId, quantity, actualStoreId, headers['Authorization'].split(' ')[1]);
+        await loadStoreAndProfile(actualStoreId, headers);
+        
+        setLoading(false);
+        return; // ✅ Exit early - don't check cart
+      }
+
+      // ✅ CART FLOW (only if NOT Buy Now)
       const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
       const storeCart = multiCarts[actualStoreId] || [];
 
@@ -197,51 +280,16 @@ export default function ShopCheckoutPage() {
       }
 
       setCartItems(storeCart);
-
-      try {
-        // Load store and profile data
-        const [storeRes, profileRes] = await Promise.allSettled([
-          fetch(`${API_BASE_URL}/shop/${actualStoreId}/`),
-          fetch(`${API_BASE_URL}/api/buyer/profile/`, { headers })
-        ]);
-
-        if (storeRes.status === 'fulfilled' && storeRes.value.ok) {
-          const storeResData = await storeRes.value.json();
-          setStoreData(storeResData.store || storeResData);
-          console.log('✅ Store data loaded for checkout');
-        } else {
-          console.warn('⚠️ Store API failed, using fallback');
-          setStoreData({
-            name: `Store ${actualStoreId}`,
-            seller_phone: actualStoreId,
-            id: actualStoreId
-          });
-        }
-
-        if (profileRes.status === 'fulfilled' && profileRes.value.ok) {
-          const profileData = await profileRes.value.json();
-          setShippingInfo({
-            name: profileData.full_name || '',
-            phone: profileData.phone_number || '',
-            address: [profileData.address_line_1, profileData.address_line_2].filter(Boolean).join(', '),
-            city: profileData.city || '',
-            pincode: profileData.pincode || ''
-          });
-          console.log('✅ Profile data loaded for shipping');
-        }
-      } catch (error) {
-        console.error('❌ Failed to load checkout data:', error);
-      } finally {
-        setLoading(false);
-      }
+      await loadStoreAndProfile(actualStoreId, headers);
+      setLoading(false);
     };
 
     if (actualStoreId && !urlError) {
-      loadData();
+      initializeCheckout();
     }
-  }, [actualStoreId]);
+  }, [actualStoreId, searchParams]);
 
-  // ✅ ENHANCED: Form validation
+  // ✅ Form validation
   const validateForm = () => {
     const errors = {};
 
@@ -260,8 +308,7 @@ export default function ShopCheckoutPage() {
   const calculateTotal = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
 
-  // ✅ ENHANCED: Handle online payment with better error handling
-  // ✅ FIXED: Handle online payment matching working checkout
+  // ✅ Handle online payment
   const handleOnlinePayment = async (orderData) => {
     if (!razorpayLoaded) {
       alert('Payment system not loaded. Please refresh and try again.');
@@ -274,7 +321,6 @@ export default function ShopCheckoutPage() {
       const headers = checkAuth();
       if (!headers) return false;
 
-      // Step 1: Create Razorpay order
       const createOrderResponse = await fetch(`${API_BASE_URL}/user/orders/create-razorpay-order/`, {
         method: 'POST',
         headers: {
@@ -292,20 +338,16 @@ export default function ShopCheckoutPage() {
         throw new Error(errorData.error || 'Failed to create payment order');
       }
 
-      // ✅ CRITICAL FIX: Use key_id instead of key (matching working code)
       const { razorpay_order_id, amount, key_id } = await createOrderResponse.json();
 
       console.log('✅ Razorpay order created:', razorpay_order_id);
-      console.log('✅ Using key_id:', key_id);
 
-      // ✅ Validate key_id exists
       if (!key_id) {
         throw new Error('Payment key not received from server');
       }
 
-      // Step 2: Initialize Razorpay payment
       const options = {
-        key: key_id,  // ✅ FIXED: Use key_id from backend response
+        key: key_id,
         amount: amount,
         currency: 'INR',
         name: storeData?.name || `Store ${actualStoreId}`,
@@ -315,7 +357,6 @@ export default function ShopCheckoutPage() {
           console.log('💳 Payment completed, verifying...');
 
           try {
-            // Step 3: Verify payment and create order
             const verifyResponse = await fetch(`${API_BASE_URL}/user/orders/verify-payment-and-create-order/`, {
               method: 'POST',
               headers: {
@@ -333,22 +374,19 @@ export default function ShopCheckoutPage() {
             const verifyData = await verifyResponse.json();
 
             if (verifyResponse.ok && verifyData.success) {
-              // Clear cart
-              const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
-              delete multiCarts[actualStoreId];
-              localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+              // ✅ Clear cart ONLY if NOT Buy Now
+              if (!isBuyNow) {
+                const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
+                delete multiCarts[actualStoreId];
+                localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+              }
 
               console.log('✅ Payment verified and order created');
-              // alert(`Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`);
-              toast.success(
-                `Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`,
-                {
-                  position: 'top-center',
-                  autoClose: 3000,
-                }
-              );
+              toast.success(`Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`, {
+                position: 'top-center',
+                autoClose: 3000,
+              });
 
-              // Navigate to store-specific profile orders page
               const profileUrl = getShopUrl('/profile/orders');
               router.push(profileUrl);
             } else {
@@ -373,7 +411,7 @@ export default function ShopCheckoutPage() {
           contact: shippingInfo.phone
         },
         theme: {
-          color: '#1a4845'  // Match your shop theme
+          color: '#1a4845'
         }
       };
 
@@ -394,17 +432,15 @@ export default function ShopCheckoutPage() {
     }
   };
 
-
-  // ✅ ENHANCED: Handle order placement with validation
+  // ✅ Handle order placement
   const handlePlaceOrder = async () => {
     console.log('🔄 Placing order...');
     console.log('- Store ID:', actualStoreId);
     console.log('- Cart items:', cartItems.length);
     console.log('- Payment method:', paymentMethod);
+    console.log('- Is Buy Now:', isBuyNow);
 
-    // Validate form
     if (!validateForm()) {
-      // alert('Please fix the form errors and try again');
       toast.warning('Please fill the form', {
         position: "top-center",
         autoClose: 2000,
@@ -448,12 +484,10 @@ export default function ShopCheckoutPage() {
       console.log('📤 Sending order data:', orderData);
 
       if (paymentMethod === 'ONLINE') {
-        // Handle online payment
         const paymentSuccess = await handleOnlinePayment(orderData);
         if (!paymentSuccess) {
           setSubmitting(false);
         }
-        // Don't set submitting to false here as payment is in progress
       } else {
         // Handle COD
         const headers = checkAuth();
@@ -474,21 +508,19 @@ export default function ShopCheckoutPage() {
         const responseData = await response.json();
 
         if (response.ok) {
-          // Clear cart
-          const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
-          delete multiCarts[actualStoreId];
-          localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+          // ✅ Clear cart ONLY if NOT Buy Now
+          if (!isBuyNow) {
+            const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
+            delete multiCarts[actualStoreId];
+            localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+          }
 
           console.log('✅ COD Order placed successfully:', responseData);
-          // alert(`Order placed successfully! Order #${responseData.order_id} 🎉`);
-          toast.success(
-            `Order placed successfully! Order #${responseData.order_id} 🎉`,
-            {
-              position: 'top-center',
-              autoClose: 3000,
-            }
-          );
-          // ✅ FIXED: Navigate to store-specific profile orders page
+          toast.success(`Order placed successfully! Order #${responseData.order_id} 🎉`, {
+            position: 'top-center',
+            autoClose: 3000,
+          });
+          
           const profileUrl = getShopUrl('/profile/orders');
           router.push(profileUrl);
         } else {
@@ -512,16 +544,13 @@ export default function ShopCheckoutPage() {
     router.push(cartUrl);
   };
 
-  // ✅ ENHANCED: Input change handler with error clearing
   const handleInputChange = (field, value) => {
     setShippingInfo({ ...shippingInfo, [field]: value });
-    // Clear error when user starts typing
     if (formErrors[field]) {
       setFormErrors({ ...formErrors, [field]: '' });
     }
   };
 
-  // Show loading while redirecting or loading
   if (loading || urlError) {
     return (
       <div style={styles.loadingContainer}>
@@ -530,22 +559,19 @@ export default function ShopCheckoutPage() {
             <AlertTriangle size={48} color="#ef4444" />
             <h2>Invalid Checkout URL</h2>
             <p>{urlError}</p>
-            <p>Redirecting to cart...</p>
+            <p>Redirecting...</p>
           </>
         ) : (
           <>
             <div style={styles.spinner}></div>
             <p>Loading checkout...</p>
-            <p style={{ fontSize: '12px', color: '#666' }}>
-              Store ID: {actualStoreId || 'Not found'}
-            </p>
+            {isBuyNow && <p style={{ fontSize: '12px', color: '#666' }}>Buy Now Mode</p>}
           </>
         )}
       </div>
     );
   }
 
-  // Show error if no store ID found (shouldn't reach here due to redirect)
   if (!actualStoreId) {
     return (
       <div style={styles.errorContainer}>
@@ -561,15 +587,9 @@ export default function ShopCheckoutPage() {
 
   return (
     <div style={styles.pageContainer}>
-      {/* ✅ ADD: SHeader - Navigation Bar */}
-      <SHeader
-        store={storeData}
-        isLoggedIn={isLoggedIn}
-      />
+      <SHeader store={storeData} isLoggedIn={isLoggedIn} />
+      
       <div className='shopslugcheckoutcontainer' style={styles.container}>
-
-
-        {/* Store Context */}
         <div className='shopslugcheckoutstoreindicator' style={styles.storeIndicator}>
           <button onClick={handleBackClick} style={styles.backButton}>
             <ArrowLeft size={20} />
@@ -578,7 +598,7 @@ export default function ShopCheckoutPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Package size={16} />
             <span>
-              Placing order {cartItems.length} item{cartItems.length !== 1 ? 's' : ''}
+              {isBuyNow ? 'Buy Now - ' : ''}Placing order {cartItems.length} item{cartItems.length !== 1 ? 's' : ''}
             </span>
           </div>
         </div>
