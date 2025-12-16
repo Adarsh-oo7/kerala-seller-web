@@ -8,6 +8,8 @@
         height: 30px !important;
     }
 
+
+
     .keralasellerprofileverificationpagetitle {
         font-size: 19px !important;
     }
@@ -62,6 +64,10 @@
     .keralasellerprofileverificationpageicon {
         width: 30px !important;
         height: 30px !important;
+    }
+
+    .shopverificationpagecontainer {
+        padding-top: 80px !important;
     }
 
     .keralasellerprofileverificationpagetitle {

@@ -307,7 +307,7 @@ const handleWishlistToggle = async (e) => {
 
         {/* ✅ Rating overlay (existing) - shows on image hover */}
         {/* {product.average_rating > 0 && ( */}
-        <div style={styles.ratingOverlay}>
+        <div className='shopproductcardoverlay' style={styles.ratingOverlay}>
           <div style={styles.ratingLeft}>
             <Star
               size={12}

@@ -7,6 +7,9 @@ import { auth } from '../../../../../firebase'; // ✅ Adjust path to your fireb
 import axios from 'axios';
 import Link from 'next/link';
 import SHeader from '../../../../../components/common/SHeader';
+import "../../../../../styles/Kerelasellerprofileverification.css";
+import Footer from '../../../../../components/common/Footer';
+
 
 import {
   Check,
@@ -41,7 +44,7 @@ export default function VerifyPhonePage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  
+
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
@@ -111,7 +114,7 @@ export default function VerifyPhonePage() {
   const fetchProfile = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
-    
+
     setIsLoading(true);
     try {
       // Fetch buyer profile
@@ -153,7 +156,7 @@ export default function VerifyPhonePage() {
   // ✅ Validate
   const validatePhoneNumber = (phone) =>
     /^[6-9]\d{9}$/.test(phone.replace(/\s+/g, ''));
-  
+
   const validateOTP = (code) =>
     code.length === 6 && /^\d{6}$/.test(code);
 
@@ -165,39 +168,39 @@ export default function VerifyPhonePage() {
     }
     const headers = getAuthHeaders();
     if (!headers) return;
-    
+
     setIsSubmitting(true);
     setError('');
-    
+
     try {
       console.log('🔄 Step 1: Preparing backend for phone:', phoneNumber);
       await axios.post(SEND_OTP_API, { phone: phoneNumber }, { headers });
-      
+
       console.log('🔄 Step 2: Sending Firebase SMS OTP...');
       const formattedPhone = `+91${phoneNumber}`;
       const verifier = setupRecaptcha();
-      
+
       if (!verifier) {
         throw new Error('Failed to initialize reCAPTCHA');
       }
-      
+
       const confirmationResult = await signInWithPhoneNumber(
         auth,
         formattedPhone,
         verifier
       );
-      
+
       console.log('✅ Firebase OTP sent successfully!');
       setVerificationId(confirmationResult);
       setOtpSent(true);
       setResendTimer(60);
       setOtpAttempts(0);
       setSuccessMessage(`SMS OTP sent to ${formattedPhone}`);
-      
+
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('❌ OTP sending failed:', error);
-      
+
       let errorMessage = 'Failed to send OTP. Please try again.';
       if (error.code === 'auth/too-many-requests') {
         errorMessage = 'Too many requests. Please try again later.';
@@ -208,7 +211,7 @@ export default function VerifyPhonePage() {
       } else if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
       }
-      
+
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -225,30 +228,30 @@ export default function VerifyPhonePage() {
       setError('Verification session expired. Please request a new OTP.');
       return;
     }
-    
+
     const headers = getAuthHeaders();
     if (!headers) return;
-    
+
     setIsSubmitting(true);
     setError('');
-    
+
     try {
       console.log('🔄 Step 1: Verifying Firebase OTP...');
       const result = await verificationId.confirm(otp);
       const idToken = await result.user.getIdToken();
-      
+
       console.log('🔄 Step 2: Verifying with backend...');
       await axios.post(
         VERIFY_FIREBASE_API,
         { firebase_id_token: idToken },
         { headers }
       );
-      
+
       console.log('✅ Backend verification successful!');
       setSuccessMessage('Phone verified successfully! 🎉');
-      
+
       await fetchProfile();
-      
+
       setTimeout(() => {
         const profileBack =
           actualStoreId && actualStoreId !== 'new'
@@ -259,7 +262,7 @@ export default function VerifyPhonePage() {
     } catch (error) {
       console.error('❌ OTP verification failed:', error);
       setOtpAttempts((prev) => prev + 1);
-      
+
       let errorMessage = 'Invalid OTP. Please try again.';
       if (error.code === 'auth/invalid-verification-code') {
         errorMessage = 'Invalid OTP code. Please check and try again.';
@@ -268,10 +271,10 @@ export default function VerifyPhonePage() {
       } else if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
       }
-      
+
       setError(errorMessage);
       setOtp('');
-      
+
       if (otpAttempts >= 2) {
         setOtpSent(false);
         setVerificationId(null);
@@ -322,18 +325,11 @@ export default function VerifyPhonePage() {
 
   // ✅ Main UI
   return (
-    <div style={styles.pageContainer}>
+    <div className='shopverificationpagecontainer' style={styles.pageContainer}>
       <SHeader store={storeData} isLoggedIn={true} />
-      
+
       <div style={styles.container}>
-        <div style={styles.header}>
-          <ArrowLeft 
-            size={24} 
-            style={styles.backIcon} 
-            onClick={() => router.back()} 
-          />
-          <h2 style={styles.title}>Verify Your Phone</h2>
-        </div>
+
 
         {successMessage && (
           <div style={styles.successAlert}>
@@ -362,7 +358,7 @@ export default function VerifyPhonePage() {
               <p style={styles.verifiedText}>
                 Your phone number <strong>+91 {buyer.phone_number}</strong> is verified!
               </p>
-              
+
               <div style={styles.benefits}>
                 <div style={styles.benefitsTitle}>
                   <Shield size={18} />
@@ -375,142 +371,172 @@ export default function VerifyPhonePage() {
                   <li><Shield size={14} /> Account recovery options</li>
                 </ul>
               </div>
-              
-              <Link 
-                style={styles.backButton} 
+
+              <Link
+                style={styles.backButton}
                 href={actualStoreId && actualStoreId !== 'new' ? `/shop/${actualStoreId}/profile` : '/profile'}
               >
                 Back to Profile
               </Link>
             </div>
           ) : (
-            <div style={styles.formSection}>
-              {!otpSent ? (
-                <>
-                  <div style={styles.formGroup}>
-                    <label style={styles.label}>
-                      <Phone size={16} />
-                      Mobile Number
-                    </label>
-                    <div style={styles.phoneInputContainer}>
-                      <span style={styles.countryCode}>+91</span>
-                      <input
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={e => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                        placeholder="Enter 10-digit number"
-                        style={styles.phoneInput}
-                        maxLength={10}
-                      />
+
+            <div style={styles.verificationSection}>
+              <div style={{ ...styles.verificationHeader, flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <div style={styles.headerIcon}>
+                  <Shield className='keralasellerprofileverificationpageicon' size={35} />
+                </div>
+                <div>
+                  <h2 className='keralasellerprofileverificationpagetitle' style={styles.sectionTitle}>
+                    Verify Your Phone Number
+                  </h2>
+                  <p className='keralasellerprofileverificationpagetext' style={styles.sectionDescription}>
+                    Secure your account and enable shopping by verifying your phone number with SMS OTP.
+                  </p>
+                </div>
+              </div>
+
+              <div style={styles.warningBox}>
+                <AlertCircle size={20} />
+                <div>
+                  <strong className='keralasellerprofileverificationpagetext'>Account Security Required</strong>
+                  <p className='keralasellerprofileverificationpagetext'>Phone verification is required for placing orders and account security.</p>
+                </div>
+              </div>
+              <div style={styles.formSection}>
+                {!otpSent ? (
+                  <>
+                    <div style={styles.formGroup}>
+                      <label className='keralasellerprofileverificationpagetext' style={styles.label}>
+                        <Phone size={16} />
+                        Mobile Number
+                      </label>
+                      <div style={styles.phoneInputContainer}>
+                        <span className='keralasellerprofileverificationcountrycode' style={styles.countryCode}>+91</span>
+                        <input
+                          className='keralasellerprofileverificationinput'
+                          type="tel"
+                          value={phoneNumber}
+                          onChange={e => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                          placeholder="Enter 10-digit number"
+                          style={styles.phoneInput}
+                          maxLength={10}
+                        />
+                      </div>
+                      <p style={styles.helpText}>
+                        You will receive an SMS with a 6-digit verification code
+                      </p>
                     </div>
-                    <p style={styles.helpText}>
-                      You will receive an SMS with a 6-digit verification code
-                    </p>
-                  </div>
-                  
-                  <button
-                    onClick={handleSendOtp}
-                    disabled={isSubmitting || !validatePhoneNumber(phoneNumber)}
-                    style={{
-                      ...styles.sendButton,
-                      ...(isSubmitting || !validatePhoneNumber(phoneNumber) ? styles.disabledButton : {})
-                    }}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div style={styles.buttonSpinner}></div>
-                        Sending OTP...
-                      </>
-                    ) : (
-                      <>
-                        <MessageCircle size={17} />
-                        Send SMS OTP
-                      </>
-                    )}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div style={styles.otpSentBadge}>
-                    <MessageCircle size={16} />
-                    OTP sent to <strong>+91 {phoneNumber}</strong>
-                  </div>
-                  
-                  <div style={styles.formGroup}>
-                    <label style={styles.label}>Enter 6-digit Verification Code</label>
-                    <input
-                      type="text"
-                      value={otp}
-                      onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      placeholder="000000"
-                      maxLength={6}
-                      style={styles.otpInput}
-                      autoFocus
-                    />
-                    <p style={styles.helpText}>
-                      Check your SMS for the 6-digit verification code
-                    </p>
-                  </div>
-                  
-                  <button
-                    onClick={handleVerifyOtp}
-                    disabled={isSubmitting || otp.length !== 6}
-                    style={{
-                      ...styles.verifyButton,
-                      ...(isSubmitting || otp.length !== 6 ? styles.disabledButton : {})
-                    }}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div style={styles.buttonSpinner}></div>
-                        Verifying...
-                      </>
-                    ) : (
-                      <>
-                        <Check size={17} />
-                        Verify OTP
-                      </>
-                    )}
-                  </button>
-                  
-                  <div style={styles.otpFooter}>
-                    <button onClick={handleChangeNumber} style={styles.changeButton}>
-                      Change Number
+
+                    <button
+                      className='keralasellerprofileverificationbtn'
+                      onClick={handleSendOtp}
+                      disabled={isSubmitting || !validatePhoneNumber(phoneNumber)}
+                      style={{
+                        ...styles.sendButton,
+                        ...(isSubmitting || !validatePhoneNumber(phoneNumber) ? styles.disabledButton : {})
+                      }}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div style={styles.buttonSpinner}></div>
+                          Sending OTP...
+                        </>
+                      ) : (
+                        <>
+                          <MessageCircle size={17} />
+                          Send SMS OTP
+                        </>
+                      )}
                     </button>
-                    {resendTimer > 0 ? (
-                      <span style={styles.timerText}>
-                        <Clock size={15} />
-                        Resend OTP in {formatTime(resendTimer)}
-                      </span>
-                    ) : (
-                      <button onClick={handleResendOtp} style={styles.resendButton}>
-                        <RefreshCw size={15} />
-                        Resend OTP
-                      </button>
-                    )}
-                  </div>
-                  
-                  {otpAttempts > 0 && (
-                    <div style={styles.attemptsWarning}>
-                      <AlertCircle size={14} />
-                      {3 - otpAttempts} attempts remaining
+                  </>
+                ) : (
+                  <>
+                    <div className='keralasellerprofileverificationotpbadgeinfo' style={styles.otpSentBadge}>
+                      <MessageCircle className='keralasellerprofileverificationotpbadgeinfoicon' size={16} />
+                      <span className='keralasellerprofileverificationotpbadgetext'>SMS OTP sent to +91 {phoneNumber}</span>
                     </div>
-                  )}
-                </>
-              )}
+
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Enter 6-digit Verification Code</label>
+                      <input
+                        className='keralasellerprofileverificationinput'
+                        type="text"
+                        value={otp}
+                        onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        placeholder="000000"
+                        maxLength={6}
+                        style={styles.otpInput}
+                        autoFocus
+                      />
+                      <p style={styles.helpText}>
+                        Check your SMS for the 6-digit verification code
+                      </p>
+                    </div>
+
+                    <button
+                      className='keralasellerprofileverificationbtn'
+                      onClick={handleVerifyOtp}
+                      disabled={isSubmitting || otp.length !== 6}
+                      style={{
+                        ...styles.verifyButton,
+                        ...(isSubmitting || otp.length !== 6 ? styles.disabledButton : {})
+                      }}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div style={styles.buttonSpinner}></div>
+                          Verifying...
+                        </>
+                      ) : (
+                        <>
+                          <Check size={17} />
+                          Verify OTP
+                        </>
+                      )}
+                    </button>
+
+                    <div className='keralasellerprofileverificationotpfooter' style={styles.otpFooter}>
+                      <button className='keralasellerprofileverificationresendbtn' onClick={handleChangeNumber} style={styles.changeButton}>
+                        Change Number
+                      </button>
+                      {resendTimer > 0 ? (
+                        <span style={styles.timerText}>
+                          <Clock size={15} />
+                          Resend OTP in {formatTime(resendTimer)}
+                        </span>
+                      ) : (
+                        <button className='keralasellerprofileverificationresendbtn' onClick={handleResendOtp} style={styles.resendButton}>
+                          <RefreshCw size={15} />
+                          Resend OTP
+                        </button>
+                      )}
+                    </div>
+
+                    {otpAttempts > 0 && (
+                      <div style={styles.attemptsWarning}>
+                        <AlertCircle size={14} />
+                        {3 - otpAttempts} attempts remaining
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>
       </div>
-      
+
       <div id="recaptcha-container"></div>
-      
+
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
       `}</style>
+      <Footer />
+
     </div>
   );
 }
@@ -520,7 +546,6 @@ const styles = {
     minHeight: '100vh',
     backgroundColor: '#FDFFF0',
     paddingTop: '140px',
-    paddingBottom: '40px'
   },
   loadingContainer: {
     display: 'flex',
@@ -549,7 +574,7 @@ const styles = {
   container: {
     maxWidth: '500px',
     margin: '0 auto',
-    padding: '0 24px'
+    padding: '24px'
   },
   header: {
     display: 'flex',
@@ -690,7 +715,6 @@ const styles = {
   },
   countryCode: {
     padding: '14px 16px',
-    backgroundColor: '#f9fafb',
     fontWeight: '600',
     color: '#374151'
   },
@@ -734,6 +758,45 @@ const styles = {
     borderRadius: '10px',
     fontWeight: '600',
     cursor: 'pointer'
+  },
+
+  verificationSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px',
+  },
+  verificationHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '16px',
+    textAlign: 'left'
+  },
+  headerIcon: {
+    color: '#f63b3bff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  sectionTitle: {
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#1f2937',
+  },
+  sectionDescription: {
+    fontSize: '14px',
+    color: '#6b7280',
+    lineHeight: '1.5',
+    margin: 0
+  },
+  warningBox: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px',
+    padding: '16px',
+    backgroundColor: '#fef3c7',
+    borderRadius: '12px',
+    border: '1px solid #f59e0b'
   },
   disabledButton: {
     backgroundColor: '#9ca3af',

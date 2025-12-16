@@ -432,7 +432,6 @@
 .product-title {
     font-size: 15px;
     font-weight: 600;
-    line-height: 1.3;
     color: #1a4845;
     margin: 0;
     display: -webkit-box;
@@ -457,18 +456,14 @@
 
 .product-meta {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    /* 👈 stack vertically */
+    align-items: flex-start;
+    /* left align */
     margin-top: 4px;
-    gap: 10px;
+    gap: 4px;
 }
 
-.store-name {
-    font-size: 0.9rem;
-    color: #6b7280;
-    /* gray-500 */
-    white-space: nowrap;
-}
 
 .price-row {
     display: flex;
@@ -496,6 +491,8 @@
     font-size: 12px;
     color: #28a745;
     font-weight: 500;
+    white-space: nowrap;
+
 }
 
 

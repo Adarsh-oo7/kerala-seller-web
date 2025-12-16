@@ -33,17 +33,12 @@
 
 .shopslugproducts-container {
     display: grid !important;
-    gap: 16px !important;
-    justify-content: center !important;
-    justify-items: center !important;
+    gap: 12px !important;
     margin: 0 auto !important;
     padding: 10px 0 !important;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
-    box-sizing: border-box !important;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important;
     max-width: 1200px !important;
     width: 100% !important;
-    overflow-x: hidden !important;
-    overflow-y: visible !important;
 }
 
 

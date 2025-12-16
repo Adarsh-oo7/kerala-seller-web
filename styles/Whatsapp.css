@@ -79,18 +79,32 @@ a.blantershow-chat i {
   margin: 0 10px 0 0 !important;
 }
 
-.info-avatar:before {
-  content: '\f232' !important;
-  z-index: 1 !important;
-  font-family: "Font Awesome 5 Brands" !important;
-  background: #23ab23 !important;
-  color: #fff !important;
-  padding: 4px 5px !important;
-  border-radius: 100% !important;
-  position: absolute !important;
-  top: 30px !important;
-  left: 30px !important;
+.info-avatar {
+  position: relative !important;
 }
+
+.wa-icon {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  background: #25D366;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.wa-icon svg {
+  fill: #fff;
+  width: 15px;
+  height: 15px;
+}
+
+
+
 
 a.informasi {
   padding: 20px !important;
@@ -203,14 +217,23 @@ a.close-chat {
   }
 }
 
+@media screen and (max-width:767px) {
+
+  a.blantershow-chat {
+    bottom: 70px !important;
+    right: 30px !important;
+    padding: 7px 14px !important;
+    font-size: 13px !important;
+  }
+}
+
 @media screen and (max-width:480px) {
   #whatsapp-chat {
     width: auto !important;
     right: 20px !important;
-    /* 👈 250px from right */
-    /* make sure left doesn't override */
     font-size: 80% !important;
   }
+
 }
 
 

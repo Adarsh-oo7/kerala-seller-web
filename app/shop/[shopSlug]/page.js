@@ -871,7 +871,7 @@ function EnhancedSellerStorefrontPage() {
           onFilterChange={handleFilterChange}
           activeFilters={filters}
         />
-        <div className="container" style={styles.container}>
+        <div  style={styles.container}>
           <div className="products-header-enhanced" style={styles.productsHeader}>
             <div className="products-title-enhanced" style={styles.productsTitle}>
               <span className="product-text" style={styles.producttext}>
@@ -968,18 +968,13 @@ export default ShopPageWithSuspense;
 // ✅ ALL STYLES
 const styles = {
   pageContainer: {
-    display: 'flex',
-    flexDirection: 'column',
     minHeight: '100vh',
     backgroundColor: '#FDFFF0',
   },
   container: {
-    flex: 1,
     maxWidth: '1200px',
     margin: '0 auto',
-    padding: '20px 20px',
-    boxSizing: 'border-box',
-    overflowX: 'hidden',
+    padding: '0px 20px',
   },
   Filtercontainer: {
     flex: 1,
@@ -1299,14 +1294,14 @@ const styles = {
   },
   productsContainer: {
     display: 'grid',
-    gap: '16px',
+    gap: '12px',
     justifyContent: 'center',
+    justifyItems: 'center',
+    flexWrap: "wrap",
     width: '100%',
     margin: '0 auto',
     padding: '10px 0',
-    boxSizing: 'border-box',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-    overflowX: 'hidden',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
   },
   emptyState: {
     display: 'flex',

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../../styles/Whatsapp.css";
+import { siWhatsapp } from "simple-icons";
 
 // 🔥 ENV handler
 const getApiBaseUrl = () => {
@@ -132,6 +133,11 @@ function Whatsapp({ sellerPhone, shopSlug }) {
               src="https://2.bp.blogspot.com/-y6xNA_8TpFo/XXWzkdYk0MI/AAAAAAAAA5s/RCzTBJ_FbMwVt5AEZKekwQqiDNqdNQJjgCLcBGAs/s70/supportmale.png"
               alt="Support"
             />
+            <div
+              className="wa-icon"
+              dangerouslySetInnerHTML={{ __html: siWhatsapp.svg }}
+            />
+
           </div>
 
           <div className="info-chat">

@@ -1,15 +1,32 @@
 .product-model {
-    font-size: 0.85rem !important;
-    color: #6b7280 !important;
-    font-weight: 400 !important;
-    margin-left: 4px !important;
+    font-size: 0.85rem;
+    color: #6b7280;
+    font-weight: 400;
+
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    flex-shrink: 0;
+    /* model keeps its space */
+}
+
+
+.product-name {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
     white-space: nowrap !important;
     overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    display: inline-block !important;
-    vertical-align: middle !important;
-    max-width: 120px !important;
 }
+
+.product-name>span,
+.product-name {
+    min-width: 0;
+}
+
+
 
 
 @media (max-width: 767px) {
@@ -46,20 +63,22 @@
 
     .product-name {
         font-size: 13px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
     }
 
     .product-model {
-        max-width: 70px !important;
-        font-size: 14px !important;
-        color: #6b7280 !important;
-        font-weight: 400 !important;
-        margin-left: 4px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        display: inline-block !important;
-        vertical-align: middle !important;
-        max-width: 20px !important; 
+        font-size: 0.65rem;
+        color: #6b7280;
+        font-weight: 400;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
     .product-pricing {
@@ -70,6 +89,5 @@
     .add-to-cart-btn {
         padding: 6px 5px !important;
     }
-
 
 }
