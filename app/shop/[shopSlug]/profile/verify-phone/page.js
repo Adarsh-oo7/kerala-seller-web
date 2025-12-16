@@ -351,29 +351,42 @@ export default function VerifyPhonePage() {
         <div style={styles.card}>
           {buyer.phone_verified ? (
             <div style={styles.verifiedSection}>
-              <div style={styles.verifiedIcon}>
-                <Check size={40} color="#10b981" />
+              <div className='keralasellerprofileverificationiconcontainer' style={styles.verifiedIcon}>
+                <Check size={40} className='keralasellerprofileverificationpageicon' color="#10b981" />
               </div>
-              <h3 style={styles.verifiedTitle}>Phone Number Verified</h3>
-              <p style={styles.verifiedText}>
-                Your phone number <strong>+91 {buyer.phone_number}</strong> is verified!
+              <h2 className='keralasellerprofileverificationconftitle' style={styles.verifiedTitle}>Phone Number Verified</h2>
+              <p className='keralasellerprofileverificationconftext' style={styles.verifiedText}>
+                Your phone number <strong className='keralasellerprofileverificationnoclr'>+91 {buyer.phone_number}</strong> is verified!
               </p>
 
-              <div style={styles.benefits}>
-                <div style={styles.benefitsTitle}>
+              <div className="benefits" style={styles.benefits}>
+                <div className="keralasellerprofileverificationbenefitsTitle" style={styles.benefitsTitle}>
                   <Shield size={18} />
                   <span>Benefits of verified account:</span>
                 </div>
                 <ul style={styles.benefitsList}>
-                  <li><Lock size={14} /> Enhanced account security</li>
-                  <li><MessageCircle size={14} /> Order notifications via SMS</li>
-                  <li><Check size={14} /> Faster checkout process</li>
-                  <li><Shield size={14} /> Account recovery options</li>
+                  <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Lock size={16} />
+                    <span className='keralasellerprofileverificationbenefitslist'>Enhanced account security</span>
+                  </li>
+                  <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <MessageCircle size={16} />
+                    <span className='keralasellerprofileverificationbenefitslist'>Order notifications via SMS</span>
+                  </li>
+                  <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Check size={16} />
+                    <span className='keralasellerprofileverificationbenefitslist'>Faster checkout process</span>
+                  </li>
+                  <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Shield size={16} />
+                    <span className='keralasellerprofileverificationbenefitslist'>Account recovery options</span>
+                  </li>
                 </ul>
               </div>
 
               <Link
                 style={styles.backButton}
+                className='keralasellerprofileverificationbtn'
                 href={actualStoreId && actualStoreId !== 'new' ? `/shop/${actualStoreId}/profile` : '/profile'}
               >
                 Back to Profile

@@ -8,6 +8,8 @@ import "../../../../../styles/Shopslugproduct.css";
 import { useCart } from '../../../../context/CartContext';
 import SHeader from '../../../../../components/common/SHeader';
 import Footer from '../../../../../components/common/Footer';
+import { toast } from "react-toastify";
+
 import {
   ShoppingCart,
   Star,
@@ -585,53 +587,53 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
   };
 
   // ✅ NEW: Buy Now Handler with Direct Payment
- // NEW Buy Now Handler with Direct Payment
-// NEW Buy Now Handler with Direct Payment
-// ✅ FIXED: Buy Now - Redirect to Individual Shop's Checkout
-const handleBuyNow = () => {
-  if (!product) return;
+  // NEW Buy Now Handler with Direct Payment
+  // NEW Buy Now Handler with Direct Payment
+  // ✅ FIXED: Buy Now - Redirect to Individual Shop's Checkout
+  const handleBuyNow = () => {
+    if (!product) return;
 
-  // ✅ Check if user is logged in
-  if (!isLoggedIn) {
-    if (!store) {
-      alert('Store information is loading. Please wait and try again.');
+    // ✅ Check if user is logged in
+    if (!isLoggedIn) {
+      if (!store) {
+        alert('Store information is loading. Please wait and try again.');
+        return;
+      }
+
+      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+      const shopSlug = generateShopSlug(store);
+      const phone = store?.seller_phone || store?.phone;
+
+      if (!phone) {
+        alert('Store information is incomplete. Please try again later.');
+        return;
+      }
+
+      console.log('🔄 Redirecting to seller login:', `/shop/${shopSlug}/login?redirect=${returnUrl}&id=${phone}`);
+      router.push(`/shop/${shopSlug}/login?redirect=${returnUrl}&id=${phone}`);
       return;
     }
-    
-    const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+
+    // ✅ Get shop slug and seller phone
     const shopSlug = generateShopSlug(store);
-    const phone = store?.seller_phone || store?.phone;
-    
-    if (!phone) {
-      alert('Store information is incomplete. Please try again later.');
+    const sellerPhone = store?.seller_phone || store?.phone;
+
+    if (!shopSlug || !sellerPhone) {
+      alert('Store information missing. Cannot proceed to checkout.');
       return;
     }
-    
-    console.log('🔄 Redirecting to seller login:', `/shop/${shopSlug}/login?redirect=${returnUrl}&id=${phone}`);
-    router.push(`/shop/${shopSlug}/login?redirect=${returnUrl}&id=${phone}`);
-    return;
-  }
 
-  // ✅ Get shop slug and seller phone
-  const shopSlug = generateShopSlug(store);
-  const sellerPhone = store?.seller_phone || store?.phone;
-  
-  if (!shopSlug || !sellerPhone) {
-    alert('Store information missing. Cannot proceed to checkout.');
-    return;
-  }
+    // ✅ Navigate to individual shop's checkout with Buy Now parameters
+    console.log('🛒 Buy Now: Redirecting to shop checkout', {
+      shopSlug,
+      sellerPhone,
+      productId: product.id,
+      quantity
+    });
 
-  // ✅ Navigate to individual shop's checkout with Buy Now parameters
-  console.log('🛒 Buy Now: Redirecting to shop checkout', {
-    shopSlug,
-    sellerPhone,
-    productId: product.id,
-    quantity
-  });
-
-  // ✅ Redirect to: /shop/[shopSlug]/checkout?buyNow=1&productId=123&quantity=2
-  router.push(`/shop/${shopSlug}/checkout?buyNow=1&productId=${product.id}&quantity=${quantity}&id=${sellerPhone}`);
-};
+    // ✅ Redirect to: /shop/[shopSlug]/checkout?buyNow=1&productId=123&quantity=2
+    router.push(`/shop/${shopSlug}/checkout?buyNow=1&productId=${product.id}&quantity=${quantity}&id=${sellerPhone}`);
+  };
 
 
 
@@ -651,7 +653,15 @@ const handleBuyNow = () => {
       } else {
         // Fallback: copy to clipboard
         await navigator.clipboard.writeText(window.location.href);
-        alert('Product link copied to clipboard! Share it with your friends.');
+        // alert('Product link copied to clipboard! Share it with your friends.');
+         toast.success(
+        `Product link copied to clipboard! Share it with your friends.`,
+        {
+          position: "top-right",
+          autoClose: 2000,
+          theme: "colored",
+        }
+      );
         console.log('✅ Link copied to clipboard');
       }
     } catch (error) {
@@ -659,7 +669,15 @@ const handleBuyNow = () => {
       // Final fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(window.location.href);
-        alert('Product link copied to clipboard!');
+        // alert('Product link copied to clipboard!');
+         toast.success(
+        `Product link copied to clipboard!`,
+        {
+          position: "top-right",
+          autoClose: 2000,
+          theme: "colored",
+        }
+      );
       } catch (clipboardError) {
         console.error('Clipboard error:', clipboardError);
         // Last resort: show the URL
@@ -1172,7 +1190,15 @@ function ShopProductPageContent() {
   // Add to cart handler
   const handleAddToCart = useCallback(async (quantity = 1) => {
     if (!product?.id || product.online_stock <= 0) {
-      alert('Product is out of stock');
+      // alert('Product is out of stock');
+       toast.warning(
+        `Product is out of stock`,
+        {
+          position: "top-right",
+          autoClose: 2000,
+          theme: "colored",
+        }
+      );
       return;
     }
 
@@ -1195,7 +1221,15 @@ function ShopProductPageContent() {
         await Promise.resolve(addToCart(sellerPhone, product));
       }
 
-      console.log('✅ Successfully added to cart:', product.name, 'Quantity:', quantity);
+      console.log('✅ Successfully added to cart:', product.name);
+      toast.success(
+        `${product.name} added to cart`,
+        {
+          position: "top-right",
+          autoClose: 2000,
+          theme: "colored",
+        }
+      );
     } catch (error) {
       console.error('❌ Add to cart failed:', error);
       alert('Failed to add to cart. Please try again.');
