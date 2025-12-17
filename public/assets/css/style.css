@@ -116,14 +116,14 @@
 /* Overlay */
 .mobile-menu-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    /* translucent black */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s, visibility 0.3s;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
     z-index: 99;
 }
 
@@ -132,6 +132,7 @@
     visibility: visible;
 }
 
+
 /* Sidebar */
 .mobile-menu {
     position: fixed;
@@ -139,7 +140,9 @@
     left: 0;
     width: 280px;
     height: 100%;
-    background-color: var(--background, #fff);
+    background: #fdfff0;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
     z-index: 100;
@@ -169,7 +172,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--foreground, #374151);
+    color: #67b86c;
 }
 
 /* Mobile nav items */
@@ -179,24 +182,34 @@
 
 .mobile-nav-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     padding: 1rem 0;
     font-weight: 500;
     font-size: 16px;
-    color: #006400;
+    color: #67b86c;
     border-bottom: 1px solid var(--border-color, #e5e7eb);
     text-decoration: none;
 }
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-right,
+.plus-icon {
+    width: 20px;
+    text-align: right;
+}
+
 
 .mobile-nav-item:hover {
     background-color: rgba(0, 0, 0, 0.05);
 }
 
-.plus-icon {
-    width: 20px;
-    text-align: center;
-}
+
 
 /* Submenu */
 .submenu {
@@ -211,13 +224,16 @@
 }
 
 .submenu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 12px 20px 12px 40px;
     color: #006400;
     text-decoration: none;
     font-size: 14px;
-    display: block;
     border-bottom: 1px solid #e5e7eb;
 }
+
 
 .submenu-item:hover {
     background-color: rgba(0, 0, 0, 0.05);

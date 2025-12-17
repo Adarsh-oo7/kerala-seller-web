@@ -78,20 +78,40 @@ const MobileMenu = ({ isOpen, onClose }) => {
           </button>
         </div>
         <div className="mobile-nav-items">
-          <Link href="/" className="mobile-nav-item" onClick={onClose}><ChevronRight size={16} /> Home</Link>
-          <Link href="/shop" className="mobile-nav-item" onClick={onClose}><ChevronRight size={16} /> Shop</Link>
+          <Link href="/" className="mobile-nav-item" onClick={onClose}>
+            <span className="nav-left">Home</span>
+            <ChevronRight size={16} />
+          </Link>
+          <Link href="/shop" className="mobile-nav-item" onClick={onClose}>
+            <span className="nav-left">Shop</span>
+            <ChevronRight size={16} />
+          </Link>
           <div>
             <div className="mobile-nav-item" onClick={() => toggleExpandItem("products")}>
-              <span><ChevronRight size={16} /> Products</span>
-              <div className="plus-icon">{expandedItem === "products" ? "−" : "+"}</div>
+              <span className="nav-left">Products</span>
+              <div className="nav-right">
+                {expandedItem === "products" ? "−" : "+"}
+              </div>
             </div>
             <div className={`submenu ${expandedItem === "products" ? "expanded" : ""}`}>
-              <Link href="/category/1" className="submenu-item" onClick={onClose}>Category 1</Link>
-              <Link href="/category/2" className="submenu-item" onClick={onClose}>Category 2</Link>
+              <Link href="/category/1" className="submenu-item" onClick={onClose}>
+                <span>Category 1</span>
+                <ChevronRight size={14} />
+              </Link>
+              <Link href="/category/2" className="submenu-item" onClick={onClose}>
+                <span>Category 2</span>
+                <ChevronRight size={14} />
+              </Link>
             </div>
           </div>
-          <Link href="/about" className="mobile-nav-item" onClick={onClose}><ChevronRight size={16} /> About Us</Link>
-          <Link href="/contact" className="mobile-nav-item" onClick={onClose}><ChevronRight size={16} /> Contact Us</Link>
+          <Link href="/about" className="mobile-nav-item" onClick={onClose}>
+            <span className="nav-left">About Us</span>
+            <ChevronRight size={16} />
+          </Link>
+          <Link href="/contact" className="mobile-nav-item" onClick={onClose}>
+            <span className="nav-left">Contact Us</span>
+            <ChevronRight size={16} />
+          </Link>
         </div>
       </div>
     </>
