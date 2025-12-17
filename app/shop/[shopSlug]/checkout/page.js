@@ -41,7 +41,7 @@ export default function ShopCheckoutPage() {
   const [storeData, setStoreData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [paymentMethod, setPaymentMethod] = useState(''); // ✅ Empty - auto-select based on store settings
   const [shippingInfo, setShippingInfo] = useState({
     name: '', phone: '', address: '', city: '', pincode: ''
   });
@@ -49,7 +49,7 @@ export default function ShopCheckoutPage() {
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isBuyNow, setIsBuyNow] = useState(false); // ✅ NEW: Track Buy Now mode
+  const [isBuyNow, setIsBuyNow] = useState(false);
 
   // ✅ Check login status
   useEffect(() => {
@@ -117,6 +117,29 @@ export default function ShopCheckoutPage() {
     loadScript();
   }, []);
 
+  // ✅ NEW: Auto-select payment method when store data is loaded
+  useEffect(() => {
+    if (storeData && !paymentMethod) {
+      const codEnabled = storeData.accepts_cod === true;
+      
+      console.log('🔍 Payment Options:', {
+        accepts_cod: storeData.accepts_cod,
+        codEnabled,
+        razorpayLoaded,
+        payment_method: storeData.payment_method
+      });
+
+      // Auto-select first available payment method
+      if (codEnabled) {
+        setPaymentMethod('COD');
+        console.log('✅ Auto-selected COD');
+      } else if (razorpayLoaded) {
+        setPaymentMethod('ONLINE');
+        console.log('✅ Auto-selected ONLINE payment');
+      }
+    }
+  }, [storeData, razorpayLoaded, paymentMethod]);
+
   // ✅ Generate shop URLs
   const getShopUrl = (path = '') => {
     if (!actualStoreId) {
@@ -181,7 +204,6 @@ export default function ShopCheckoutPage() {
 
       console.log('✅ Product fetched:', product.name);
 
-      // Set cart items with single product
       setCartItems([{
         id: product.id,
         name: product.name,
@@ -191,8 +213,7 @@ export default function ShopCheckoutPage() {
         store: product.store
       }]);
 
-      console.log('✅ Buy Now cart item set:', cartItems);
-      
+      console.log('✅ Buy Now cart item set');
     } catch (error) {
       console.error('❌ Failed to fetch product:', error);
       toast.error('Failed to load product details', {
@@ -213,14 +234,21 @@ export default function ShopCheckoutPage() {
 
       if (storeRes.status === 'fulfilled' && storeRes.value.ok) {
         const storeResData = await storeRes.value.json();
-        setStoreData(storeResData.store || storeResData);
-        console.log('✅ Store data loaded');
+        const store = storeResData.store || storeResData;
+        setStoreData(store);
+        
+        console.log('✅ Store data loaded:', {
+          name: store.name,
+          accepts_cod: store.accepts_cod,
+          payment_method: store.payment_method
+        });
       } else {
         console.warn('⚠️ Store API failed, using fallback');
         setStoreData({
           name: `Store ${sellerPhone}`,
           seller_phone: sellerPhone,
-          id: sellerPhone
+          id: sellerPhone,
+          accepts_cod: false // ✅ Default to false for safety
         });
       }
 
@@ -256,7 +284,6 @@ export default function ShopCheckoutPage() {
       console.log('🔍 Checkout params:', { buyNow, productId, quantity });
 
       if (buyNow && productId) {
-        // ✅ BUY NOW FLOW
         console.log('🛒 Buy Now mode detected');
         setIsBuyNow(true);
         
@@ -264,7 +291,7 @@ export default function ShopCheckoutPage() {
         await loadStoreAndProfile(actualStoreId, headers);
         
         setLoading(false);
-        return; // ✅ Exit early - don't check cart
+        return;
       }
 
       // ✅ CART FLOW (only if NOT Buy Now)
@@ -288,6 +315,18 @@ export default function ShopCheckoutPage() {
       initializeCheckout();
     }
   }, [actualStoreId, searchParams]);
+
+  // ✅ NEW: Check if COD is enabled for this store
+  const isCODEnabled = () => {
+    if (!storeData) {
+      console.log('⚠️ No store data - COD disabled');
+      return false;
+    }
+    
+    const enabled = storeData.accepts_cod === true;
+    console.log('🔍 COD Check:', { accepts_cod: storeData.accepts_cod, enabled });
+    return enabled;
+  };
 
   // ✅ Form validation
   const validateForm = () => {
@@ -374,7 +413,6 @@ export default function ShopCheckoutPage() {
             const verifyData = await verifyResponse.json();
 
             if (verifyResponse.ok && verifyData.success) {
-              // ✅ Clear cart ONLY if NOT Buy Now
               if (!isBuyNow) {
                 const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
                 delete multiCarts[actualStoreId];
@@ -438,12 +476,23 @@ export default function ShopCheckoutPage() {
     console.log('- Store ID:', actualStoreId);
     console.log('- Cart items:', cartItems.length);
     console.log('- Payment method:', paymentMethod);
+    console.log('- COD Enabled:', isCODEnabled());
     console.log('- Is Buy Now:', isBuyNow);
 
     if (!validateForm()) {
       toast.warning('Please fill the form', {
         position: "top-center",
         autoClose: 2000,
+        theme: "colored",
+      });
+      return;
+    }
+
+    // ✅ NEW: Validate COD is allowed
+    if (paymentMethod === 'COD' && !isCODEnabled()) {
+      toast.error('Cash on Delivery is not available for this store. Please choose online payment.', {
+        position: "top-center",
+        autoClose: 5000,
         theme: "colored",
       });
       return;
@@ -489,7 +538,6 @@ export default function ShopCheckoutPage() {
           setSubmitting(false);
         }
       } else {
-        // Handle COD
         const headers = checkAuth();
         if (!headers) {
           setSubmitting(false);
@@ -508,7 +556,6 @@ export default function ShopCheckoutPage() {
         const responseData = await response.json();
 
         if (response.ok) {
-          // ✅ Clear cart ONLY if NOT Buy Now
           if (!isBuyNow) {
             const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
             delete multiCarts[actualStoreId];
@@ -603,7 +650,6 @@ export default function ShopCheckoutPage() {
           </div>
         </div>
 
-
         <div className='shopslugcheckoutlayout' style={styles.checkoutLayout}>
           {/* Left: Forms */}
           <div style={styles.formSection}>
@@ -614,7 +660,6 @@ export default function ShopCheckoutPage() {
               </h2>
 
               <div style={styles.inputGroup}>
-                {/* <label style={styles.label}>Full Name *</label> */}
                 <input
                   className='shopslugckeckoutinputsize'
                   type="text"
@@ -633,7 +678,6 @@ export default function ShopCheckoutPage() {
               </div>
 
               <div style={styles.inputGroup}>
-                {/* <label style={styles.label}>Phone Number *</label> */}
                 <input
                   type="tel"
                   className='shopslugckeckoutinputsize'
@@ -652,7 +696,6 @@ export default function ShopCheckoutPage() {
               </div>
 
               <div style={styles.inputGroup}>
-                {/* <label style={styles.label}>Address *</label> */}
                 <textarea
                   value={shippingInfo.address}
                   className='shopslugckeckoutinputsize'
@@ -672,7 +715,6 @@ export default function ShopCheckoutPage() {
 
               <div style={styles.inputRow}>
                 <div style={styles.inputGroup}>
-                  {/* <label style={styles.label}>City *</label> */}
                   <input
                     type="text"
                     className='shopslugckeckoutinputsize'
@@ -690,7 +732,6 @@ export default function ShopCheckoutPage() {
                   )}
                 </div>
                 <div style={styles.inputGroup}>
-                  {/* <label style={styles.label}>Pincode *</label> */}
                   <input
                     type="text"
                     className='shopslugckeckoutinputsize'
@@ -710,6 +751,7 @@ export default function ShopCheckoutPage() {
               </div>
             </div>
 
+            {/* ✅ FIXED: Payment Method Section */}
             <div style={styles.section}>
               <h2 className='shopslugcheckouttitle' style={styles.sectionTitle}>
                 <CreditCard size={20} />
@@ -717,30 +759,34 @@ export default function ShopCheckoutPage() {
               </h2>
 
               <div style={styles.paymentOptions}>
-                <label
-                  className='shopslugcheckoutpayment'
-                  style={{
-                    ...styles.paymentOption,
-                    backgroundColor: paymentMethod === 'COD' ? '#0e451e25' : 'transparent',
-                    borderColor: paymentMethod === 'COD' ? '#1a484571' : '#e5e7eb'
-                  }}>
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="COD"
-                    checked={paymentMethod === 'COD'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    style={styles.radio}
-                  />
-                  <div>
-                    <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      Cash on Delivery
-                      <CheckCircle size={16} color="#10b981" />
+                {/* ✅ ONLY SHOW COD IF accepts_cod IS TRUE */}
+                {isCODEnabled() && (
+                  <label
+                    className='shopslugcheckoutpayment'
+                    style={{
+                      ...styles.paymentOption,
+                      backgroundColor: paymentMethod === 'COD' ? '#0e451e25' : 'transparent',
+                      borderColor: paymentMethod === 'COD' ? '#1a484571' : '#e5e7eb'
+                    }}>
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="COD"
+                      checked={paymentMethod === 'COD'}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      style={styles.radio}
+                    />
+                    <div>
+                      <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Cash on Delivery
+                        {paymentMethod === 'COD' && <CheckCircle size={16} color="#10b981" />}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Pay when you receive the order</div>
                     </div>
-                    <div style={{ fontSize: '12px', color: '#6b7280' }}>Pay when you receive the order</div>
-                  </div>
-                </label>
+                  </label>
+                )}
 
+                {/* ✅ ALWAYS SHOW ONLINE PAYMENT */}
                 <label
                   className='shopslugcheckoutpayment'
                   style={{
@@ -768,6 +814,25 @@ export default function ShopCheckoutPage() {
                     </div>
                   </div>
                 </label>
+
+                {/* ✅ NEW: Show info message if COD is not available */}
+                {!isCODEnabled() && (
+                  <div style={{
+                    marginTop: '12px',
+                    padding: '12px',
+                    backgroundColor: '#fff3cd',
+                    border: '1px solid #ffc107',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    color: '#856404',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <AlertTriangle size={16} />
+                    <span>Cash on Delivery is not available for this store. Please use online payment.</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -831,7 +896,6 @@ export default function ShopCheckoutPage() {
               )}
             </button>
 
-            {/* Payment Security Notice */}
             {paymentMethod === 'ONLINE' && (
               <div style={styles.securityNotice}>
                 <Shield size={14} />
@@ -840,19 +904,6 @@ export default function ShopCheckoutPage() {
             )}
           </div>
         </div>
-
-        {/* ✅ ENHANCED: Debug info for development */}
-        {/* {process.env.NODE_ENV === 'development' && (
-          <div style={styles.debugPanel}>
-            <div style={styles.debugTitle}>🔧 Debug Info</div>
-            <div>Store ID: {actualStoreId}</div>
-            <div>Cart Items: {cartItems.length}</div>
-            <div>Payment Method: {paymentMethod}</div>
-            <div>Razorpay: {razorpayLoaded ? '✅' : '❌'}</div>
-            <div>Form Errors: {Object.keys(formErrors).length}</div>
-            <div>Submitting: {submitting ? 'Yes' : 'No'}</div>
-          </div>
-        )} */}
       </div>
     </div>
   );
@@ -863,7 +914,7 @@ const styles = {
   container: {
     minHeight: '100vh',
     backgroundColor: '#FDFFF0',
-    padding: '100px 20px 20px', // 👈 added top padding to push content below SHeader
+    padding: '100px 20px 20px',
     maxWidth: '1400px',
     margin: '0 auto'
   },
@@ -890,22 +941,14 @@ const styles = {
     padding: '12px 24px', backgroundColor: '#6b7280', color: 'white',
     border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600'
   },
-  header: {
-    display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px',
-    backgroundColor: 'white', borderRadius: '12px', padding: '16px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
-  },
   backButton: {
     background: 'none', border: 'none', cursor: 'pointer',
     color: '#1a4845', padding: '8px', borderRadius: '6px'
   },
-  title: {
-    fontSize: '24px', fontWeight: '700', color: '#1f2937', flex: 1
-  },
   storeIndicator: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between', // 👈 pushes arrow left, text+icon right
+    justifyContent: 'space-between',
     backgroundColor: '#0e451e25',
     border: '1px solid #0e451e25',
     borderRadius: '8px',
@@ -915,14 +958,6 @@ const styles = {
     fontSize: '14px',
     color: '#1a4845',
     fontWeight: '500'
-  },
-
-
-  securityIndicator: {
-    display: 'flex', alignItems: 'center', gap: '8px',
-    backgroundColor: '#f0fdf4', border: '1px solid #10b981',
-    borderRadius: '8px', padding: '10px 16px', marginBottom: '20px',
-    fontSize: '13px', color: '#047857', fontWeight: '500'
   },
   checkoutLayout: {
     display: 'grid', gridTemplateColumns: '1fr 350px', gap: '30px', backgroundColor: "#FDFFF0",
@@ -938,10 +973,6 @@ const styles = {
   },
   inputGroup: { marginBottom: '16px', },
   inputRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', },
-  label: {
-    display: 'block', fontSize: '14px', fontWeight: '600',
-    color: '#374151', marginBottom: '6px'
-  },
   input: {
     width: '100%', padding: '12px 16px', border: '1px solid',
     borderRadius: '8px', fontSize: '16px', transition: 'border-color 0.2s',
@@ -1003,12 +1034,4 @@ const styles = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
     marginTop: '12px', fontSize: '12px', color: '#6b7280'
   },
-  debugPanel: {
-    backgroundColor: '#f3f4f6', border: '1px solid #d1d5db',
-    borderRadius: '8px', padding: '12px', marginTop: '20px',
-    fontSize: '12px', fontFamily: 'monospace'
-  },
-  debugTitle: {
-    fontWeight: 'bold', marginBottom: '8px', color: '#374151'
-  }
 };

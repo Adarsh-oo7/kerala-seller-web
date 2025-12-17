@@ -26,18 +26,18 @@ const loadRazorpayScript = () => {
 export default function CheckoutPage() {
   const { sellerPhone } = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams(); // ✅ NEW: Get URL parameters
+  const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [storeData, setStoreData] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [paymentMethod, setPaymentMethod] = useState(''); // ✅ Empty - auto-select based on store settings
   const [shippingInfo, setShippingInfo] = useState({
     name: '', phone: '', address: '', city: '', pincode: ''
   });
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [isBuyNow, setIsBuyNow] = useState(false); // ✅ NEW: Track if it's Buy Now
+  const [isBuyNow, setIsBuyNow] = useState(false);
 
   console.log('🔍 Checkout Debug:');
   console.log('- sellerPhone:', sellerPhone);
@@ -55,7 +55,30 @@ export default function CheckoutPage() {
     loadScript();
   }, []);
 
-  // ✅ NEW: Buy Now + Cart checkout logic
+  // ✅ Auto-select payment method when store data is loaded
+  useEffect(() => {
+    if (storeData && !paymentMethod) {
+      const codEnabled = storeData.accepts_cod === true;
+      
+      console.log('🔍 Payment Options:', {
+        accepts_cod: storeData.accepts_cod,
+        codEnabled,
+        razorpayLoaded,
+        payment_method: storeData.payment_method
+      });
+
+      // Auto-select first available payment method
+      if (codEnabled) {
+        setPaymentMethod('COD');
+        console.log('✅ Auto-selected COD');
+      } else if (razorpayLoaded) {
+        setPaymentMethod('ONLINE');
+        console.log('✅ Auto-selected ONLINE payment');
+      }
+    }
+  }, [storeData, razorpayLoaded, paymentMethod]);
+
+  // ✅ Buy Now + Cart checkout logic
   useEffect(() => {
     const initializeCheckout = async () => {
       const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
@@ -78,11 +101,9 @@ export default function CheckoutPage() {
       console.log('🔍 Buy Now Check:', { buyNow, productId, quantity });
 
       if (buyNow && productId) {
-        // ✅ BUY NOW FLOW: Fetch single product
         setIsBuyNow(true);
         await fetchSingleProduct(productId, quantity, token);
       } else {
-        // ✅ CART CHECKOUT FLOW: Load cart items
         setIsBuyNow(false);
         await loadCartItems(token);
       }
@@ -91,7 +112,7 @@ export default function CheckoutPage() {
     initializeCheckout();
   }, [sellerPhone, router, searchParams]);
 
-  // ✅ NEW: Fetch single product for Buy Now
+  // ✅ Fetch single product for Buy Now
   const fetchSingleProduct = async (productId, quantity, token) => {
     try {
       console.log('🛒 Fetching product for Buy Now:', productId);
@@ -101,7 +122,6 @@ export default function CheckoutPage() {
 
       console.log('✅ Product fetched:', product.name);
 
-      // Set cart items with single product
       setCartItems([{
         id: product.id,
         name: product.name,
@@ -111,7 +131,6 @@ export default function CheckoutPage() {
         store: product.store
       }]);
 
-      // Fetch store and profile data
       await loadStoreAndProfile(token);
       
       setLoading(false);
@@ -125,7 +144,7 @@ export default function CheckoutPage() {
     }
   };
 
-  // ✅ Load cart items (existing flow)
+  // ✅ Load cart items
   const loadCartItems = async (token) => {
     const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
     const sellerCart = multiCarts[sellerPhone] || [];
@@ -155,11 +174,20 @@ export default function CheckoutPage() {
 
       if (storeRes.status === 'fulfilled' && storeRes.value.ok) {
         const storeResData = await storeRes.value.json();
-        setStoreData(storeResData.store || storeResData);
+        const store = storeResData.store || storeResData;
+        setStoreData(store);
+        
+        console.log('✅ Store data loaded:', {
+          name: store.name,
+          accepts_cod: store.accepts_cod,
+          payment_method: store.payment_method
+        });
       } else {
+        console.warn('⚠️ Store API failed, using fallback');
         setStoreData({
           name: `Store ${sellerPhone}`,
-          seller_phone: sellerPhone
+          seller_phone: sellerPhone,
+          accepts_cod: false // ✅ Default to false for safety
         });
       }
 
@@ -181,6 +209,18 @@ export default function CheckoutPage() {
   const calculateTotal = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
 
+  // ✅ Check if COD is enabled for this store (using accepts_cod field)
+  const isCODEnabled = () => {
+    if (!storeData) {
+      console.log('⚠️ No store data - COD disabled');
+      return false;
+    }
+    
+    const enabled = storeData.accepts_cod === true;
+    console.log('🔍 COD Check:', { accepts_cod: storeData.accepts_cod, enabled });
+    return enabled;
+  };
+
   // ✅ Enhanced online payment with Razorpay
   const handleOnlinePayment = async (orderData) => {
     if (!razorpayLoaded) {
@@ -193,7 +233,6 @@ export default function CheckoutPage() {
 
       const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
 
-      // Step 1: Create Razorpay order
       const createOrderResponse = await fetch(`${API_BASE_URL}/user/orders/create-razorpay-order/`, {
         method: 'POST',
         headers: {
@@ -213,9 +252,7 @@ export default function CheckoutPage() {
 
       const { razorpay_order_id, amount, key_id } = await createOrderResponse.json();
       console.log('✅ Razorpay order created:', razorpay_order_id);
-      console.log('✅ Using seller key:', key_id);
 
-      // Step 2: Initialize Razorpay payment
       const options = {
         key: key_id,
         amount: amount,
@@ -227,7 +264,6 @@ export default function CheckoutPage() {
           console.log('💳 Payment completed, verifying...');
 
           try {
-            // Step 3: Verify payment and create order
             const verifyResponse = await fetch(`${API_BASE_URL}/user/orders/verify-payment-and-create-order/`, {
               method: 'POST',
               headers: {
@@ -245,7 +281,6 @@ export default function CheckoutPage() {
             const verifyData = await verifyResponse.json();
 
             if (verifyResponse.ok && verifyData.success) {
-              // ✅ Clear cart ONLY if NOT Buy Now
               if (!isBuyNow) {
                 const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
                 delete multiCarts[sellerPhone];
@@ -306,14 +341,24 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     console.log('🔄 Place order clicked');
     console.log('- Payment method:', paymentMethod);
+    console.log('- COD Enabled:', isCODEnabled());
     console.log('- Cart items:', cartItems.length);
-    console.log('- Seller phone:', sellerPhone);
     console.log('- Is Buy Now:', isBuyNow);
 
     // Validation
     if (!shippingInfo.name || !shippingInfo.phone || !shippingInfo.address ||
       !shippingInfo.city || !shippingInfo.pincode || !paymentMethod) {
       toast.warn('Please fill all required fields and select a payment method.', {
+        position: "top-right",
+        autoClose: 5000,
+        theme: "colored",
+      });
+      return;
+    }
+
+    // ✅ Validate COD is allowed
+    if (paymentMethod === 'COD' && !isCODEnabled()) {
+      toast.error('Cash on Delivery is not available for this store. Please choose online payment.', {
         position: "top-right",
         autoClose: 5000,
         theme: "colored",
@@ -351,13 +396,11 @@ export default function CheckoutPage() {
       console.log('🔍 ORDER DATA:', orderData);
 
       if (paymentMethod === 'ONLINE') {
-        // Handle online payment
         const paymentSuccess = await handleOnlinePayment(orderData);
         if (!paymentSuccess) {
           setSubmitting(false);
         }
       } else {
-        // Handle COD
         const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
 
         const response = await fetch(`${API_BASE_URL}/user/orders/create-order/`, {
@@ -373,7 +416,6 @@ export default function CheckoutPage() {
         console.log('📤 COD Response:', responseData);
 
         if (response.ok) {
-          // ✅ Clear cart ONLY if NOT Buy Now
           if (!isBuyNow) {
             const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
             delete multiCarts[sellerPhone];
@@ -394,12 +436,7 @@ export default function CheckoutPage() {
         setSubmitting(false);
       }
     } catch (error) {
-      console.error('❌ ORDER ERROR:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
-
+      console.error('❌ ORDER ERROR:', error);
       const errorMessage = error.response?.data?.error || error.message || 'Network error occurred';
       alert('Order failed: ' + errorMessage);
       setSubmitting(false);
@@ -450,7 +487,6 @@ export default function CheckoutPage() {
         margin: '0 auto'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(14, 69, 30, 0.145)', justifyContent: 'space-between', marginBottom: '30px', border: '1px solid rgba(14, 69, 30, 0.145)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', padding: '20px', borderRadius: '12px' }}>
-
           <button
             onClick={() => router.back()}
             style={{
@@ -473,13 +509,13 @@ export default function CheckoutPage() {
           </h1>
         </div>
 
-        {/* Rest of your checkout UI remains the same */}
         <div className='keralasellerscheckoutlayout' style={{
           display: 'grid',
           gridTemplateColumns: '1fr 350px',
           gap: '30px'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+            {/* Shipping Information Section */}
             <div style={{ backgroundColor: '#FDFFF0', color: '#1a4845', border: '1px solid #bbbbbbff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', borderRadius: '12px', padding: '30px' }}>
               <h2 className='keralasellerscheckouttitle' style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px' }}>
                 <User size={20} />
@@ -589,6 +625,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            {/* ✅ FIXED: Payment Method Section */}
             <div style={{ backgroundColor: '#FDFFF0', color: '#1a4845', border: '1px solid #bbbbbbff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', borderRadius: '12px', padding: '30px' }}>
               <h2 className='keralasellerscheckouttitle' style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px' }}>
                 <CreditCard size={20} />
@@ -596,42 +633,46 @@ export default function CheckoutPage() {
               </h2>
 
               <div style={{ marginBottom: '20px' }}>
-                <label className='keralasellerscheckoutpayment' style={{
-                  alignItems: 'center',
-                  justifyContent: 'flex-start',
-                  display: 'flex',
-                  padding: '16px',
-                  border: `2px solid rgba(14, 69, 30, 0.145)`,
-                  borderRadius: '8px',
-                  marginBottom: '12px',
-                  cursor: 'pointer',
-                  backgroundColor: paymentMethod === 'COD' ? 'rgba(14, 69, 30, 0.145)' : '#FDFFF0',
-                  transition: 'background-color 0.3s ease'
-                }}>
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="COD"
-                    checked={paymentMethod === 'COD'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    style={{ marginRight: '12px', accentColor: '#1a4845' }}
-                  />
-                  <div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontWeight: 'bold'
-                      }}
-                    >
-                      <span>Cash on Delivery</span>
-                      {paymentMethod === 'COD' && <CheckCircle size={16} color="#10b981" />}
+                {/* ✅ ONLY SHOW COD IF accepts_cod IS TRUE */}
+                {isCODEnabled() && (
+                  <label className='keralasellerscheckoutpayment' style={{
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    display: 'flex',
+                    padding: '16px',
+                    border: `2px solid rgba(14, 69, 30, 0.145)`,
+                    borderRadius: '8px',
+                    marginBottom: '12px',
+                    cursor: 'pointer',
+                    backgroundColor: paymentMethod === 'COD' ? 'rgba(14, 69, 30, 0.145)' : '#FDFFF0',
+                    transition: 'background-color 0.3s ease'
+                  }}>
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="COD"
+                      checked={paymentMethod === 'COD'}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      style={{ marginRight: '12px', accentColor: '#1a4845' }}
+                    />
+                    <div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        <span>Cash on Delivery</span>
+                        {paymentMethod === 'COD' && <CheckCircle size={16} color="#10b981" />}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#1a4845' }}>Pay when you receive the order</div>
                     </div>
-                    <div style={{ fontSize: '12px', color: '#1a4845' }}>Pay when you receive the order</div>
-                  </div>
-                </label>
+                  </label>
+                )}
 
+                {/* ✅ ALWAYS SHOW ONLINE PAYMENT */}
                 <label className='keralasellerscheckoutpayment' style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -670,10 +711,30 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 </label>
+
+                {/* ✅ Show info message if COD is not available */}
+                {!isCODEnabled() && (
+                  <div style={{
+                    marginTop: '12px',
+                    padding: '12px',
+                    backgroundColor: '#fff3cd',
+                    border: '1px solid #ffc107',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    color: '#856404',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <AlertTriangle size={16} />
+                    <span>Cash on Delivery is not available for this store. Please use online payment.</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
+          {/* Order Summary Section */}
           <div style={{ flex: '0 0 400px', backgroundColor: '#FDFFF0', color: '#1a4845', border: '1px solid #bbbbbbff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', borderRadius: '12px', padding: '30px', height: 'fit-content' }}>
             <h2 className='keralasellerscheckouttitle' style={{ fontSize: '18px' }}>ORDER SUMMARY</h2>
 

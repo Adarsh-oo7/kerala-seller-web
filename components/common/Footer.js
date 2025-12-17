@@ -1,6 +1,7 @@
 import React from "react";
 import { Facebook, Instagram, Youtube } from "lucide-react";
 
+
 export default function Footer() {
   return (
     <footer className="footer">
@@ -12,13 +13,13 @@ export default function Footer() {
         <a href="#">Shipping and Delivery</a>
       </nav>
       <div className="footer-socials">
-        <a href="#" aria-label="Facebook">
+        <a href="https://www.facebook.com/profile.php?id=61579701681445" aria-label="Facebook">
           <Facebook className="social-icon" />
         </a>
-        <a href="#" aria-label="Instagram">
+        <a href="https://www.instagram.com/kerala_sellers/#/" aria-label="Instagram">
           <Instagram className="social-icon" />
         </a>
-        <a href="#" aria-label="YouTube">
+        <a href="https://www.youtube.com/@KeralaSellers" aria-label="YouTube">
           <Youtube className="social-icon" />
         </a>
       </div>
