@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import "../../../../styles/BuyerProfile.css";
 import { toast } from "react-toastify";
+import ShopFooter from '../../../../components/common/ShopFooter';
 
 import {
   User,
@@ -519,6 +520,7 @@ export default function ShopProfilePage() {
           </Link>
         </div>
       </div>
+      <ShopFooter />
     </div>
   );
 }
@@ -528,7 +530,6 @@ const styles = {
     minHeight: 'calc(100vh - 130px)',
     backgroundColor: '#FDFFF0',
     paddingTop: '130px',
-    paddingBottom: '35px',
     overflowX: 'hidden',
     width: '100%',
     boxSizing: 'border-box'

@@ -8,7 +8,8 @@ import axios from 'axios';
 import Link from 'next/link';
 import SHeader from '../../../../../components/common/SHeader';
 import "../../../../../styles/Kerelasellerprofileverification.css";
-import Footer from '../../../../../components/common/Footer';
+import ShopFooter from '../../../../../components/common/ShopFooter';
+
 
 
 import {
@@ -548,7 +549,7 @@ export default function VerifyPhonePage() {
           100% { transform: rotate(360deg); }
         }
       `}</style>
-      <Footer />
+      <ShopFooter />
 
     </div>
   );
@@ -556,7 +557,6 @@ export default function VerifyPhonePage() {
 
 const styles = {
   pageContainer: {
-    minHeight: '100vh',
     backgroundColor: '#FDFFF0',
     paddingTop: '140px',
   },

@@ -1579,6 +1579,111 @@ body {
 
 /*/// ///////////////////////////////////////////////// end of Footer //////////////////////////////////////////////////////////////////////////////// */
 
+
+/* //////////////////////////////////////////////////////Shop Footer//////////////////////////////////////////////////////////////////////////////////////////////// */
+
+
+.Shopfooter {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-areas:
+        "logo logo logo"
+        "links links links"
+        "left . socials";
+    align-items: center;
+    padding: 1.5rem 1rem;
+    font-size: 14px;
+    color: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    background-color: #1a4845;
+    row-gap: 1rem;
+}
+
+
+.Shopfooter-logo {
+    grid-area: logo;
+    display: flex;
+    justify-content: center;
+}
+
+.Shopfooter-links {
+    grid-area: links;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.Shopfooter-left {
+    grid-area: left;
+}
+
+.Shopfooter-socials {
+    grid-area: socials;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+
+.Shopfooter-logo img {
+    height: 40px;
+    width: auto;
+}
+
+
+
+.Shopfooter-links a {
+    text-decoration: none;
+    color: #ffffff;
+    transition: color 0.2s;
+}
+
+.Shopfooter-links a:hover {
+    text-decoration: underline;
+    color: #ffffff;
+    /* darker gray */
+}
+
+
+.Shopsocial-icon {
+    width: 20px;
+    height: 20px;
+    color: #ffffff;
+    transition: color 0.2s;
+}
+
+.Shopsocial-icon:hover {
+    color: #397eec;
+}
+
+@media (max-width: 767px) {
+    .Shopfooter {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "logo"
+            "links"
+            "socials"
+            "left";
+        text-align: center;
+    }
+
+    .Shopfooter-socials,
+    .Shopfooter-links {
+        justify-content: center;
+    }
+
+
+    .Shopfooter-left {
+        text-align: center;
+    }
+}
+
+
+
+/*/// ///////////////////////////////////////////////// end of ShopFooter //////////////////////////////////////////////////////////////////////////////// */
+
+
 /*/// ///////////////////////////////////////////////// seller Registration//////////////////////////////////////////////////////////////////////////////// */
 
 

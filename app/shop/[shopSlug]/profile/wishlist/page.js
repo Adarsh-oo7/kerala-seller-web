@@ -7,6 +7,7 @@ import Link from 'next/link';
 import "../../../../../styles/ShopProfileWishlist.css";
 import SHeader from '../../../../../components/common/SHeader';
 import { toast } from "react-toastify";
+import ShopFooter from '../../../../../components/common/ShopFooter';
 
 
 const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
@@ -563,6 +564,7 @@ export default function ShopWishlistPage() {
         )
         }
       </div >
+      <ShopFooter />
     </div>
   );
 }

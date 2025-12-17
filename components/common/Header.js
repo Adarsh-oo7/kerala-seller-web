@@ -10,7 +10,7 @@ import BottomNav from "./BottomNav";
 // ==============================================================================
 
 const DesktopNav = () => (
-  <div className="navigation desktop-only" style={{backgroundColor:'#1a4845'}}>
+  <div className="navigation desktop-only" style={{ backgroundColor: '#1a4845' }}>
     <nav className="nav-menu">
       <Link href="/" className="nav-item">HOME</Link>
       <Link href="/shop" className="nav-item">SHOP</Link>
@@ -70,7 +70,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
         <div className="mobile-menu-header">
           <div className="mobile-logo">
             <Link href="/" onClick={onClose}>
-              <img src="https://tse2.mm.bing.net/th/id/OIP.NXILvymg8PHUgZW6_b7fegHaHa?pid=Api&P=0&h=220" alt="Logo" className="logo-image" />
+              <img src="/assets/images/logo/KERALA SELLERS transp.png" alt="Logo" className="logo-image" />
             </Link>
           </div>
           <button className="close-button" onClick={onClose}>
@@ -115,19 +115,19 @@ export default function Header() {
   // ✅ FIXED: Enhanced authentication check to support both token types
   useEffect(() => {
     // Check both possible token locations
-    const token = localStorage.getItem('access_token') || 
-                  localStorage.getItem('buyerAccessToken');
+    const token = localStorage.getItem('access_token') ||
+      localStorage.getItem('buyerAccessToken');
     setIsLoggedIn(!!token);
-    
+
     console.log('🔍 Auth check - Token found:', !!token);
-    
+
     // Listen for storage changes (login/logout from other tabs)
     const handleStorageChange = () => {
-      const newToken = localStorage.getItem('access_token') || 
-                       localStorage.getItem('buyerAccessToken');
+      const newToken = localStorage.getItem('access_token') ||
+        localStorage.getItem('buyerAccessToken');
       setIsLoggedIn(!!newToken);
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
@@ -164,7 +164,7 @@ export default function Header() {
 
         <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       </header>
-      
+
       <BottomNav cartItemCount={cartItemCount} isLoggedIn={isLoggedIn} />
 
       {/* Updated Styles with Old Color Theme */}

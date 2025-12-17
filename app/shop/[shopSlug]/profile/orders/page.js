@@ -5,6 +5,8 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import "../../../../../styles/ShopProfileOrders.css";
 import SHeader from '../../../../../components/common/SHeader';
+import ShopFooter from '../../../../../components/common/ShopFooter';
+
 
 import {
   ArrowLeft, Package, Clock, CheckCircle, XCircle, Store, AlertTriangle, X, User,
@@ -1208,7 +1210,6 @@ export default function ShopOrdersPage() {
             </div>
           </div>
         )}
-
         {/* CSS Animations */}
         <style jsx>{`
         @keyframes spin {
@@ -1220,7 +1221,10 @@ export default function ShopOrdersPage() {
           animation: spin 1s linear infinite;
         }
       `}</style>
+
       </div>
+      <ShopFooter />
+
     </div>
   );
 }

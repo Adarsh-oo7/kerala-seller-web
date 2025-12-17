@@ -8,7 +8,7 @@ import "../../../styles/Shopslugpage.css";
 import { useCart } from '../../context/CartContext';
 import SHeader from '../../../components/common/SHeader';
 import Whatsapp from '../../../components/common/Whatsapp'
-import Footer from '../../../components/common/Footer';
+import ShopFooter from '../../../components/common/ShopFooter';
 import ShopProductCard from '../../../components/common/ShopProductCard';
 
 import {
@@ -930,7 +930,7 @@ function EnhancedSellerStorefrontPage() {
           )}
         </div>
         <Whatsapp sellerPhone={sellerPhone} shopSlug={shopSlug} />
-        <Footer />
+        <ShopFooter />
       </div>
     </ErrorBoundary>
   );
@@ -974,7 +974,7 @@ const styles = {
   container: {
     maxWidth: '1200px',
     margin: '0 auto',
-    padding: '0px 20px',
+    padding: '30px 20px',
   },
   Filtercontainer: {
     flex: 1,

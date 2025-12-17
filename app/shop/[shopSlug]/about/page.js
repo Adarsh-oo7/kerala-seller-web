@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import "../../../../styles/ShopslugAbout.css";
+import ShopFooter from '../../../../components/common/ShopFooter';
 
 import {
   Star,
@@ -364,6 +365,7 @@ function StoreAboutContent() {
           <div style={styles.spinner}></div>
           <p style={styles.loadingText}>Loading store details...</p>
         </div>
+        <ShopFooter />
       </div>
     );
   }
@@ -384,6 +386,7 @@ function StoreAboutContent() {
             Browse All Shops
           </Link>
         </div>
+        <ShopFooter />
       </div>
     );
   }
@@ -407,6 +410,7 @@ function StoreAboutContent() {
             </Link>
           </div>
         </div>
+        <ShopFooter />
       </div>
     );
   }
@@ -424,6 +428,7 @@ function StoreAboutContent() {
             Browse All Shops
           </Link>
         </div>
+        <ShopFooter />
       </div>
     );
   }
@@ -782,7 +787,7 @@ function StoreAboutContent() {
           </button>
         </div>
       </div>
-
+      <ShopFooter />
       {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
@@ -974,7 +979,7 @@ const styles = {
     alignItems: 'center',
     textAlign: 'center',
     gap: '10px',
-    paddingTop:'25px'
+    paddingTop: '25px'
   },
 
   cardTitle: {

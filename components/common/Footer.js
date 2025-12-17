@@ -13,13 +13,13 @@ export default function Footer() {
         <a href="#">Shipping and Delivery</a>
       </nav>
       <div className="footer-socials">
-        <a href="https://www.facebook.com/profile.php?id=61579701681445" aria-label="Facebook">
+        <a href="https://www.facebook.com/profile.php?id=61579701681445" target="blank" aria-label="Facebook">
           <Facebook className="social-icon" />
         </a>
-        <a href="https://www.instagram.com/kerala_sellers/#/" aria-label="Instagram">
+        <a href="https://www.instagram.com/kerala_sellers/#/" target="blank" aria-label="Instagram">
           <Instagram className="social-icon" />
         </a>
-        <a href="https://www.youtube.com/@KeralaSellers" aria-label="YouTube">
+        <a href="https://www.youtube.com/@KeralaSellers" target="blank"  aria-label="YouTube">
           <Youtube className="social-icon" />
         </a>
       </div>
