@@ -703,10 +703,6 @@ const handleBuyNow = () => {
     // ✅ Navigate to checkout with Buy Now parameters
     router.push(`/checkout/${product.store.seller_phone}?buyNow=1&productId=${product.id}&quantity=${quantity}`);
 };
-
-
-
-
     // ✅ Share functionality
     const handleShare = async () => {
         const shareData = {

@@ -461,9 +461,41 @@ export default function ProfilePage() {
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  // ✅ FIXED: Enhanced authentication and redirect logic
+useEffect(() => {
+  const checkAuthAndFetchProfile = async () => {
+    const headers = getAuthHeaders();
+    
+    // ✅ NEW: Immediately redirect if not authenticated
+    if (!headers) {
+      console.log('❌ No authentication found, redirecting to login...');
+      setIsLoading(false);
+      
+      const shopContext = getShopContext();
+      
+      // Save current URL to return after login
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('preLoginPath', window.location.pathname + window.location.search);
+      }
+      
+      // Redirect to appropriate login page
+      if (shopContext.isInShop && shopContext.shopId) {
+        console.log('🏪 Redirecting to shop login:', `${shopContext.shopUrl}/login`);
+        router.push(`${shopContext.shopUrl}/login`);
+      } else {
+        console.log('🏠 Redirecting to main buyer login');
+        router.push('/login/buyer');
+      }
+      return;
+    }
+    
+    // ✅ User is authenticated, proceed with fetching profile
+    await fetchProfile();
+  };
+  
+  checkAuthAndFetchProfile();
+}, [router]); // ✅ Added router as dependency
+
 
   const handleLogout = () => {
     const shopContext = getShopContext();
