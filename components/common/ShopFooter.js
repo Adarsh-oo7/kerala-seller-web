@@ -6,7 +6,6 @@ export default function ShopFooter() {
     return (
         <footer className="Shopfooter">
 
-
             <div className="Shopfooter-left">© 2025 Kerala Sellers</div>
             <div className="Shopfooter-logo">
                 <img src="/logo.png" alt="Kerala Sellers" />
