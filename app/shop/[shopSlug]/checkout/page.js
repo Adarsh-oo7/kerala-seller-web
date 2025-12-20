@@ -7,6 +7,7 @@ import "../../../../styles/Shopslugcheckout.css";
 import SHeader from '../../../../components/common/SHeader';
 import { toast } from "react-toastify";
 import axios from 'axios';
+import { useCart } from '../../../../app/context/CartContext';
 
 const API_BASE_URL = 'https://api.keralasellers.in';
 
@@ -36,12 +37,16 @@ export default function ShopCheckoutPage() {
   const { shopSlug } = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // ✅ Cart context
+  const cartContext = useCart();
+  const { clearCartForSeller, clearAllCarts } = cartContext || {};
   
   const [cartItems, setCartItems] = useState([]);
   const [storeData, setStoreData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState(''); // ✅ Empty - auto-select based on store settings
+  const [paymentMethod, setPaymentMethod] = useState('');
   const [shippingInfo, setShippingInfo] = useState({
     name: '', phone: '', address: '', city: '', pincode: ''
   });
@@ -66,10 +71,6 @@ export default function ShopCheckoutPage() {
 
   // ✅ Get store ID from URL
   const getActualStoreId = () => {
-    console.log('🔍 Getting store ID for checkout...');
-    console.log('- shopSlug from params:', shopSlug);
-    console.log('- id from search params:', searchParams.get('id'));
-
     if (shopSlug === 'undefined' || shopSlug === undefined) {
       setUrlError('Invalid shop slug in URL');
       return null;
@@ -117,19 +118,11 @@ export default function ShopCheckoutPage() {
     loadScript();
   }, []);
 
-  // ✅ NEW: Auto-select payment method when store data is loaded
+  // ✅ Auto-select payment method when store data is loaded
   useEffect(() => {
     if (storeData && !paymentMethod) {
       const codEnabled = storeData.accepts_cod === true;
       
-      console.log('🔍 Payment Options:', {
-        accepts_cod: storeData.accepts_cod,
-        codEnabled,
-        razorpayLoaded,
-        payment_method: storeData.payment_method
-      });
-
-      // Auto-select first available payment method
       if (codEnabled) {
         setPaymentMethod('COD');
         console.log('✅ Auto-selected COD');
@@ -194,7 +187,7 @@ export default function ShopCheckoutPage() {
     }
   }, [urlError, actualStoreId, router]);
 
-  // ✅ NEW: Fetch single product for Buy Now
+  // ✅ Fetch single product for Buy Now
   const fetchSingleProduct = async (productId, quantity, sellerPhone, token) => {
     try {
       console.log('🛒 Fetching product for Buy Now:', productId);
@@ -248,7 +241,7 @@ export default function ShopCheckoutPage() {
           name: `Store ${sellerPhone}`,
           seller_phone: sellerPhone,
           id: sellerPhone,
-          accepts_cod: false // ✅ Default to false for safety
+          accepts_cod: false
         });
       }
 
@@ -276,7 +269,6 @@ export default function ShopCheckoutPage() {
 
       console.log('📦 Initializing checkout for store:', actualStoreId);
 
-      // ✅ CHECK FOR BUY NOW PARAMETERS FIRST!
       const buyNow = searchParams.get('buyNow') === '1';
       const productId = searchParams.get('productId');
       const quantity = parseInt(searchParams.get('quantity') || '1');
@@ -294,7 +286,6 @@ export default function ShopCheckoutPage() {
         return;
       }
 
-      // ✅ CART FLOW (only if NOT Buy Now)
       const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
       const storeCart = multiCarts[actualStoreId] || [];
 
@@ -316,7 +307,7 @@ export default function ShopCheckoutPage() {
     }
   }, [actualStoreId, searchParams]);
 
-  // ✅ NEW: Check if COD is enabled for this store
+  // ✅ Check if COD is enabled for this store
   const isCODEnabled = () => {
     if (!storeData) {
       console.log('⚠️ No store data - COD disabled');
@@ -413,10 +404,18 @@ export default function ShopCheckoutPage() {
             const verifyData = await verifyResponse.json();
 
             if (verifyResponse.ok && verifyData.success) {
+              // ✅ UPDATED: Clear cart via context
               if (!isBuyNow) {
-                const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
-                delete multiCarts[actualStoreId];
-                localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+                if (clearAllCarts) {
+                  clearAllCarts();
+                } else if (clearCartForSeller) {
+                  clearCartForSeller(actualStoreId);
+                } else {
+                  // Fallback to localStorage
+                  const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
+                  delete multiCarts[actualStoreId];
+                  localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+                }
               }
 
               console.log('✅ Payment verified and order created');
@@ -473,11 +472,6 @@ export default function ShopCheckoutPage() {
   // ✅ Handle order placement
   const handlePlaceOrder = async () => {
     console.log('🔄 Placing order...');
-    console.log('- Store ID:', actualStoreId);
-    console.log('- Cart items:', cartItems.length);
-    console.log('- Payment method:', paymentMethod);
-    console.log('- COD Enabled:', isCODEnabled());
-    console.log('- Is Buy Now:', isBuyNow);
 
     if (!validateForm()) {
       toast.warning('Please fill the form', {
@@ -488,7 +482,6 @@ export default function ShopCheckoutPage() {
       return;
     }
 
-    // ✅ NEW: Validate COD is allowed
     if (paymentMethod === 'COD' && !isCODEnabled()) {
       toast.error('Cash on Delivery is not available for this store. Please choose online payment.', {
         position: "top-center",
@@ -556,10 +549,18 @@ export default function ShopCheckoutPage() {
         const responseData = await response.json();
 
         if (response.ok) {
+          // ✅ UPDATED: Clear cart via context
           if (!isBuyNow) {
-            const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
-            delete multiCarts[actualStoreId];
-            localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+            if (clearAllCarts) {
+              clearAllCarts();
+            } else if (clearCartForSeller) {
+              clearCartForSeller(actualStoreId);
+            } else {
+              // Fallback to localStorage
+              const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
+              delete multiCarts[actualStoreId];
+              localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+            }
           }
 
           console.log('✅ COD Order placed successfully:', responseData);
@@ -651,7 +652,6 @@ export default function ShopCheckoutPage() {
         </div>
 
         <div className='shopslugcheckoutlayout' style={styles.checkoutLayout}>
-          {/* Left: Forms */}
           <div style={styles.formSection}>
             <div style={styles.section}>
               <h2 className='shopslugcheckouttitle' style={styles.sectionTitle}>
@@ -751,7 +751,6 @@ export default function ShopCheckoutPage() {
               </div>
             </div>
 
-            {/* ✅ FIXED: Payment Method Section */}
             <div style={styles.section}>
               <h2 className='shopslugcheckouttitle' style={styles.sectionTitle}>
                 <CreditCard size={20} />
@@ -759,7 +758,6 @@ export default function ShopCheckoutPage() {
               </h2>
 
               <div style={styles.paymentOptions}>
-                {/* ✅ ONLY SHOW COD IF accepts_cod IS TRUE */}
                 {isCODEnabled() && (
                   <label
                     className='shopslugcheckoutpayment'
@@ -786,7 +784,6 @@ export default function ShopCheckoutPage() {
                   </label>
                 )}
 
-                {/* ✅ ALWAYS SHOW ONLINE PAYMENT */}
                 <label
                   className='shopslugcheckoutpayment'
                   style={{
@@ -815,7 +812,6 @@ export default function ShopCheckoutPage() {
                   </div>
                 </label>
 
-                {/* ✅ NEW: Show info message if COD is not available */}
                 {!isCODEnabled() && (
                   <div style={{
                     marginTop: '12px',
@@ -837,7 +833,6 @@ export default function ShopCheckoutPage() {
             </div>
           </div>
 
-          {/* Right: Order Summary */}
           <div style={styles.summarySection}>
             <h2 className='shopslugcheckouttitle' style={styles.sectionTitle}>ORDER SUMMARY</h2>
             <div style={styles.storeInfo}>

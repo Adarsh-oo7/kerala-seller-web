@@ -7,6 +7,7 @@ import Footer from '../../../components/common/Footer';
 import "../../../styles/keralasellerscheckout.css";
 import { toast } from "react-toastify";
 import axios from 'axios';
+import { useCart } from '../../context/CartContext'; // ✅ added
 
 import { ArrowLeft, CreditCard, User, AlertTriangle, Package, CheckCircle } from 'lucide-react';
 
@@ -38,6 +39,9 @@ export default function CheckoutPage() {
   });
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [isBuyNow, setIsBuyNow] = useState(false);
+
+  // ✅ from CartContext for proper clearing
+  const { clearCartForSeller, clearAllCarts } = useCart();
 
   console.log('🔍 Checkout Debug:');
   console.log('- sellerPhone:', sellerPhone);
@@ -282,9 +286,12 @@ export default function CheckoutPage() {
 
             if (verifyResponse.ok && verifyData.success) {
               if (!isBuyNow) {
-                const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
-                delete multiCarts[sellerPhone];
-                localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+                // ✅ Clear cart via context so header/cart update
+                if (clearAllCarts) {
+                  clearAllCarts();
+                } else if (clearCartForSeller) {
+                  clearCartForSeller(sellerPhone);
+                }
               }
 
               console.log('✅ Payment verified and order created');
@@ -417,9 +424,12 @@ export default function CheckoutPage() {
 
         if (response.ok) {
           if (!isBuyNow) {
-            const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
-            delete multiCarts[sellerPhone];
-            localStorage.setItem('multiCarts', JSON.stringify(multiCarts));
+            // ✅ Clear cart via context so header/cart update
+            if (clearAllCarts) {
+              clearAllCarts();
+            } else if (clearCartForSeller) {
+              clearCartForSeller(sellerPhone);
+            }
           }
 
           toast.success(`Order placed successfully! Order #${responseData.order_id} 🎉`, {
@@ -838,3 +848,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+ 

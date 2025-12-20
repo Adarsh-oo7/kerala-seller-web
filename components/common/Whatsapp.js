@@ -5,19 +5,31 @@ import axios from "axios";
 import "../../styles/Whatsapp.css";
 import { siWhatsapp } from "simple-icons";
 
-// 🔥 ENV handler
+// -------------------------------------------------------------------
+// 🔥 API BASE URL HANDLER
+// -------------------------------------------------------------------
+
+// Returns the appropriate API base URL based on environment variables or defaults
+// Example environment variable settings:
+
+// NEXT_PUBLIC_API_URL=https://another-api.example.com
+// -------------------------------------------------------------------
+// 🔥 API BASE URL HANDLE
+
+// Returns the API base URL based on environment variables or defaults
+
+
+// Returns the API base URL based on environment variables or defaults
+
 const getApiBaseUrl = () => {
   const envUrl =
     process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-
   if (envUrl && envUrl.trim() !== "" && envUrl !== "undefined") {
     return envUrl.trim();
   }
-
   if (process.env.NODE_ENV === "development") {
     return "http://localhost:8000";
   }
-
   return "https://keralaseller-backend.onrender.com";
 };
 
@@ -41,9 +53,7 @@ function Whatsapp({ sellerPhone, shopSlug }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-
-
-
+  
   useEffect(() => {
     console.log("📍 WhatsApp Component Debug:", { sellerPhone, shopSlug, storeData });
   }, [storeData]);
