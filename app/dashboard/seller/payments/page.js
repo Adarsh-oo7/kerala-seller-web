@@ -194,20 +194,21 @@ export default function PaymentsDashboard() {
           pendingSettlementAmount: 0,
         };
       } else {
-        const captured = liveTransactions.filter(t => t.status === 'captured');
-        const authorized = liveTransactions.filter(t => t.status === 'authorized');
+  const captured = liveTransactions.filter(t => t.status === 'captured');
+  const authorized = liveTransactions.filter(t => t.status === 'authorized');
 
-        return {
-          successCount: captured.length,
-          successAmount: captured.reduce((sum, t) => sum + parseFloat(t.amount || 0) / 100, 0), // ✅ Razorpay amounts are in paise
-          pendingCount: authorized.length,
-          pendingAmount: authorized.reduce((sum, t) => sum + parseFloat(t.amount || 0) / 100, 0),
-          settledCount: captured.length,
-          settledAmount: captured.reduce((sum, t) => sum + parseFloat(t.amount || 0) / 100, 0),
-          pendingSettlementCount: 0,
-          pendingSettlementAmount: 0,
-        };
-      }
+  return {
+    successCount: captured.length,
+    successAmount: captured.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0), // ✅ FIXED
+    pendingCount: authorized.length,
+    pendingAmount: authorized.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0), // ✅ FIXED
+    settledCount: captured.length,
+    settledAmount: captured.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0), // ✅ FIXED
+    pendingSettlementCount: 0,
+    pendingSettlementAmount: 0,
+  };
+}
+
     } else {
       const successful = payoutHistory.filter(p => p.status === 'success');
       const pending = payoutHistory.filter(p => p.status === 'pending');
@@ -573,10 +574,27 @@ export default function PaymentsDashboard() {
                   {liveTransactions.map((txn) => (
                     <div key={txn.id} style={s.tableRow5}>
                       <div style={{ flex: 2, fontSize: '13px' }}>
-                        {txn.created_at ? new Date(txn.created_at * 1000).toLocaleDateString() : 'N/A'}
-                      </div>
+  {(() => {
+    const createdAt = txn.created_at;
+    if (!createdAt) return 'N/A';
+    
+    // If it's a number (Unix timestamp)
+    if (typeof createdAt === 'number' && !isNaN(createdAt)) {
+      return new Date(createdAt * 1000).toLocaleDateString('en-IN');
+    }
+    
+    // If it's a string (ISO format)
+    if (typeof createdAt === 'string') {
+      const date = new Date(createdAt);
+      return !isNaN(date.getTime()) ? date.toLocaleDateString('en-IN') : 'N/A';
+    }
+    
+    return 'N/A';
+  })()}
+</div>
+
                       <div style={{ flex: 2, fontWeight: 700, color: '#10b981', fontSize: '14px' }}>
-                        ₹{(parseFloat(txn.amount) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        ₹{(parseFloat(txn.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </div>
                       <div style={{ flex: 2, fontSize: '13px', textTransform: 'capitalize' }}>
                         {txn.method || 'N/A'}
@@ -620,15 +638,34 @@ export default function PaymentsDashboard() {
                   {viewMode === 'live' ? (
                     liveSettlements.map((settlement) => (
                       <div key={settlement.id} style={s.tableRow5}>
-                        <div style={{ flex: 2, fontSize: '13px' }}>
-                          {settlement.created_at ? new Date(settlement.created_at * 1000).toLocaleDateString() : 'N/A'}
-                        </div>
+  <div style={{ flex: 2, fontSize: '13px' }}>
+  {(() => {
+    const createdAt = settlement.created_at;
+    if (!createdAt) return 'N/A';
+    
+    // If it's a number (Unix timestamp)
+    if (typeof createdAt === 'number' && !isNaN(createdAt)) {
+      return new Date(createdAt * 1000).toLocaleDateString('en-IN');
+    }
+    
+    // If it's a string (ISO format)
+    if (typeof createdAt === 'string') {
+      const date = new Date(createdAt);
+      return !isNaN(date.getTime()) ? date.toLocaleDateString('en-IN') : 'N/A';
+    }
+    
+    return 'N/A';
+  })()}
+</div>
+
+
                         <div style={{ flex: 2, fontWeight: 700, color: '#10b981', fontSize: '14px' }}>
-                          ₹{(parseFloat(settlement.amount) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          ₹{(parseFloat(settlement.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </div>
                         <div style={{ flex: 2, fontSize: '13px', color: '#ef4444' }}>
-                          -₹{(parseFloat(settlement.fees || 0) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </div>
+  -₹{parseFloat(settlement.fees || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+</div>
+
                         <div style={{ flex: 2 }}>
                           <span style={{
                             ...s.statusBadge,

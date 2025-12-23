@@ -930,7 +930,8 @@ function EnhancedSellerStorefrontPage() {
           )}
         </div>
         <Whatsapp sellerPhone={sellerPhone} shopSlug={shopSlug} />
-        <ShopFooter />
+       <ShopFooter store={store} />
+
       </div>
     </ErrorBoundary>
   );

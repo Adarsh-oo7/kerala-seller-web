@@ -614,7 +614,7 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
       return;
     }
 
-    // ✅ Get shop slug and seller phone
+
     const shopSlug = generateShopSlug(store);
     const sellerPhone = store?.seller_phone || store?.phone;
 
@@ -923,7 +923,6 @@ function RelatedProductCard({ product, shopSlug, sellerPhone }) {
     checkWishlistStatus();
   }, [product?.id]);
 
-  // Handle wishlist toggle
   const handleWishlistToggle = async (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1201,8 +1200,6 @@ function ShopProductPageContent() {
       );
       return;
     }
-
-    // Check if user is logged in
     if (!isLoggedIn) {
       router.push(`/login/buyer?redirect=${encodeURIComponent(window.location.pathname)}`);
       return;
@@ -1381,7 +1378,6 @@ function ShopProductPageContent() {
   );
 }
 
-// ✅ Main Export with Suspense Boundary
 export default function ShopProductPage() {
   return (
     <Suspense fallback={
@@ -1481,7 +1477,6 @@ const styles = {
     zIndex: 1,
     gap: '10px'
   },
-
   optimizedBadge: {
     position: 'absolute',
     top: '10px',
@@ -1495,7 +1490,6 @@ const styles = {
     alignItems: 'center',
     gap: '3px',
   },
-
   thumbnailRowWrapper: {
     display: 'flex',
     alignItems: 'center',
@@ -1504,7 +1498,6 @@ const styles = {
     marginTop: '12px',
     position: 'relative',
   },
-
   thumbnailContainer: {
     overflowX: 'auto',
     flex: 1,
@@ -1512,7 +1505,6 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
   },
-
   thumbnailScroller: {
     display: 'flex',
     gap: '8px',
@@ -2276,13 +2268,11 @@ const styles = {
     color: '#6b7280',
     padding: '20px'
   },
-
   // ✅ FULLY RESPONSIVE: Related Products
   relatedContainer: {
     backgroundColor: '#FDFFF0',
     padding: 'clamp(20px, 4vw, 32px)',
   },
-
   relatedGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', // ✅ smaller cards
@@ -2300,14 +2290,12 @@ const styles = {
     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
     margin: '0 auto',
   },
-
   relatedProductLink: {
     display: 'flex',
     flexDirection: 'column',
     textDecoration: 'none',
     color: 'inherit',
   },
-
   relatedProductImageContainer: {
     position: 'relative',
     width: '100%',
@@ -2318,7 +2306,6 @@ const styles = {
     backgroundColor: '#f8efea',
     overflow: 'hidden',
   },
-
   relatedProductImage: {
     width: '100%',
     height: '180px',
@@ -2327,7 +2314,6 @@ const styles = {
     display: 'block',
     backgroundColor: '#fff',
   },
-
   relatedWishlistButton: {
     position: 'absolute',
     top: '8px',
@@ -2340,36 +2326,30 @@ const styles = {
     cursor: 'pointer',
     transition: 'transform 0.2s ease, background 0.2s ease',
   },
-
   relatedWishlistActive: {
     color: 'red',
     background: 'rgba(255,255,255,1)',
   },
-
   relatedProductInfo: {
     padding: '10px',
     textAlign: 'left',
   },
-
   relatedProductName: {
     fontSize: '15px',
     fontWeight: '500',
     margin: '5px 0',
   },
-
   priceRow: {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
   },
-
   relatedProductPrice: {
     fontSize: '14px',
     fontWeight: '600',
     color: '#28a745',
     margin: 0,
   },
-
   originalPrice: {
     textDecoration: 'line-through',
     fontSize: '12px',
