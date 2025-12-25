@@ -20,13 +20,13 @@ import {
     AlertCircle
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
-const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
+// ✅ FIXED: Hardcoded API URL (no environment variable confusion)
+const API_BASE_URL = 'https://api.keralasellers.in';
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/register/send-otp/`;
-const REGISTER_API = `${API_BASE_URL}/user/buyer/register/`;
+const REGISTER_API = `${API_BASE_URL}/user/buyer/register/verify-otp/`;  // ✅ CHANGED FROM /register/ TO /verify-otp/
 
 export default function BuyerRegisterPage() {
-    const [step, setStep] = useState(1); // 1 for details, 2 for OTP
+    const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         email: '',
         full_name: '',
@@ -86,7 +86,6 @@ export default function BuyerRegisterPage() {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
 
-        // Clear validation error for this field
         if (validationErrors[name]) {
             setValidationErrors(prev => ({
                 ...prev,
@@ -94,10 +93,10 @@ export default function BuyerRegisterPage() {
             }));
         }
 
-        // Clear general error
         if (error) setError('');
     };
 
+    // ✅ FIXED: Only send email (backend doesn't need full_name here)
     const handleSendOtp = async (e) => {
         e.preventDefault();
         setError('');
@@ -111,10 +110,9 @@ export default function BuyerRegisterPage() {
 
         try {
             await axios.post(SEND_OTP_API, {
-                email: formData.email.trim(),
-                full_name: formData.full_name.trim()
+                email: formData.email.trim().toLowerCase()  // ✅ ONLY EMAIL
             });
-            setStep(2); // Move to the OTP step
+            setStep(2);
         } catch (err) {
             console.error('OTP send error:', err);
             const errorMessage = err.response?.data?.error ||
@@ -127,6 +125,7 @@ export default function BuyerRegisterPage() {
         }
     };
 
+    // ✅ FIXED: Send all fields to new verify-otp endpoint
     const handleRegister = async (e) => {
         e.preventDefault();
         setError('');
@@ -138,19 +137,23 @@ export default function BuyerRegisterPage() {
 
         setIsLoading(true);
         const finalData = {
-            ...formData,
+            email: formData.email.trim().toLowerCase(),
             full_name: formData.full_name.trim(),
-            email: formData.email.trim(),
+            password: formData.password,
             otp: otp.trim()
         };
 
         try {
             const response = await axios.post(REGISTER_API, finalData);
 
-            // Store token and redirect
-            localStorage.setItem('buyerAccessToken', response.data.token);
+            // ✅ FIXED: Handle new token format
+            if (response.data.access_token) {
+                localStorage.setItem('buyerAccessToken', response.data.access_token);
+            }
+            if (response.data.refresh_token) {
+                localStorage.setItem('buyerRefreshToken', response.data.refresh_token);
+            }
 
-            // Show success message briefly before redirect
             setError('');
             setTimeout(() => {
                 router.push('/profile');
@@ -158,9 +161,9 @@ export default function BuyerRegisterPage() {
 
         } catch (err) {
             console.error('Registration error:', err);
-            const errorMessage = err.response?.data?.otp?.[0] ||
-                err.response?.data?.error ||
+            const errorMessage = err.response?.data?.error ||
                 err.response?.data?.message ||
+                err.response?.data?.otp?.[0] ||
                 'Registration failed. Please check your OTP and try again.';
             setError(errorMessage);
         } finally {
@@ -168,14 +171,14 @@ export default function BuyerRegisterPage() {
         }
     };
 
+    // ✅ FIXED: Only send email for resend
     const handleResendOtp = async () => {
         setError('');
         setIsLoading(true);
 
         try {
             await axios.post(SEND_OTP_API, {
-                email: formData.email.trim(),
-                full_name: formData.full_name.trim()
+                email: formData.email.trim().toLowerCase()  // ✅ ONLY EMAIL
             });
             setError('OTP has been resent to your email');
         } catch (err) {
@@ -196,7 +199,6 @@ export default function BuyerRegisterPage() {
             <Header />
             <div style={styles.container}>
                 <div style={styles.card}>
-                    {/* Header */}
                     <div style={styles.header}>
                         <div className='buyerregistericoncontainer' style={styles.iconContainer}>
                             <User className='buyerregistericonsize' size={32} color="#1a4845" />
@@ -209,7 +211,6 @@ export default function BuyerRegisterPage() {
                         </p>
                     </div>
 
-                    {/* Progress Indicator */}
                     <div style={styles.progressContainer}>
                         <div style={styles.progressBar}>
                             <div
@@ -225,7 +226,6 @@ export default function BuyerRegisterPage() {
                     </div>
 
                     {step === 1 ? (
-                        /* Step 1: Personal Details */
                         <form onSubmit={handleSendOtp} style={styles.form}>
                             <div style={styles.inputGroup}>
                                 <div style={styles.inputWrapper}>
@@ -274,16 +274,14 @@ export default function BuyerRegisterPage() {
                             </div>
 
                             <div style={styles.inputGroup}>
-
                                 <div style={styles.passwordContainer}>
-                                    {/* <div style={styles.inputWrapper}> */}
                                     <Lock size={18} style={styles.inputIcon} />
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         name="password"
                                         value={formData.password}
                                         onChange={handleChange}
-                                        placeholder="Enter password "
+                                        placeholder="Enter password"
                                         required
                                         style={{
                                             ...styles.passwordInput,
@@ -292,7 +290,6 @@ export default function BuyerRegisterPage() {
                                         className='buyerregisterpasswordinput'
                                         disabled={isLoading}
                                     />
-                                    {/* </div> */}
                                     <button
                                         type="button"
                                         className='buyerregistereye'
@@ -309,9 +306,7 @@ export default function BuyerRegisterPage() {
                             </div>
 
                             <div style={styles.inputGroup}>
-
                                 <div style={styles.passwordContainer}>
-                                    {/* <div style={styles.inputWrapper}> */}
                                     <Lock size={18} style={styles.inputIcon} />
                                     <input
                                         type={showConfirmPassword ? "text" : "password"}
@@ -327,7 +322,6 @@ export default function BuyerRegisterPage() {
                                         className='buyerregisterpasswordinput'
                                         disabled={isLoading}
                                     />
-                                    {/* </div> */}
                                     <button
                                         type="button"
                                         className='buyerregistereye'
@@ -366,7 +360,6 @@ export default function BuyerRegisterPage() {
                             </button>
                         </form>
                     ) : (
-                        /* Step 2: OTP Verification */
                         <form onSubmit={handleRegister} style={styles.form}>
                             <div style={styles.otpInfo}>
                                 <Mail size={20} color='#1a4845' />
@@ -432,7 +425,7 @@ export default function BuyerRegisterPage() {
                             </button>
 
                             <button
-                            className='buyerregisterbacktodetailbtn'
+                                className='buyerregisterbacktodetailbtn'
                                 type="button"
                                 onClick={handleBackToStep1}
                                 style={styles.backButton}
@@ -444,7 +437,6 @@ export default function BuyerRegisterPage() {
                         </form>
                     )}
 
-                    {/* Error Message */}
                     {error && (
                         <div style={styles.errorContainer}>
                             <AlertCircle size={16} />
@@ -452,7 +444,6 @@ export default function BuyerRegisterPage() {
                         </div>
                     )}
 
-                    {/* Footer Links */}
                     <div style={styles.footerLinks}>
                         <Link href="/login/buyer" style={styles.link}>
                             Already have an account? Login
@@ -462,7 +453,6 @@ export default function BuyerRegisterPage() {
             </div>
             <Footer />
 
-            {/* CSS Animations */}
             <style jsx>{`
                 @keyframes spin {
                     0% { transform: rotate(0deg); }
@@ -484,310 +474,41 @@ export default function BuyerRegisterPage() {
 }
 
 const styles = {
-    pageContainer: {
-        minHeight: '100vh',
-        backgroundColor: '#FDFFF0'
-
-    },
-
-    container: {
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '80vh',
-        padding: '20px'
-    },
-
-    card: {
-        backgroundImage: 'url("/assets/images/Shoppagebanner.png")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        position: 'relative',
-        backgroundAttachment: 'fixed',
-        marginTop: '50px',
-        padding: '40px',
-        borderRadius: '16px',
-        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-        width: '90%',
-        maxWidth: '400px',
-        backgroundColor: 'rgba(0, 0, 0, 0.45)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        color: '#fff',
-        textAlign: 'center',
-        zIndex: 2,
-        transition: 'all 0.3s ease',
-    },
-
-    header: {
-        textAlign: 'center',
-        marginBottom: '32px'
-    },
-
-    iconContainer: {
-        width: '64px',
-        height: '64px',
-        backgroundColor: '#FDFFF0',
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        margin: '0 auto 16px auto'
-    },
-
-    title: {
-        fontSize: '1.5rem',
-        fontWeight: '700',
-        color: '#1f2937',
-        marginBottom: '8px'
-    },
-
-    subtitle: {
-        fontSize: '0.95rem',
-        color: '#6b7280',
-        lineHeight: '1.5',
-        margin: 0
-    },
-
-    progressContainer: {
-        marginBottom: '24px'
-    },
-
-    progressBar: {
-        width: '100%',
-        height: '4px',
-        backgroundColor: '#e5e7eb',
-        borderRadius: '2px',
-        overflow: 'hidden',
-        marginBottom: '8px'
-    },
-
-    progressFill: {
-        height: '100%',
-        backgroundColor: '#1a4845',
-        borderRadius: '2px',
-        transition: 'width 0.3s ease'
-    },
-
-    stepIndicator: {
-        fontSize: '0.875rem',
-        color: '#6b7280',
-        textAlign: 'center'
-    },
-
-    form: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px'
-    },
-
-    inputGroup: {
-        display: 'flex',
-        flexDirection: 'column'
-    },
-    inputWrapper: {
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center'
-    },
-    inputIcon: {
-        position: 'absolute',
-        left: '16px',
-        color: '#6b7280',
-        zIndex: 1
-    },
-
-    label: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        fontSize: '0.9rem',
-        fontWeight: '600',
-        color: '#374151',
-        marginBottom: '8px'
-    },
-
-    input: {
-        width: '100%',
-        padding: '14px 16px 14px 48px',
-        border: '1px solid #d1d5db',
-        borderRadius: '8px',
-        boxSizing: 'border-box',
-        fontSize: '15px',
-        backgroundColor: '#FDFFF0',
-        transition: 'all 0.2s ease',
-        outline: 'none'
-    },
-
-    passwordInput: {
-        width: '100%',
-        padding: '14px 48px 14px 48px',
-        border: '1px solid #d1d5db',
-        borderRadius: '8px',
-        boxSizing: 'border-box',
-        fontSize: '15px',
-        backgroundColor: '#FDFFF0',
-        transition: 'all 0.2s ease',
-        outline: 'none'
-    },
-
-    passwordContainer: {
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center'
-    },
-
-
-
-    eyeButton: {
-        position: 'absolute',
-        right: '12px',
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        color: '#1a4845',
-        padding: '4px',
-        borderRadius: '4px'
-    },
-
-    inputError: {
-        borderColor: '#ef4444'
-    },
-
-    errorText: {
-        color: '#ef4444',
-        fontSize: '0.875rem',
-        marginTop: '6px'
-    },
-
-    otpInfo: {
-        display: 'flex',
-        justifyContent: "center",
-        gap: '12px',
-        padding: '16px',
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        marginBottom: '16px',
-        border: '1px solid #e2e8f0'
-    },
-
-    otpDetails: {
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center' // centers the text vertically with the icon
-    },
-
-    otpText: {
-        margin: '0 0 4px 0',
-        fontSize: '14px',
-        color: '#1a4845'
-    },
-    otpemail: {
-        margin: '0 0 4px 0',
-        fontSize: '0.9rem',
-        color: '#1a4845'
-    },
-
-
-    otpInput: {
-        textAlign: 'center',
-        letterSpacing: '0.5em',
-        fontSize: '1.2rem',
-        fontWeight: '600'
-    },
-
-    otpActions: {
-        display: 'flex',
-        justifyContent: 'flex-end',
-        marginTop: '8px'
-    },
-
-    resendButton: {
-        background: 'none',
-        border: 'none',
-        color: '#3b82f6',
-        cursor: 'pointer',
-        fontSize: '0.85rem',
-        padding: '4px 0'
-    },
-
-    button: {
-        width: '100%',
-        padding: '16px 24px',
-        border: 'none',
-        borderRadius: '8px',
-        backgroundColor: '#1a4845',
-        color: 'white',
-        cursor: 'pointer',
-        fontSize: '1rem',
-        fontWeight: '600',
-        transition: 'all 0.2s ease',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '52px'
-    },
-
-    buttonLoading: {
-        backgroundColor: '#9ca3af',
-        cursor: 'not-allowed'
-    },
-
-    buttonContent: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-    },
-
-    spinner: {
-        width: '16px',
-        height: '16px',
-        border: '2px solid rgba(255, 255, 255, 0.3)',
-        borderTop: '2px solid #ffffff',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite'
-    },
-
-    backButton: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '6px',
-        width: '100%',
-        padding: '12px 16px',
-        background: 'none',
-        border: '1px solid #d1d5db',
-        borderRadius: '8px',
-        color: '#6b7280',
-        cursor: 'pointer',
-        fontSize: '0.9rem',
-        marginTop: '8px'
-    },
-
-    errorContainer: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '12px 16px',
-        backgroundColor: '#fef2f2',
-        border: '1px solid #ef4444',
-        borderRadius: '8px',
-        color: '#991b1b',
-        fontSize: '0.9rem',
-        marginTop: '16px'
-    },
-
-    footerLinks: {
-        marginTop: '24px',
-        textAlign: 'center',
-        fontSize: '14px'
-    },
-
-    link: {
-        color: '#3b82f6',
-        textDecoration: 'none',
-        fontWeight: '500'
-    }
+    pageContainer: { minHeight: '100vh', backgroundColor: '#FDFFF0' },
+    container: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '20px' },
+    card: { backgroundImage: 'url("/assets/images/Shoppagebanner.png")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', position: 'relative', backgroundAttachment: 'fixed', marginTop: '50px', padding: '40px', borderRadius: '16px', boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)', width: '90%', maxWidth: '400px', backgroundColor: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#fff', textAlign: 'center', zIndex: 2, transition: 'all 0.3s ease' },
+    header: { textAlign: 'center', marginBottom: '32px' },
+    iconContainer: { width: '64px', height: '64px', backgroundColor: '#FDFFF0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' },
+    title: { fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '8px' },
+    subtitle: { fontSize: '0.95rem', color: '#6b7280', lineHeight: '1.5', margin: 0 },
+    progressContainer: { marginBottom: '24px' },
+    progressBar: { width: '100%', height: '4px', backgroundColor: '#e5e7eb', borderRadius: '2px', overflow: 'hidden', marginBottom: '8px' },
+    progressFill: { height: '100%', backgroundColor: '#1a4845', borderRadius: '2px', transition: 'width 0.3s ease' },
+    stepIndicator: { fontSize: '0.875rem', color: '#6b7280', textAlign: 'center' },
+    form: { display: 'flex', flexDirection: 'column', gap: '20px' },
+    inputGroup: { display: 'flex', flexDirection: 'column' },
+    inputWrapper: { position: 'relative', display: 'flex', alignItems: 'center' },
+    inputIcon: { position: 'absolute', left: '16px', color: '#6b7280', zIndex: 1 },
+    label: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: '600', color: '#374151', marginBottom: '8px' },
+    input: { width: '100%', padding: '14px 16px 14px 48px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', fontSize: '15px', backgroundColor: '#FDFFF0', transition: 'all 0.2s ease', outline: 'none' },
+    passwordInput: { width: '100%', padding: '14px 48px 14px 48px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', fontSize: '15px', backgroundColor: '#FDFFF0', transition: 'all 0.2s ease', outline: 'none' },
+    passwordContainer: { position: 'relative', display: 'flex', alignItems: 'center' },
+    eyeButton: { position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#1a4845', padding: '4px', borderRadius: '4px' },
+    inputError: { borderColor: '#ef4444' },
+    errorText: { color: '#ef4444', fontSize: '0.875rem', marginTop: '6px' },
+    otpInfo: { display: 'flex', justifyContent: "center", gap: '12px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '8px', marginBottom: '16px', border: '1px solid #e2e8f0' },
+    otpDetails: { display: 'flex', flexDirection: 'column', justifyContent: 'center' },
+    otpText: { margin: '0 0 4px 0', fontSize: '14px', color: '#1a4845' },
+    otpemail: { margin: '0 0 4px 0', fontSize: '0.9rem', color: '#1a4845' },
+    otpInput: { textAlign: 'center', letterSpacing: '0.5em', fontSize: '1.2rem', fontWeight: '600' },
+    otpActions: { display: 'flex', justifyContent: 'flex-end', marginTop: '8px' },
+    resendButton: { background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.85rem', padding: '4px 0' },
+    button: { width: '100%', padding: '16px 24px', border: 'none', borderRadius: '8px', backgroundColor: '#1a4845', color: 'white', cursor: 'pointer', fontSize: '1rem', fontWeight: '600', transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '52px' },
+    buttonLoading: { backgroundColor: '#9ca3af', cursor: 'not-allowed' },
+    buttonContent: { display: 'flex', alignItems: 'center', gap: '8px' },
+    spinner: { width: '16px', height: '16px', border: '2px solid rgba(255, 255, 255, 0.3)', borderTop: '2px solid #ffffff', borderRadius: '50%', animation: 'spin 1s linear infinite' },
+    backButton: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', padding: '12px 16px', background: 'none', border: '1px solid #d1d5db', borderRadius: '8px', color: '#6b7280', cursor: 'pointer', fontSize: '0.9rem', marginTop: '8px' },
+    errorContainer: { display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', backgroundColor: '#fef2f2', border: '1px solid #ef4444', borderRadius: '8px', color: '#991b1b', fontSize: '0.9rem', marginTop: '16px' },
+    footerLinks: { marginTop: '24px', textAlign: 'center', fontSize: '14px' },
+    link: { color: '#3b82f6', textDecoration: 'none', fontWeight: '500' }
 };
-
