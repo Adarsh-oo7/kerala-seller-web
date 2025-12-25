@@ -1200,10 +1200,31 @@ function ShopProductPageContent() {
       );
       return;
     }
-    if (!isLoggedIn) {
-      router.push(`/login/buyer?redirect=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
+    // ✅ FIXED: Redirect to shop-specific login page with full URL preservation
+if (!isLoggedIn) {
+  if (!store) {
+    alert('Store information is loading. Please wait and try again.');
+    return;
+  }
+
+  // ✅ Get current full URL with query parameters
+  const currentFullPath = window.location.pathname + window.location.search;
+  const returnUrl = encodeURIComponent(currentFullPath);
+  
+  // ✅ Generate shop slug and get phone
+  const shopSlugForLogin = generateShopSlug(store);
+  const phone = store?.seller_phone || store?.phone;
+
+  if (!phone) {
+    alert('Store information is incomplete. Please try again later.');
+    return;
+  }
+
+  // ✅ Redirect to shop-specific login page
+  console.log('🔄 Redirecting to seller login:', `/shop/${shopSlugForLogin}/login?redirect=${returnUrl}&id=${phone}`);
+  router.push(`/shop/${shopSlugForLogin}/login?redirect=${returnUrl}&id=${phone}`);
+  return;
+}
 
     if (!addToCart) {
       alert('Cart service unavailable. Please refresh the page.');

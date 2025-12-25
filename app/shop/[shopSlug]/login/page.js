@@ -282,26 +282,28 @@ function ShopLoginContent() {
     }, []);
 
     // Get actual store ID from URL parameters
-    const getActualStoreId = () => {
-        console.log('🔍 Getting store ID for shop login...');
-        console.log('- shopSlug from params:', shopSlug);
-        console.log('- id from search params:', searchParams.get('id'));
+// Get actual store ID from URL parameters
+const getActualStoreId = () => {
+    console.log('🔍 Getting store ID for shop login...');
+    console.log('- shopSlug from params:', shopSlug);
+    console.log('- id from search params:', searchParams.get('id'));
 
-        if (shopSlug === 'undefined' || shopSlug === undefined) {
-            return { error: 'Invalid shop slug in URL', storeId: null };
-        }
+    if (shopSlug === 'undefined' || shopSlug === undefined) {
+        return { error: 'Invalid shop slug in URL', storeId: null };
+    }
 
-        const queryId = searchParams.get('id');
-        if (queryId && queryId !== 'undefined' && queryId.trim() !== '') {
-            return { error: null, storeId: queryId.trim() };
-        }
+    const queryId = searchParams.get('id');
+    if (queryId && queryId !== 'undefined' && queryId.trim() !== '') {
+        return { error: null, storeId: queryId.trim() };
+    }
 
-        if (shopSlug && shopSlug !== 'new' && shopSlug !== 'undefined') {
-            return { error: null, storeId: shopSlug };
-        }
+    // ✅ FIX: Accept both numeric IDs and string slugs
+    if (shopSlug && shopSlug !== 'new' && shopSlug !== 'undefined') {
+        return { error: null, storeId: shopSlug };
+    }
 
-        return { error: 'No valid store ID found', storeId: null };
-    };
+    return { error: 'No valid store ID found', storeId: null };
+};
 
     // Generate shop URLs
     const getShopUrl = (path = '') => {
@@ -330,78 +332,114 @@ function ShopLoginContent() {
         setStoreInfo(prev => ({ ...prev, actualStoreId: storeId }));
 
         // Fetch store data
-        const fetchStoreData = async () => {
-            try {
-                console.log('📡 Fetching store data for shop login:', storeId);
-                const response = await fetch(`${API_BASE_URL}/shop/${storeId}/`);
+// In the fetchStoreData function inside useEffect
+const fetchStoreData = async () => {
+    try {
+        console.log('📡 Fetching store data for shop login:', storeId);
+        
+        // ✅ FIX: Fetch store by either ID or slug
+        const response = await fetch(`${API_BASE_URL}/shop/${storeId}/`);
 
-                if (response.ok) {
-                    const storeResData = await response.json();
-                    const storeData = storeResData.store || storeResData;
-                    console.log('✅ Store data loaded for login');
+        if (response.ok) {
+            const storeResData = await response.json();
+            const storeData = storeResData.store || storeResData;
+            
+            console.log('✅ Store data loaded for login:', {
+                id: storeData.id,
+                name: storeData.name,
+                slug: storeData.slug || storeData.seller_phone
+            });
 
-                    setStoreInfo(prev => ({
-                        ...prev,
-                        storeData,
-                        loading: false
-                    }));
-                } else {
-                    console.warn('⚠️ Store data not found, using fallback');
-                    setStoreInfo(prev => ({
-                        ...prev,
-                        storeData: {
-                            name: `Store ${storeId}`,
-                            seller_phone: storeId,
-                            id: storeId
-                        },
-                        loading: false
-                    }));
-                }
-            } catch (error) {
-                console.error('❌ Failed to fetch store data:', error);
-                setStoreInfo(prev => ({
-                    ...prev,
-                    storeData: {
-                        name: `Store ${storeId}`,
-                        seller_phone: storeId,
-                        id: storeId
-                    },
-                    loading: false,
-                    error: error.message
-                }));
-            }
-        };
+            setStoreInfo(prev => ({
+                ...prev,
+                storeData: {
+                    ...storeData,
+                    // ✅ Ensure slug exists (fallback to seller_phone or id)
+                    slug: storeData.slug || storeData.seller_phone || storeId
+                },
+                loading: false
+            }));
+        } else {
+            console.warn('⚠️ Store data not found, using fallback');
+            setStoreInfo(prev => ({
+                ...prev,
+                storeData: {
+                    name: `Store ${storeId}`,
+                    seller_phone: storeId,
+                    id: storeId,
+                    slug: storeId // ✅ Add slug fallback
+                },
+                loading: false
+            }));
+        }
+    } catch (error) {
+        console.error('❌ Failed to fetch store data:', error);
+        setStoreInfo(prev => ({
+            ...prev,
+            storeData: {
+                name: `Store ${storeId}`,
+                seller_phone: storeId,
+                id: storeId,
+                slug: storeId // ✅ Add slug fallback
+            },
+            loading: false,
+            error: error.message
+        }));
+    }
+};
+
 
         fetchStoreData();
     }, [shopSlug, searchParams, router]);
 
-    const handleLoginSuccess = useCallback((token, userData = {}) => {
-        console.log('🎉 Shop login successful, storing token and redirecting...');
+const handleLoginSuccess = useCallback((token, userData = {}) => {
+    console.log('🎉 Shop login successful, storing token and redirecting...');
 
-        // Store token with multiple keys for compatibility
-        localStorage.setItem('access_token', token);
-        localStorage.setItem('buyerAccessToken', token);
+    // Store token with multiple keys for compatibility
+    localStorage.setItem('access_token', token);
+    localStorage.setItem('buyerAccessToken', token);
 
-        // Store user data if provided
-        if (userData.user) {
-            localStorage.setItem('userInfo', JSON.stringify(userData.user));
-        }
+    // Store user data if provided
+    if (userData.user) {
+        localStorage.setItem('userInfo', JSON.stringify(userData.user));
+    }
 
-        // ✅ UPDATE: Update login state for SHeader
-        setIsLoggedIn(true);
+    // ✅ UPDATE: Update login state for SHeader
+    setIsLoggedIn(true);
 
-        // Shop-specific redirect logic
-        const redirectTo = searchParams.get('redirect');
+    // ✅ FIXED: Better redirect logic
+    const redirectTo = searchParams.get('redirect');
+    
+    console.log('🔍 Redirect debugging:', {
+        redirectTo,
+        decoded: redirectTo ? decodeURIComponent(redirectTo) : 'none',
+        storeSlug: storeInfo.storeData?.slug,
+        storeId: storeInfo.actualStoreId
+    });
 
-        if (redirectTo) {
-            router.push(decodeURIComponent(redirectTo));
+    if (redirectTo) {
+        // Decode and validate the redirect URL
+        const decodedRedirect = decodeURIComponent(redirectTo);
+        console.log('🔄 Redirecting to specified URL:', decodedRedirect);
+        
+        // ✅ FIX: Use router.replace instead of router.push to avoid back button issues
+        router.replace(decodedRedirect);
+    } else {
+        // ✅ FIX: Check if we have store data with a slug
+        if (storeInfo.storeData?.slug) {
+            const shopUrl = `/shop/${storeInfo.storeData.slug}`;
+            console.log('🔄 Redirecting to shop via slug:', shopUrl);
+            router.replace(shopUrl);
         } else {
-            // Default to shop home instead of profile to avoid loop
+            // Fallback to ID-based URL
             const shopUrl = getShopUrl('');
-            console.log('🔄 Redirecting to shop home:', shopUrl);
-            router.push(shopUrl);
+            console.log('🔄 Redirecting to shop home (fallback):', shopUrl);
+            router.replace(shopUrl);
         }
-    }, [router, searchParams, storeInfo.actualStoreId]);
+    }
+}, [router, searchParams, storeInfo.actualStoreId, storeInfo.storeData, getShopUrl]);
+// ✅ Added getShopUrl to dependencies since it uses storeInfo
+
 
     // ✅ FIXED: Enhanced token check with validation and loop prevention
     useEffect(() => {

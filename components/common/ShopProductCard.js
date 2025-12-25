@@ -145,27 +145,33 @@ export default function ShopProductCard({
     return imageUrl.startsWith('/') ? `${API_BASE_URL}${imageUrl}` : imageUrl;
   };
 
-  // ✅ FIXED: Proper wishlist toggle with better event handling
-const handleWishlistToggle = async (e) => {
-  e.preventDefault();
-  e.stopPropagation();
+  // ✅ Helper function to get login redirect URL with query parameters
+  const getLoginRedirectUrl = () => {
+    // ✅ FIX: Include full path with query parameters
+    const currentFullPath = window.location.pathname + window.location.search;
+    return shopSlug 
+      ? `/shop/${shopSlug}/login?redirect=${encodeURIComponent(currentFullPath)}`
+      : `/shop/${sellerPhone}/login?redirect=${encodeURIComponent(currentFullPath)}`;
+  };
 
-  console.log('🔍 Wishlist button clicked for product:', product.id);
+  // ✅ FIXED: Proper wishlist toggle with correct redirect URL
+  const handleWishlistToggle = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-  const headers = getAuthHeaders();
-  if (!headers) {
-    const shouldLogin = window.confirm('Please login to add items to your wishlist. Would you like to login now?');
-    if (shouldLogin) {
-      // ✅ FIX: Redirect to shop-specific login page
-      const shopLoginUrl = shopSlug 
-        ? `/shop/${shopSlug}/login?redirect=${encodeURIComponent(window.location.pathname)}`
-        : `/shop/${sellerPhone}/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-      
-      window.location.href = shopLoginUrl;
+    console.log('🔍 Wishlist button clicked for product:', product.id);
+
+    const headers = getAuthHeaders();
+    if (!headers) {
+      const shouldLogin = window.confirm('Please login to add items to your wishlist. Would you like to login now?');
+      if (shouldLogin) {
+        // ✅ FIX: Use helper function with full path
+        const loginUrl = getLoginRedirectUrl();
+        console.log('🔄 Redirecting to login:', loginUrl);
+        window.location.href = loginUrl;
+      }
+      return;
     }
-    return;
-  }
-
 
     if (isWishlistLoading) {
       console.log('⏳ Wishlist request already in progress for product:', product.id);
@@ -280,6 +286,30 @@ const handleWishlistToggle = async (e) => {
     window.open(getProductUrl(), '_blank');
   };
 
+  // ✅ FIXED: Add to cart handler with correct redirect URL
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // ✅ FIX: Check if user is logged in before adding to cart
+    const headers = getAuthHeaders();
+    if (!headers) {
+      const shouldLogin = window.confirm('Please login to add items to your cart. Would you like to login now?');
+      if (shouldLogin) {
+        // ✅ FIX: Use helper function with full path
+        const loginUrl = getLoginRedirectUrl();
+        console.log('🔄 Redirecting to login:', loginUrl);
+        window.location.href = loginUrl;
+      }
+      return;
+    }
+    
+    // User is logged in, proceed with adding to cart
+    if (onAddToCart) {
+      onAddToCart(e, product);
+    }
+  };
+
   return (
     <div
       className={`shop-product-card ${getStockStatus()}`}
@@ -306,7 +336,6 @@ const handleWishlistToggle = async (e) => {
         </Link>
 
         {/* ✅ Rating overlay (existing) - shows on image hover */}
-        {/* {product.average_rating > 0 && ( */}
         <div className='shopproductcardoverlay' style={styles.ratingOverlay}>
           <div style={styles.ratingLeft}>
             <Star
@@ -327,7 +356,6 @@ const handleWishlistToggle = async (e) => {
             <span style={styles.ratingRight}>No reviews</span>
           )}
         </div>
-        {/* )} */}
 
         {/* Product badges */}
         <div className="product-badges" style={styles.productBadges}>
@@ -400,8 +428,6 @@ const handleWishlistToggle = async (e) => {
             </h3>
           </div>
 
-
-
           {/* Pricing */}
           <div className="product-pricing" style={styles.productPricing}>
             <div className="price-section" style={styles.priceSection}>
@@ -416,39 +442,17 @@ const handleWishlistToggle = async (e) => {
             </div>
           </div>
 
-         <button
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // ✅ FIX: Check if user is logged in before adding to cart
-    const headers = getAuthHeaders();
-    if (!headers) {
-      const shouldLogin = window.confirm('Please login to add items to your cart. Would you like to login now?');
-      if (shouldLogin) {
-        // ✅ Redirect to shop-specific login page
-        const shopLoginUrl = shopSlug 
-          ? `/shop/${shopSlug}/login?redirect=${encodeURIComponent(window.location.pathname)}`
-          : `/shop/${sellerPhone}/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-        
-        window.location.href = shopLoginUrl;
-      }
-      return;
-    }
-    
-    // User is logged in, proceed with adding to cart
-    if (onAddToCart) {
-      onAddToCart(e, product);
-    }
-  }}
-  className={`add-to-cart-btn ${(product.online_stock || 0) === 0 ? 'disabled' : ''} ${isLoading ? 'loading' : ''} ${isInCart ? 'in-cart' : ''}`}
-  style={styles.addToCartBtn}
-  disabled={(product.online_stock || 0) === 0 || isLoading}
-  aria-label={(product.online_stock || 0) > 0 ?
-    (isInCart ? `Add more ${product.name || 'product'} to cart (${getCartQuantity()} in cart)` : `Add ${product.name || 'product'} to cart`) :
-    'Out of stock'}
-  type="button"
->
+          {/* ✅ FIXED: Add to cart button using handler function */}
+          <button
+            onClick={handleAddToCart}
+            className={`add-to-cart-btn ${(product.online_stock || 0) === 0 ? 'disabled' : ''} ${isLoading ? 'loading' : ''} ${isInCart ? 'in-cart' : ''}`}
+            style={styles.addToCartBtn}
+            disabled={(product.online_stock || 0) === 0 || isLoading}
+            aria-label={(product.online_stock || 0) > 0 ?
+              (isInCart ? `Add more ${product.name || 'product'} to cart (${getCartQuantity()} in cart)` : `Add ${product.name || 'product'} to cart`) :
+              'Out of stock'}
+            type="button"
+          >
             {isLoading ? (
               <>
                 <RefreshCw size={16} className="spinning" />
@@ -471,12 +475,8 @@ const handleWishlistToggle = async (e) => {
               </>
             )}
           </button>
-
-
         </div>
       </Link>
-
-
 
       {/* ✅ CSS for animations */}
       <style jsx>{`
@@ -493,7 +493,7 @@ const handleWishlistToggle = async (e) => {
   );
 }
 
-// ✅ Enhanced styles with better mobile support and loading states
+// ✅ Enhanced styles with better mobile support and loading states (UNCHANGED)
 const styles = {
   shopProductCard: {
     width: "100%",
@@ -791,4 +791,4 @@ const styles = {
     overflow: "hidden",
     textOverflow: "ellipsis",
   },
-}
+};
