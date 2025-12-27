@@ -8,9 +8,7 @@ import axios from 'axios';
 import Link from 'next/link';
 import SHeader from '../../../../../components/common/SHeader';
 import "../../../../../styles/Kerelasellerprofileverification.css";
-import ShopFooter from '../../../../../components/common/ShopFooter';
-
-
+import ShopFooter from '../../../../../components/common/ShopFooter'; // ✅ Your footer
 
 import {
   Check,
@@ -59,12 +57,26 @@ export default function VerifyPhonePage() {
   const [recaptchaVerifier, setRecaptchaVerifier] = useState(null);
   const [buyer, setBuyer] = useState(null);
   const [storeData, setStoreData] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ ADDED for SHeader
 
   // ✅ Store context from URL
   const shopSlug = params.shopSlug;
   const actualStoreId =
     searchParams.get('id') ||
     (shopSlug && shopSlug !== 'new' ? shopSlug : null);
+
+  // ✅ Check login status
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('buyerAccessToken') ||
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('accessToken');
+      setIsLoggedIn(!!token);
+    } catch (error) {
+      console.warn('localStorage access error:', error);
+      setIsLoggedIn(false);
+    }
+  }, [buyer]);
 
   // ✅ Auth headers
   const getAuthHeaders = () => {
@@ -315,11 +327,13 @@ export default function VerifyPhonePage() {
   if (isLoading || !buyer) {
     return (
       <div style={styles.pageContainer}>
-        <SHeader store={storeData} isLoggedIn={true} />
+        <SHeader store={storeData} isLoggedIn={isLoggedIn} />
         <div style={styles.loadingContainer}>
           <div style={styles.spinner}></div>
           <p>Loading verification...</p>
         </div>
+        {/* ✅ Footer for loading state */}
+        <ShopFooter store={storeData} />
       </div>
     );
   }
@@ -327,11 +341,9 @@ export default function VerifyPhonePage() {
   // ✅ Main UI
   return (
     <div className='shopverificationpagecontainer' style={styles.pageContainer}>
-      <SHeader store={storeData} isLoggedIn={true} />
+      <SHeader store={storeData} isLoggedIn={isLoggedIn} />
 
       <div style={styles.container}>
-
-
         {successMessage && (
           <div style={styles.successAlert}>
             <Check size={16} />
@@ -394,7 +406,6 @@ export default function VerifyPhonePage() {
               </Link>
             </div>
           ) : (
-
             <div style={styles.verificationSection}>
               <div style={{ ...styles.verificationHeader, flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                 <div style={styles.headerIcon}>
@@ -549,8 +560,9 @@ export default function VerifyPhonePage() {
           100% { transform: rotate(360deg); }
         }
       `}</style>
-      <ShopFooter />
 
+      {/* ✅ FOOTER - Pass store prop */}
+      <ShopFooter store={storeData} />
     </div>
   );
 }
@@ -559,14 +571,18 @@ const styles = {
   pageContainer: {
     backgroundColor: '#FDFFF0',
     paddingTop: '140px',
+    minHeight: '100vh', // ✅ ADDED
+    display: 'flex',    // ✅ ADDED
+    flexDirection: 'column' // ✅ ADDED
   },
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: '60vh',
-    gap: '20px'
+    minHeight: 'calc(100vh - 300px)', // ✅ CHANGED
+    gap: '20px',
+    flex: 1 // ✅ ADDED
   },
   spinner: {
     width: '32px',
@@ -587,7 +603,9 @@ const styles = {
   container: {
     maxWidth: '500px',
     margin: '0 auto',
-    padding: '24px'
+    padding: '24px',
+    flex: 1, // ✅ ADDED to push footer down
+    marginBottom: '40px' // ✅ ADDED space before footer
   },
   header: {
     display: 'flex',
@@ -772,7 +790,6 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer'
   },
-
   verificationSection: {
     display: 'flex',
     flexDirection: 'column',

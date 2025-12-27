@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import "../../../../styles/BuyerProfile.css";
 import { toast } from "react-toastify";
-import ShopFooter from '../../../../components/common/ShopFooter';
+import ShopFooter from '../../../../components/common/ShopFooter'; // ✅ Your footer
 
 import {
   User,
@@ -17,7 +17,7 @@ import {
   Store,
   RefreshCw,
   AlertTriangle,
-  Phone // ✅ ADD: Phone icon for verification menu
+  Phone
 } from 'lucide-react';
 import SHeader from '../../../../components/common/SHeader';
 
@@ -89,7 +89,6 @@ export default function ShopProfilePage() {
     }
   };
 
-  // ✅ ADD: Phone verification URL helper
   const getPhoneVerificationUrl = () => {
     return getShopUrl('/profile/verify-phone');
   };
@@ -247,7 +246,7 @@ export default function ShopProfilePage() {
       if (storeRes.status === 'fulfilled' && storeRes.value.ok) {
         const storeResData = await storeRes.value.json();
         setStoreData(storeResData.store || storeResData);
-        console.log('✅ Store data loaded');
+        console.log('✅ Store data loaded:', storeResData.store || storeResData);
       } else {
         console.warn('⚠️ Store data not found, using fallback');
         setStoreData({
@@ -304,7 +303,7 @@ export default function ShopProfilePage() {
             Logout from {storeData?.name || 'this store'}?
           </p>
           <p className="cart-remove-text" style={{ fontSize: '12px', opacity: 0.8 }}>
-            You’ll need to login again to access your account.
+            You'll need to login again to access your account.
           </p>
 
           <div className="cart-remove-actions">
@@ -347,12 +346,6 @@ export default function ShopProfilePage() {
     );
   };
 
-  const handleBackClick = () => {
-    const backUrl = getShopUrl('');
-    console.log('🔙 Back to shop:', backUrl);
-    router.push(backUrl);
-  };
-
   const handleRefresh = () => {
     console.log('🔄 Refreshing profile data...');
     fetchData(true);
@@ -380,6 +373,8 @@ export default function ShopProfilePage() {
             </>
           )}
         </div>
+        {/* ✅ Pass store prop to footer */}
+        <ShopFooter store={storeData} />
       </div>
     );
   }
@@ -396,6 +391,8 @@ export default function ShopProfilePage() {
             Go Home
           </button>
         </div>
+        {/* ✅ Pass store prop to footer */}
+        <ShopFooter store={storeData} />
       </div>
     );
   }
@@ -412,6 +409,8 @@ export default function ShopProfilePage() {
             Login to {storeData?.name || `Store ${actualStoreId}`}
           </Link>
         </div>
+        {/* ✅ Pass store prop to footer */}
+        <ShopFooter store={storeData} />
       </div>
     );
   }
@@ -478,7 +477,6 @@ export default function ShopProfilePage() {
             <div style={styles.menuArrow}>→</div>
           </Link>
 
-          {/* ✅ ADD: Phone Verification Menu Item */}
           <Link href={getPhoneVerificationUrl()} style={styles.menuItem}>
             <Phone
               size={24}
@@ -520,30 +518,41 @@ export default function ShopProfilePage() {
           </Link>
         </div>
       </div>
-      <ShopFooter />
+      
+      {/* ✅ FOOTER - Pass store prop */}
+      <ShopFooter store={storeData} />
     </div>
   );
 }
 
 const styles = {
   pageContainer: {
-    minHeight: 'calc(100vh - 130px)',
+    minHeight: '100vh',
     backgroundColor: '#FDFFF0',
     paddingTop: '130px',
     overflowX: 'hidden',
     width: '100%',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column'
   },
   container: {
     padding: '20px',
     maxWidth: '800px',
     margin: '0 auto',
     width: '100%',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    flex: 1
   },
   loadingContainer: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', minHeight: 'calc(100vh - 90px)', gap: '20px', textAlign: 'center'
+    display: 'flex', 
+    flexDirection: 'column', 
+    alignItems: 'center',
+    justifyContent: 'center', 
+    minHeight: 'calc(100vh - 130px)',
+    gap: '20px', 
+    textAlign: 'center',
+    flex: 1
   },
   spinner: {
     width: '32px', height: '32px', border: '3px solid #f3f3f3',
@@ -551,9 +560,15 @@ const styles = {
     animation: 'spin 1s linear infinite'
   },
   errorContainer: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', minHeight: 'calc(100vh - 90px)', gap: '20px',
-    textAlign: 'center', padding: '40px'
+    display: 'flex', 
+    flexDirection: 'column', 
+    alignItems: 'center',
+    justifyContent: 'center', 
+    minHeight: 'calc(100vh - 130px)', 
+    gap: '20px',
+    textAlign: 'center', 
+    padding: '40px',
+    flex: 1
   },
   homeButton: {
     padding: '12px 24px', backgroundColor: '#6b7280', color: 'white',
@@ -610,7 +625,12 @@ const styles = {
   },
   statNumber: { fontSize: '24px', fontWeight: '700', color: '#1f2937' },
   statLabel: { fontSize: '13px', color: '#6b7280', fontWeight: '500' },
-  menuSection: { display: 'flex', flexDirection: 'column', gap: '12px' },
+  menuSection: { 
+    display: 'flex', 
+    flexDirection: 'column', 
+    gap: '12px',
+    marginBottom: '40px'
+  },
   menuItem: {
     display: 'flex',
     alignItems: 'center',

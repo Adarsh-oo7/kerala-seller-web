@@ -365,7 +365,7 @@ function StoreAboutContent() {
           <div style={styles.spinner}></div>
           <p style={styles.loadingText}>Loading store details...</p>
         </div>
-        <ShopFooter />
+<ShopFooter store={storeData} />
       </div>
     );
   }
@@ -386,7 +386,7 @@ function StoreAboutContent() {
             Browse All Shops
           </Link>
         </div>
-        <ShopFooter />
+<ShopFooter store={storeData} />
       </div>
     );
   }
@@ -410,7 +410,9 @@ function StoreAboutContent() {
             </Link>
           </div>
         </div>
-        <ShopFooter />
+       <ShopFooter store={storeData} />
+
+
       </div>
     );
   }
@@ -428,7 +430,8 @@ function StoreAboutContent() {
             Browse All Shops
           </Link>
         </div>
-        <ShopFooter />
+        <ShopFooter store={storeData} />
+
       </div>
     );
   }
@@ -787,7 +790,8 @@ function StoreAboutContent() {
           </button>
         </div>
       </div>
-      <ShopFooter />
+     <ShopFooter store={storeData} />
+
       {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
