@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation'; // ✅ Add this import
+import { useRouter } from 'next/navigation';
 import ProductForm from '../../../../components/ProductForm';
 import '../../../../styles/DashboardProduct.css'
 import {
@@ -28,15 +28,14 @@ import {
   Layers
 } from 'lucide-react';
 
-// ✅ Add the subscription API URL
 const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
 const API_URL = `${API_BASE_URL}/api/products/`;
-const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`; // ✅ Add this
+const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [subscription, setSubscription] = useState(null); // ✅ Add this state
+  const [subscription, setSubscription] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -47,9 +46,9 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState('table');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
-  const router = useRouter(); // ✅ Add this
+  const router = useRouter();
 
-  // ✅ Add this function to fetch subscription
+  // ✅ Fetch subscription data
   const fetchSubscription = useCallback(async () => {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
@@ -81,7 +80,6 @@ export default function ProductsPage() {
     try {
       console.log('🔄 Fetching products from:', API_URL);
 
-      // ✅ FIXED: Use Bearer instead of Token
       const response = await axios.get(API_URL, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -123,17 +121,15 @@ export default function ProductsPage() {
     }
   }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     fetchSubscription();
     fetchProducts();
   }, [fetchSubscription, fetchProducts]);
-
 
   // ✅ Enhanced filtering and sorting
   useEffect(() => {
     let filtered = [...products];
 
-    // Apply search filter
     if (searchTerm.trim()) {
       filtered = filtered.filter(product =>
         product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -143,7 +139,6 @@ export default function ProductsPage() {
       );
     }
 
-    // Apply stock filter
     switch (filterType) {
       case 'low_stock':
         filtered = filtered.filter(product =>
@@ -166,11 +161,9 @@ export default function ProductsPage() {
         );
         break;
       default:
-        // 'all' - no additional filtering
         break;
     }
 
-    // Apply sorting
     filtered.sort((a, b) => {
       let aValue, bValue;
 
@@ -187,7 +180,7 @@ export default function ProductsPage() {
           aValue = new Date(a.created_at || 0);
           bValue = new Date(b.created_at || 0);
           break;
-        default: // name
+        default:
           aValue = (a.name || '').toLowerCase();
           bValue = (b.name || '').toLowerCase();
           break;
@@ -202,20 +195,14 @@ export default function ProductsPage() {
   }, [products, searchTerm, filterType, sortBy, sortOrder]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-
-  useEffect(() => {
-    // Function to handle auto-switching view
     const handleResize = () => {
       if (window.innerWidth < 768) {
-        setViewMode("grid"); // ✅ Auto switch to grid
+        setViewMode("grid");
       } else {
-        setViewMode("table"); // ✅ Back to table on larger screens
+        setViewMode("table");
       }
     };
 
-    // Run once on mount and whenever the window resizes
     handleResize();
     window.addEventListener("resize", handleResize);
 
@@ -237,7 +224,7 @@ export default function ProductsPage() {
       });
 
       console.log(`✅ Product ${productId} deleted successfully`);
-      fetchProducts(); // Refresh the list after deleting
+      fetchProducts();
     } catch (error) {
       console.error('❌ Failed to delete product:', error);
       const errorMessage = error.response?.data?.message ||
@@ -249,21 +236,49 @@ export default function ProductsPage() {
     }
   };
 
-const handleOpenModal = (product = null) => {
-  // Check subscription before allowing add (but allow edit of existing products)
-  if (!subscription?.is_active && !product) {
-    // Show confirmation dialog asking user to subscribe
-    if (window.confirm('You need an active subscription to add products.\n\nWould you like to subscribe now?')) {
-      router.push('/dashboard/seller/subscription');
+  // ✅ FIXED: Enforce product limit based on subscription
+  const handleOpenModal = (product = null) => {
+    // Allow editing existing products without restriction
+    if (product) {
+      setEditingProduct(product);
+      setIsModalOpen(true);
+      return;
     }
-    return;
-  }
-  
-  // If subscription is active or editing existing product, open modal
-  setEditingProduct(product);
-  setIsModalOpen(true);
-};
 
+    // ✅ Check if subscription is active
+    if (!subscription?.is_active) {
+      if (window.confirm('You need an active subscription to add products.\n\nWould you like to subscribe now?')) {
+        router.push('/dashboard/seller/subscription');
+      }
+      return;
+    }
+
+    // ✅ NEW: Check product limit
+    const currentProductCount = products.length;
+    const productLimit = subscription.product_limit || 0;
+
+    console.log('📊 Product Limit Check:', {
+      currentCount: currentProductCount,
+      limit: productLimit,
+      remaining: productLimit - currentProductCount
+    });
+
+    if (currentProductCount >= productLimit) {
+      // ✅ Show upgrade message when limit is reached
+      if (window.confirm(
+        `You've reached your product limit (${currentProductCount}/${productLimit}).\n\n` +
+        `Upgrade your subscription to add more products.\n\n` +
+        `Would you like to upgrade now?`
+      )) {
+        router.push('/dashboard/seller/subscription');
+      }
+      return;
+    }
+
+    // ✅ Limit not reached, allow adding product
+    setEditingProduct(null);
+    setIsModalOpen(true);
+  };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -275,7 +290,6 @@ const handleOpenModal = (product = null) => {
     fetchProducts();
   };
 
-  // ✅ Enhanced sort handler
   const handleSort = (field) => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -285,7 +299,6 @@ const handleOpenModal = (product = null) => {
     }
   };
 
-  // Helper to display the sale type nicely
   const formatSaleType = (type) => {
     const types = {
       'ONLINE_AND_OFFLINE': 'Online & In-Store',
@@ -314,7 +327,6 @@ const handleOpenModal = (product = null) => {
     };
   };
 
-  // ✅ Analytics calculations
   const getAnalytics = () => {
     const totalProducts = products.length;
     const totalValue = products.reduce((sum, p) => sum + (parseFloat(p.price || 0) * parseInt(p.online_stock || 0)), 0);
@@ -329,7 +341,14 @@ const handleOpenModal = (product = null) => {
     };
   };
 
-  // Loading state
+  // ✅ NEW: Calculate remaining product slots
+  const getRemainingSlots = () => {
+    if (!subscription?.is_active) return 0;
+    const limit = subscription.product_limit || 0;
+    const current = products.length;
+    return Math.max(0, limit - current);
+  };
+
   if (isLoading) {
     return (
       <div style={styles.loadingContainer}>
@@ -339,7 +358,6 @@ const handleOpenModal = (product = null) => {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div style={styles.errorContainer}>
@@ -356,7 +374,7 @@ const handleOpenModal = (product = null) => {
 
   const filterCounts = getFilterCounts();
   const analytics = getAnalytics();
-
+  const remainingSlots = getRemainingSlots();
 
   // ✅ Enhanced Grid View Component
   const GridView = () => (
@@ -435,19 +453,39 @@ const handleOpenModal = (product = null) => {
 
   return (
     <div className='dashboardproductpagecontainer' style={styles.container}>
-      {/* ✅ Enhanced Header with Analytics */}
+      {/* ✅ Enhanced Header with Product Limit Display */}
       <div className='dashboardproductheader' style={styles.header}>
         <div>
           <h1 className='dashboardproducttitle' style={styles.h1}>
             <Package size={28} className='dashboardproductpackageicon' />
             My Products ({filteredProducts.length})
           </h1>
-          <p className='dashboardproductsubtitle' style={styles.subtitle}>Manage your product inventory and listings</p>
+          <p className='dashboardproductsubtitle' style={styles.subtitle}>
+            Manage your product inventory and listings
+            {subscription?.is_active && (
+              <span style={styles.limitBadge}>
+                {' • '}
+                {products.length}/{subscription.product_limit || 0} products used
+                {remainingSlots > 0 && ` (${remainingSlots} slots remaining)`}
+                {remainingSlots === 0 && ' - Limit reached!'}
+              </span>
+            )}
+          </p>
         </div>
         <div style={styles.headerActions}>
-          <button className='dashboardproductaddprodbtn' onClick={() => handleOpenModal()} style={styles.buttonPrimary}>
+          <button 
+            className='dashboardproductaddprodbtn' 
+            onClick={() => handleOpenModal()} 
+            style={{
+              ...styles.buttonPrimary,
+              opacity: remainingSlots === 0 ? 0.6 : 1,
+              cursor: remainingSlots === 0 ? 'not-allowed' : 'pointer'
+            }}
+            disabled={remainingSlots === 0}
+          >
             <Plus size={18} />
             Add Product
+            {subscription?.is_active && remainingSlots === 0 && ' (Limit Reached)'}
           </button>
         </div>
       </div>
@@ -815,6 +853,11 @@ const styles = {
     maxWidth: '1400px',
     margin: '0 auto',
     animation: 'fadeIn 0.6s ease-out'
+  },
+    limitBadge: {
+    color: '#059669',
+    fontWeight: '600',
+    fontSize: '13px'
   },
 
   // Loading State

@@ -8,7 +8,7 @@ export default function ShopFooter({ store }) {
     const instagramUrl = store?.instagram_link || store?.instagram_url;
     const youtubeUrl = store?.youtube_link || store?.youtube_url;
     const storeName = store?.name || store?.seller_name || 'Kerala Sellers';
-    const logoUrl = store?.logo_url || store?.logo || "/logo.png";
+    const logoUrl = store?.logo_url || store?.logo || "https://via.placeholder.com/150x50/1a4845/ffffff?text=KS";
 
     return (
         <footer className="Shopfooter">
@@ -20,7 +20,11 @@ export default function ShopFooter({ store }) {
                 <img 
                     src={logoUrl} 
                     alt={storeName}
-                    onError={(e) => { e.target.src = '/logo.png'; }}
+                    onError={(e) => { 
+                        // ✅ FIXED: Use placeholder instead of missing /logo.png
+                        e.target.src = 'https://via.placeholder.com/150x50/1a4845/ffffff?text=KS';
+                        e.target.onerror = null; // Prevent infinite loop
+                    }}
                 />
             </div>
             
