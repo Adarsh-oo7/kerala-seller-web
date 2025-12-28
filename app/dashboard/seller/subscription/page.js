@@ -1189,10 +1189,6 @@ const styles = {
     },
 
     // Plan Cards
-    planGrid: {
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: '24px',
-    },
 
     currentPlanHighlight: {
         border: '2px solid #3b82f6',
