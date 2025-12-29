@@ -16,7 +16,6 @@ import { toast } from "react-toastify";
 import { Search, X, Filter, Grid, AlertCircle, Package, Heart } from 'lucide-react';
 import { useRouter } from "next/navigation";
 
-
 const bannerImages = [
   { src: "/assets/images/Banner/5.png", alt: "Kerala Sellers - Local Products" },
   { src: "/assets/images/Banner/4.png", alt: "Quality Products from Kerala" },
@@ -28,9 +27,7 @@ const bannerImages = [
 // ✅ Enhanced API base URL handling with environment variables
 // ✅ BULLETPROOF - Works everywhere
 
-
-  
-  // ✅ Second check fallback env var
+// ✅ Second check fallback env var
 // ✅ HARDCODED - NO FUNCTIONS, NO ERRORS
 const API_BASE_URL = 'https://api.keralasellers.in';
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
@@ -45,7 +42,6 @@ console.log('✅ API URLs configured:', {
   WISHLIST_TOGGLE_API,
   WISHLIST_CHECK_API
 });
-
 
 // ✅ Enhanced token handling function
 const getAuthHeaders = () => {
@@ -178,276 +174,267 @@ export default function Home() {
     }
   }, []);
 
-  const fetchProducts = useCallback(async (page = 1, appliedFilters = filters) => {
-    if (page === 1) {
-      setIsLoading(true);
-    } else {
-      setIsLoadingMore(true);
-    }
-    setError('');
+  // ==========================================
+  // 🔽 OLD PRODUCT FETCHING CODE - COMMENTED OUT
+  // ==========================================
+  
+  // const fetchProducts = useCallback(async (page = 1, appliedFilters = filters) => {
+  //   if (page === 1) {
+  //     setIsLoading(true);
+  //   } else {
+  //     setIsLoadingMore(true);
+  //   }
+  //   setError('');
 
-    try {
-      let url = `${PRODUCTS_API_URL}?page=${page}`;
+  //   try {
+  //     let url = `${PRODUCTS_API_URL}?page=${page}`;
 
-      // Add filters to URL
-      if (appliedFilters.category) {
-        url += `&category=${appliedFilters.category}`;
-      }
-      if (appliedFilters.search) {
-        url += `&search=${encodeURIComponent(appliedFilters.search)}`;
-      }
+  //     // Add filters to URL
+  //     if (appliedFilters.category) {
+  //       url += `&category=${appliedFilters.category}`;
+  //     }
+  //     if (appliedFilters.search) {
+  //       url += `&search=${encodeURIComponent(appliedFilters.search)}`;
+  //     }
 
-      console.log('Fetching products from:', url);
-      const response = await axios.get(url);
-      const data = response.data;
-      console.log('Products API response:', data);
+  //     console.log('Fetching products from:', url);
+  //     const response = await axios.get(url);
+  //     const data = response.data;
+  //     console.log('Products API response:', data);
 
-      let productList = [];
+  //     let productList = [];
 
-      // ✅ Enhanced response structure handling
-      if (Array.isArray(data.results)) {
-        productList = data.results;
-      } else if (Array.isArray(data.data)) {
-        productList = data.data;
-      } else if (Array.isArray(data)) {
-        productList = data;
-      } else if (data.products && Array.isArray(data.products)) {
-        productList = data.products;
-      } else {
-        console.warn('Unexpected API response structure:', data);
-        productList = [];
-      }
+  //     // ✅ Enhanced response structure handling
+  //     if (Array.isArray(data.results)) {
+  //       productList = data.results;
+  //     } else if (Array.isArray(data.data)) {
+  //       productList = data.data;
+  //     } else if (Array.isArray(data)) {
+  //       productList = data;
+  //     } else if (data.products && Array.isArray(data.products)) {
+  //       productList = data.products;
+  //     } else {
+  //       console.warn('Unexpected API response structure:', data);
+  //       productList = [];
+  //     }
 
-      console.log('Processed product list:', productList.length, 'products');
+  //     console.log('Processed product list:', productList.length, 'products');
 
-      // Set pagination info
-      const count = data.count || data.total || productList.length;
-      setTotalPages(Math.ceil(count / (data.page_size || 20)));
-      setTotalProducts(count);
+  //     // Set pagination info
+  //     const count = data.count || data.total || productList.length;
+  //     setTotalPages(Math.ceil(count / (data.page_size || 20)));
+  //     setTotalProducts(count);
 
-      // Apply client-side filters
-      const filteredList = applyClientFilters(productList, appliedFilters);
+  //     // Apply client-side filters
+  //     const filteredList = applyClientFilters(productList, appliedFilters);
 
-      if (page === 1) {
-        setProducts(filteredList);
-        setFilteredProducts(filteredList);
-      } else {
-        setProducts(prev => [...prev, ...filteredList]);
-        setFilteredProducts(prev => [...prev, ...filteredList]);
-      }
+  //     if (page === 1) {
+  //       setProducts(filteredList);
+  //       setFilteredProducts(filteredList);
+  //     } else {
+  //       setProducts(prev => [...prev, ...filteredList]);
+  //       setFilteredProducts(prev => [...prev, ...filteredList]);
+  //     }
 
-    } catch (error) {
-      console.error("Failed to fetch products:", error);
-      if (error.response) {
-        setError(`Server error: ${error.response.status} - ${error.response.statusText}`);
-      } else if (error.request) {
-        setError('Network error: Unable to connect to server');
-      } else {
-        setError('Failed to load products. Please try again.');
-      }
+  //   } catch (error) {
+  //     console.error("Failed to fetch products:", error);
+  //     if (error.response) {
+  //       setError(`Server error: ${error.response.status} - ${error.response.statusText}`);
+  //     } else if (error.request) {
+  //       setError('Network error: Unable to connect to server');
+  //     } else {
+  //       setError('Failed to load products. Please try again.');
+  //     }
 
-      // Set empty arrays to prevent crashes
-      if (page === 1) {
-        setProducts([]);
-        setFilteredProducts([]);
-      }
-    } finally {
-      if (page === 1) {
-        setIsLoading(false);
-      } else {
-        setIsLoadingMore(false);
-      }
-    }
-  }, [filters]);
+  //     // Set empty arrays to prevent crashes
+  //     if (page === 1) {
+  //       setProducts([]);
+  //       setFilteredProducts([]);
+  //     }
+  //   } finally {
+  //     if (page === 1) {
+  //       setIsLoading(false);
+  //     } else {
+  //       setIsLoadingMore(false);
+  //     }
+  //   }
+  // }, [filters]);
 
-  const applyClientFilters = (productList, appliedFilters) => {
-    if (!Array.isArray(productList)) {
-      console.warn('Product list is not an array:', productList);
-      return [];
-    }
+  // const applyClientFilters = (productList, appliedFilters) => {
+  //   if (!Array.isArray(productList)) {
+  //     console.warn('Product list is not an array:', productList);
+  //     return [];
+  //   }
 
-    let filtered = [...productList];
+  //   let filtered = [...productList];
 
-    // Price filter
-    if (appliedFilters.priceMin || appliedFilters.priceMax) {
-      filtered = filtered.filter(product => {
-        const price = parseFloat(product.price) || 0;
-        const min = parseFloat(appliedFilters.priceMin) || 0;
-        const max = parseFloat(appliedFilters.priceMax) || Infinity;
-        return price >= min && price <= max;
-      });
-    }
+  //   // Price filter
+  //   if (appliedFilters.priceMin || appliedFilters.priceMax) {
+  //     filtered = filtered.filter(product => {
+  //       const price = parseFloat(product.price) || 0;
+  //       const min = parseFloat(appliedFilters.priceMin) || 0;
+  //       const max = parseFloat(appliedFilters.priceMax) || Infinity;
+  //       return price >= min && price <= max;
+  //     });
+  //   }
 
-    // Rating filter
-    if (appliedFilters.rating) {
-      const minRating = parseFloat(appliedFilters.rating);
-      filtered = filtered.filter(product =>
-        (product.average_rating || 0) >= minRating
-      );
-    }
+  //   // Rating filter
+  //   if (appliedFilters.rating) {
+  //     const minRating = parseFloat(appliedFilters.rating);
+  //     filtered = filtered.filter(product =>
+  //       (product.average_rating || 0) >= minRating
+  //     );
+  //   }
 
-    // Stock filter
-    if (appliedFilters.inStock) {
-      filtered = filtered.filter(product =>
-        (product.online_stock || 0) > 0
-      );
-    }
+  //   // Stock filter
+  //   if (appliedFilters.inStock) {
+  //     filtered = filtered.filter(product =>
+  //       (product.online_stock || 0) > 0
+  //     );
+  //   }
 
-    // Sort products
-    switch (appliedFilters.sortBy) {
-      case 'price_low':
-        filtered.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
-        break;
-      case 'price_high':
-        filtered.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
-        break;
-      case 'rating':
-        filtered.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
-        break;
-      case 'newest':
-      default:
-        filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-        break;
-    }
+  //   // Sort products
+  //   switch (appliedFilters.sortBy) {
+  //     case 'price_low':
+  //       filtered.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+  //       break;
+  //     case 'price_high':
+  //       filtered.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
+  //       break;
+  //     case 'rating':
+  //       filtered.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
+  //       break;
+  //     case 'newest':
+  //     default:
+  //       filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  //       break;
+  //   }
 
-    return filtered;
-  };
+  //   return filtered;
+  // };
 
   // ✅ Enhanced wishlist functionality
-  const handleToggleWishlist = async (productId) => {
-    console.log('🔍 Toggle wishlist for product:', productId);
+  // const handleToggleWishlist = async (productId) => {
+  //   console.log('🔍 Toggle wishlist for product:', productId);
 
-    const headers = getAuthHeaders();
-    if (!headers) {
-      // alert('Please login to add items to wishlist');
-      router.push("/login/buyer");
-      return;
-    }
+  //   const headers = getAuthHeaders();
+  //   if (!headers) {
+  //     router.push("/login/buyer");
+  //     return;
+  //   }
 
-    // Prevent multiple requests for the same product
-    if (wishlistLoading.has(productId)) {
-      console.log('⏳ Wishlist request already in progress for product:', productId);
-      return;
-    }
+  //   if (wishlistLoading.has(productId)) {
+  //     console.log('⏳ Wishlist request already in progress for product:', productId);
+  //     return;
+  //   }
 
-    // Add to loading set
-    setWishlistLoading(prev => new Set([...prev, productId]));
+  //   setWishlistLoading(prev => new Set([...prev, productId]));
 
-    try {
-      console.log('🔄 Sending wishlist toggle request...');
-      const response = await axios.post(WISHLIST_TOGGLE_API, {
-        product_id: productId
-      }, {
-        headers,
-        timeout: 10000
-      });
+  //   try {
+  //     console.log('🔄 Sending wishlist toggle request...');
+  //     const response = await axios.post(WISHLIST_TOGGLE_API, {
+  //       product_id: productId
+  //     }, {
+  //       headers,
+  //       timeout: 10000
+  //     });
 
-      console.log('✅ Wishlist toggle response:', response.data);
+  //     console.log('✅ Wishlist toggle response:', response.data);
 
-      // Update the product's wishlist status in your local state
-      const updateProducts = (prevProducts) =>
-        prevProducts.map(product =>
-          product.id === productId
-            ? { ...product, isWishlisted: response.data.is_wishlisted }
-            : product
-        );
+  //     const updateProducts = (prevProducts) =>
+  //       prevProducts.map(product =>
+  //         product.id === productId
+  //           ? { ...product, isWishlisted: response.data.is_wishlisted }
+  //           : product
+  //       );
 
-      setProducts(updateProducts);
-      setFilteredProducts(updateProducts);
+  //     setProducts(updateProducts);
+  //     setFilteredProducts(updateProducts);
 
-      // Show user feedback
-      const action = response.data.is_wishlisted ? 'added to' : 'removed from';
-      const productName = response.data.product_name || 'Product';
-      console.log(`✅ ${productName} ${action} wishlist`);
+  //     const action = response.data.is_wishlisted ? 'added to' : 'removed from';
+  //     const productName = response.data.product_name || 'Product';
+  //     console.log(`✅ ${productName} ${action} wishlist`);
 
-      // Optional: Show visual feedback (you can customize this)
-      showWishlistFeedback(productId, response.data.is_wishlisted, productName);
+  //     showWishlistFeedback(productId, response.data.is_wishlisted, productName);
 
-    } catch (error) {
-      console.error('❌ Wishlist toggle error:', error);
+  //   } catch (error) {
+  //     console.error('❌ Wishlist toggle error:', error);
 
-      if (error.response?.status === 401) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('buyerAccessToken');
-        alert('Session expired. Please login again.');
-      } else if (error.code === 'ECONNABORTED') {
-        alert('Request timeout. Please check your connection and try again.');
-      } else {
-        const errorMessage = error.response?.data?.error || 'Failed to update wishlist. Please try again.';
-        alert(errorMessage);
-      }
-    } finally {
-      // Remove from loading set
-      setWishlistLoading(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(productId);
-        return newSet;
-      });
-    }
-  };
+  //     if (error.response?.status === 401) {
+  //       localStorage.removeItem('access_token');
+  //       localStorage.removeItem('buyerAccessToken');
+  //       alert('Session expired. Please login again.');
+  //     } else if (error.code === 'ECONNABORTED') {
+  //       alert('Request timeout. Please check your connection and try again.');
+  //     } else {
+  //       const errorMessage = error.response?.data?.error || 'Failed to update wishlist. Please try again.';
+  //       alert(errorMessage);
+  //     }
+  //   } finally {
+  //     setWishlistLoading(prev => {
+  //       const newSet = new Set(prev);
+  //       newSet.delete(productId);
+  //       return newSet;
+  //     });
+  //   }
+  // };
 
-  // ✅ Visual feedback for wishlist actions
-  const showWishlistFeedback = (productId, isWishlisted, productName) => {
-    // Find the heart button for this product and show visual feedback
-    const heartButton = document.querySelector(`[data-product-id="${productId}"] .wishlist-heart`);
-    if (heartButton) {
-      const originalColor = heartButton.style.color;
-      heartButton.style.color = isWishlisted ? '#dc2626' : '#6b7280';
-      heartButton.style.transform = 'scale(1.2)';
+  // const showWishlistFeedback = (productId, isWishlisted, productName) => {
+  //   const heartButton = document.querySelector(`[data-product-id="${productId}"] .wishlist-heart`);
+  //   if (heartButton) {
+  //     const originalColor = heartButton.style.color;
+  //     heartButton.style.color = isWishlisted ? '#dc2626' : '#6b7280';
+  //     heartButton.style.transform = 'scale(1.2)';
 
-      setTimeout(() => {
-        heartButton.style.transform = 'scale(1)';
-      }, 200);
-    }
+  //     setTimeout(() => {
+  //       heartButton.style.transform = 'scale(1)';
+  //     }, 200);
+  //   }
 
-    // Optional: Show toast notification (you can implement a toast system)
-    const action = isWishlisted ? 'added to' : 'removed from';
+  //   const action = isWishlisted ? 'added to' : 'removed from';
 
-    toast.success(`Item ${action} wishlist`, {
-      position: "top-right",
-      autoClose: 1500,
-      theme: "colored",
-    });
-    console.log(`💖 ${productName} ${action} wishlist!`);
-  };
+  //   toast.success(`Item ${action} wishlist`, {
+  //     position: "top-right",
+  //     autoClose: 1500,
+  //     theme: "colored",
+  //   });
+  //   console.log(`💖 ${productName} ${action} wishlist!`);
+  // };
 
-  // ✅ Check wishlist status for products when they load
-  const checkWishlistStatus = async (productIds) => {
-    const headers = getAuthHeaders();
-    if (!headers || productIds.length === 0) return;
+  // const checkWishlistStatus = async (productIds) => {
+  //   const headers = getAuthHeaders();
+  //   if (!headers || productIds.length === 0) return;
 
-    try {
-      console.log('🔍 Checking wishlist status for products:', productIds.length);
+  //   try {
+  //     console.log('🔍 Checking wishlist status for products:', productIds.length);
 
-      // Check wishlist status for multiple products
-      const promises = productIds.slice(0, 10).map(id => // Limit to 10 to avoid too many requests
-        axios.get(`${WISHLIST_CHECK_API}?product_id=${id}`, { headers, timeout: 5000 })
-          .then(response => ({ id, isWishlisted: response.data.is_wishlisted }))
-          .catch(error => {
-            console.warn(`Failed to check wishlist for product ${id}:`, error);
-            return { id, isWishlisted: false };
-          })
-      );
+  //     const promises = productIds.slice(0, 10).map(id =>
+  //       axios.get(`${WISHLIST_CHECK_API}?product_id=${id}`, { headers, timeout: 5000 })
+  //         .then(response => ({ id, isWishlisted: response.data.is_wishlisted }))
+  //         .catch(error => {
+  //           console.warn(`Failed to check wishlist for product ${id}:`, error);
+  //           return { id, isWishlisted: false };
+  //         })
+  //     );
 
-      const results = await Promise.all(promises);
-      console.log('✅ Wishlist status results:', results);
+  //     const results = await Promise.all(promises);
+  //     console.log('✅ Wishlist status results:', results);
 
-      // Update products with wishlist status
-      const updateProductsWithWishlist = (prevProducts) =>
-        prevProducts.map(product => {
-          const wishlistInfo = results.find(r => r.id === product.id);
-          return wishlistInfo
-            ? { ...product, isWishlisted: wishlistInfo.isWishlisted }
-            : product;
-        });
+  //     const updateProductsWithWishlist = (prevProducts) =>
+  //       prevProducts.map(product => {
+  //         const wishlistInfo = results.find(r => r.id === product.id);
+  //         return wishlistInfo
+  //           ? { ...product, isWishlisted: wishlistInfo.isWishlisted }
+  //           : product;
+  //       });
 
-      setProducts(updateProductsWithWishlist);
-      setFilteredProducts(updateProductsWithWishlist);
+  //     setProducts(updateProductsWithWishlist);
+  //     setFilteredProducts(updateProductsWithWishlist);
 
-    } catch (error) {
-      console.warn('Error checking wishlist status:', error);
-    }
-  };
+  //   } catch (error) {
+  //     console.warn('Error checking wishlist status:', error);
+  //   }
+  // };
 
   // ✅ Improved responsive grid
   const gridColumns = useMemo(() => {
@@ -463,152 +450,134 @@ export default function Home() {
   }, [isMobile, isTablet]);
 
   // Effect for debounced search
-  useEffect(() => {
-    if (debouncedSearchTerm !== filters.search) {
-      const newFilters = {
-        ...filters,
-        search: debouncedSearchTerm
-      };
-      setFilters(newFilters);
-      setCurrentPage(1);
-      fetchProducts(1, newFilters);
-    }
-  }, [debouncedSearchTerm]);
+  // useEffect(() => {
+  //   if (debouncedSearchTerm !== filters.search) {
+  //     const newFilters = {
+  //       ...filters,
+  //       search: debouncedSearchTerm
+  //     };
+  //     setFilters(newFilters);
+  //     setCurrentPage(1);
+  //     fetchProducts(1, newFilters);
+  //   }
+  // }, [debouncedSearchTerm]);
 
-  // ✅ Check wishlist status when products are loaded
-  useEffect(() => {
-    if (filteredProducts.length > 0 && currentPage === 1) {
-      const productIds = filteredProducts.map(p => p.id);
-      checkWishlistStatus(productIds);
-    }
-  }, [filteredProducts.length, currentPage]);
+  // useEffect(() => {
+  //   if (filteredProducts.length > 0 && currentPage === 1) {
+  //     const productIds = filteredProducts.map(p => p.id);
+  //     checkWishlistStatus(productIds);
+  //   }
+  // }, [filteredProducts.length, currentPage]);
 
   useEffect(() => {
     fetchCategories();
-    fetchProducts(1);
-  }, [fetchCategories, fetchProducts]);
+    // fetchProducts(1); // ❌ COMMENTED OUT - Not fetching products anymore
+    setIsLoading(false); // ✅ Set loading to false immediately
+  }, [fetchCategories]);
 
-  // ✅ NEW: Infinite scroll
-  const loadMoreProducts = useCallback(() => {
-    if (currentPage < totalPages && !isLoading && !isLoadingMore) {
-      const nextPage = currentPage + 1;
-      setCurrentPage(nextPage);
-      fetchProducts(nextPage);
-    }
-  }, [currentPage, totalPages, isLoading, isLoadingMore, fetchProducts]);
+  // const loadMoreProducts = useCallback(() => {
+  //   if (currentPage < totalPages && !isLoading && !isLoadingMore) {
+  //     const nextPage = currentPage + 1;
+  //     setCurrentPage(nextPage);
+  //     fetchProducts(nextPage);
+  //   }
+  // }, [currentPage, totalPages, isLoading, isLoadingMore, fetchProducts]);
 
-  useInfiniteScroll(
-    loadMoreProducts,
-    currentPage < totalPages,
-    isLoading || isLoadingMore
-  );
+  // useInfiniteScroll(
+  //   loadMoreProducts,
+  //   currentPage < totalPages,
+  //   isLoading || isLoadingMore
+  // );
 
-  // Handle search input changes
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-  };
+  // const handleSearchChange = (e) => {
+  //   const value = e.target.value;
+  //   setSearchTerm(value);
+  // };
 
-  // Handle search clear
-  const handleClearSearch = () => {
-    setSearchTerm('');
-    const newFilters = {
-      ...filters,
-      search: ''
-    };
+  // const handleClearSearch = () => {
+  //   setSearchTerm('');
+  //   const newFilters = {
+  //     ...filters,
+  //     search: ''
+  //   };
 
-    setFilters(newFilters);
-    setCurrentPage(1);
-    fetchProducts(1, newFilters);
-  };
+  //   setFilters(newFilters);
+  //   setCurrentPage(1);
+  //   fetchProducts(1, newFilters);
+  // };
 
-  // Handle category click from TopCategory component
-  const handleCategoryClick = (categoryId, categoryName) => {
-    const newFilters = {
-      ...filters,
-      category: categoryId.toString(),
-      search: ''
-    };
+  // const handleCategoryClick = (categoryId, categoryName) => {
+  //   const newFilters = {
+  //     ...filters,
+  //     category: categoryId.toString(),
+  //     search: ''
+  //   };
 
-    setFilters(newFilters);
-    setSearchTerm('');
-    setCurrentPage(1);
-    fetchProducts(1, newFilters);
+  //   setFilters(newFilters);
+  //   setSearchTerm('');
+  //   setCurrentPage(1);
+  //   fetchProducts(1, newFilters);
 
-    // Scroll to products section
-    const productsSection = document.querySelector('[data-products-section]');
-    if (productsSection) {
-      productsSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  //   const productsSection = document.querySelector('[data-products-section]');
+  //   if (productsSection) {
+  //     productsSection.scrollIntoView({ behavior: 'smooth' });
+  //   }
+  // };
 
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
-    setCurrentPage(1);
-    fetchProducts(1, newFilters);
-  };
+  // const handleFilterChange = (newFilters) => {
+  //   setFilters(newFilters);
+  //   setCurrentPage(1);
+  //   fetchProducts(1, newFilters);
+  // };
 
-  const handleAddToCart = (e, product) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // const handleAddToCart = (e, product) => {
+  //   e.preventDefault();
+  //   e.stopPropagation();
 
-    // Check if product has required data
-    if (!product) {
-      alert("Product information is missing.");
-      return;
-    }
+  //   if (!product) {
+  //     alert("Product information is missing.");
+  //     return;
+  //   }
 
-    // ✅ Enhanced seller phone detection
-    const sellerPhone = product.store?.seller_phone ||
-      product.seller_phone ||
-      product.store?.phone ||
-      product.phone;
+  //   const sellerPhone = product.store?.seller_phone ||
+  //     product.seller_phone ||
+  //     product.store?.phone ||
+  //     product.phone;
 
-    if (sellerPhone) {
-      addToCart(sellerPhone, product);
-      toast.success("Added to cart!", {
-        position: "top-right",
-        autoClose: 1500,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "colored",
-      });
+  //   if (sellerPhone) {
+  //     addToCart(sellerPhone, product);
+  //     toast.success("Added to cart!", {
+  //       position: "top-right",
+  //       autoClose: 1500,
+  //       hideProgressBar: false,
+  //       closeOnClick: true,
+  //       pauseOnHover: true,
+  //       draggable: true,
+  //       theme: "colored",
+  //     });
+  //   } else {
+  //     alert("Could not add to cart: seller information is missing.");
+  //     console.log('Product data:', product);
+  //   }
+  // };
 
+  // const handleRetry = () => {
+  //   setError('');
+  //   fetchCategories();
+  //   fetchProducts(1);
+  // };
 
-      // Show success feedback
-      // const button = e.target.closest('button');
-      // if (button) {
-      //   const originalText = button.textContent;
-      //   const originalBg = button.style.backgroundColor;
-      //   button.textContent = 'Added!';
-      //   button.style.backgroundColor = '#10b981';
-      //   setTimeout(() => {
-      //     button.textContent = originalText;
-      //     button.style.backgroundColor = originalBg;
-      //   }, 1500);
-      // }
-    } else {
-      alert("Could not add to cart: seller information is missing.");
-      console.log('Product data:', product);
-    }
-  };
+  // useEffect(() => {
+  //   if (showFilters) {
+  //     document.body.style.overflow = 'hidden';
+  //   } else {
+  //     document.body.style.overflow = '';
+  //   }
+  // }, [showFilters]);
 
-  // Retry function for error state
-  const handleRetry = () => {
-    setError('');
-    fetchCategories();
-    fetchProducts(1);
-  };
-
-  useEffect(() => {
-    if (showFilters) {
-      document.body.style.overflow = 'hidden'; // disable page scroll
-    } else {
-      document.body.style.overflow = '';       // enable page scroll
-    }
-  }, [showFilters]);
+  // ==========================================
+  // 🔼 END OF COMMENTED OLD CODE
+  // ==========================================
 
   // Dynamic styles based on media queries
   const dynamicStyles = {
@@ -629,7 +598,9 @@ export default function Home() {
 
       {/* Top Category Section */}
       <div style={dynamicStyles.topCategorySection}>
-        <TopCategory onCategoryClick={handleCategoryClick} />
+        <TopCategory 
+          // onCategoryClick={handleCategoryClick} // ❌ COMMENTED OUT
+        />
       </div>
 
       {/* Banner Section */}
@@ -639,8 +610,12 @@ export default function Home() {
 
       {/* Main Content */}
       <div style={dynamicStyles.container} data-products-section>
-        {/* Search Bar Section */}
-        <div style={dynamicStyles.searchSection}>
+        
+        {/* ==========================================
+            🔽 OLD SEARCH AND FILTERS - COMMENTED OUT
+            ========================================== */}
+        
+        {/* <div style={dynamicStyles.searchSection}>
           <div style={dynamicStyles.searchContainer}>
             <div className='keralasellershomepagesearchwrapper' style={dynamicStyles.searchInputWrapper}>
               <Search size={20} className='keralasellershomepagesearchicon' style={dynamicStyles.searchIcon} />
@@ -659,10 +634,9 @@ export default function Home() {
               )}
             </div>
           </div>
-        </div>
+        </div> */}
 
-        {/* Products Section Header */}
-        <div style={dynamicStyles.productsHeader}>
+        {/* <div style={dynamicStyles.productsHeader}>
           <div style={dynamicStyles.headerLeft}>
             <h2 className='keralasellershomepagetitle' style={dynamicStyles.sectionTitle}>All Products</h2>
             {searchTerm && (
@@ -686,10 +660,9 @@ export default function Home() {
               Filters {showFilters ? '▲' : '▼'}
             </button>
           </div>
-        </div>
+        </div> */}
 
-        {/* Error State */}
-        {error && (
+        {/* {error && (
           <div style={dynamicStyles.errorContainer}>
             <AlertCircle size={24} />
             <div>
@@ -700,10 +673,9 @@ export default function Home() {
               </button>
             </div>
           </div>
-        )}
+        )} */}
 
-        {/* Filter Sidebar Overlay */}
-        {showFilters && (
+        {/* {showFilters && (
           <div
             className="filter-sidebar-overlay"
             onClick={() => setShowFilters(false)}
@@ -728,10 +700,13 @@ export default function Home() {
               />
             </div>
           </div>
-        )}
+        )} */}
 
-        {/* Products Grid */}
-        {isLoading && currentPage === 1 ? (
+        {/* ==========================================
+            🔽 OLD PRODUCTS GRID - COMMENTED OUT
+            ========================================== */}
+        
+        {/* {isLoading && currentPage === 1 ? (
           <div style={dynamicStyles.loadingGrid}>
             {Array.from({ length: isMobile ? 4 : 8 }).map((_, index) => (
               <div key={index} style={dynamicStyles.skeletonWrapper}>
@@ -796,9 +771,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-
             ) : (
-              /* No Products Message */
               <div style={dynamicStyles.noProducts}>
                 <Package size={48} color='#1a4845' />
                 <h3 className='keralasellershomepagetitle'>No products found</h3>
@@ -824,7 +797,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* ✅ Loading indicator at bottom while loading more */}
             {isLoadingMore && (
               <div style={dynamicStyles.loadingIndicator}>
                 <div style={dynamicStyles.spinner}></div>
@@ -832,7 +804,102 @@ export default function Home() {
               </div>
             )}
           </>
-        )}
+        )} */}
+
+        {/* ==========================================
+            ✅ NEW COMING SOON SECTION
+            ========================================== */}
+        
+        <div style={dynamicStyles.comingSoonContainer}>
+          <div style={dynamicStyles.comingSoonContent}>
+            {/* Animated Icon */}
+            <div style={dynamicStyles.iconWrapper}>
+              <Package size={80} color='#1a4845' strokeWidth={1.5} />
+            </div>
+
+            {/* Main Heading */}
+            <h1 style={dynamicStyles.comingSoonTitle}>
+              Products Coming Soon!
+            </h1>
+
+            {/* Subtitle */}
+            <p style={dynamicStyles.comingSoonSubtitle}>
+              We're building Kerala's largest marketplace for local sellers.
+              Be among the first to showcase your products to thousands of customers!
+            </p>
+
+            {/* Features Grid */}
+            <div style={dynamicStyles.featuresGrid}>
+              <div style={dynamicStyles.featureCard}>
+                <div style={dynamicStyles.featureIcon}>🏪</div>
+                <h3 style={dynamicStyles.featureTitle}>Zero Commission</h3>
+                <p style={dynamicStyles.featureText}>Sell without any commission fees</p>
+              </div>
+              
+              <div style={dynamicStyles.featureCard}>
+                <div style={dynamicStyles.featureIcon}>🚀</div>
+                <h3 style={dynamicStyles.featureTitle}>Easy Setup</h3>
+                <p style={dynamicStyles.featureText}>Start selling in just minutes</p>
+              </div>
+              
+              <div style={dynamicStyles.featureCard}>
+                <div style={dynamicStyles.featureIcon}>💰</div>
+                <h3 style={dynamicStyles.featureTitle}>Direct Payments</h3>
+                <p style={dynamicStyles.featureText}>Get paid directly to your account</p>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div style={dynamicStyles.ctaContainer}>
+              <Link href="/register/seller" style={{ textDecoration: 'none' }}>
+                <button style={dynamicStyles.primaryButton}>
+                  <span style={dynamicStyles.buttonIcon}>🛍️</span>
+                  Start Your Own Shop
+                </button>
+              </Link>
+              
+              <Link href="/about" style={{ textDecoration: 'none' }}>
+                <button style={dynamicStyles.secondaryButton}>
+                  Learn More
+                </button>
+              </Link>
+            </div>
+
+            {/* Stats */}
+            <div style={dynamicStyles.statsContainer}>
+              <div style={dynamicStyles.statItem}>
+                <div style={dynamicStyles.statNumber}>500+</div>
+                <div style={dynamicStyles.statLabel}>Sellers Waiting</div>
+              </div>
+              <div style={dynamicStyles.statDivider}></div>
+              <div style={dynamicStyles.statItem}>
+                <div style={dynamicStyles.statNumber}>10,000+</div>
+                <div style={dynamicStyles.statLabel}>Products Ready</div>
+              </div>
+              <div style={dynamicStyles.statDivider}></div>
+              <div style={dynamicStyles.statItem}>
+                <div style={dynamicStyles.statNumber}>₹0</div>
+                <div style={dynamicStyles.statLabel}>Commission Fee</div>
+              </div>
+            </div>
+
+            {/* Notification Signup */}
+            <div style={dynamicStyles.notifyContainer}>
+              <p style={dynamicStyles.notifyText}>Get notified when we launch:</p>
+              <div style={dynamicStyles.notifyInputWrapper}>
+                <input 
+                  type="email" 
+                  placeholder="Enter your email" 
+                  style={dynamicStyles.notifyInput}
+                />
+                <button style={dynamicStyles.notifyButton}>
+                  Notify Me
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <Footer />
@@ -844,6 +911,11 @@ export default function Home() {
           to { opacity: 1; transform: translateY(0); }
         }
         
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.7; }
@@ -870,6 +942,29 @@ export default function Home() {
 
         .wishlist-loading {
           animation: pulse 1s infinite;
+        }
+
+        /* Hover effects for buttons */
+        button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(26, 72, 69, 0.4) !important;
+        }
+
+        /* Feature card hover effect */
+        .feature-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+        }
+
+        @media (max-width: 768px) {
+          .stats-container {
+            flex-direction: column;
+          }
+          
+          .stat-divider {
+            width: 80%;
+            height: 2px !important;
+          }
         }
       `}</style>
     </div>
@@ -1072,7 +1167,6 @@ const styles = {
     fontWeight: '500'
   },
 
-  // ✅ NEW: Loading indicator styles
   loadingIndicator: {
     display: 'flex',
     flexDirection: 'column',
@@ -1091,6 +1185,199 @@ const styles = {
     borderTop: '3px solid #3b82f6',
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite'
-  }
-};
+  },
 
+  // ✅ NEW: Coming Soon Styles
+  comingSoonContainer: {
+    minHeight: '70vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '40px 20px',
+    background: 'linear-gradient(135deg, #FDFFF0 0%, #f0fdf4 100%)',
+    borderRadius: '20px',
+    marginTop: '30px',
+  },
+
+  comingSoonContent: {
+    maxWidth: '900px',
+    textAlign: 'center',
+    animation: 'fadeIn 0.8s ease-out',
+  },
+
+  iconWrapper: {
+    marginBottom: '24px',
+    animation: 'float 3s ease-in-out infinite',
+  },
+
+  comingSoonTitle: {
+    fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+    fontWeight: '800',
+    color: '#1a4845',
+    marginBottom: '16px',
+    lineHeight: '1.2',
+  },
+
+  comingSoonSubtitle: {
+    fontSize: 'clamp(1rem, 2.5vw, 1.25rem)',
+    color: '#64748b',
+    marginBottom: '48px',
+    lineHeight: '1.6',
+    maxWidth: '700px',
+    margin: '0 auto 48px',
+  },
+
+  featuresGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '24px',
+    marginBottom: '48px',
+  },
+
+  featureCard: {
+    background: 'white',
+    padding: '24px',
+    borderRadius: '16px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    cursor: 'pointer',
+  },
+
+  featureIcon: {
+    fontSize: '3rem',
+    marginBottom: '12px',
+  },
+
+  featureTitle: {
+    fontSize: '1.125rem',
+    fontWeight: '700',
+    color: '#1a4845',
+    marginBottom: '8px',
+  },
+
+  featureText: {
+    fontSize: '0.875rem',
+    color: '#64748b',
+    lineHeight: '1.5',
+  },
+
+  ctaContainer: {
+    display: 'flex',
+    gap: '16px',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    marginBottom: '48px',
+  },
+
+  primaryButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '16px 32px',
+    fontSize: '1.125rem',
+    fontWeight: '600',
+    color: 'white',
+    background: 'linear-gradient(135deg, #1a4845 0%, #2d7a6e 100%)',
+    border: 'none',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 16px rgba(26, 72, 69, 0.3)',
+  },
+
+  buttonIcon: {
+    fontSize: '1.5rem',
+  },
+
+  secondaryButton: {
+    padding: '16px 32px',
+    fontSize: '1.125rem',
+    fontWeight: '600',
+    color: '#1a4845',
+    background: 'white',
+    border: '2px solid #1a4845',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+  },
+
+  statsContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '32px',
+    padding: '32px',
+    background: 'white',
+    borderRadius: '16px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+    marginBottom: '32px',
+    flexWrap: 'wrap',
+  },
+
+  statItem: {
+    textAlign: 'center',
+  },
+
+  statNumber: {
+    fontSize: '2rem',
+    fontWeight: '800',
+    color: '#1a4845',
+    marginBottom: '4px',
+  },
+
+  statLabel: {
+    fontSize: '0.875rem',
+    color: '#64748b',
+    fontWeight: '500',
+  },
+
+  statDivider: {
+    width: '2px',
+    height: '40px',
+    background: '#e5e7eb',
+  },
+
+  notifyContainer: {
+    marginTop: '32px',
+  },
+
+  notifyText: {
+    fontSize: '1rem',
+    color: '#64748b',
+    marginBottom: '12px',
+    fontWeight: '500',
+  },
+
+  notifyInputWrapper: {
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    maxWidth: '500px',
+    margin: '0 auto',
+  },
+
+  notifyInput: {
+    flex: '1',
+    minWidth: '250px',
+    padding: '12px 16px',
+    fontSize: '1rem',
+    border: '2px solid #e5e7eb',
+    borderRadius: '8px',
+    outline: 'none',
+    transition: 'border-color 0.2s',
+  },
+
+  notifyButton: {
+    padding: '12px 24px',
+    fontSize: '1rem',
+    fontWeight: '600',
+    color: 'white',
+    background: '#1a4845',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'background 0.3s ease',
+    whiteSpace: 'nowrap',
+  },
+};
