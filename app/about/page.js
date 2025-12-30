@@ -435,7 +435,6 @@ export default function AboutPage() {
 
         .step-header-wrapper {
           display: flex;
-          justify-content: center;
           margin-bottom: 40px;
         }
 
