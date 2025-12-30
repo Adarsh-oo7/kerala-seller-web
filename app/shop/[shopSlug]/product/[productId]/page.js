@@ -881,18 +881,18 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
 
       {/* Product Features */}
       <div style={styles.features}>
-        <div style={styles.feature}>
+        {/* <div style={styles.feature}>
           <Truck size={16} />
           <span>Free delivery across Kerala</span>
-        </div>
+        </div> */}
         <div style={styles.feature}>
           <Shield size={16} />
           <span>Genuine product guarantee</span>
         </div>
-        <div style={styles.feature}>
+        {/* <div style={styles.feature}>
           <RefreshCw size={16} />
           <span>Easy returns & exchanges</span>
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import "../../../../styles/DashboardSubscription.css"
+import { toast } from 'react-toastify'; // ✅ ADD: Import toast
 import {
     CheckCircle,
     Star,
@@ -16,7 +17,7 @@ import {
     Crown,
     Zap,
     Shield,
-    Clock // ✅ ADD: Clock icon for Coming Soon
+    Clock
 } from 'lucide-react';
 
 // ✅ Enhanced API URLs with subscription lifecycle support
@@ -283,6 +284,13 @@ export default function SubscriptionPage() {
         script.onerror = () => {
             console.error('❌ Failed to load Razorpay script');
             setError('Payment system failed to load. Please refresh the page.');
+            
+            // ✅ REPLACED: alert with toast
+            toast.error('Payment system failed to load. Please refresh the page.', {
+                position: "top-right",
+                autoClose: 5000,
+                theme: "colored",
+            });
         };
         document.body.appendChild(script);
 
@@ -338,6 +346,14 @@ export default function SubscriptionPage() {
 
             if (subErr.response?.status === 401) {
                 setSubscriptionError('Session expired. Please log in again.');
+                
+                // ✅ REPLACED: alert with toast
+                toast.error('Session expired. Please log in again.', {
+                    position: "top-right",
+                    autoClose: 3000,
+                    theme: "colored",
+                });
+                
                 setTimeout(() => router.push('/login/seller'), 2000);
             } else if (subErr.response?.status === 404) {
                 console.log('ℹ️ No subscription found (normal for new users)');
@@ -368,6 +384,13 @@ export default function SubscriptionPage() {
         } catch (err) {
             console.error('❌ Failed to load plans:', err);
             setError('Failed to load subscription plans. Please refresh the page.');
+            
+            // ✅ REPLACED: alert with toast
+            toast.error('Failed to load subscription plans. Please refresh the page.', {
+                position: "top-right",
+                autoClose: 5000,
+                theme: "colored",
+            });
         }
     }, []);
 
@@ -393,16 +416,26 @@ export default function SubscriptionPage() {
         loadData();
     }, [loadPlansData, loadSubscriptionData]);
 
-    // ✅ Updated payment handling to match your Django API
+    // ✅ Updated payment handling with TOAST notifications
     const handleChoosePlan = async (planId, planName) => {
         if (!razorpayLoaded || !window.Razorpay) {
-            alert('Payment system is loading. Please wait a moment and try again.');
+            // ✅ REPLACED: alert with toast
+            toast.warning('Payment system is loading. Please wait a moment and try again.', {
+                position: "top-right",
+                autoClose: 3000,
+                theme: "colored",
+            });
             return;
         }
 
         const plan = plans.find(p => p.id === planId);
         if (!plan) {
-            alert('Plan not found. Please refresh the page and try again.');
+            // ✅ REPLACED: alert with toast
+            toast.error('Plan not found. Please refresh the page and try again.', {
+                position: "top-right",
+                autoClose: 3000,
+                theme: "colored",
+            });
             return;
         }
 
@@ -410,6 +443,7 @@ export default function SubscriptionPage() {
         const yearlyPrice = parseFloat(plan.yearly_price || '') || (basePrice * 12 * 0.90);
         const displayPrice = billingCycle === 'yearly' ? yearlyPrice : basePrice;
 
+        // ✅ REPLACED: confirm with custom toast confirmation
         const confirmed = confirm(
             `Subscribe to ${planName}?\n\n` +
             `Price: ₹${Math.round(displayPrice).toLocaleString('en-IN')}/${billingCycle === 'yearly' ? 'year' : 'month'}\n\n` +
@@ -467,7 +501,13 @@ export default function SubscriptionPage() {
                         console.log('✅ Payment verified:', verifyResponse.data);
 
                         setError('');
-                        alert('🎉 Payment Successful!\n\nYour subscription is now active! You can now sell products online with Kerala Sellers Premium features.');
+                        
+                        // ✅ REPLACED: alert with toast
+                        toast.success('🎉 Payment Successful! Your subscription is now active!', {
+                            position: "top-center",
+                            autoClose: 5000,
+                            theme: "colored",
+                        });
 
                         await loadSubscriptionData();
 
@@ -475,13 +515,24 @@ export default function SubscriptionPage() {
                         console.error('❌ Payment verification failed:', verifyError);
 
                         if (verifyError.response?.status === 401) {
-                            alert('❌ Session expired. Please log in again.');
+                            // ✅ REPLACED: alert with toast
+                            toast.error('Session expired. Please log in again.', {
+                                position: "top-right",
+                                autoClose: 3000,
+                                theme: "colored",
+                            });
                             setTimeout(() => router.push('/login/seller'), 2000);
                         } else {
                             const errorMessage = verifyError.response?.data?.error ||
                                 verifyError.response?.data?.message ||
                                 'Payment verification failed. Please contact support if money was deducted.';
-                            alert(`❌ ${errorMessage}`);
+                            
+                            // ✅ REPLACED: alert with toast
+                            toast.error(errorMessage, {
+                                position: "top-right",
+                                autoClose: 7000,
+                                theme: "colored",
+                            });
                         }
                     } finally {
                         setIsProcessing(null);
@@ -491,6 +542,13 @@ export default function SubscriptionPage() {
                     ondismiss: () => {
                         console.log('Payment modal dismissed');
                         setIsProcessing(null);
+                        
+                        // ✅ ADDED: Toast notification on modal dismiss
+                        toast.info('Payment cancelled', {
+                            position: "top-right",
+                            autoClose: 2000,
+                            theme: "light",
+                        });
                     }
                 }
             };
@@ -499,7 +557,14 @@ export default function SubscriptionPage() {
 
             rzp.on('payment.failed', function (response) {
                 console.error('❌ Payment failed:', response.error);
-                alert(`❌ Payment failed: ${response.error.description}`);
+                
+                // ✅ REPLACED: alert with toast
+                toast.error(`Payment failed: ${response.error.description}`, {
+                    position: "top-right",
+                    autoClose: 5000,
+                    theme: "colored",
+                });
+                
                 setIsProcessing(null);
             });
 
@@ -509,13 +574,24 @@ export default function SubscriptionPage() {
             console.error('❌ Subscription error:', error);
 
             if (error.response?.status === 401) {
-                alert('❌ Session expired. Please log in again.');
+                // ✅ REPLACED: alert with toast
+                toast.error('Session expired. Please log in again.', {
+                    position: "top-right",
+                    autoClose: 3000,
+                    theme: "colored",
+                });
                 setTimeout(() => router.push('/login/seller'), 2000);
             } else {
                 const errorMessage = error.response?.data?.error ||
                     error.response?.data?.message ||
                     'Failed to process subscription. Please try again.';
-                alert(`❌ ${errorMessage}`);
+                
+                // ✅ REPLACED: alert with toast
+                toast.error(errorMessage, {
+                    position: "top-right",
+                    autoClose: 5000,
+                    theme: "colored",
+                });
             }
             setIsProcessing(null);
         }
@@ -608,12 +684,10 @@ export default function SubscriptionPage() {
                         plan.name.toLowerCase().includes('professional') ||
                         index === Math.floor(plans.length / 2);
                     
-                    // ✅ ADD: Check if coming soon
                     const isComingSoon = billingCycle === 'yearly';
 
                     return (
                         <div className="plan-card-wrapper" key={plan.id}>
-                            {/* ✅ UPDATED: Show "Most Popular" only if not coming soon */}
                             {isPopular && !isComingSoon && (
                                 <div className='popularBadge' style={styles.popularBadge}>
                                     <Star size={16} />
@@ -621,7 +695,6 @@ export default function SubscriptionPage() {
                                 </div>
                             )}
 
-                            {/* ✅ ADD: Coming Soon Badge */}
                             {isComingSoon && (
                                 <div className='comingSoonBadge' style={styles.comingSoonBadge}>
                                     <Clock size={16} />
@@ -636,7 +709,7 @@ export default function SubscriptionPage() {
                                     ...styles.card,
                                     ...(isCurrentPlan ? styles.currentPlanHighlight : {}),
                                     ...(isPopular && !isComingSoon ? styles.popularCard : {}),
-                                    ...(isComingSoon ? styles.comingSoonCard : {}) // ✅ ADD: Dim coming soon cards
+                                    ...(isComingSoon ? styles.comingSoonCard : {})
                                 }}>
 
                                 <div className='dashboardsubscribeplanheader' style={styles.planHeader}>
@@ -700,7 +773,6 @@ export default function SubscriptionPage() {
                                     </ul>
                                 </div>
 
-                                {/* ✅ UPDATED: Button logic for coming soon */}
                                 <button
                                     className='dashboardsubscribechooseplanbtn'
                                     style={{
@@ -762,7 +834,7 @@ export default function SubscriptionPage() {
     );
 }
 
-// ✅ ENHANCED STYLES with Coming Soon Support
+// Styles remain the same...
 const styles = {
     container: {
         padding: '24px',
@@ -772,7 +844,6 @@ const styles = {
         animation: 'fadeIn 0.6s ease-out'
     },
 
-    // Loading
     loadingContainer: {
         display: 'flex',
         flexDirection: 'column',
@@ -819,7 +890,6 @@ const styles = {
         justifyContent: 'center'
     },
 
-    // Header
     header: {
         textAlign: 'center',
         marginBottom: '32px'
@@ -839,7 +909,6 @@ const styles = {
         margin: '0 auto'
     },
 
-    // Error Alert
     errorAlert: {
         display: 'flex',
         alignItems: 'center',
@@ -862,7 +931,6 @@ const styles = {
         padding: '4px 8px'
     },
 
-    // Toggle
     toggleContainer: {
         display: 'flex',
         justifyContent: 'center',
@@ -914,7 +982,6 @@ const styles = {
         fontWeight: '600'
     },
 
-    // ✅ ADD: Coming Soon Notice
     comingSoonNotice: {
         display: 'flex',
         alignItems: 'center',
@@ -929,7 +996,6 @@ const styles = {
         margin: '0 auto 32px auto'
     },
 
-    // Cards
     card: {
         width: '100%',
         maxWidth: '320px',
@@ -959,7 +1025,6 @@ const styles = {
         boxSizing: 'border-box',
     },
 
-    // Current Plan Card Styles
     loadingCard: {
         textAlign: 'center',
         maxWidth: '800px',
@@ -1092,7 +1157,6 @@ const styles = {
         fontSize: '14px'
     },
 
-    // ✅ NEW: Store Status Styles
     storeStatusSection: {
         marginTop: '24px',
         paddingTop: '24px'
@@ -1188,8 +1252,6 @@ const styles = {
         transition: 'all 0.2s'
     },
 
-    // Plan Cards
-
     currentPlanHighlight: {
         border: '2px solid #3b82f6',
         transform: 'scale(1.02)',
@@ -1220,7 +1282,6 @@ const styles = {
         zIndex: 5
     },
 
-    // ✅ ADD: Coming Soon Badge and Card Style
     comingSoonBadge: {
         position: 'absolute',
         top: '-23px',
@@ -1316,7 +1377,6 @@ const styles = {
         flexShrink: 0
     },
 
-    // Buttons
     button: {
         width: '75%',
         padding: '10px 24px',
@@ -1363,5 +1423,13 @@ const styles = {
         border: '2px solid #e5e7eb',
         color: '#9ca3af',
         cursor: 'not-allowed'
+    },
+
+    planGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: '32px',
+        marginTop: '32px',
+        justifyItems: 'center'
     }
 };
