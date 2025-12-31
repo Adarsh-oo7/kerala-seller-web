@@ -206,7 +206,7 @@ const CloudinaryImageUpload = ({
   currentImages = [],
   type = 'main',
   helpText = '',
-  onRemoveImage // ✅ NEW: Callback for removing images
+  onRemoveImage
 }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
@@ -217,11 +217,11 @@ const CloudinaryImageUpload = ({
   useEffect(() => {
     if (currentImages.length > 0) {
       setPreviews(currentImages.map((img, index) => ({
-        id: img.id || index, // ✅ Use database ID if available
+        id: img.id || index,
         url: typeof img === 'string' ? img : img.url || img.image_url,
         public_id: typeof img === 'object' ? img.public_id : null,
         isUploaded: true,
-        isFromDatabase: img.isFromDatabase || false // ✅ Track if from database
+        isFromDatabase: img.isFromDatabase || false
       })));
     }
   }, [currentImages]);
@@ -353,17 +353,14 @@ const CloudinaryImageUpload = ({
     }
   };
 
-  // ✅ FIXED: Remove image function
   const removeImage = async (previewId) => {
     const imageToRemove = previews.find(p => p.id === previewId);
     if (!imageToRemove) return;
 
-    // ✅ Call parent's removal handler if image is from database
     if (imageToRemove.isFromDatabase && onRemoveImage) {
       await onRemoveImage(imageToRemove.id);
     }
 
-    // Update local state
     setPreviews(prev => prev.filter(preview => preview.id !== previewId));
     const updatedResults = uploadResults.filter(result => result.public_id !== imageToRemove.public_id);
     setUploadResults(updatedResults);
@@ -542,7 +539,7 @@ const CloudinaryImageUpload = ({
       </small>
     </div>
   );
-}
+};
 
 // ✅ COMPREHENSIVE STYLES
 const styles = {
@@ -620,7 +617,6 @@ const styles = {
     backgroundColor: '#FDFFF0',
     cursor: 'pointer',
     color: '#6c757d'
-
   },
   textArea: {
     width: '100%',
@@ -1090,7 +1086,7 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(styleSheet);
 };
 
-// ✅ Category Selector Component (unchanged from original)
+// ✅ Category Selector Component
 const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesChange }) => {
   const [allCategories, setAllCategories] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
@@ -1481,58 +1477,56 @@ export default function ProductForm({ product, onClose, onSuccess }) {
   const [dynamicAttributes, setDynamicAttributes] = useState({});
   const [uploadingImages, setUploadingImages] = useState(false);
   const [priceError, setPriceError] = useState('');
+  const [modelNameError, setModelNameError] = useState(''); // ✅ NEW: Model name error state
+
   const [subscription, setSubscription] = useState(null);
   const [productCount, setProductCount] = useState(0);
   const [limitReached, setLimitReached] = useState(false);
-  const [loadingLimits, setLoadingLimits] = useState(true); // ⬅️ THIS WAS MISSING!
-useEffect(() => {
-  if (product) {
-    console.log('📦 Loading product for editing:', product);
-    
-    setFormData({
-      name: product.name || '',
-      model_name: product.model_name || '',
-      description: product.description || '',
-      price: product.price || '',
-      mrp: product.mrp || '',
-      total_stock: product.total_stock || 0,
-      online_stock: product.online_stock || 0,
-      sale_type: product.sale_type || 'BOTH',
-    });
-    
-    setSelectedCategoryId(product.category || '');
-    setDynamicAttributes(product.attributes || {});
-    setMainImageUrl(product.main_image_url || product.cloudinary_image_url || '');
-    
-    // Load sub-images with database IDs
-    const subImages = product.sub_images?.map(img => ({
-      id: img.id,
-      url: img.cloudinary_image_url || img.image_url,
-      public_id: img.cloudinary_public_id || img.public_id,
-      isFromDatabase: true
-    })) || [];
-    
-    setSubImageUrls(subImages);
-    console.log('✅ Product loaded:', product.name);
-  }
-}, [product]);
+  const [loadingLimits, setLoadingLimits] = useState(true);
 
-  // ✅ FIXED: Load product data with proper sub-image structure
-    // ✅ ADD: Fetch subscription and product count on mount
+  useEffect(() => {
+    if (product) {
+      console.log('📦 Loading product for editing:', product);
+      
+      setFormData({
+        name: product.name || '',
+        model_name: product.model_name || '',
+        description: product.description || '',
+        price: product.price || '',
+        mrp: product.mrp || '',
+        total_stock: product.total_stock || 0,
+        online_stock: product.online_stock || 0,
+        sale_type: product.sale_type || 'BOTH',
+      });
+      
+      setSelectedCategoryId(product.category || '');
+      setDynamicAttributes(product.attributes || {});
+      setMainImageUrl(product.main_image_url || product.cloudinary_image_url || '');
+      
+      const subImages = product.sub_images?.map(img => ({
+        id: img.id,
+        url: img.cloudinary_image_url || img.image_url,
+        public_id: img.cloudinary_public_id || img.public_id,
+        isFromDatabase: true
+      })) || [];
+      
+      setSubImageUrls(subImages);
+      console.log('✅ Product loaded:', product.name);
+    }
+  }, [product]);
+
   useEffect(() => {
     const fetchLimits = async () => {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
       try {
-        // Fetch subscription
         const subResponse = await axios.get(
           `${API_BASE_URL}/api/subscriptions/current/`,
           { headers: { 'Authorization': `Bearer ${token}` } }
         );
         setSubscription(subResponse.data);
 
-        // Fetch product count (only when adding new product)
         if (!product) {
           const productsResponse = await axios.get(
             `${API_BASE_URL}/api/products/`,
@@ -1544,7 +1538,6 @@ useEffect(() => {
           
           setProductCount(count);
 
-          // Check if limit reached
           if (subResponse.data.product_limit && count >= subResponse.data.product_limit) {
             setLimitReached(true);
             setError(
@@ -1555,6 +1548,8 @@ useEffect(() => {
         }
       } catch (err) {
         console.error('Failed to fetch subscription limits:', err);
+      } finally {
+        setLoadingLimits(false);
       }
     };
 
@@ -1562,615 +1557,658 @@ useEffect(() => {
   }, [product]);
 
   const handleChange = (e) => {
-  const { name, value } = e.target;
-
-  if (name === 'price' || name === 'mrp') {
-    // Clean value (remove negative signs)
-    let cleanValue = value.replace(/^-/, '');
+    const { name, value } = e.target;
     
-    const validation = validatePositiveNumber(cleanValue, name === 'price' ? 'Selling Price' : 'MRP');
-    
-    if (validation.isValid) {
-      setFormData(prev => ({ ...prev, [name]: cleanValue }));
-      setPriceError('');
-      
-      // Cross-validation: Check price vs MRP
-      if (name === 'price' && formData.mrp) {
-        if (parseFloat(cleanValue) > parseFloat(formData.mrp)) {
-          setPriceError('Selling price cannot be higher than MRP');
-        }
-      } else if (name === 'mrp' && formData.price) {
-        if (parseFloat(formData.price) > parseFloat(cleanValue)) {
-          setPriceError('MRP cannot be lower than selling price');
-        }
+    // ✅ VALIDATE MODEL NAME LENGTH (MAX 100 CHARACTERS)
+    if (name === 'model_name') {
+      if (value.length > 100) {
+        setModelNameError('Model name cannot exceed 100 characters');
+        return; // Don't update if exceeds limit
+      } else {
+        setModelNameError('');
+        setFormData({ ...formData, [name]: value });
       }
-    } else if (cleanValue !== '') {
-      setPriceError(validation.error);
-    }
-  } else {
-    // Regular field update
-    setFormData({ ...formData, [name]: value });
-  }
-};
-
-// ✅ ADD handleMainImageUpload
-const handleMainImageUpload = (uploadedImages) => {
-  if (uploadedImages.length > 0) {
-    setMainImageUrl(uploadedImages[0].url);
-  } else {
-    setMainImageUrl('');
-  }
-  setUploadingImages(false);
-};
-
-// ✅ ADD handleSubImagesUpload
-const handleSubImagesUpload = (uploadedImages) => {
-  console.log('Sub-images uploaded:', uploadedImages);
-  setSubImageUrls(prevUrls => {
-    const allImages = [
-      ...prevUrls,
-      ...uploadedImages.map(img => ({
-        id: Date.now() + Math.random(),
-        url: img.url,
-        public_id: img.public_id,
-        isFromDatabase: false
-      }))
-    ];
-    
-    const uniqueImages = allImages.filter((img, index, self) => 
-      index === self.findIndex(t => t.url === img.url)
-    );
-    
-    return uniqueImages.slice(0, 4);
-  });
-  setUploadingImages(false);
-};
-
-// ✅ ADD handleDeleteOldSubImage
-const handleDeleteOldSubImage = async (subImageId) => {
-  if (!subImageId) return;
-  
-  console.log('Deleting sub-image ID:', subImageId);
-  const token = localStorage.getItem('accessToken');
-  
-  if (!token) {
-    setError('Authentication required. Please log in again.');
-    return;
-  }
-
-  try {
-    const response = await axios.delete(
-      `${API_BASE_URL}/api/products/sub-images/${subImageId}/delete/`,
-      { headers: { 'Authorization': `Bearer ${token}` } }
-    );
-    
-    console.log('Sub-image deleted from database:', response.data);
-    setSubImageUrls(prev => prev.filter(img => img.id !== subImageId));
-    setError('');
-  } catch (error) {
-    console.error('Error deleting sub-image:', error);
-    const errorMessage = error.response?.data?.error || 
-                        error.response?.data?.detail || 
-                        'Failed to delete image';
-    setError(errorMessage);
-  }
-};
-
-// ✅ ADD handleAttributeChange
-const handleAttributeChange = (attributeName, value) => {
-  setDynamicAttributes(prev => ({ ...prev, [attributeName]: value }));
-};
-
-
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  // ✅ CHECK LIMIT FIRST (for new products only)
-  if (!product && limitReached) {
-    setError(
-      `❌ Product limit reached! You have ${productCount}/${subscription.product_limit} products. ` +
-      `Please upgrade your subscription to add more products.`
-    );
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
-  }
-
-  // ✅ CHECK SUBSCRIPTION STATUS
-  if (!product && subscription && !subscription.is_active) {
-    setError(
-      'You need an active subscription to add products. ' +
-      'Please visit the subscription page to subscribe.'
-    );
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
-  }
-
-  if (!mainImageUrl && !product) {
-    setError('Please upload a main product image');
-    return;
-  }
-
-  if (uploadingImages) {
-    setError('Please wait for image uploads to complete');
-    return;
-  }
-
-  if (!selectedCategoryId) {
-    setError('Please select a product category');
-    return;
-  }
-
-  const priceValidation = validatePositiveNumber(formData.price, 'Selling Price');
-  if (!priceValidation.isValid) {
-    setError(priceValidation.error);
-    return;
-  }
-
-  if (formData.mrp) {
-    const mrpValidation = validatePositiveNumber(formData.mrp, 'MRP');
-    if (!mrpValidation.isValid) {
-      setError(mrpValidation.error);
       return;
     }
 
-    if (parseFloat(formData.price) > parseFloat(formData.mrp)) {
-      setError('Selling price cannot be higher than MRP');
-      return;
+    if (name === 'price' || name === 'mrp') {
+      let cleanValue = value.replace(/^-/, '');
+      
+      const validation = validatePositiveNumber(cleanValue, name === 'price' ? 'Selling Price' : 'MRP');
+      
+      if (validation.isValid) {
+        setFormData(prev => ({ ...prev, [name]: cleanValue }));
+        setPriceError('');
+        
+        if (name === 'price' && formData.mrp) {
+          if (parseFloat(cleanValue) > parseFloat(formData.mrp)) {
+            setPriceError('Selling price cannot be higher than MRP');
+          }
+        } else if (name === 'mrp' && formData.price) {
+          if (parseFloat(formData.price) > parseFloat(cleanValue)) {
+            setPriceError('MRP cannot be lower than selling price');
+          }
+        }
+      } else if (cleanValue !== '') {
+        setPriceError(validation.error);
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
     }
-  }
-
-  const totalStockValidation = validatePositiveInteger(formData.total_stock, 'Total Stock');
-  if (!totalStockValidation.isValid) {
-    setError(totalStockValidation.error);
-    return;
-  }
-
-  const onlineStockValidation = validatePositiveInteger(formData.online_stock, 'Online Stock');
-  if (!onlineStockValidation.isValid) {
-    setError(onlineStockValidation.error);
-    return;
-  }
-
-  if (formData.online_stock > formData.total_stock) {
-    setError('Online stock cannot be more than total stock');
-    return;
-  }
-
-  setIsSubmitting(true);
-  setError('');
-
-  const submissionData = {
-    ...formData,
-    category: selectedCategoryId ? parseInt(selectedCategoryId) : null,
-    attributes: dynamicAttributes,
-    main_image_url: mainImageUrl,
-    sub_image_urls: subImageUrls.map(img => ({
-      url: img.url,
-      public_id: img.public_id
-    }))
   };
 
-  console.log('🚀 Submitting product data:', submissionData);
+  const handleMainImageUpload = (uploadedImages) => {
+    if (uploadedImages.length > 0) {
+      setMainImageUrl(uploadedImages[0].url);
+    } else {
+      setMainImageUrl('');
+    }
+    setUploadingImages(false);
+  };
 
-  const url = product
-    ? `${PRODUCTS_API_URL}${product.id}/`
-    : PRODUCTS_API_URL;
-  const method = product ? 'PATCH' : 'POST';
-
-  try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios({
-      method,
-      url,
-      data: submissionData,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 30000
+  const handleSubImagesUpload = (uploadedImages) => {
+    console.log('Sub-images uploaded:', uploadedImages);
+    setSubImageUrls(prevUrls => {
+      const allImages = [
+        ...prevUrls,
+        ...uploadedImages.map(img => ({
+          id: Date.now() + Math.random(),
+          url: img.url,
+          public_id: img.public_id,
+          isFromDatabase: false
+        }))
+      ];
+      
+      const uniqueImages = allImages.filter((img, index, self) => 
+        index === self.findIndex(t => t.url === img.url)
+      );
+      
+      return uniqueImages.slice(0, 4);
     });
+    setUploadingImages(false);
+  };
 
-    console.log('✅ Product saved successfully:', response.data);
-    onSuccess();
-  } catch (err) {
-    let errorMessage = 'Something went wrong. Please check your details and try again.';
-
-    if (err.response?.status === 401) {
-      errorMessage = 'Your session has expired. Please log in again.';
-      setTimeout(() => {
-        localStorage.removeItem('accessToken');
-        window.location.href = '/login/seller';
-      }, 2000);
-    } else if (err.response?.data) {
-      if (typeof err.response.data === 'string') {
-        errorMessage = err.response.data;
-      } else if (err.response.data.detail) {
-        errorMessage = err.response.data.detail;
-      } else if (err.response.data.category) {
-        errorMessage = 'Please select a valid category';
-      } else if (err.response.data.main_image_url) {
-        errorMessage = 'Main image is required';
-      }
-    } else if (err.code === 'ECONNABORTED') {
-      errorMessage = 'Request is taking too long. Please check your internet connection and try again.';
+  const handleDeleteOldSubImage = async (subImageId) => {
+    if (!subImageId) return;
+    
+    console.log('Deleting sub-image ID:', subImageId);
+    const token = localStorage.getItem('accessToken');
+    
+    if (!token) {
+      setError('Authentication required. Please log in again.');
+      return;
     }
 
-    console.error('❌ Product save error:', err);
-    setError(errorMessage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+    try {
+      const response = await axios.delete(
+        `${API_BASE_URL}/api/products/sub-images/${subImageId}/delete/`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      
+      console.log('Sub-image deleted from database:', response.data);
+      setSubImageUrls(prev => prev.filter(img => img.id !== subImageId));
+      setError('');
+    } catch (error) {
+      console.error('Error deleting sub-image:', error);
+      const errorMessage = error.response?.data?.error || 
+                          error.response?.data?.detail || 
+                          'Failed to delete image';
+      setError(errorMessage);
+    }
+  };
 
-// ✅ UPDATED return Statement
-return (
-  <div style={styles.modalOverlay}>
-    <div style={styles.modalContent}>
-      <div style={styles.modalHeader}>
-        <h2 className='dashboardproductmodaltitle' style={{ ...styles.modalTitle, display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {product ? (
-            <>
-              <Edit size={22} className='dashboardproductmodaltitleicon' /> Edit Product
-            </>
-          ) : (
-            <>
-              <Package2 size={22} className='dashboardproductmodaltitleicon' /> Add New Product
-            </>
+  const handleAttributeChange = (attributeName, value) => {
+    setDynamicAttributes(prev => ({ ...prev, [attributeName]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // ✅ VALIDATE MODEL NAME BEFORE SUBMISSION
+    if (formData.model_name && formData.model_name.length > 100) {
+      setError('Model name cannot exceed 100 characters');
+      setModelNameError('Model name cannot exceed 100 characters');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (!product && limitReached) {
+      setError(
+        `❌ Product limit reached! You have ${productCount}/${subscription.product_limit} products. ` +
+        `Please upgrade your subscription to add more products.`
+      );
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (!product && subscription && !subscription.is_active) {
+      setError(
+        'You need an active subscription to add products. ' +
+        'Please visit the subscription page to subscribe.'
+      );
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (!mainImageUrl && !product) {
+      setError('Please upload a main product image');
+      return;
+    }
+
+    if (uploadingImages) {
+      setError('Please wait for image uploads to complete');
+      return;
+    }
+
+    if (!selectedCategoryId) {
+      setError('Please select a product category');
+      return;
+    }
+
+    const priceValidation = validatePositiveNumber(formData.price, 'Selling Price');
+    if (!priceValidation.isValid) {
+      setError(priceValidation.error);
+      return;
+    }
+
+    if (formData.mrp) {
+      const mrpValidation = validatePositiveNumber(formData.mrp, 'MRP');
+      if (!mrpValidation.isValid) {
+        setError(mrpValidation.error);
+        return;
+      }
+
+      if (parseFloat(formData.price) > parseFloat(formData.mrp)) {
+        setError('Selling price cannot be higher than MRP');
+        return;
+      }
+    }
+
+    const totalStockValidation = validatePositiveInteger(formData.total_stock, 'Total Stock');
+    if (!totalStockValidation.isValid) {
+      setError(totalStockValidation.error);
+      return;
+    }
+
+    const onlineStockValidation = validatePositiveInteger(formData.online_stock, 'Online Stock');
+    if (!onlineStockValidation.isValid) {
+      setError(onlineStockValidation.error);
+      return;
+    }
+
+    if (formData.online_stock > formData.total_stock) {
+      setError('Online stock cannot be more than total stock');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError('');
+
+    const submissionData = {
+      ...formData,
+      category: selectedCategoryId ? parseInt(selectedCategoryId) : null,
+      attributes: dynamicAttributes,
+      main_image_url: mainImageUrl,
+      sub_image_urls: subImageUrls.map(img => ({
+        url: img.url,
+        public_id: img.public_id
+      }))
+    };
+
+    console.log('🚀 Submitting product data:', submissionData);
+
+    const url = product
+      ? `${PRODUCTS_API_URL}${product.id}/`
+      : PRODUCTS_API_URL;
+    const method = product ? 'PATCH' : 'POST';
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await axios({
+        method,
+        url,
+        data: submissionData,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      });
+
+      console.log('✅ Product saved successfully:', response.data);
+      onSuccess();
+    } catch (err) {
+      let errorMessage = 'Something went wrong. Please check your details and try again.';
+
+      if (err.response?.status === 401) {
+        errorMessage = 'Your session has expired. Please log in again.';
+        setTimeout(() => {
+          localStorage.removeItem('accessToken');
+          window.location.href = '/login/seller';
+        }, 2000);
+      } else if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        } else if (err.response.data.detail) {
+          errorMessage = err.response.data.detail;
+        } else if (err.response.data.model_name) {
+          errorMessage = Array.isArray(err.response.data.model_name) 
+            ? err.response.data.model_name[0]
+            : err.response.data.model_name;
+          setModelNameError(errorMessage);
+        } else if (err.response.data.category) {
+          errorMessage = 'Please select a valid category';
+        } else if (err.response.data.main_image_url) {
+          errorMessage = 'Main image is required';
+        }
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Request is taking too long. Please check your internet connection and try again.';
+      }
+
+      console.error('❌ Product save error:', err);
+      setError(errorMessage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  return (
+    <div style={styles.modalOverlay}>
+      <div style={styles.modalContent}>
+        <div style={styles.modalHeader}>
+          <h2 className='dashboardproductmodaltitle' style={{ ...styles.modalTitle, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {product ? (
+              <>
+                <Edit size={22} className='dashboardproductmodaltitleicon' /> Edit Product
+              </>
+            ) : (
+              <>
+                <Package2 size={22} className='dashboardproductmodaltitleicon' /> Add New Product
+              </>
+            )}
+          </h2>    
+          <div style={{ ...styles.connectionStatus, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Cloud size={14} /> Images powered by Cloudinary
+          </div>
+          {!product && subscription && !loadingLimits && (
+            <div style={{
+              fontSize: '13px',
+              color: limitReached ? '#dc3545' : '#059669',
+              marginTop: '12px',
+              padding: '10px 14px',
+              backgroundColor: limitReached ? '#fff5f5' : '#d1fae5',
+              borderRadius: '8px',
+              border: `2px solid ${limitReached ? '#dc3545' : '#10b981'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                <span style={{ fontSize: '16px' }}>{limitReached ? '⚠️' : '✅'}</span>
+                <div>
+                  <strong>{limitReached ? 'Product Limit Reached:' : 'Products:'}</strong> {productCount}/{subscription.product_limit || '∞'}
+                  {!limitReached && subscription.product_limit && (
+                    <span style={{ color: '#6b7280', marginLeft: '6px' }}>
+                      ({subscription.product_limit - productCount} remaining)
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              {limitReached && (
+                <button
+                  type="button"
+                  onClick={() => window.location.href = '/dashboard/seller/subscription'}
+                  style={{
+                    padding: '6px 14px',
+                    backgroundColor: '#0d6efd',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  <Rocket size={14} />
+                  Upgrade Now
+                </button>
+              )}
+            </div>
           )}
-        </h2>
-        
-        <div style={{ ...styles.connectionStatus, display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Cloud size={14} /> Images powered by Cloudinary
         </div>
 
-        {/* ✅ SUBSCRIPTION STATUS BADGE */}
-        {!product && subscription && !loadingLimits && (
-          <div style={{
-            fontSize: '13px',
-            color: limitReached ? '#dc3545' : '#059669',
-            marginTop: '12px',
-            padding: '10px 14px',
-            backgroundColor: limitReached ? '#fff5f5' : '#d1fae5',
-            borderRadius: '8px',
-            border: `2px solid ${limitReached ? '#dc3545' : '#10b981'}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            flexWrap: 'wrap'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-              <span style={{ fontSize: '16px' }}>{limitReached ? '⚠️' : '✅'}</span>
-              <div>
-                <strong>{limitReached ? 'Product Limit Reached:' : 'Products:'}</strong> {productCount}/{subscription.product_limit || '∞'}
-                {!limitReached && subscription.product_limit && (
-                  <span style={{ color: '#6b7280', marginLeft: '6px' }}>
-                    ({subscription.product_limit - productCount} remaining)
-                  </span>
-                )}
+        <form onSubmit={handleSubmit}>
+          {error && (
+            <div style={{
+              ...styles.errorAlert,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <span style={{ fontSize: '20px', flexShrink: 0 }}>⚠️</span>
+                <div style={{ flex: 1 }}>
+                  <strong>Error:</strong>
+                  <br />
+                  {error}
+                </div>
               </div>
-            </div>
-            
-            {limitReached && (
-              <button
-                type="button"
-                onClick={() => window.location.href = '/dashboard/seller/subscription'}
-                style={{
-                  padding: '6px 14px',
-                  backgroundColor: '#0d6efd',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                <Rocket size={14} />
-                Upgrade Now
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        {/* ✅ ENHANCED ERROR DISPLAY */}
-        {error && (
-          <div style={{
-            ...styles.errorAlert,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-              <span style={{ fontSize: '20px', flexShrink: 0 }}>⚠️</span>
-              <div style={{ flex: 1 }}>
-                <strong>Error:</strong>
-                <br />
-                {error}
-              </div>
-            </div>
-            
-            {limitReached && !product && (
-              <button
-                type="button"
-                onClick={() => window.location.href = '/dashboard/seller/subscription'}
-                style={{
-                  padding: '12px 20px',
-                  backgroundColor: '#0d6efd',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  alignSelf: 'flex-start'
-                }}
-              >
-                <Rocket size={16} />
-                Upgrade Subscription
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Basic Product Information */}
-        <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Basic Product Information *</h3>
-        <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
-          <div style={styles.formGroup}>
-            <label className='dashboardproductmodalsectionlabel' style={styles.label}>Product Name</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              style={styles.input}
-              className='dashboardproductmodalselectinput'
-              placeholder="eg, Cotton T-Shirt, iPhone 13, Shoes..."
-            />
-            <small style={styles.helpText}>Give your product a clear, descriptive name</small>
-          </div>
-
-          <div style={styles.formGroup}>
-            <label className='dashboardproductmodalsectionlabel' style={styles.label}>Model/Variation</label>
-            <input
-              type="text"
-              name="model_name"
-              value={formData.model_name}
-              onChange={handleChange}
-              style={styles.input}
-              className='dashboardproductmodalselectinput'
-              placeholder="e.g., Red XL, 128GB Black, Size 42..."
-            />
-            <small style={styles.helpText}>Specify color, size, model year, or any variations</small>
-          </div>
-
-          <div style={styles.formGroup}>
-            <label className='dashboardproductmodalsectionlabel' style={styles.label}>Product Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              style={styles.textArea}
-              className='dashboardproductmodalselectinput'
-              placeholder="Describe your product: features, benefits, materials..."
-              rows="4"
-            />
-            <small style={styles.helpText}>Help customers understand why they should buy your product</small>
-          </div>
-        </div>
-
-        {/* Pricing */}
-        <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Pricing Information *</h3>
-        <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
-          {priceError && (
-            <div style={styles.priceError}>
-              ⚠️ {priceError}
+              
+              {limitReached && !product && (
+                <button
+                  type="button"
+                  onClick={() => window.location.href = '/dashboard/seller/subscription'}
+                  style={{
+                    padding: '12px 20px',
+                    backgroundColor: '#0d6efd',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    alignSelf: 'flex-start'
+                  }}
+                >
+                  <Rocket size={16} />
+                  Upgrade Subscription
+                </button>
+              )}
             </div>
           )}
 
-          <div className='dashboardproductmodalpriceinputgap' style={styles.formRow}>
+          <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Basic Product Information *</h3>
+          <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
             <div style={styles.formGroup}>
-              <label className='dashboardproductmodalsectionlabel' style={styles.label}>Your Selling Price (₹)</label>
+              <label className='dashboardproductmodalsectionlabel' style={styles.label}>Product Name</label>
               <input
-                type="number"
-                name="price"
-                value={formData.price}
+                type="text"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
                 required
                 style={styles.input}
                 className='dashboardproductmodalselectinput'
-                step="0.01"
-                min="0"
-                placeholder="299.99"
-                onKeyPress={(e) => {
-                  if (e.key === '-') e.preventDefault();
-                }}
+                placeholder="eg, Cotton T-Shirt, iPhone 13, Shoes..."
               />
-              <small style={styles.helpText}>The price you want to charge customers</small>
+              <small style={styles.helpText}>Give your product a clear, descriptive name</small>
+            </div>
+
+            {/* ✅ ENHANCED MODEL NAME INPUT WITH VALIDATION */}
+            <div style={styles.formGroup}>
+              <label className='dashboardproductmodalsectionlabel' style={styles.label}>
+                Model/Variation
+                <span style={{ 
+                  fontSize: '12px', 
+                  color: modelNameError ? '#dc3545' : (formData.model_name.length > 80 ? '#ffc107' : '#6c757d'),
+                  marginLeft: '8px',
+                  fontWeight: 'normal'
+                }}>
+                  ({formData.model_name.length}/100 characters)
+                </span>
+              </label>
+              <input
+                type="text"
+                name="model_name"
+                value={formData.model_name}
+                onChange={handleChange}
+                style={{
+                  ...styles.input,
+                  borderColor: modelNameError ? '#dc3545' : (formData.model_name.length > 80 ? '#ffc107' : '#1a4845')
+                }}
+                className='dashboardproductmodalselectinput'
+                placeholder="e.g., Red XL, 128GB Black, Size 42..."
+                maxLength={100}
+              />
+              {modelNameError && (
+                <div style={{
+                  color: '#dc3545',
+                  fontSize: '13px',
+                  marginTop: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <AlertCircle size={14} />
+                  {modelNameError}
+                </div>
+              )}
+              {formData.model_name.length > 80 && !modelNameError && (
+                <div style={{
+                  color: '#ffc107',
+                  fontSize: '13px',
+                  marginTop: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <AlertCircle size={14} />
+                  Warning: You're close to the character limit
+                </div>
+              )}
+              <small style={styles.helpText}>Specify color, size, model year, or any variations (max 100 characters)</small>
             </div>
 
             <div style={styles.formGroup}>
-              <label className='dashboardproductmodalsectionlabel' style={styles.label}>MRP - Maximum Retail Price (₹)</label>
-              <input
-                type="number"
-                name="mrp"
-                value={formData.mrp}
+              <label className='dashboardproductmodalsectionlabel' style={styles.label}>Product Description</label>
+              <textarea
+                name="description"
+                value={formData.description}
                 onChange={handleChange}
-                style={styles.input}
+                style={styles.textArea}
                 className='dashboardproductmodalselectinput'
-                step="0.01"
-                min="0"
-                placeholder="399.99"
-                onKeyPress={(e) => {
-                  if (e.key === '-') e.preventDefault();
-                }}
+                placeholder="Describe your product: features, benefits, materials..."
+                rows="4"
               />
-              <small style={styles.helpText}>Original price (must be higher than or equal to selling price)</small>
+              <small style={styles.helpText}>Help customers understand why they should buy your product</small>
             </div>
           </div>
 
-          {formData.price && formData.mrp && parseFloat(formData.mrp) > parseFloat(formData.price) && (
-            <div className='dashboardproductmodaldiscountlabel' style={styles.discountDisplay}>
-              🎉 Great! You're offering a discount of ₹{(parseFloat(formData.mrp) - parseFloat(formData.price)).toFixed(2)}
-              ({Math.round(((parseFloat(formData.mrp) - parseFloat(formData.price)) / parseFloat(formData.mrp)) * 100)}% off)
-            </div>
-          )}
-        </div>
+          <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Pricing Information *</h3>
+          <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
+            {priceError && (
+              <div style={styles.priceError}>
+                ⚠️ {priceError}
+              </div>
+            )}
 
-        {/* Stock Management */}
-        <SmartStockInput formData={formData} setFormData={setFormData} />
+            <div className='dashboardproductmodalpriceinputgap' style={styles.formRow}>
+              <div style={styles.formGroup}>
+                <label className='dashboardproductmodalsectionlabel' style={styles.label}>Your Selling Price (₹)</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  required
+                  style={styles.input}
+                  className='dashboardproductmodalselectinput'
+                  step="0.01"
+                  min="0"
+                  placeholder="299.99"
+                  onKeyPress={(e) => {
+                    if (e.key === '-') e.preventDefault();
+                  }}
+                />
+                <small style={styles.helpText}>The price you want to charge customers</small>
+              </div>
 
-        {/* Sales Channels */}
-        <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Where Do You Want to Sell ?</h3>
-        <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
-          <select
-            name="sale_type"
-            value={formData.sale_type}
-            onChange={handleChange}
-            style={styles.selectInput}
-            className='dashboardproductmodalselectinput'
-          >
-            <option className='dashboardproductmodalselectinput' value="BOTH">🌐 Both Online & In-Store (Recommended)</option>
-            <option className='dashboardproductmodalselectinput' value="OFFLINE">🏪 Only In My Physical Store</option>
-            <option className='dashboardproductmodalselectinput' value="ONLINE">🌐 Only Online Sales</option>
-          </select>
-          <small style={styles.helpText}>Choose where customers can buy this product</small>
-        </div>
-
-        <hr style={styles.hr} />
-
-        {/* Category Section */}
-        <CategorySelector
-          selectedCategoryId={selectedCategoryId}
-          onCategorySelect={setSelectedCategoryId}
-          onAttributesChange={setDynamicAttributes}
-        />
-
-        {/* Dynamic Attributes */}
-        {Object.keys(dynamicAttributes).length > 0 && (
-          <div>
-            <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Category-Specific Details</h3>
-            <div className='dashboardproductmodalsectioncontainer' style={styles.attributesSection}>
-              <div style={styles.attributesGrid}>
-                {Object.keys(dynamicAttributes).map(name => (
-                  <div key={name} style={styles.formGroup}>
-                    <label className='dashboardproductmodalsectionlabel' style={styles.label}>{name}</label>
-                    <input
-                      type="text"
-                      value={dynamicAttributes[name] || ''}
-                      onChange={e => handleAttributeChange(name, e.target.value)}
-                      style={styles.input}
-                      className='dashboardproductmodalselectinput'
-                      placeholder={`Enter ${name.toLowerCase()}...`}
-                    />
-                  </div>
-                ))}
+              <div style={styles.formGroup}>
+                <label className='dashboardproductmodalsectionlabel' style={styles.label}>MRP - Maximum Retail Price (₹)</label>
+                <input
+                  type="number"
+                  name="mrp"
+                  value={formData.mrp}
+                  onChange={handleChange}
+                  style={styles.input}
+                  className='dashboardproductmodalselectinput'
+                  step="0.01"
+                  min="0"
+                  placeholder="399.99"
+                  onKeyPress={(e) => {
+                    if (e.key === '-') e.preventDefault();
+                  }}
+                />
+                <small style={styles.helpText}>Original price (must be higher than or equal to selling price)</small>
               </div>
             </div>
-          </div>
-        )}
 
-        <hr style={styles.hr} />
-
-        {/* Image Uploads */}
-        <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Product Images *</h3>
-        <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
-          <CloudinaryImageUpload
-            label="Main Product Image"
-            required={!product}
-            type="main"
-            onUploadComplete={handleMainImageUpload}
-            onUploadStart={() => setUploadingImages(true)}
-            currentImages={mainImageUrl ? [mainImageUrl] : []}
-            helpText="📸 This is the first image customers will see. Make it count!"
-          />
-
-          <CloudinaryImageUpload
-            label="Additional Images"
-            multiple={true}
-            maxFiles={4}
-            type="sub"
-            onUploadComplete={handleSubImagesUpload}
-            onUploadStart={() => setUploadingImages(true)}
-            onRemoveImage={handleDeleteOldSubImage}
-            currentImages={subImageUrls}
-            helpText="📷 Add more angles, close-ups, or usage photos (max 4 images)"
-          />
-        </div>
-
-        <div style={styles.buttonContainer}>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting || uploadingImages}
-            className='dashboardproductcreatebtn'
-            style={{
-              ...styles.buttonSecondary,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-            }}
-          >
-            <X size={18} className='dashboardproductcreatebtnicon' color='white' /> Cancel
-          </button>
-          
-          <button
-            type="submit"
-            disabled={
-              isSubmitting || 
-              uploadingImages || 
-              !selectedCategoryId || 
-              priceError ||
-              (!product && limitReached)
-            }
-            className='dashboardproductcreatebtn'
-            style={{
-              ...styles.buttonPrimary,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              opacity: (!product && limitReached) ? 0.6 : 1,
-              cursor: (!product && limitReached) ? 'not-allowed' : 'pointer'
-            }}
-            title={(!product && limitReached) ? 'Product limit reached - please upgrade your subscription' : ''}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 size={18} className="spin" /> {product ? 'Updating...' : 'Creating...'}
-              </>
-            ) : uploadingImages ? (
-              <>
-                <CloudUpload size={18} className='dashboardproductcreatebtnicon' /> Uploading Images...
-              </>
-            ) : (!product && limitReached) ? (
-              <>
-                <X size={18} />
-                Limit Reached
-              </>
-            ) : (
-              <>
-                {product ? <CheckCircle size={18} className='dashboardproductcreatebtnicon' /> : <Rocket size={18} className='dashboardproductcreatebtnicon' />}
-                {product ? 'Update Product' : 'Create Product'}
-              </>
+            {formData.price && formData.mrp && parseFloat(formData.mrp) > parseFloat(formData.price) && (
+              <div className='dashboardproductmodaldiscountlabel' style={styles.discountDisplay}>
+                🎉 Great! You're offering a discount of ₹{(parseFloat(formData.mrp) - parseFloat(formData.price)).toFixed(2)}
+                ({Math.round(((parseFloat(formData.mrp) - parseFloat(formData.price)) / parseFloat(formData.mrp)) * 100)}% off)
+              </div>
             )}
-          </button>
-        </div>
-      </form>
+          </div>
+
+          <SmartStockInput formData={formData} setFormData={setFormData} />
+
+          <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Where Do You Want to Sell ?</h3>
+          <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
+            <select
+              name="sale_type"
+              value={formData.sale_type}
+              onChange={handleChange}
+              style={styles.selectInput}
+              className='dashboardproductmodalselectinput'
+            >
+              <option className='dashboardproductmodalselectinput' value="BOTH">🌐 Both Online & In-Store (Recommended)</option>
+              <option className='dashboardproductmodalselectinput' value="OFFLINE">🏪 Only In My Physical Store</option>
+              <option className='dashboardproductmodalselectinput' value="ONLINE">🌐 Only Online Sales</option>
+            </select>
+            <small style={styles.helpText}>Choose where customers can buy this product</small>
+          </div>
+
+          <hr style={styles.hr} />
+
+          <CategorySelector
+            selectedCategoryId={selectedCategoryId}
+            onCategorySelect={setSelectedCategoryId}
+            onAttributesChange={setDynamicAttributes}
+          />
+          {Object.keys(dynamicAttributes).length > 0 && (
+            <div>
+              <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Category-Specific Details</h3>
+              <div className='dashboardproductmodalsectioncontainer' style={styles.attributesSection}>
+                <div style={styles.attributesGrid}>
+                  {Object.keys(dynamicAttributes).map(name => (
+                    <div key={name} style={styles.formGroup}>
+                      <label className='dashboardproductmodalsectionlabel' style={styles.label}>{name}</label>
+                      <input
+                        type="text"
+                        value={dynamicAttributes[name] || ''}
+                        onChange={e => handleAttributeChange(name, e.target.value)}
+                        style={styles.input}
+                        className='dashboardproductmodalselectinput'
+                        placeholder={`Enter ${name.toLowerCase()}...`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <hr style={styles.hr} />
+
+          <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Product Images *</h3>
+          <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
+            <CloudinaryImageUpload
+              label="Main Product Image"
+              required={!product}
+              type="main"
+              onUploadComplete={handleMainImageUpload}
+              onUploadStart={() => setUploadingImages(true)}
+              currentImages={mainImageUrl ? [mainImageUrl] : []}
+              helpText="📸 This is the first image customers will see. Make it count!"
+            />
+
+            <CloudinaryImageUpload
+              label="Additional Images"
+              multiple={true}
+              maxFiles={4}
+              type="sub"
+              onUploadComplete={handleSubImagesUpload}
+              onUploadStart={() => setUploadingImages(true)}
+              onRemoveImage={handleDeleteOldSubImage}
+              currentImages={subImageUrls}
+              helpText="📷 Add more angles, close-ups, or usage photos (max 4 images)"
+            />
+          </div>
+
+          <div style={styles.buttonContainer}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting || uploadingImages}
+              className='dashboardproductcreatebtn'
+              style={{
+                ...styles.buttonSecondary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+              }}
+            >
+              <X size={18} className='dashboardproductcreatebtnicon' color='white' /> Cancel
+            </button>
+            
+            <button
+              type="submit"
+              disabled={
+                isSubmitting || 
+                uploadingImages || 
+                !selectedCategoryId || 
+                priceError ||
+                modelNameError ||
+                (!product && limitReached)
+              }
+              className='dashboardproductcreatebtn'
+              style={{
+                ...styles.buttonPrimary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                opacity: (!product && limitReached) ? 0.6 : 1,
+                cursor: (!product && limitReached) ? 'not-allowed' : 'pointer'
+              }}
+              title={(!product && limitReached) ? 'Product limit reached - please upgrade your subscription' : ''}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={18} className="spin" /> {product ? 'Updating...' : 'Creating...'}
+                </>
+              ) : uploadingImages ? (
+                <>
+                  <CloudUpload size={18} className='dashboardproductcreatebtnicon' /> Uploading Images...
+                </>
+              ) : (!product && limitReached) ? (
+                <>
+                  <X size={18} />
+                  Limit Reached
+                </>
+              ) : (
+                <>
+                  {product ? <CheckCircle size={18} className='dashboardproductcreatebtnicon' /> : <Rocket size={18} className='dashboardproductcreatebtnicon' />}
+                  {product ? 'Update Product' : 'Create Product'}
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
-);
+  );
 }
