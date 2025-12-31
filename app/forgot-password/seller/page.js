@@ -6,7 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
-import '../../../styles/Registerseller.css'
+import '../../../styles/Registerseller.css';
+import { auth } from '../../../firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 import {
   Phone,
   Lock,
@@ -17,41 +19,15 @@ import {
   Eye,
   EyeOff,
   MessageSquare,
-  Store,
   RefreshCw,
   Shield,
   Globe
 } from 'lucide-react';
 
-// ✅ Enhanced API base URL handling
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
-  if (process.env.NODE_ENV === 'development') {
-    return 'https://api.keralasellers.in';
-  }
-  return 'https://api.keralasellers.in';
-};
-
 const API_BASE_URL = 'https://api.keralasellers.in';
-// ✅ UPDATED: Use the new seller-specific phone-based endpoints
 const SEND_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/send-otp/`;
 const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/verify/`;
 
-// ✅ Only log in development and after component mounts
-const logApiUrls = () => {
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    console.log('🌐 Seller Forgot Password API URLs configured:', {
-      API_BASE_URL,
-      SEND_RESET_OTP_API,
-      VERIFY_RESET_OTP_API
-    });
-  }
-};
-
-// ✅ Loading fallback component
 function LoadingFallback() {
   return (
     <div style={{
@@ -81,7 +57,6 @@ function LoadingFallback() {
           fontWeight: '500'
         }}>Loading seller password reset...</p>
       </div>
-
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -92,7 +67,6 @@ function LoadingFallback() {
   );
 }
 
-// ✅ Main component wrapped for Suspense
 function SellerForgotPasswordContent() {
   const [step, setStep] = useState(1);
   const [phone, setPhone] = useState('');
@@ -105,18 +79,14 @@ function SellerForgotPasswordContent() {
   const [messageType, setMessageType] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [otpSentTime, setOtpSentTime] = useState(null);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [confirmationResult, setConfirmationResult] = useState(null);
   const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
 
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ✅ Get current store info and phone from URL parameters
   useEffect(() => {
-    // Only log API URLs after component mounts
-    logApiUrls();
-
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
       const storeMatch = currentPath.match(/\/store\/([^\/]+)/);
@@ -125,15 +95,37 @@ function SellerForgotPasswordContent() {
         isInStore: !!storeMatch
       });
 
-      // Pre-fill phone if provided in URL params or store context
       const phoneParam = searchParams.get('phone') || storeMatch?.[1];
       if (phoneParam && /^[6-9]\d{9}$/.test(phoneParam)) {
         setPhone(phoneParam);
       }
+
+      // Initialize Firebase reCAPTCHA
+      if (!window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            size: 'invisible',
+            callback: () => console.log('✅ reCAPTCHA solved'),
+            'expired-callback': () => console.log('⚠️ reCAPTCHA expired')
+          });
+        } catch (error) {
+          console.error('❌ reCAPTCHA error:', error);
+        }
+      }
     }
+
+    return () => {
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+          window.recaptchaVerifier = null;
+        } catch (error) {
+          console.error('Cleanup error:', error);
+        }
+      }
+    };
   }, [searchParams]);
 
-  // ✅ Resend cooldown timer
   useEffect(() => {
     let timer;
     if (resendCooldown > 0) {
@@ -177,7 +169,7 @@ function SellerForgotPasswordContent() {
     }, 6000);
   };
 
-  // ✅ Enhanced phone submission with better error handling
+  // 🔥 Firebase-based OTP sending
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setErrors({});
@@ -195,60 +187,50 @@ function SellerForgotPasswordContent() {
     setIsLoading(true);
 
     try {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📱 Sending OTP to seller phone:', phone);
-        console.log('🔗 Using endpoint:', SEND_RESET_OTP_API);
-      }
-
-      const response = await axios.post(SEND_RESET_OTP_API, {
+      // Step 1: Verify seller exists on backend
+      const verifyResponse = await axios.post(SEND_RESET_OTP_API, {
         phone: phone.trim()
-      }, {
-        timeout: 15000,
-        headers: {
-          'Content-Type': 'application/json'
-        }
       });
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ OTP sent successfully:', response.data);
+      if (!verifyResponse.data.seller_exists) {
+        throw new Error('Seller not found');
       }
 
-      setOtpSentTime(new Date());
+      // Step 2: Send Firebase OTP
+      const phoneNumber = `+91${phone.trim()}`;
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        phoneNumber,
+        window.recaptchaVerifier
+      );
+
+      setConfirmationResult(confirmation);
       setResendCooldown(60);
-      showMessage(`An OTP has been sent to +91 ${phone}. Please check your messages.`, 'success');
+      showMessage(`OTP sent to +91 ${phone}. Please check your messages.`, 'success');
       setStep(2);
 
     } catch (err) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ OTP send error:', err);
-        console.error('❌ Error response:', err.response?.data);
-        console.error('❌ Error status:', err.response?.status);
-      }
-
+      console.error('❌ OTP send error:', err);
+      
       let errorMessage = 'Could not send OTP. Please try again.';
-
+      
       if (err.response?.status === 404) {
-        errorMessage = 'No seller account found with this phone number. Please check your number and try registering first.';
-      } else if (err.response?.status === 400) {
-        errorMessage = err.response.data?.error || 'Invalid phone number format. Please enter a valid 10-digit number.';
-      } else if (err.response?.status === 429) {
-        errorMessage = 'Too many requests. Please wait a few minutes before trying again.';
-      } else if (err.code === 'ECONNABORTED') {
-        errorMessage = 'Request timed out. Please check your connection and try again.';
-      } else if (err.response?.data) {
-        errorMessage = err.response.data.error ||
-          err.response.data.message ||
-          err.response.data.detail ||
-          errorMessage;
+        errorMessage = 'No seller account found with this phone number.';
+      } else if (err.code === 'auth/invalid-phone-number') {
+        errorMessage = 'Invalid phone number format.';
+      } else if (err.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many requests. Please try again later.';
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
       }
-
+      
       showMessage(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ✅ Enhanced password reset with comprehensive validation
+  // 🔥 Firebase-based password reset
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setErrors({});
@@ -281,29 +263,20 @@ function SellerForgotPasswordContent() {
     setIsLoading(true);
 
     try {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔐 Resetting password for seller:', phone);
-        console.log('🔗 Using endpoint:', VERIFY_RESET_OTP_API);
-      }
+      // Step 1: Verify OTP with Firebase
+      const credential = await confirmationResult.confirm(otp.trim());
+      const firebaseIdToken = await credential.user.getIdToken();
 
+      // Step 2: Send to backend to reset password
       const response = await axios.post(VERIFY_RESET_OTP_API, {
+        firebase_id_token: firebaseIdToken,
         phone: phone.trim(),
-        otp: otp.trim(),
         password: password
-      }, {
-        timeout: 15000,
-        headers: {
-          'Content-Type': 'application/json'
-        }
       });
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Password reset successful:', response.data);
-      }
+      showMessage('Password reset successfully! Redirecting to login...', 'success');
 
-      showMessage('Password has been reset successfully! You can now login to your seller account.', 'success');
-
-      // ✅ Store-aware redirect
+      // Redirect after success
       setTimeout(() => {
         const redirectUrl = searchParams.get('redirect');
         if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
@@ -314,62 +287,43 @@ function SellerForgotPasswordContent() {
       }, 2500);
 
     } catch (err) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Password reset error:', err);
-        console.error('❌ Error response:', err.response?.data);
-      }
-
+      console.error('❌ Password reset error:', err);
+      
       let errorMessage = 'Failed to reset password. Please try again.';
-
-      if (err.response?.status === 400) {
-        errorMessage = err.response.data?.error || 'Invalid or expired OTP. Please request a new OTP.';
-      } else if (err.response?.status === 404) {
-        errorMessage = 'Seller account not found. Please check your phone number.';
-      } else if (err.response?.status === 429) {
-        errorMessage = 'Too many attempts. Please wait before trying again.';
-      } else if (err.code === 'ECONNABORTED') {
-        errorMessage = 'Request timed out. Please try again.';
-      } else if (err.response?.data) {
-        errorMessage = err.response.data.error ||
-          err.response.data.message ||
-          err.response.data.detail ||
-          errorMessage;
+      
+      if (err.code === 'auth/invalid-verification-code') {
+        errorMessage = 'Invalid OTP. Please check and try again.';
+      } else if (err.code === 'auth/code-expired') {
+        errorMessage = 'OTP expired. Please request a new one.';
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
       }
-
+      
       showMessage(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ✅ Enhanced resend OTP with cooldown
   const handleResendOtp = async () => {
     if (resendCooldown > 0) return;
-
+    
     setIsLoading(true);
 
     try {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔄 Resending OTP to seller phone:', phone);
-      }
+      const phoneNumber = `+91${phone.trim()}`;
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        phoneNumber,
+        window.recaptchaVerifier
+      );
 
-      await axios.post(SEND_RESET_OTP_API, {
-        phone: phone.trim()
-      }, {
-        timeout: 15000,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      setOtpSentTime(new Date());
+      setConfirmationResult(confirmation);
       setResendCooldown(60);
-      showMessage('OTP has been resent to your phone. Please check your messages.', 'success');
+      showMessage('OTP has been resent to your phone.', 'success');
 
     } catch (err) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ OTP resend error:', err);
-      }
+      console.error('❌ OTP resend error:', err);
       showMessage('Failed to resend OTP. Please try again later.', 'error');
     } finally {
       setIsLoading(false);
@@ -384,7 +338,6 @@ function SellerForgotPasswordContent() {
     }
   };
 
-  // ✅ Store-aware back link
   const getBackLink = () => {
     const redirectUrl = searchParams.get('redirect');
     if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
@@ -398,10 +351,10 @@ function SellerForgotPasswordContent() {
   return (
     <div style={styles.pageContainer}>
       <Header />
+      <div id="recaptcha-container"></div>
 
       <div style={styles.container}>
         <div style={styles.card}>
-          {/* ✅ Store context indicator */}
           {currentStoreInfo.isInStore && (
             <div style={styles.storeIndicator}>
               <Globe size={16} />
@@ -409,7 +362,6 @@ function SellerForgotPasswordContent() {
             </div>
           )}
 
-          {/* Header */}
           <div style={styles.header}>
             <div className='sellerregistericoncontainer' style={styles.iconContainer}>
               <KeyRound className='sellerregistericonsize' size={32} color="#1a4845" />
@@ -417,13 +369,12 @@ function SellerForgotPasswordContent() {
             <h1 className='sellerregistercardtitle' style={styles.title}>Reset Seller Password</h1>
             <p className='sellerregistercardsubtitle' style={styles.subtitle}>
               {step === 1
-                ? "Enter your registered phone number to receive a password reset code"
-                : "Enter the verification code and create a new secure password for your seller account"
+                ? "Enter your registered phone number to receive a verification code via SMS"
+                : "Enter the verification code and create a new secure password"
               }
             </p>
           </div>
 
-          {/* Progress Indicator */}
           <div style={styles.progressContainer}>
             <div style={styles.progressBar}>
               <div
@@ -438,7 +389,6 @@ function SellerForgotPasswordContent() {
             </div>
           </div>
 
-          {/* Message Display */}
           {message && (
             <div style={{
               ...styles.messageContainer,
@@ -454,11 +404,9 @@ function SellerForgotPasswordContent() {
             </div>
           )}
 
-          {/* Step 1: Enter Phone */}
           {step === 1 && (
             <form onSubmit={handleSendOtp} style={styles.form}>
               <div style={styles.inputGroup}>
-
                 <div style={styles.phoneInputContainer}>
                   <span className='sellerregistercountryocde' style={styles.countryCode}>+91</span>
                   <input
@@ -509,7 +457,6 @@ function SellerForgotPasswordContent() {
             </form>
           )}
 
-          {/* Step 2: Enter OTP & New Password */}
           {step === 2 && (
             <form onSubmit={handleResetPassword} style={styles.form}>
               <div style={styles.phoneDisplay}>
@@ -603,7 +550,6 @@ function SellerForgotPasswordContent() {
                   <span style={styles.errorText}>{errors.password}</span>
                 )}
 
-                {/* ✅ Password strength indicator */}
                 {password && (
                   <div style={styles.passwordStrength}>
                     <div style={styles.strengthBar}>
@@ -662,7 +608,6 @@ function SellerForgotPasswordContent() {
                   <span style={styles.errorText}>{errors.confirmPassword}</span>
                 )}
 
-                {/* ✅ Password match indicator */}
                 {confirmPassword && password && (
                   <div style={styles.passwordMatch}>
                     {password === confirmPassword ? (
@@ -704,7 +649,6 @@ function SellerForgotPasswordContent() {
             </form>
           )}
 
-          {/* Footer Links */}
           <div style={styles.footer}>
             <Link className='sellerregisterbacktodetailbtn' href={getBackLink()} style={styles.backLink}>
               <ArrowLeft size={16} />
@@ -728,7 +672,6 @@ function SellerForgotPasswordContent() {
             )}
           </div>
 
-          {/* Support Section */}
           <div style={styles.supportSection}>
             <div style={styles.supportCard}>
               <h4 style={styles.supportTitle}>Need Help?</h4>
@@ -749,7 +692,6 @@ function SellerForgotPasswordContent() {
       </div>
       <Footer />
 
-      {/* CSS Animations */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -765,7 +707,6 @@ function SellerForgotPasswordContent() {
   );
 }
 
-// ✅ Main export wrapped in Suspense
 export default function SellerForgotPasswordPage() {
   return (
     <Suspense fallback={<LoadingFallback />}>
@@ -773,6 +714,8 @@ export default function SellerForgotPasswordPage() {
     </Suspense>
   );
 }
+
+// Keep all your existing styles (no changes needed)
 
 // All your existing styles remain exactly the same
 const styles = {

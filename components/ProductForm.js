@@ -1845,7 +1845,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
               gap: '12px',
               flexWrap: 'wrap'
             }}>
-              
+
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                 <span style={{ fontSize: '16px' }}>{limitReached ? '⚠️' : '✅'}</span>
                 <div>
@@ -2063,7 +2063,6 @@ export default function ProductForm({ product, onClose, onSuccess }) {
                 <small style={styles.helpText}>Original price (must be higher than or equal to selling price)</small>
               </div>
             </div>
-
             {formData.price && formData.mrp && parseFloat(formData.mrp) > parseFloat(formData.price) && (
               <div className='dashboardproductmodaldiscountlabel' style={styles.discountDisplay}>
                 🎉 Great! You're offering a discount of ₹{(parseFloat(formData.mrp) - parseFloat(formData.price)).toFixed(2)}
