@@ -7,9 +7,9 @@ import Link from 'next/link';
 import "../../../../../styles/ShopProfileWishlist.css";
 import SHeader from '../../../../../components/common/SHeader';
 import { toast } from "react-toastify";
-import ShopFooter from '../../../../../components/common/ShopFooter'; // ✅ Your footer component
+import ShopFooter from '../../../../../components/common/ShopFooter';
 
-const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
+const API_BASE_URL = 'https://api.keralasellers.in';
 
 export default function ShopWishlistPage() {
   const { shopSlug } = useParams();
@@ -20,6 +20,7 @@ export default function ShopWishlistPage() {
   const [storeData, setStoreData] = useState(null);
   const [urlError, setUrlError] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [cartUpdateTrigger, setCartUpdateTrigger] = useState(0); // ✅ Track cart updates
 
   useEffect(() => {
     try {
@@ -206,16 +207,53 @@ export default function ShopWishlistPage() {
         });
       } else {
         console.error('❌ Failed to remove from wishlist');
-        alert('Failed to remove item from wishlist. Please try again.');
+        toast.error('Failed to remove item from wishlist', {
+          position: 'top-center',
+          autoClose: 3000,
+          theme: "colored",
+        });
       }
     } catch (error) {
       console.error('❌ Failed to remove from wishlist:', error);
-      alert('Network error. Please try again.');
+      toast.error('Network error. Please try again.', {
+        position: 'top-center',
+        autoClose: 3000,
+        theme: "colored",
+      });
     }
   };
 
-  const addToCart = async (product) => {
-    console.log('🛒 Adding to cart:', product.name, 'for store:', actualStoreId);
+  // ✅ FIXED addToCart function with cart update trigger
+  const addToCart = async (productData) => {
+    console.log('🛒 Adding to cart - Raw data:', productData);
+    
+    const product = productData.product || productData;
+    
+    console.log('🛒 Product extracted:', {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      store: actualStoreId
+    });
+
+    if (!product.id || !product.price) {
+      console.error('❌ Invalid product data:', product);
+      toast.error('Cannot add product to cart - missing data', {
+        position: 'top-center',
+        autoClose: 3000,
+        theme: "colored",
+      });
+      return;
+    }
+
+    if ((product.online_stock || 0) === 0) {
+      toast.warning('This product is out of stock', {
+        position: 'top-center',
+        autoClose: 3000,
+        theme: "colored",
+      });
+      return;
+    }
 
     try {
       const cartData = JSON.parse(localStorage.getItem('multiCarts') || '{}');
@@ -226,30 +264,73 @@ export default function ShopWishlistPage() {
       if (existingItem) {
         existingItem.quantity += 1;
         console.log('🔄 Updated quantity in cart:', existingItem.quantity);
+        toast.success(`${product.name} quantity updated in cart!`, {
+          position: 'top-center',
+          autoClose: 2000,
+          theme: "colored",
+        });
       } else {
-        storeCart.push({
+        const cartItem = {
           id: product.id,
-          name: product.name,
-          price: product.price,
+          name: product.name || 'Unnamed Product',
+          price: parseFloat(product.price),
+          mrp: product.mrp ? parseFloat(product.mrp) : null,
           quantity: 1,
           seller_phone: actualStoreId,
-          main_image_url: product.processedImageUrl || product.main_image_url || product.image_url,
-          description: product.description
+          store_id: actualStoreId,
+          main_image_url: productData.processedImageUrl || 
+                         product.processedImageUrl || 
+                         product.main_image_url || 
+                         product.image_url || 
+                         '/placeholder.svg',
+          description: product.description || '',
+          model_name: product.model_name || '',
+          online_stock: product.online_stock || 0
+        };
+        
+        storeCart.push(cartItem);
+        console.log('➕ Added new item to cart:', cartItem);
+        
+        toast.success(`${product.name} added to cart!`, {
+          position: 'top-center',
+          autoClose: 2000,
+          theme: "colored",
         });
-        console.log('➕ Added new item to cart');
       }
 
       cartData[actualStoreId] = storeCart;
       localStorage.setItem('multiCarts', JSON.stringify(cartData));
+      
+      console.log('✅ Cart updated successfully:', {
+        storeId: actualStoreId,
+        itemCount: storeCart.length,
+        totalItems: storeCart.reduce((sum, item) => sum + item.quantity, 0)
+      });
 
-      toast.success(`${product.name} added to cart!`, {
+      // ✅ Trigger cart update in multiple ways
+      // 1. Custom event
+      window.dispatchEvent(new CustomEvent('cartUpdated', { 
+        detail: { storeId: actualStoreId, cart: storeCart } 
+      }));
+
+      // 2. Storage event (for cross-tab communication)
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'multiCarts',
+        newValue: JSON.stringify(cartData),
+        url: window.location.href,
+        storageArea: localStorage
+      }));
+
+      // 3. Force component re-render
+      setCartUpdateTrigger(prev => prev + 1);
+
+    } catch (error) {
+      console.error('❌ Failed to add to cart:', error);
+      toast.error('Failed to add item to cart. Please try again.', {
         position: 'top-center',
         autoClose: 3000,
         theme: "colored",
       });
-    } catch (error) {
-      console.error('❌ Failed to add to cart:', error);
-      alert('Failed to add item to cart. Please try again.');
     }
   };
 
@@ -282,7 +363,7 @@ export default function ShopWishlistPage() {
   if (loading || urlError) {
     return (
       <div style={styles.pagecontainer}>
-        <SHeader store={storeData} isLoggedIn={isLoggedIn} />
+        <SHeader store={storeData} isLoggedIn={isLoggedIn} cartTrigger={cartUpdateTrigger} />
         <div style={styles.loadingContainer}>
           {urlError ? (
             <>
@@ -301,7 +382,6 @@ export default function ShopWishlistPage() {
             </>
           )}
         </div>
-        {/* ✅ Footer for loading state */}
         <ShopFooter store={storeData} />
       </div>
     );
@@ -310,7 +390,7 @@ export default function ShopWishlistPage() {
   if (!actualStoreId) {
     return (
       <div style={styles.pagecontainer}>
-        <SHeader store={null} isLoggedIn={isLoggedIn} />
+        <SHeader store={null} isLoggedIn={isLoggedIn} cartTrigger={cartUpdateTrigger} />
         <div style={styles.errorContainer}>
           <Store size={48} color="#ef4444" />
           <h2>Store Not Found</h2>
@@ -319,7 +399,6 @@ export default function ShopWishlistPage() {
             Go to Profile
           </button>
         </div>
-        {/* ✅ Footer for error state */}
         <ShopFooter store={storeData} />
       </div>
     );
@@ -327,7 +406,7 @@ export default function ShopWishlistPage() {
 
   return (
     <div className='profilwishlistpagecont' style={styles.pagecontainer}>
-      <SHeader store={storeData} isLoggedIn={isLoggedIn} />
+      <SHeader store={storeData} isLoggedIn={isLoggedIn} cartTrigger={cartUpdateTrigger} />
 
       <div
         style={{
@@ -382,6 +461,8 @@ export default function ShopWishlistPage() {
                 return 0;
               };
 
+              const isOutOfStock = (product.online_stock || 0) === 0;
+
               return (
                 <div
                   className={`shop-product-card ${getStockStatus()}`}
@@ -430,7 +511,7 @@ export default function ShopWishlistPage() {
                           Only {product.online_stock} left
                         </span>
                       )}
-                      {(product.online_stock || 0) === 0 && (
+                      {isOutOfStock && (
                         <span className="badge out-of-stock" style={styles.badgeOutOfStock}>
                           Out of Stock
                         </span>
@@ -439,7 +520,11 @@ export default function ShopWishlistPage() {
 
                     <div className="quick-actions" style={styles.quickActions}>
                       <button
-                        onClick={() => removeFromWishlist(item.id)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          removeFromWishlist(item.id);
+                        }}
                         style={styles.removeButton}
                         title="Remove from wishlist"
                       >
@@ -492,14 +577,24 @@ export default function ShopWishlistPage() {
                         )}
                       </div>
                     </div>
+                    
                     <button
                       className='shopslugprofilewishlistaddtocartbtn'
-                      onClick={() => addToCart(product)}
-                      style={styles.addToCartButton}
-                      disabled={!productPrice}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🛒 Button clicked for:', product.name);
+                        console.log('🛒 Full item data:', item);
+                        addToCart(item);
+                      }}
+                      style={{
+                        ...styles.addToCartButton,
+                        ...(isOutOfStock || !productPrice ? styles.addToCartButtonDisabled : {})
+                      }}
+                      disabled={isOutOfStock || !productPrice}
                     >
                       <ShoppingCart size={16} />
-                      Add to Cart
+                      {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
                     </button>
                   </div>
                 </div>
@@ -509,7 +604,6 @@ export default function ShopWishlistPage() {
         )}
       </div>
 
-      {/* ✅ FOOTER - Pass store prop */}
       <ShopFooter store={storeData} />
     </div>
   );
@@ -519,17 +613,17 @@ const styles = {
   pagecontainer: { 
     backgroundColor: "#FDFFF0", 
     paddingTop: "100px",
-    minHeight: '100vh', // ✅ ADDED for proper footer positioning
-    display: 'flex',    // ✅ ADDED for flex layout
-    flexDirection: 'column' // ✅ ADDED for column layout
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column'
   },
   container: { 
-    minHeight: 'calc(100vh - 200px)', // ✅ CHANGED to account for header/footer
+    minHeight: 'calc(100vh - 200px)',
     backgroundColor: '#FDFFF0', 
     padding: '20px', 
     maxWidth: '1200px', 
     margin: '0 auto',
-    flex: 1 // ✅ ADDED to push footer down
+    flex: 1
   },
   loadingContainer: {
     display: 'flex', 
@@ -539,7 +633,7 @@ const styles = {
     minHeight: 'calc(100vh - 200px)', 
     gap: '20px', 
     textAlign: 'center',
-    flex: 1 // ✅ ADDED
+    flex: 1
   },
   spinner: {
     width: '32px', height: '32px', border: '3px solid #f3f3f3',
@@ -555,29 +649,11 @@ const styles = {
     gap: '20px',
     textAlign: 'center', 
     padding: '40px',
-    flex: 1 // ✅ ADDED
+    flex: 1
   },
   homeButton: {
     padding: '12px 24px', backgroundColor: '#6b7280', color: 'white',
     border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600'
-  },
-  header: {
-    display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px',
-    backgroundColor: '#FDFFF0', borderRadius: '12px', padding: '16px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-  },
-  backButton: {
-    background: 'none', border: 'none', cursor: 'pointer',
-    color: '#3b82f6', padding: '8px', borderRadius: '6px'
-  },
-  title: {
-    fontSize: '24px', fontWeight: '700', color: '#1f2937', flex: 1
-  },
-  storeInfo: {
-    display: 'flex', alignItems: 'center', gap: '8px',
-    backgroundColor: '#fef2f2', border: '1px solid #fecaca',
-    borderRadius: '8px', padding: '12px', marginBottom: '16px',
-    color: '#991b1b', fontSize: '14px', fontWeight: '500'
   },
   emptyState: {
     display: 'flex', 
@@ -605,58 +681,7 @@ const styles = {
     padding: '10px 0',
     boxSizing: 'border-box',
     gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-    marginBottom: '40px' // ✅ ADDED space before footer
-  },
-  wishlistCard: {
-    backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s',
-    border: '1px solid #e5e7eb'
-  },
-  productImage: { position: 'relative', height: '200px', overflow: 'hidden' },
-  image: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    backgroundColor: '#f3f4f6',
-    transition: 'opacity 0.3s ease'
-  },
-  removeButton: {
-    position: 'absolute', top: '12px', right: '12px',
-    backgroundColor: 'rgba(255,255,255,0.95)', border: 'none',
-    borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#ef4444', boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    transition: 'all 0.2s'
-  },
-  productInfo: { 
-    padding: '16px',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between'
-  },
-  productPrice: {
-    fontSize: '18px', fontWeight: '700', color: '#059669',
-    margin: '0 0 8px 0'
-  },
-  productDescription: {
-    fontSize: '14px', color: '#6b7280', margin: '0', lineHeight: '1.4',
-    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-    overflow: 'hidden'
-  },
-  productActions: {
-    padding: '16px', borderTop: '1px solid #f3f4f6',
-    display: 'flex', gap: '8px'
-  },
-  addToCartButton: {
-    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    gap: '6px', backgroundColor: '#10b981', color: 'white', border: 'none',
-    borderRadius: '6px', padding: '10px 12px', cursor: 'pointer', fontSize: '14px',
-    fontWeight: '500', transition: 'all 0.2s'
-  },
-  viewButton: {
-    backgroundColor: '#f3f4f6', color: '#374151', border: 'none',
-    borderRadius: '6px', padding: '10px 12px', cursor: 'pointer',
-    fontSize: '14px', fontWeight: '500', transition: 'all 0.2s'
+    marginBottom: '40px'
   },
   shopProductCard: {
     width: "100%",
@@ -669,11 +694,6 @@ const styles = {
     flexDirection: "column",
     transition: "transform 0.2s ease, box-shadow 0.2s ease",
     position: "relative"
-  },
-  productLink: {
-    textDecoration: 'none',
-    color: 'inherit',
-    display: 'block'
   },
   productImageWrapper: {
     width: "100%",
@@ -733,38 +753,25 @@ const styles = {
     right: '8px',
     zIndex: 10,
   },
-  quickActionBtn: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    backgroundColor: 'rgba(255,255,255,0.95)',
+  removeButton: {
+    backgroundColor: 'rgba(255,255,255,0.95)', 
     border: 'none',
+    borderRadius: '50%', 
+    width: '36px', 
+    height: '36px', 
     cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
+    display: 'flex', 
+    alignItems: 'center', 
     justifyContent: 'center',
-    color: '#059669',
-    transition: 'all 0.2s',
-    backdropFilter: 'blur(4px)',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-    position: 'relative'
+    color: '#ef4444', 
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    transition: 'all 0.2s'
   },
-  quickActionBtnActive: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    color: '#ef4444',
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-    boxShadow: '0 2px 12px rgba(239, 68, 68, 0.25)'
-  },
-  quickActionBtnLoading: {
-    cursor: 'not-allowed',
-    opacity: 0.7,
-    pointerEvents: 'none'
-  },
-  storeName: {
-    fontSize: '0.8rem',
-    color: '#059669',
-    fontWeight: '500',
-    marginBottom: '8px'
+  productInfo: { 
+    padding: '16px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between'
   },
   productHeader: {
     marginBottom: '8px',
@@ -786,26 +793,6 @@ const styles = {
     fontWeight: '400',
     color: '#6b7280',
   },
-  productRating: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    marginBottom: '8px'
-  },
-  ratingStars: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1px'
-  },
-  ratingNumber: {
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    color: '#1f2937'
-  },
-  reviewCountText: {
-    fontSize: '0.8rem',
-    color: '#6b7280'
-  },
   productPricing: {
     marginBottom: '8px'
   },
@@ -825,34 +812,26 @@ const styles = {
     color: 'rgb(156, 163, 175)',
     textDecoration: 'line-through'
   },
-  wishlistIndicator: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    fontSize: '0.8rem',
-    color: '#ef4444',
-    fontWeight: '500',
-    marginBottom: '8px',
-    padding: '4px 6px',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: '12px',
-    width: 'fit-content'
-  },
-  addToCartBtn: {
-    display: 'flex',
-    alignItems: 'center',
+  addToCartButton: {
+    flex: 1, 
+    display: 'flex', 
+    alignItems: 'center', 
     justifyContent: 'center',
-    gap: '8px',
-    width: '100%',
-    padding: '7px 42px',
-    backgroundColor: '#059669',
-    color: 'white',
+    gap: '6px', 
+    backgroundColor: '#10b981', 
+    color: 'white', 
     border: 'none',
-    borderRadius: '6px',
-    fontSize: '12px',
-    fontWeight: '500',
-    cursor: 'pointer',
+    borderRadius: '6px', 
+    padding: '10px 12px', 
+    cursor: 'pointer', 
+    fontSize: '14px',
+    fontWeight: '500', 
     transition: 'all 0.2s'
+  },
+  addToCartButtonDisabled: {
+    backgroundColor: '#9ca3af',
+    cursor: 'not-allowed',
+    opacity: 0.6
   },
   ratingOverlay: {
     position: "absolute",
