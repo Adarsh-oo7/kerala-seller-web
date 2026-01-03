@@ -1,3 +1,32 @@
+.tooltip-wrapper {
+    position: relative !important;
+    display: inline-block !important;
+}
+
+.tooltip-text {
+    position: absolute !important;
+    bottom: 120% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background-color: #111 !important;
+    color: #fff !important;
+    padding: 6px 10px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: opacity 0.2s ease !important;
+    pointer-events: none !important;
+}
+
+.tooltip-wrapper:hover .tooltip-text {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+
+
 @media(max-width: 1200px) {
 
     .dashboardstockhistorybtn {
@@ -74,6 +103,15 @@
         text-align: center !important;
     }
 
+    .dashboardproductmodaltitle {
+        font-size: 20px !important;
+    }
+
+    .dashboardproductmodalsectionlabel {
+        font-size: 14px !important;
+
+    }
+
 }
 
 @media(max-width: 576px) {
@@ -135,6 +173,25 @@
         text-align: center !important;
     }
 
+    .dashboardproductmodalselectinput {
+        font-size: 12px !important;
+        padding: 7px 13px !important;
+    }
+
+    .dashboardproductcreatebtn {
+        padding: 5px 10px !important;
+        font-size: 12px !important;
+    }
+
+    .dashboardproductmodalsectionlabel {
+        font-size: 12px !important;
+    }
+
+    .dashboardproductmodalgrid {
+        gap: 0px !important;
+        margin-bottom: 8px !important;
+
+    }
 }
 
 @media(max-width: 480px) {
@@ -199,6 +256,26 @@
         /* allow flexible resizing */
         min-width: 90px !important;
         text-align: center !important;
+    }
+
+    .dashboardproductcreatebtn {
+        padding: 5px 10px !important;
+        font-size: 11px !important;
+        height: 28px !important;
+    }
+
+    .dashboardproductmodalsectionlabel {
+        font-size: 12px !important;
+    }
+
+    .dashboardproductmodalgrid {
+        gap: 0px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .dashboardproductmodalselectinput {
+        font-size: 11px !important;
+        padding: 6px 12px !important;
     }
 
 }

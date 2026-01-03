@@ -2,34 +2,35 @@
 
 import { useState } from 'react';
 import axios from 'axios';
+import { Trash2 } from "lucide-react";
 
 // ✅ Enhanced environment variable handling for your hosted backend
 const getApiBaseUrl = () => {
   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-  
+
   console.log('Environment check:', {
     NEXT_PUBLIC_API_BASE_URL: 'https://api.keralasellers.in',
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NODE_ENV: process.env.NODE_ENV
   });
-  
+
   if (envUrl && envUrl !== 'undefined') {
     return envUrl;
   }
-  
+
   // Updated fallback with your hosted backend URL
-  return process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:8000' 
+  return process.env.NODE_ENV === 'development'
+    ? 'http://localhost:8000'
     : 'https://keralaseller-backend.onrender.com';  // ✅ Your hosted backend
 };
 
 const API_BASE_URL = 'https://api.keralasellers.in';
 const API_URL = `${API_BASE_URL}/user/store/products/`;
 
-console.log('🌐 Quick Add API configured:', { 
-  API_BASE_URL, 
+console.log('🌐 Quick Add API configured:', {
+  API_BASE_URL,
   API_URL,
-  ENVIRONMENT: process.env.NODE_ENV 
+  ENVIRONMENT: process.env.NODE_ENV
 });
 
 export default function QuickAddStockForm({ onClose, onSuccess }) {
@@ -50,8 +51,8 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ 
-      ...prev, 
+    setFormData(prev => ({
+      ...prev,
       [name]: value,
       // ✅ ENHANCED: Auto-set price to MRP if price field is empty
       ...(name === 'mrp' && !prev.price ? { price: value } : {})
@@ -112,7 +113,7 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
     submissionData.append('price', formData.price || formData.mrp); // ✅ Use price or fallback to MRP
     submissionData.append('total_stock', formData.total_stock);
     submissionData.append('online_stock', formData.online_stock || '0'); // ✅ Default to 0 if not specified
-    
+
     if (formData.description.trim()) {
       submissionData.append('description', formData.description.trim());
     }
@@ -121,38 +122,38 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
       submissionData.append('main_image', imageFile); // ✅ Fixed field name to match your backend
       console.log('📸 Image file being sent:', imageFile.name);
     }
-    
+
     const token = localStorage.getItem('accessToken');
-    
+
     console.log('=== DEBUG: Quick Add Submission ===');
     console.log('API URL:', API_URL);
     console.log('Form data:', Object.fromEntries(submissionData.entries()));
     console.log('Has image:', !!imageFile);
     console.log('Environment:', process.env.NODE_ENV);
     console.log('==================================');
-    
+
     try {
       const response = await axios.post(API_URL, submissionData, {
-        headers: { 
-          'Content-Type': 'multipart/form-data', 
+        headers: {
+          'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}` // ✅ FIXED: Changed from Token to Bearer
         },
         timeout: 30000  // ✅ Increased timeout for hosted backend
       });
-      
+
       console.log('✅ Product added successfully:', response.data);
       setSuccess('Product added successfully!');
-      
+
       // ✅ ENHANCED: Auto-close after 1.5 seconds on success
       setTimeout(() => {
         onSuccess();
       }, 1500);
-      
+
     } catch (err) {
       console.error('❌ Submission error:', err.response?.data || err.message);
-      
+
       let errorMessage = 'Failed to add product. Please check your input.';
-      
+
       if (err.response?.status === 401) {
         errorMessage = 'Authentication failed. Please log in again.';
         setTimeout(() => {
@@ -173,7 +174,7 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
               fieldErrors.push(`${field}: ${err.response.data[field][0]}`);
             }
           });
-          
+
           if (fieldErrors.length > 0) {
             errorMessage = fieldErrors.join(', ');
           }
@@ -183,7 +184,7 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
       } else if (err.request) {
         errorMessage = 'Unable to connect to server. Please check your internet connection.';
       }
-      
+
       setError(errorMessage);
     } finally {
       setIsSaving(false);
@@ -194,55 +195,74 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
     <div style={styles.modalOverlay}>
       <div style={styles.modalContent}>
         <div style={styles.modalHeader}>
-          <h2 style={styles.modalTitle}>Quick Add Product</h2>
+          <h2 className='dashboardproductmodaltitle' style={styles.modalTitle}>Add Stock Product</h2>
           <button onClick={onClose} style={styles.closeButton} disabled={isSaving}>
             ×
           </button>
         </div>
 
         <p style={styles.apiInfo}>
-          🌐 Connected to: {API_BASE_URL}
         </p>
-        
+
         <form onSubmit={handleSubmit}>
           <div style={styles.formGroup}>
-            <label style={styles.label}>Product Name*</label>
-            <input 
-              type="text" 
-              name="name" 
-              value={formData.name} 
-              onChange={handleChange} 
-              required 
+            <label className='dashboardproductmodalsectionlabel' style={styles.label}>Product Name*</label>
+            <input
+              className='dashboardproductmodalselectinput'
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
               style={styles.input}
               placeholder="Enter product name"
               disabled={isSaving}
             />
           </div>
-          
+
           <div style={styles.formGroup}>
-            <label style={styles.label}>Model/Variation</label>
-            <input 
-              type="text" 
-              name="model_name" 
-              value={formData.model_name} 
-              onChange={handleChange} 
-              placeholder="e.g., Red XL, 250g, Cotton Blend" 
+            <label className='dashboardproductmodalsectionlabel' style={styles.label}>Model/Variation</label>
+            <input
+              className='dashboardproductmodalselectinput'
+              type="text"
+              name="model_name"
+              value={formData.model_name}
+              onChange={handleChange}
+              placeholder="e.g., Red XL, 250g, Cotton Blend"
               style={styles.input}
               disabled={isSaving}
             />
+            <small style={styles.charCount}>{formData.model_name.length}/100 characters</small>
+          </div>
+
+          {/* ✅ NEW: Description field */}
+          <div style={styles.formGroup}>
+            <label className='dashboardproductmodalsectionlabel' style={styles.label}>Description</label>
+            <textarea
+              className='dashboardproductmodalselectinput'
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              style={{ ...styles.input, minHeight: '80px', resize: 'vertical' }}
+              placeholder="Brief product description..."
+              disabled={isSaving}
+              maxLength={500}
+            />
+            <small style={styles.charCount}>{formData.description.length}/500 characters</small>
           </div>
 
           {/* ✅ ENHANCED: Separate MRP and Price fields */}
-          <div style={styles.formRow}>
+          <div className='dashboardproductmodalgrid' style={styles.formRow}>
             <div style={styles.formGroup}>
-              <label style={styles.label}>MRP (₹)*</label>
-              <input 
-                type="number" 
-                name="mrp" 
-                value={formData.mrp} 
-                onChange={handleChange} 
-                required 
-                style={styles.input} 
+              <label className='dashboardproductmodalsectionlabel' style={styles.label}>MRP (₹)*</label>
+              <input
+                className='dashboardproductmodalselectinput'
+                type="number"
+                name="mrp"
+                value={formData.mrp}
+                onChange={handleChange}
+                required
+                style={styles.input}
                 step="0.01"
                 min="0"
                 placeholder="Max retail price"
@@ -250,13 +270,14 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
               />
             </div>
             <div style={styles.formGroup}>
-              <label style={styles.label}>Selling Price (₹)</label>
-              <input 
-                type="number" 
-                name="price" 
-                value={formData.price} 
-                onChange={handleChange} 
-                style={styles.input} 
+              <label className='dashboardproductmodalsectionlabel' style={styles.label}>Selling Price (₹)</label>
+              <input
+                className='dashboardproductmodalselectinput'
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleChange}
+                style={styles.input}
                 step="0.01"
                 min="0"
                 placeholder="Auto-fills from MRP"
@@ -268,13 +289,14 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
           {/* ✅ ENHANCED: Separate Total and Online stock fields */}
           <div style={styles.formRow}>
             <div style={styles.formGroup}>
-              <label style={styles.label}>Total Stock*</label>
-              <input 
-                type="number" 
-                name="total_stock" 
-                value={formData.total_stock} 
-                onChange={handleChange} 
-                required 
+              <label className='dashboardproductmodalsectionlabel' style={styles.label}>Total Stock*</label>
+              <input
+                className='dashboardproductmodalselectinput'
+                type="number"
+                name="total_stock"
+                value={formData.total_stock}
+                onChange={handleChange}
+                required
                 style={styles.input}
                 min="0"
                 placeholder="Total quantity"
@@ -282,12 +304,13 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
               />
             </div>
             <div style={styles.formGroup}>
-              <label style={styles.label}>Online Stock</label>
-              <input 
-                type="number" 
-                name="online_stock" 
-                value={formData.online_stock} 
-                onChange={handleChange} 
+              <label className='dashboardproductmodalsectionlabel' style={styles.label}>Online Stock</label>
+              <input
+                className='dashboardproductmodalselectinput'
+                type="number"
+                name="online_stock"
+                value={formData.online_stock}
+                onChange={handleChange}
                 style={styles.input}
                 min="0"
                 placeholder="0 (can update later)"
@@ -296,28 +319,15 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
             </div>
           </div>
 
-          {/* ✅ NEW: Description field */}
+
+
           <div style={styles.formGroup}>
-            <label style={styles.label}>Description</label>
-            <textarea 
-              name="description" 
-              value={formData.description} 
-              onChange={handleChange} 
-              style={{...styles.input, minHeight: '80px', resize: 'vertical'}}
-              placeholder="Brief product description..."
-              disabled={isSaving}
-              maxLength={500}
-            />
-            <small style={styles.charCount}>{formData.description.length}/500 characters</small>
-          </div>
-          
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Product Image</label>
+            <label className='dashboardproductmodalsectionlabel' style={styles.label}>Product Image</label>
             {imagePreview && (
               <div style={styles.imagePreviewContainer}>
-                <img src={imagePreview} alt="Preview" style={styles.imagePreview}/>
-                <button 
-                  type="button" 
+                <img src={imagePreview} alt="Preview" style={styles.imagePreview} />
+                <button
+                  type="button"
                   onClick={() => {
                     setImageFile(null);
                     setImagePreview('');
@@ -325,15 +335,17 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
                   style={styles.removeImageButton}
                   disabled={isSaving}
                 >
-                  Remove
+                  <Trash2 size={14} />
+
                 </button>
               </div>
             )}
-            <input 
-              type="file" 
-              name="image" 
-              onChange={handleImageChange} 
-              accept="image/*" 
+            <input
+              className='dashboardproductmodalselectinput'
+              type="file"
+              name="image"
+              onChange={handleImageChange}
+              accept="image/*"
               style={styles.input}
               disabled={isSaving}
             />
@@ -354,7 +366,7 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
               ⚠️ {error}
             </div>
           )}
-          
+
           <div style={styles.infoBox}>
             <h4 style={styles.infoTitle}>ℹ️ Quick Add Features:</h4>
             <ul style={styles.infoList}>
@@ -364,19 +376,21 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
               <li>All fields can be edited later</li>
             </ul>
           </div>
-          
+
           <div style={styles.buttonContainer}>
-            <button 
-              type="button" 
-              onClick={onClose} 
-              disabled={isSaving} 
+            <button
+              className='dashboardproductcreatebtn'
+              type="button"
+              onClick={onClose}
+              disabled={isSaving}
               style={styles.buttonSecondary}
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
-              disabled={isSaving || !formData.name.trim() || !formData.mrp || !formData.total_stock} 
+            <button
+              className='dashboardproductcreatebtn'
+              type="submit"
+              disabled={isSaving || !formData.name.trim() || !formData.mrp || !formData.total_stock}
               style={{
                 ...styles.buttonPrimary,
                 opacity: (isSaving || !formData.name.trim() || !formData.mrp || !formData.total_stock) ? 0.6 : 1
@@ -417,25 +431,25 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
 }
 
 const styles = {
-  modalOverlay: { 
-    position: 'fixed', 
-    top: 0, 
-    left: 0, 
-    right: 0, 
-    bottom: 0, 
-    backgroundColor: 'rgba(0,0,0,0.5)', 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
     zIndex: 1000,
     padding: '20px',
     animation: 'fadeIn 0.3s ease-out'
   },
 
-  modalContent: { 
-    background: 'white', 
-    borderRadius: '12px', 
-    width: '500px', 
+  modalContent: {
+    background: 'rgb(253, 255, 240)',
+    borderRadius: '12px',
+    width: '500px',
     maxWidth: '90%',
     maxHeight: '90vh',
     overflowY: 'auto',
@@ -469,14 +483,14 @@ const styles = {
   },
 
   apiInfo: {
-    fontSize: '12px', 
-    color: '#6b7280', 
+    fontSize: '12px',
+    color: '#6b7280',
     padding: '0 24px',
     marginBottom: '16px',
     fontFamily: 'monospace'
   },
 
-  formGroup: { 
+  formGroup: {
     marginBottom: '16px',
     padding: '0 24px'
   },
@@ -486,7 +500,7 @@ const styles = {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: '16px',
-    padding: '0 24px',
+    // padding: '0 24px',
     marginBottom: '16px'
   },
 
@@ -498,19 +512,20 @@ const styles = {
     marginBottom: '6px'
   },
 
-  input: { 
-    width: '100%', 
-    padding: '10px 12px', 
-    boxSizing: 'border-box', 
-    border: '1px solid #d1d5db', 
+  input: {
+    width: '100%',
+    padding: '10px 12px',
+    boxSizing: 'border-box',
+    border: '1px solid #000000ff',
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
+    backgroundColor: 'rgb(253, 255, 240)',
     transition: 'border-color 0.2s'
   },
 
   helpText: {
-    fontSize: '12px', 
+    fontSize: '12px',
     color: '#6b7280',
     display: 'block',
     marginTop: '4px'
@@ -525,28 +540,33 @@ const styles = {
   },
 
   imagePreviewContainer: {
-    marginBottom: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px'
+    position: 'relative',   // IMPORTANT
+    display: 'inline-block',
   },
 
   imagePreview: {
-    width: '80px',
-    height: '80px',
+    width: '160px',
+    height: '160px',
     objectFit: 'cover',
     borderRadius: '8px',
-    border: '1px solid #d1d5db'
+    border: '1px solid #ddd',
   },
 
   removeImageButton: {
-    padding: '6px 12px',
-    backgroundColor: '#ef4444',
-    color: 'white',
+    position: 'absolute',
+    top: '8px',
+    right: '8px',
+    background: 'rgba(227, 30, 30, 0.6)',
+    color: '#fff',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: '50%',
+    width: '28px',
+    height: '28px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     cursor: 'pointer',
-    fontSize: '12px'
+    zIndex: 2,
   },
 
   successContainer: {
@@ -578,48 +598,48 @@ const styles = {
   },
 
   infoTitle: {
-    margin: '0 0 8px 0', 
-    fontSize: '13px', 
+    margin: '0 0 8px 0',
+    fontSize: '13px',
     color: '#1d4ed8',
     fontWeight: '600'
   },
 
   infoList: {
-    margin: 0, 
-    paddingLeft: '16px', 
-    fontSize: '12px', 
+    margin: 0,
+    paddingLeft: '16px',
+    fontSize: '12px',
     color: '#374151'
   },
 
-  buttonContainer: { 
-    display: 'flex', 
-    justifyContent: 'flex-end', 
-    gap: '12px', 
+  buttonContainer: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '12px',
     padding: '20px 24px',
     borderTop: '1px solid #e5e7eb'
   },
 
-  buttonPrimary: { 
+  buttonPrimary: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '12px 20px', 
-    backgroundColor: '#3b82f6', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '8px', 
+    padding: '12px 20px',
+    backgroundColor: 'rgb(68, 141, 82)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500',
     transition: 'background-color 0.2s'
   },
 
-  buttonSecondary: { 
-    padding: '12px 20px', 
-    backgroundColor: '#6b7280', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '8px', 
+  buttonSecondary: {
+    padding: '12px 20px',
+    backgroundColor: '#6b7280',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '500'

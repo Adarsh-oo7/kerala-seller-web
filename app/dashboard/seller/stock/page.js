@@ -313,10 +313,19 @@ export default function StockManagementPage() {
             <History size={18} />
             View History
           </Link>
-          <button className='dashboardstockaddbtn' onClick={handleOpenModal} style={styles.buttonPrimary}>
-            <Plus size={18} />
-            Quick Add Product
-          </button>
+          <div className="tooltip-wrapper">
+            <button
+              className="dashboardstockaddbtn"
+              onClick={handleOpenModal}
+              style={styles.buttonPrimary}
+            >
+              <Plus size={18} />
+              Quick Add Stock
+            </button>
+
+            <span className="tooltip-text">Add product to stock (not visible on website)</span>
+          </div>
+
         </div>
       </div>
 
