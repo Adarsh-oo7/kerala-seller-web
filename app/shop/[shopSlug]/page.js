@@ -222,7 +222,8 @@ function EnhancedStoreBanner({ store, shopSlug }) {
   const getBannerImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('/media/')) {
-      return `${'https://api.keralasellers.in'}${url}`;
+     return `${API_BASE_URL}${url}`;  // Instead of hardcoded URL
+
     }
     return url;
   };
@@ -722,7 +723,7 @@ function EnhancedSellerStorefrontPage() {
         setIsLoading(true);
         setError(null);
         abortControllerRef.current = new AbortController();
-        const response = await axios.get(`${'https://api.keralasellers.in'}/shop/${sellerPhone}/`, {
+const response = await axios.get(`${API_BASE_URL}/shop/${sellerPhone}/`, {
           signal: abortControllerRef.current.signal,
           timeout: 15000,
         });
