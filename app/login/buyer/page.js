@@ -37,7 +37,8 @@ const getApiBaseUrl = () => {
     return 'https://api.keralasellers.in';
 };
 
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;const API_BASE_URL = 'https://api.keralasellers.in';
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+const API_BASE_URL = 'https://api.keralasellers.in';
 const GOOGLE_LOGIN_API = `${API_BASE_URL}/user/buyer/login/google/`;
 const EMAIL_LOGIN_API = `${API_BASE_URL}/user/buyer/login/`;
 

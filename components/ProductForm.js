@@ -215,16 +215,19 @@ const CloudinaryImageUpload = ({
   const [uploadResults, setUploadResults] = useState([]);
 
   useEffect(() => {
-    if (currentImages.length > 0) {
-      setPreviews(currentImages.map((img, index) => ({
-        id: img.id || index,
-        url: typeof img === 'string' ? img : img.url || img.image_url,
-        public_id: typeof img === 'object' ? img.public_id : null,
-        isUploaded: true,
-        isFromDatabase: img.isFromDatabase || false
-      })));
-    }
-  }, [currentImages]);
+  if (currentImages.length > 0) {
+    setPreviews(currentImages.map((img, index) => ({
+      id: img.id || index,
+      url: typeof img === 'string' ? img : img.url || img.image_url,
+      public_id: typeof img === 'object' ? img.public_id : null,
+      isUploaded: true,
+      isFromDatabase: img.isFromDatabase || false
+    })));
+  } else {
+    setPreviews([]);
+  }
+}, [currentImages]);
+
 
   const handleFileChange = async (e) => {
     const files = Array.from(e.target.files);
@@ -1503,12 +1506,19 @@ export default function ProductForm({ product, onClose, onSuccess }) {
       setDynamicAttributes(product.attributes || {});
       setMainImageUrl(product.main_image_url || product.cloudinary_image_url || '');
       
-      const subImages = product.sub_images?.map(img => ({
-        id: img.id,
-        url: img.cloudinary_image_url || img.image_url,
-        public_id: img.cloudinary_public_id || img.public_id,
-        isFromDatabase: true
-      })) || [];
+      const mainImage = product.main_image_url || product.cloudinary_image_url || '';
+const subImages = product.sub_images
+  ?.filter(img => {
+    const subImageUrl = img.cloudinary_image_url || img.image_url;
+    return subImageUrl !== mainImage;
+  })
+  .map(img => ({
+    id: img.id,
+    url: img.cloudinary_image_url || img.image_url,
+    public_id: img.cloudinary_public_id || img.public_id,
+    isFromDatabase: true
+  })) || [];
+
       
       setSubImageUrls(subImages);
       console.log('✅ Product loaded:', product.name);
@@ -1597,14 +1607,15 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     }
   };
 
-  const handleMainImageUpload = (uploadedImages) => {
-    if (uploadedImages.length > 0) {
-      setMainImageUrl(uploadedImages[0].url);
-    } else {
-      setMainImageUrl('');
-    }
-    setUploadingImages(false);
-  };
+const handleMainImageUpload = (uploadedImages) => {
+  if (uploadedImages.length > 0) {
+    setMainImageUrl(uploadedImages[0].url);
+  }
+  // ✅ Don't clear mainImageUrl if no new image uploaded
+  // This preserves existing main image when editing
+  setUploadingImages(false);
+};
+
 
   const handleSubImagesUpload = (uploadedImages) => {
     console.log('Sub-images uploaded:', uploadedImages);
@@ -1619,9 +1630,12 @@ export default function ProductForm({ product, onClose, onSuccess }) {
         }))
       ];
       
-      const uniqueImages = allImages.filter((img, index, self) => 
-        index === self.findIndex(t => t.url === img.url)
-      );
+      const uniqueImages = allImages
+  .filter(img => img.url !== mainImageUrl)
+  .filter((img, index, self) => 
+    index === self.findIndex(t => t.url === img.url)
+  );
+
       
       return uniqueImages.slice(0, 4);
     });

@@ -352,21 +352,59 @@ function ProductImageGallery({ product }) {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   // Combine main image and sub-images
-  const allImages = [
-    {
-      url: getBestImageUrl(product, 'main'),
+const allImages = React.useMemo(() => {
+  const images = [];
+  
+  // ✅ Step 1: Add main image if it exists and is valid
+  const mainImageUrl = getBestImageUrl(product, 'main');
+  if (mainImageUrl && !mainImageUrl.includes('placehold.co') && !mainImageUrl.includes('No+Image')) {
+    images.push({
+      url: mainImageUrl,
       thumbnail: getBestImageUrl(product, 'thumbnail'),
       large: getBestImageUrl(product, 'large'),
-      alt: product.name
-    },
-    ...(product.sub_images || []).map((subImage, index) => ({
-      url: subImage.image_url || subImage.thumbnail_url || getBestImageUrl({ main_image_url: subImage.image }),
-      thumbnail: subImage.thumbnail_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
-      large: subImage.large_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
-      alt: `${product.name} - Image ${index + 2}`
-    }))
-  ];
-
+      alt: product.name,
+      isMain: true
+    });
+  }
+  
+  // ✅ Step 2: Add sub-images with correct property names and duplicate prevention
+  if (product.sub_images && Array.isArray(product.sub_images)) {
+    product.sub_images.forEach((subImage, index) => {
+      // Use correct backend property names (cloudinary_image_url first)
+      const subImageUrl = subImage.cloudinary_image_url || 
+                          subImage.image_url || 
+                          subImage.thumbnail_url || 
+                          getBestImageUrl({ main_image_url: subImage.image });
+      
+      // ✅ Only add if valid and NOT a duplicate of main image
+      if (subImageUrl && 
+          !subImageUrl.includes('placehold.co') && 
+          !subImageUrl.includes('No+Image') &&
+          subImageUrl !== mainImageUrl) {
+        images.push({
+          url: subImageUrl,
+          thumbnail: subImage.thumbnail_url || subImage.cloudinary_image_url || subImage.image_url || subImageUrl,
+          large: subImage.large_url || subImage.cloudinary_image_url || subImage.image_url || subImageUrl,
+          alt: `${product.name} - Image ${index + 2}`,
+          isMain: false
+        });
+      }
+    });
+  }
+  
+  // ✅ Step 3: Fallback if no valid images exist
+  if (images.length === 0) {
+    images.push({
+      url: 'https://placehold.co/400x400?text=No+Image',
+      thumbnail: 'https://placehold.co/80x80?text=No+Image',
+      large: 'https://placehold.co/600x400?text=No+Image',
+      alt: 'No image available',
+      isMain: true
+    });
+  }
+  
+  return images;
+}, [product?.main_image_url, product?.cloudinary_url, product?.sub_images]);
 
   const handlePrevious = () => {
     setSelectedImageIndex((prev) =>
