@@ -13,7 +13,22 @@ import { toast } from "react-toastify";
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw, ChevronLeft, Minus, Plus, ChevronRight, Zap, CreditCard } from 'lucide-react';
 
 // ✅ API configuration - matches your existing backend
-const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
+// const API_URL = `${API_BASE_URL}/api/products/`;
+// const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;
+
+// // ✅ Your existing Razorpay endpoints
+// const CREATE_RAZORPAY_ORDER_URL = `${API_BASE_URL}/api/orders/create-razorpay-order/`;
+// const VERIFY_PAYMENT_URL = `${API_BASE_URL}/api/orders/verify-payment-and-create-order/`;
+
+// // ✅ Wishlist API URLs
+// const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
+// const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
+// const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
+
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const API_URL = `${API_BASE_URL}/api/products/`;
 const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;
 
@@ -25,6 +40,9 @@ const VERIFY_PAYMENT_URL = `${API_BASE_URL}/api/orders/verify-payment-and-create
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
+
+console.log('🛒 Product/Wishlist APIs:', API_BASE_URL);
+
 
 // ✅ Enhanced auth headers function
 const getAuthHeaders = () => {

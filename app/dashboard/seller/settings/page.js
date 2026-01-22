@@ -5,14 +5,18 @@ import { useRouter } from 'next/navigation';
 import "../../../../styles/DashboardSettings.css"
 import { Upload, Check, AlertCircle, Star, Building, Save, Image as ImageIcon, Trash2, X, Settings } from 'lucide-react';
 
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl !== 'undefined') return envUrl;
-  return process.env.NODE_ENV === 'development' ? 'https://api.keralasellers.in' : 'https://api.keralasellers.in';
-};
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+//   if (envUrl && envUrl !== 'undefined') return envUrl;
+//   return process.env.NODE_ENV === 'development' ? 'https://api.keralasellers.in' : 'https://api.keralasellers.in';
+// };
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_URL = `${API_BASE_URL}/user/store/profile/`;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
 const API_URL = `${API_BASE_URL}/user/store/profile/`;
+console.log('Store Profile:', API_BASE_URL);
+
 
 const CLOUDINARY_CONFIG = {
   cloudname: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dnmbfeckd',

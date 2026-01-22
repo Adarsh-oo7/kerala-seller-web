@@ -21,7 +21,8 @@ import {
 } from 'lucide-react';
 import SHeader from '../../../../components/common/SHeader';
 
-const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
 
 export default function ShopProfilePage() {
   const { shopSlug } = useParams();

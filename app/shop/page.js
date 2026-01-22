@@ -26,26 +26,34 @@ import {
 } from 'lucide-react';
 
 // ✅ Enhanced environment variable handling
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 
-  console.log('Shop API Environment check:', {
-    NEXT_PUBLIC_API_BASE_URL: 'https://api.keralasellers.in',
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    resolved: envUrl || 'https://api.keralasellers.in'
-  });
+//   console.log('Shop API Environment check:', {
+//     NEXT_PUBLIC_API_BASE_URL: 'https://api.keralasellers.in',
+//     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+//     resolved: envUrl || 'https://api.keralasellers.in'
+//   });
 
-  if (envUrl && envUrl !== 'undefined') {
-    return envUrl;
-  }
+//   if (envUrl && envUrl !== 'undefined') {
+//     return envUrl;
+//   }
 
-  return 'https://api.keralasellers.in';
-};
+//   return 'https://api.keralasellers.in';
+// };
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_URL = `${API_BASE_URL}/user/store/shops/`;
+
+// console.log('Shop API URL configured:', API_URL);
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const API_URL = `${API_BASE_URL}/user/store/shops/`;
 
-console.log('Shop API URL configured:', API_URL);
+console.log('🏪 Shop API:', API_BASE_URL);
+
+
 
 // ✅ SEO-friendly URL generator
 const generateShopSlug = (shop) => {

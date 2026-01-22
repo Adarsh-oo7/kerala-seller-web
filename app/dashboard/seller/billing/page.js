@@ -26,10 +26,29 @@ import {
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
-const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
+// const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
+// const CREATE_BILL_URL = `${API_BASE_URL}/user/orders/create-local-bill/`; // ✅ CHANGED
+// const GENERATE_BILL_URL = `${API_BASE_URL}/user/orders/generate-local-bill/`; // ✅ NEW
+
+// ✅ Works in local + production
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  (typeof window !== 'undefined'
+    ? 'https://api.keralasellers.in'
+    : 'http://localhost:8000/api');
+
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
-const CREATE_BILL_URL = `${API_BASE_URL}/user/orders/create-local-bill/`; // ✅ CHANGED
-const GENERATE_BILL_URL = `${API_BASE_URL}/user/orders/generate-local-bill/`; // ✅ NEW
+const CREATE_BILL_URL = `${API_BASE_URL}/user/orders/create-local-bill/`;      // ✅ CHANGED
+const GENERATE_BILL_URL = `${API_BASE_URL}/user/orders/generate-local-bill/`;  // ✅ NEW
+
+console.log('🧾 Local bill APIs:', {
+  API_BASE_URL,
+  PRODUCTS_API_URL,
+  CREATE_BILL_URL,
+  GENERATE_BILL_URL,
+});
+
 
 export default function LocalBillingPage() {
   const [products, setProducts] = useState([]);

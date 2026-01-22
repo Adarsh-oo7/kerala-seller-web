@@ -13,9 +13,14 @@ import {
   MapPin, Phone, Calendar, CreditCard, AlertOctagon, Star, RefreshCw, Check, Truck, Download
 } from 'lucide-react';
 
-const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
+// const INVOICE_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/invoice/`;
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const INVOICE_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/invoice/`;
 
+console.log('📄 Invoice API:', API_BASE_URL);
 
 
 

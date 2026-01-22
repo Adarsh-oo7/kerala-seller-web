@@ -21,7 +21,20 @@ import {
 } from 'lucide-react';
 
 // ✅ Enhanced API URLs with subscription lifecycle support
-const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.4:8000';
+// const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.4:8000';
+// const PLANS_API_URL = `${API_BASE_URL}/api/subscriptions/plans/`;
+// const CURRENT_SUB_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
+// const CREATE_ORDER_API = `${API_BASE_URL}/api/subscriptions/create-order/`;
+// const VERIFY_PAYMENT_API = `${API_BASE_URL}/api/subscriptions/verify-payment/`;
+
+// // ✅ NEW: Subscription lifecycle APIs
+// const STORE_STATUS_API = `${API_BASE_URL}/api/subscriptions/stores`;
+// const SUBSCRIPTION_STATUS_API = `${API_BASE_URL}/api/subscriptions/status/`;
+
+// const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RClyCqWG0I7Frn';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const PLANS_API_URL = `${API_BASE_URL}/api/subscriptions/plans/`;
 const CURRENT_SUB_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
 const CREATE_ORDER_API = `${API_BASE_URL}/api/subscriptions/create-order/`;
@@ -32,6 +45,9 @@ const STORE_STATUS_API = `${API_BASE_URL}/api/subscriptions/stores`;
 const SUBSCRIPTION_STATUS_API = `${API_BASE_URL}/api/subscriptions/status/`;
 
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RClyCqWG0I7Frn';
+
+console.log('💳 Subscription APIs:', API_BASE_URL);
+
 
 // ✅ NEW: Helper function for status icons
 function getStatusIcon(status) {

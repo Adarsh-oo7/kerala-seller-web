@@ -37,26 +37,37 @@ import {
 } from 'lucide-react';
 
 // ✅ Helper function to get API base URL
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
+//   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+//     return envUrl.trim();
+//   }
 
-  if (process.env.NODE_ENV === 'development') {
-    return 'https://api.keralasellers.in';
-  }
+//   if (process.env.NODE_ENV === 'development') {
+//     return 'https://api.keralasellers.in';
+//   }
 
-  return 'https://api.keralasellers.in';
-};
+//   return 'https://api.keralasellers.in';
+// };
 
-// ✅ API URLs
-const API_BASE_URL = 'https://api.keralasellers.in';
+// // ✅ API URLs
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
+// const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
+// const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
+// const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;
+
+console.log('❤️ Wishlist APIs:', API_BASE_URL);
+
+
 
 // ✅ Enhanced auth headers function
 const getAuthHeaders = () => {
