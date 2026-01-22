@@ -5,21 +5,29 @@ import axios from 'axios';
 import { Package2, Edit, Cloud, Box, Globe, Folder, File, ArrowLeft, CheckCircle, X, Home, Trash2, Loader2, CloudUpload, Rocket, AlertCircle   } from "lucide-react";
 
 // ✅ Enhanced environment variable handling for your hosted backend
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 
-  if (envUrl && envUrl !== 'undefined') {
-    return envUrl;
-  }
+//   if (envUrl && envUrl !== 'undefined') {
+//     return envUrl;
+//   }
 
-  return process.env.NODE_ENV === 'development'
-    ? 'http://localhost:8000'
-    : 'https://keralaseller-backend.onrender.com';
-};
+//   return process.env.NODE_ENV === 'development'
+//     ? 'http://localhost:8000'
+//     : 'https://keralaseller-backend.onrender.com';
+// };
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
+// const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
+
+console.log('📦 Products/Categories:', API_BASE_URL);
+
 
 // ✅ WORKING CLOUDINARY CONFIGURATION WITH FALLBACK PRESETS
 const CLOUDINARY_CONFIG = {

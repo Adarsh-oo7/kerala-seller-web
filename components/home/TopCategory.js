@@ -20,36 +20,44 @@ import "slick-carousel/slick/slick-theme.css";
 import axios from "axios";
 
 // ✅ Updated environment variable handling with your hosted backend
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 
-  console.log('Environment check:', {
-    NEXT_PUBLIC_API_BASE_URL: 'https://api.keralasellers.in',
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    NODE_ENV: process.env.NODE_ENV
-  });
+//   console.log('Environment check:', {
+//     NEXT_PUBLIC_API_BASE_URL: 'https://api.keralasellers.in',
+//     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+//     NODE_ENV: process.env.NODE_ENV
+//   });
 
-  if (envUrl && envUrl !== 'undefined') {
-    return envUrl;
-  }
+//   if (envUrl && envUrl !== 'undefined') {
+//     return envUrl;
+//   }
 
-  // Updated fallback with your LIVE VPS backend
-  return process.env.NODE_ENV === 'development'
-    ? 'http://localhost:8000'
-    : 'https://api.keralasellers.in';  // ✅ LIVE PRODUCTION API
-};
+//   // Updated fallback with your LIVE VPS backend
+//   return process.env.NODE_ENV === 'development'
+//     ? 'http://localhost:8000'
+//     : 'https://api.keralasellers.in';  // ✅ LIVE PRODUCTION API
+// };
 
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
+// const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
+
+// console.log('🌐 API URLs configured:', {
+//   API_BASE_URL,
+//   PRODUCTS_API_URL,
+//   CATEGORIES_API_URL,
+//   ENVIRONMENT: process.env.NODE_ENV
+// });
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 
-console.log('🌐 API URLs configured:', {
-  API_BASE_URL,
-  PRODUCTS_API_URL,
-  CATEGORIES_API_URL,
-  ENVIRONMENT: process.env.NODE_ENV
-});
+console.log('📦 Products/Categories:', API_BASE_URL);
+
 
 // ✅ Create Axios instance with proper configuration for your hosted backend
 const apiClient = axios.create({
