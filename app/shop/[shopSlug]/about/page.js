@@ -257,7 +257,7 @@ function StoreAboutContent() {
       let response;
       try {
         console.log('🔍 Trying main shop endpoint...');
-        response = await axios.get(`${'https://api.keralasellers.in'}/shop/${sellerPhone}/`, {
+        response = await axios.get(`${API_BASE_URL}/shop/${sellerPhone}/`, {
           timeout: 15000
         });
         console.log('✅ Main shop endpoint successful:', response.data);
@@ -283,7 +283,7 @@ function StoreAboutContent() {
       } catch (mainError) {
         console.log('⚠️ Main shop endpoint failed, trying about endpoint');
         try {
-          response = await axios.get(`${'https://api.keralasellers.in'}/shop/${sellerPhone}/about/`, {
+          response = await axios.get(`${API_BASE_URL}/shop/${sellerPhone}/about/`, {
             timeout: 15000
           });
           console.log('✅ About endpoint successful:', response.data);
@@ -293,7 +293,7 @@ function StoreAboutContent() {
         } catch (aboutError) {
           console.log('⚠️ About endpoint failed, trying profile endpoint');
           try {
-            response = await axios.get(`${'https://api.keralasellers.in'}/shop/${sellerPhone}/profile/`, {
+            response = await axios.get(`${API_BASE_URL}/shop/${sellerPhone}/profile/`, {
               timeout: 15000
             });
             console.log('✅ Profile endpoint successful:', response.data);
