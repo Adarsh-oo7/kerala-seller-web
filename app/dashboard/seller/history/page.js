@@ -27,22 +27,32 @@ import {
 } from 'lucide-react';
 
 // ✅ Enhanced API Configuration
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
+//   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+//     return envUrl.trim();
+//   }
 
-  if (process.env.NODE_ENV === 'development') {
-    return 'https://api.keralasellers.in';
-  }
+//   if (process.env.NODE_ENV === 'development') {
+//     return 'https://api.keralasellers.in';
+//   }
 
-  return 'https://api.keralasellers.in';
-};
+//   return 'https://api.keralasellers.in';
+// };
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const HISTORY_API_URL = `${API_BASE_URL}/user/store/stock-history/`;
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const HISTORY_API_URL = `${API_BASE_URL}/user/store/stock-history/`;
+
+console.log('📊 Stock History:', API_BASE_URL);
+
+
+
 
 export default function StockHistoryPage() {
   const [history, setHistory] = useState([]);

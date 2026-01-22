@@ -30,24 +30,31 @@ import {
 } from 'lucide-react';
 
 // ✅ Enhanced API configuration
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
-  if (process.env.NODE_ENV === 'development') {
-    return 'https://api.keralasellers.in';
-  }
-  return 'https://api.keralasellers.in';
-};
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+//   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+//     return envUrl.trim();
+//   }
+//   if (process.env.NODE_ENV === 'development') {
+//     return 'https://api.keralasellers.in';
+//   }
+//   return 'https://api.keralasellers.in';
+// };
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const ORDER_DETAIL_API_URL = `${API_BASE_URL}/user/orders/`;
+
+// console.log('🌐 Order Confirmation API URLs configured:', { 
+//   API_BASE_URL, 
+//   ORDER_DETAIL_API_URL 
+// });
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const ORDER_DETAIL_API_URL = `${API_BASE_URL}/user/orders/`;
 
-console.log('🌐 Order Confirmation API URLs configured:', { 
-  API_BASE_URL, 
-  ORDER_DETAIL_API_URL 
-});
+console.log('📦 Order Confirmation:', API_BASE_URL);
+
 
 export default function OrderConfirmationPage() {
     const [order, setOrder] = useState(null);

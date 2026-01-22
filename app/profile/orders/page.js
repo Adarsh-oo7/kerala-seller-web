@@ -33,21 +33,32 @@ import {
 } from 'lucide-react';
 
 // ✅ Enhanced API base URL handling with environment variables
-const getApiBaseUrl = () => {
-    const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-    if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-        return envUrl.trim();
-    }
-    if (process.env.NODE_ENV === 'development') {
-        return 'https://api.keralasellers.in';
-    }
-    return 'https://api.keralasellers.in';
-};
+// const getApiBaseUrl = () => {
+//     const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+//     if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+//         return envUrl.trim();
+//     }
+//     if (process.env.NODE_ENV === 'development') {
+//         return 'https://api.keralasellers.in';
+//     }
+//     return 'https://api.keralasellers.in';
+// };
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const ORDERS_API_URL = `${API_BASE_URL}/user/orders/history/`;
+// const INVOICE_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/invoice/`;
+// const CANCEL_ORDER_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/cancel/`;
+
+// ✅ Local + Production
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/history/`;
 const INVOICE_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/invoice/`;
 const CANCEL_ORDER_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/cancel/`;
+
+console.log('📦 Orders APIs:', API_BASE_URL);
+
 
 export default function BuyerOrdersPage() {
     const [orders, setOrders] = useState([]);

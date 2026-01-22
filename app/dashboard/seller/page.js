@@ -23,34 +23,43 @@ import {
     Crown
 } from 'lucide-react';
 
-const getApiBaseUrl = () => {
-    // 1. Check explicit env vars first
-    const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-    if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-        console.log('🌐 Env var:', envUrl);
-        return envUrl.trim();
-    }
+// const getApiBaseUrl = () => {
+//     // 1. Check explicit env vars first
+//     const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+//     if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+//         console.log('🌐 Env var:', envUrl);
+//         return envUrl.trim();
+//     }
     
-    // 2. ✅ FIXED: Smart hostname detection
-    if (typeof window !== 'undefined') {
-        const hostname = window.location.hostname;
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            console.log('🌐 Local dev: Using localhost:8000');
-            return 'https://api.keralasellers.in';
-        }
-        console.log('📦 Production: Using api.keralasellers.in');
-        return 'https://api.keralasellers.in';
-    }
+//     // 2. ✅ FIXED: Smart hostname detection
+//     if (typeof window !== 'undefined') {
+//         const hostname = window.location.hostname;
+//         if (hostname === 'localhost' || hostname === '127.0.0.1') {
+//             console.log('🌐 Local dev: Using localhost:8000');
+//             return 'https://api.keralasellers.in';
+//         }
+//         console.log('📦 Production: Using api.keralasellers.in');
+//         return 'https://api.keralasellers.in';
+//     }
     
-    // 3. Server-side fallback
-    return 'https://api.keralasellers.in';
-};
+//     // 3. Server-side fallback
+//     return 'https://api.keralasellers.in';
+// };
 
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
+// const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
+// const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`; // ✅ Added
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
 const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
-const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`; // ✅ Added
+const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
+
+console.log('🏪 Layout APIs:', API_BASE_URL);
+
 
 const getFrontendBaseUrl = () => {
     if (typeof window !== 'undefined') {

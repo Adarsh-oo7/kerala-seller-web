@@ -28,9 +28,17 @@ import {
   Layers
 } from 'lucide-react';
 
-const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
+// const API_URL = `${API_BASE_URL}/api/products/`;
+// const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
+
 const API_URL = `${API_BASE_URL}/api/products/`;
 const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
+
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);

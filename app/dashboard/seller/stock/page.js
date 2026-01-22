@@ -21,8 +21,12 @@ import {
 } from 'lucide-react';
 
 // ✅ Using environment variables for API URLs
-const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
+// const API_URL = `${API_BASE_URL}/api/products/`;
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
 const API_URL = `${API_BASE_URL}/api/products/`;
+
 
 // Enhanced Confirmation Modal Component
 function ConfirmationModal({ message, onConfirm, onCancel, isLoading }) {

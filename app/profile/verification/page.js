@@ -23,29 +23,43 @@ import {
 } from 'lucide-react';
 
 // ✅ API URLs
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
-  if (process.env.NODE_ENV === 'development') {
-    return 'https://api.keralasellers.in';
-  }
-  return 'https://api.keralasellers.in';
-};
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+//   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+//     return envUrl.trim();
+//   }
+//   if (process.env.NODE_ENV === 'development') {
+//     return 'https://api.keralasellers.in';
+//   }
+//   return 'https://api.keralasellers.in';
+// };
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
+// const SEND_OTP_API = `${API_BASE_URL}/user/buyer/send-otp/`;
+// const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;
+
+// console.log('🌐 Verification API URLs configured:', {
+//   API_BASE_URL,
+//   PROFILE_API,
+//   SEND_OTP_API,
+//   VERIFY_FIREBASE_API,
+//   ENVIRONMENT: process.env.NODE_ENV
+// });
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/send-otp/`;
 const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;
 
-console.log('🌐 Verification API URLs configured:', {
+console.log('🌐 Verification APIs:', {
   API_BASE_URL,
-  PROFILE_API,
-  SEND_OTP_API,
-  VERIFY_FIREBASE_API,
+  LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL,
   ENVIRONMENT: process.env.NODE_ENV
 });
+
 
 export default function VerificationPage() {
   const [buyer, setBuyer] = useState(null);

@@ -9,7 +9,11 @@ import {
   Check, AlertCircle, Clock, RefreshCw, Edit2, Calendar, Wallet, ReceiptText, Sparkles, Zap, CheckCircle2, ShieldCheck, Lock, TrendingUp, Radio, CreditCard
 } from 'lucide-react';
 
-const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 
 export default function PaymentsDashboard() {
   const [gatewayStatus, setGatewayStatus] = useState({

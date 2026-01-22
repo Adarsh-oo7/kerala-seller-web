@@ -24,9 +24,17 @@ import {
   Globe
 } from 'lucide-react';
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const SEND_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/send-otp/`;
+// const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/verify/`;
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const SEND_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/send-otp/`;
 const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/verify/`;
+
+console.log('🔑 Seller Password Reset:', API_BASE_URL);
+
 
 function LoadingFallback() {
   return (

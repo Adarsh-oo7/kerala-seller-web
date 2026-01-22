@@ -29,22 +29,39 @@ import {
   Store
 } from 'lucide-react';
 
-// API base URL handling
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
-  if (process.env.NODE_ENV === 'development') {
-    return 'https://api.keralasellers.in';
-  }
-  return 'https://api.keralasellers.in';
-};
+// // API base URL handling
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+//   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+//     return envUrl.trim();
+//   }
+//   if (process.env.NODE_ENV === 'development') {
+//     return 'https://api.keralasellers.in';
+//   }
+//   return 'https://api.keralasellers.in';
+// };
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
+// const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
+// const ORDERS_COUNT_API = `${API_BASE_URL}/api/buyer/orders/count/`;
+
+// ✅ Local + Production (same as BuyerLogin)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const ORDERS_COUNT_API = `${API_BASE_URL}/api/buyer/orders/count/`;
+
+console.log('👤 Profile APIs:', {
+    API_BASE_URL,
+    LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    PROFILE_API,
+    WISHLIST_API
+});
+
+
 
 export default function ProfilePage() {
   const [buyer, setBuyer] = useState(null);

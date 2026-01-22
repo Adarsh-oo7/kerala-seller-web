@@ -28,25 +28,38 @@ import {
 } from 'lucide-react';
 
 // ✅ Enhanced API base URL function
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
-  if (process.env.NODE_ENV === 'development') {
-    return 'https://api.keralasellers.in';
-  }
-  return 'https://api.keralasellers.in';
-};
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+//   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+//     return envUrl.trim();
+//   }
+//   if (process.env.NODE_ENV === 'development') {
+//     return 'https://api.keralasellers.in';
+//   }
+//   return 'https://api.keralasellers.in';
+// };
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
+// const CREATE_ORDER_API = `${API_BASE_URL}/user/orders/create-order/`; 
+// const STORE_API_URL = `${API_BASE_URL}/shop/`;
+// const CREATE_PAYMENT_ORDER_API = `${API_BASE_URL}/user/orders/create-payment-order/`;
+// const VERIFY_PAYMENT_API = `${API_BASE_URL}/user/orders/verify-payment/`;
+
+// const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RClyCqWG0I7Frn';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
-const CREATE_ORDER_API = `${API_BASE_URL}/user/orders/create-order/`; 
+const CREATE_ORDER_API = `${API_BASE_URL}/user/orders/create-order/`;
 const STORE_API_URL = `${API_BASE_URL}/shop/`;
 const CREATE_PAYMENT_ORDER_API = `${API_BASE_URL}/user/orders/create-payment-order/`;
 const VERIFY_PAYMENT_API = `${API_BASE_URL}/user/orders/verify-payment/`;
 
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RClyCqWG0I7Frn';
+
+console.log('💳 Checkout APIs:', API_BASE_URL);
 
 export default function CheckoutPage() {
   const [buyerProfile, setBuyerProfile] = useState(null);

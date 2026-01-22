@@ -22,27 +22,36 @@ import {
 } from 'lucide-react';
 
 // ✅ FIXED: Use hostname detection (same as your login page)
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+//   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+//     return envUrl.trim();
+//   }
   
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      console.log(' Local dev: Using localhost:8000');
-    return 'http://localhost:8000';
-    }
-    return 'https://api.keralasellers.in';
-  }
-  return 'https://api.keralasellers.in';
-};
+//   if (typeof window !== 'undefined') {
+//     const hostname = window.location.hostname;
+//     if (hostname === 'localhost' || hostname === '127.0.0.1') {
+//       console.log(' Local dev: Using localhost:8000');
+//     return 'http://localhost:8000';
+//     }
+//     return 'https://api.keralasellers.in';
+//   }
+//   return 'https://api.keralasellers.in';
+// };
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
+// const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
+// const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/count/`;
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
 const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
 const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/count/`;
+
+console.log('🏪 Dashboard APIs:', API_BASE_URL);
+
 
 
 export default function DashboardLayout({ children }) {

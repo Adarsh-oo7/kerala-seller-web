@@ -26,32 +26,46 @@ import {
 } from 'lucide-react';
 
 // ✅ API configuration
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+//   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+//     return envUrl.trim();
+//   }
   
-  // ✅ FIXED: Use hostname instead of NODE_ENV
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'https://api.keralasellers.in';
-    }
-    return 'https://api.keralasellers.in';
-  }
+//   // ✅ FIXED: Use hostname instead of NODE_ENV
+//   if (typeof window !== 'undefined') {
+//     const hostname = window.location.hostname;
+//     if (hostname === 'localhost' || hostname === '127.0.0.1') {
+//       return 'https://api.keralasellers.in';
+//     }
+//     return 'https://api.keralasellers.in';
+//   }
   
-  return 'https://api.keralasellers.in';
-};
+//   return 'https://api.keralasellers.in';
+// };
 
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const LOGIN_API_URL = `${API_BASE_URL}/user/login/`;
+
+// console.log('🌐 Seller Login API URLs configured:', {
+//   API_BASE_URL,
+//   LOGIN_API_URL
+// });
+
+// ✅ PROVEN working (BuyerLogin tested)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const LOGIN_API_URL = `${API_BASE_URL}/user/login/`;
 
-console.log('🌐 Seller Login API URLs configured:', {
+console.log('🌐 Seller Login:', {
   API_BASE_URL,
+  LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL || 'none',
   LOGIN_API_URL
 });
+
+
 
 const FloatingIcons = ({ totalIcons = 12 }) => {
   const containerRef = useRef(null);

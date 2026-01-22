@@ -23,21 +23,30 @@ import {
   Lock
 } from 'lucide-react';
 
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in';
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
-  if (process.env.NODE_ENV === 'development') {
-    return 'https://api.keralasellers.in';
-  }
-  return 'https://api.keralasellers.in';
-};
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in';
+//   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+//     return envUrl.trim();
+//   }
+//   if (process.env.NODE_ENV === 'development') {
+//     return 'https://api.keralasellers.in';
+//   }
+//   return 'https://api.keralasellers.in';
+// };
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const SEND_OTP_API = `${API_BASE_URL}/user/buyer/send-otp/`;
+// const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;
+// const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/send-otp/`;
 const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
+
+console.log('📱 OTP APIs:', API_BASE_URL);
+
 
 export default function VerifyPhonePage() {
   const router = useRouter();

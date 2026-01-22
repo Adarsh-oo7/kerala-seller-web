@@ -12,9 +12,22 @@ import {
   ShoppingCart, Bell, BellRing, X,
 } from 'lucide-react';
 
-const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
+// const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
+// const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/`;
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
 const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/`;
+
+console.log('🔔 Notifications:', {
+  API_BASE_URL,
+  ORDERS_API_URL,
+  usingLocal: process.env.NEXT_PUBLIC_API_BASE_URL
+});
+
 
 function NotificationBell({ count, onClick }) {
   return (

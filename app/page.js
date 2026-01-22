@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import { Search, X, Filter, Grid, AlertCircle, Package, Heart } from 'lucide-react';
 import { useRouter } from "next/navigation";
 
+
 const bannerImages = [
   { src: "/assets/images/Banner/5.png", alt: "Kerala Sellers - Local Products" },
   { src: "/assets/images/Banner/4.png", alt: "Quality Products from Kerala" },
@@ -29,7 +30,12 @@ const bannerImages = [
 
 // ✅ Second check fallback env var
 // ✅ HARDCODED - NO FUNCTIONS, NO ERRORS
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+
+// ✅ Works local + production automatically
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
@@ -67,16 +73,12 @@ function useMediaQuery(query) {
     if (media.matches !== matches) {
       setMatches(media.matches);
     }
-
     const listener = () => setMatches(media.matches);
     media.addEventListener('change', listener);
-
     return () => media.removeEventListener('change', listener);
   }, [matches, query]);
-
   return matches;
 }
-
 // Debounce hook
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -595,7 +597,6 @@ export default function Home() {
   return (
     <div style={{ backgroundColor: "#FDFFF0", minHeight: '100vh' }}>
       <Header />
-
       {/* Top Category Section */}
       <div style={dynamicStyles.topCategorySection}>
         <TopCategory 
@@ -705,7 +706,8 @@ export default function Home() {
         {/* ==========================================
             🔽 OLD PRODUCTS GRID - COMMENTED OUT
             ========================================== */}
-        
+
+
         {/* {isLoading && currentPage === 1 ? (
           <div style={dynamicStyles.loadingGrid}>
             {Array.from({ length: isMobile ? 4 : 8 }).map((_, index) => (
@@ -805,11 +807,11 @@ export default function Home() {
             )}
           </>
         )} */}
-
         {/* ==========================================
             ✅ NEW COMING SOON SECTION
             ========================================== */}
-        
+
+
         <div style={dynamicStyles.comingSoonContainer}>
           <div style={dynamicStyles.comingSoonContent}>
             {/* Animated Icon */}
@@ -864,7 +866,6 @@ export default function Home() {
                 </button>
               </Link>
             </div>
-
             {/* Stats */}
             <div style={dynamicStyles.statsContainer}>
               <div style={dynamicStyles.statItem}>
@@ -979,7 +980,6 @@ const styles = {
     padding: "8px 0",
     marginTop: "15px"
   },
-
   bannerSection: {
     width: "100%",
     margin: 0,
@@ -989,25 +989,21 @@ const styles = {
     justifyContent: "center",
     display: "flex"
   },
-
   container: {
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '0px 20px',
     animation: 'fadeIn 0.6s ease-out'
   },
-
   searchSection: {
     marginBottom: '20px',
     padding: '0 5px'
   },
-
   searchContainer: {
     display: 'flex',
     justifyContent: 'center',
     width: '100%'
   },
-
   searchInputWrapper: {
     position: 'relative',
     width: '100%',
@@ -1015,14 +1011,12 @@ const styles = {
     display: 'flex',
     alignItems: 'center'
   },
-
   searchIcon: {
     position: 'absolute',
     left: '16px',
     color: '#1a4845',
     zIndex: 1
   },
-
   searchInput: {
     width: '100%',
     padding: '12px 16px 12px 50px',
@@ -1035,7 +1029,6 @@ const styles = {
     transition: 'border-color 0.2s',
     boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
   },
-
   clearSearchButton: {
     position: 'absolute',
     right: '12px',
@@ -1049,7 +1042,6 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center'
   },
-
   productsHeader: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -1058,21 +1050,18 @@ const styles = {
     flexWrap: 'wrap',
     gap: '10px'
   },
-
   headerLeft: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
     flexWrap: 'wrap'
   },
-
   sectionTitle: {
     fontSize: '1.8rem',
     margin: 0,
     fontWeight: '700',
     color: '#1e293b'
   },
-
   searchIndicator: {
     fontSize: '14px',
     color: '#3b82f6',
@@ -1081,7 +1070,6 @@ const styles = {
     borderRadius: '12px',
     fontWeight: '500'
   },
-
   categoryIndicator: {
     fontSize: '14px',
     color: '#059669',
@@ -1090,12 +1078,10 @@ const styles = {
     borderRadius: '12px',
     fontWeight: '500'
   },
-
   headerRight: {
     display: 'flex',
     gap: '10px'
   },
-
   filterToggle: {
     padding: '8px 16px',
     backgroundColor: '#1a4845',
@@ -1110,7 +1096,6 @@ const styles = {
     gap: '6px',
     transition: 'background-color 0.2s'
   },
-
   errorContainer: {
     display: 'flex',
     alignItems: 'center',
@@ -1122,7 +1107,6 @@ const styles = {
     marginBottom: '20px',
     color: '#991b1b'
   },
-
   retryButton: {
     padding: '8px 16px',
     backgroundColor: '#dc2626',
@@ -1133,16 +1117,13 @@ const styles = {
     fontSize: '14px',
     marginTop: '8px'
   },
-
   loadingGrid: {
     display: 'grid',
   },
-
   skeletonWrapper: {
     borderRadius: '8px',
     overflow: 'hidden'
   },
-
   noProducts: {
     textAlign: 'center',
     padding: '60px 20px',
@@ -1155,7 +1136,6 @@ const styles = {
     gap: '16px',
     color: '#6b7280'
   },
-
   clearFiltersButton: {
     padding: '10px 20px',
     backgroundColor: '#059669',
@@ -1166,7 +1146,6 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500'
   },
-
   loadingIndicator: {
     display: 'flex',
     flexDirection: 'column',
@@ -1177,7 +1156,6 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500'
   },
-
   spinner: {
     width: '32px',
     height: '32px',
@@ -1186,7 +1164,6 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite'
   },
-
   // ✅ NEW: Coming Soon Styles
   comingSoonContainer: {
     minHeight: '70vh',
@@ -1198,18 +1175,15 @@ const styles = {
     borderRadius: '20px',
     marginTop: '30px',
   },
-
   comingSoonContent: {
     maxWidth: '900px',
     textAlign: 'center',
     animation: 'fadeIn 0.8s ease-out',
   },
-
   iconWrapper: {
     marginBottom: '24px',
     animation: 'float 3s ease-in-out infinite',
   },
-
   comingSoonTitle: {
     fontSize: 'clamp(2rem, 5vw, 3.5rem)',
     fontWeight: '800',
@@ -1217,7 +1191,6 @@ const styles = {
     marginBottom: '16px',
     lineHeight: '1.2',
   },
-
   comingSoonSubtitle: {
     fontSize: 'clamp(1rem, 2.5vw, 1.25rem)',
     color: '#64748b',
@@ -1226,14 +1199,12 @@ const styles = {
     maxWidth: '700px',
     margin: '0 auto 48px',
   },
-
   featuresGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '24px',
     marginBottom: '48px',
   },
-
   featureCard: {
     background: 'white',
     padding: '24px',
@@ -1242,19 +1213,16 @@ const styles = {
     transition: 'transform 0.3s ease, box-shadow 0.3s ease',
     cursor: 'pointer',
   },
-
   featureIcon: {
     fontSize: '3rem',
     marginBottom: '12px',
   },
-
   featureTitle: {
     fontSize: '1.125rem',
     fontWeight: '700',
     color: '#1a4845',
     marginBottom: '8px',
   },
-
   featureText: {
     fontSize: '0.875rem',
     color: '#64748b',
@@ -1268,7 +1236,6 @@ const styles = {
     flexWrap: 'wrap',
     marginBottom: '48px',
   },
-
   primaryButton: {
     display: 'flex',
     alignItems: 'center',
@@ -1284,11 +1251,9 @@ const styles = {
     transition: 'all 0.3s ease',
     boxShadow: '0 4px 16px rgba(26, 72, 69, 0.3)',
   },
-
   buttonIcon: {
     fontSize: '1.5rem',
   },
-
   secondaryButton: {
     padding: '16px 32px',
     fontSize: '1.125rem',
@@ -1300,7 +1265,6 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.3s ease',
   },
-
   statsContainer: {
     display: 'flex',
     justifyContent: 'center',
@@ -1313,41 +1277,34 @@ const styles = {
     marginBottom: '32px',
     flexWrap: 'wrap',
   },
-
   statItem: {
     textAlign: 'center',
   },
-
   statNumber: {
     fontSize: '2rem',
     fontWeight: '800',
     color: '#1a4845',
     marginBottom: '4px',
   },
-
   statLabel: {
     fontSize: '0.875rem',
     color: '#64748b',
     fontWeight: '500',
   },
-
   statDivider: {
     width: '2px',
     height: '40px',
     background: '#e5e7eb',
   },
-
   notifyContainer: {
     marginTop: '32px',
   },
-
   notifyText: {
     fontSize: '1rem',
     color: '#64748b',
     marginBottom: '12px',
     fontWeight: '500',
   },
-
   notifyInputWrapper: {
     display: 'flex',
     gap: '12px',
@@ -1356,7 +1313,6 @@ const styles = {
     maxWidth: '500px',
     margin: '0 auto',
   },
-
   notifyInput: {
     flex: '1',
     minWidth: '250px',
@@ -1367,7 +1323,6 @@ const styles = {
     outline: 'none',
     transition: 'border-color 0.2s',
   },
-
   notifyButton: {
     padding: '12px 24px',
     fontSize: '1rem',
