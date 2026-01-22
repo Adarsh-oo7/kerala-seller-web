@@ -6,16 +6,8 @@ import Link from "next/link"
 import "../../styles/ProductCard.css";
 
 // ✅ Enhanced API base URL function
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
-  if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:8000';
-  }
-  return 'https://keralaseller-backend.onrender.com';
-};
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+  (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000');
 
 export default function ProductCard({
   id,
@@ -210,7 +202,7 @@ export default function ProductCard({
 
     // ✅ Handle local media URLs
     if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
-      return `${'https://api.keralasellers.in'}${imageUrl}`
+      return `${API_BASE_URL}${imageUrl}`
     }
 
     // ✅ Handle full URLs
@@ -220,7 +212,7 @@ export default function ProductCard({
 
     // ✅ Handle relative URLs
     if (imageUrl.startsWith('/')) {
-      return `${'https://api.keralasellers.in'}${imageUrl}`
+      return `${API_BASE_URL}${imageUrl}`
     }
 
     return imageUrl || "/placeholder.svg"

@@ -60,7 +60,7 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
   (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
-  
+
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
@@ -1194,8 +1194,8 @@ function ShopProductPageContent() {
 
       // Fetch both product and store data
       const [productRes, storeRes] = await Promise.all([
-        axios.get(`${'https://api.keralasellers.in'}/api/products/${productId}/`, { timeout: 15000 }),
-        axios.get(`${'https://api.keralasellers.in'}/shop/${sellerPhone}/`, { timeout: 15000 })
+        axios.get(`${API_BASE_URL}/api/products/${productId}/`, { timeout: 15000 }),
+        axios.get(`${API_BASE_URL}/shop/${sellerPhone}/`, { timeout: 15000 })
       ]);
 
       console.log('✅ Product data received:', productRes.data);
