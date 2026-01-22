@@ -26,22 +26,36 @@ import {
 } from 'lucide-react';
 
 // ✅ Enhanced API base URL function
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
-  if (process.env.NODE_ENV === 'development') {
-    return 'https://api.keralasellers.in';
-  }
-  return 'https://api.keralasellers.in';
-};
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+//   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+//     return envUrl.trim();
+//   }
+//   if (process.env.NODE_ENV === 'development') {
+//     return 'https://api.keralasellers.in';
+//   }
+//   return 'https://api.keralasellers.in';
+// };
 
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
+// const CART_API = `${API_BASE_URL}/api/cart/add/`;
+
+// console.log('🔍 Wishlist API URLs:', { API_BASE_URL, WISHLIST_API, CART_API });
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const CART_API = `${API_BASE_URL}/api/cart/add/`;
 
-console.log('🔍 Wishlist API URLs:', { API_BASE_URL, WISHLIST_API, CART_API });
+console.log('🛒 Wishlist/Cart APIs:', { 
+  API_BASE_URL, 
+  LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  WISHLIST_API, 
+  CART_API 
+});
+
 
 export default function WishlistPage() {
   const [wishlistItems, setWishlistItems] = useState([]);

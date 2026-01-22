@@ -21,9 +21,20 @@ import {
 } from 'lucide-react';
 
 // ✅ FIXED: Hardcoded API URL (no environment variable confusion)
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const SEND_OTP_API = `${API_BASE_URL}/user/buyer/register/send-otp/`;
+// const REGISTER_API = `${API_BASE_URL}/user/buyer/register/verify-otp/`;  // ✅ CHANGED FROM /register/ TO /verify-otp/
+
+
+// ✅ Local + Prod
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/register/send-otp/`;
-const REGISTER_API = `${API_BASE_URL}/user/buyer/register/verify-otp/`;  // ✅ CHANGED FROM /register/ TO /verify-otp/
+const REGISTER_API = `${API_BASE_URL}/user/buyer/register/verify-otp/`;
+
+console.log('📱 Register APIs:', API_BASE_URL);
+
 
 export default function BuyerRegisterPage() {
     const [step, setStep] = useState(1);

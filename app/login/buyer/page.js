@@ -26,26 +26,42 @@ import {
 } from 'lucide-react';
 
 // ✅ Enhanced API configuration
-const getApiBaseUrl = () => {
-    const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
-    if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-        return envUrl.trim();
-    }
-    if (process.env.NODE_ENV === 'development') {
-        return 'https://api.keralasellers.in';
-    }
-    return 'https://api.keralasellers.in';
-};
+// const getApiBaseUrl = () => {
+//     const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+//     if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
+//         return envUrl.trim();
+//     }
+//     if (process.env.NODE_ENV === 'development') {
+//         return 'https://api.keralasellers.in';
+//     }
+//     return 'https://api.keralasellers.in';
+// };
 
+// const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const GOOGLE_LOGIN_API = `${API_BASE_URL}/user/buyer/login/google/`;
+// const EMAIL_LOGIN_API = `${API_BASE_URL}/user/buyer/login/`;
+
+// console.log('🌐 Buyer Login API URLs configured:', {
+//     API_BASE_URL,
+//     GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'Not configured'
+// });
+
+// ✅ Works local (.env.local) + production (Vercel)
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
-const API_BASE_URL = 'https://api.keralasellers.in';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const GOOGLE_LOGIN_API = `${API_BASE_URL}/user/buyer/login/google/`;
 const EMAIL_LOGIN_API = `${API_BASE_URL}/user/buyer/login/`;
 
-console.log('🌐 Buyer Login API URLs configured:', {
+console.log('🌐 Buyer Login APIs:', {
     API_BASE_URL,
-    GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'Not configured'
+    GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'Not set',
+    LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    ENV: process.env.NODE_ENV
 });
+
 
 // ✅ Enhanced EmailLoginForm with better UX
 function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {

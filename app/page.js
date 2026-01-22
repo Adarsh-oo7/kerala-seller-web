@@ -30,7 +30,12 @@ const bannerImages = [
 
 // ✅ Second check fallback env var
 // ✅ HARDCODED - NO FUNCTIONS, NO ERRORS
-const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_BASE_URL = 'https://api.keralasellers.in';
+
+// ✅ Works local + production automatically
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
@@ -1300,7 +1305,6 @@ const styles = {
     marginBottom: '12px',
     fontWeight: '500',
   },
-  
   notifyInputWrapper: {
     display: 'flex',
     gap: '12px',
@@ -1309,8 +1313,6 @@ const styles = {
     maxWidth: '500px',
     margin: '0 auto',
   },
-
-
   notifyInput: {
     flex: '1',
     minWidth: '250px',
