@@ -26,13 +26,7 @@ import axios from 'axios';
 // const API_BASE_URL = 'https://api.keralasellers.in';
 // const API_URL = `${API_BASE_URL}/user/store/products/`;
 
-// console.log('🌐 Quick Add API configured:', { 
-//   API_BASE_URL, 
-//   API_URL,
-//   ENVIRONMENT: process.env.NODE_ENV 
-// });
-
-// ✅ Simple and clean
+// ✅ Simple and clean API configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
   (process.env.NODE_ENV === 'development' 
     ? 'http://localhost:8000' 
@@ -43,7 +37,8 @@ const API_URL = `${API_BASE_URL}/user/store/products/`;
 console.log('🌐 Quick Add API configured:', { 
   API_BASE_URL, 
   API_URL,
-  ENVIRONMENT: process.env.NODE_ENV 
+  ENVIRONMENT: process.env.NODE_ENV,
+  FROM_ENV: !!process.env.NEXT_PUBLIC_API_BASE_URL
 });
 
 
