@@ -4,7 +4,9 @@ import { X, Eye, EyeOff, AlertCircle, Check, Wallet } from 'lucide-react';
 import axios from 'axios';
 import '../styles/DashboardPayments.css'
 
-const API_BASE_URL = 'https://api.keralasellers.in' || 'http://localhost:8000';
+// const API_BASE_URL = 'https://api.keralasellers.in' || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+
 
 export default function RazorpaySetupModal({ isOpen, onClose, onSuccess, editMode }) {
   const [formData, setFormData] = useState({

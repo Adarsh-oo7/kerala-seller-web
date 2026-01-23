@@ -5,26 +5,40 @@ import axios from 'axios';
 import { Trash2 } from "lucide-react";
 
 // ✅ Enhanced environment variable handling for your hosted backend
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+// const getApiBaseUrl = () => {
+//   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+  
+//   console.log('Environment check:', {
+//     NEXT_PUBLIC_API_BASE_URL: 'https://api.keralasellers.in',
+//     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+//     NODE_ENV: process.env.NODE_ENV
+//   });
+  
+//   if (envUrl && envUrl !== 'undefined') {
+//     return envUrl;
+//   }
+  
+//   // Updated fallback with your hosted backend URL
+//   return process.env.NODE_ENV === 'development' 
+//     ? 'http://localhost:8000' 
+//     : 'https://keralaseller-backend.onrender.com';  // ✅ Your hosted backend
+// };
 
-  console.log('Environment check:', {
-    NEXT_PUBLIC_API_BASE_URL: 'https://api.keralasellers.in',
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    NODE_ENV: process.env.NODE_ENV
-  });
+// const API_BASE_URL = 'https://api.keralasellers.in';
+// const API_URL = `${API_BASE_URL}/user/store/products/`;
 
-  if (envUrl && envUrl !== 'undefined') {
-    return envUrl;
-  }
+// console.log('🌐 Quick Add API configured:', { 
+//   API_BASE_URL, 
+//   API_URL,
+//   ENVIRONMENT: process.env.NODE_ENV 
+// });
 
-  // Updated fallback with your hosted backend URL
-  return process.env.NODE_ENV === 'development'
-    ? 'http://localhost:8000'
-    : 'https://keralaseller-backend.onrender.com';  // ✅ Your hosted backend
-};
+// ✅ Simple and clean
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+  (process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:8000' 
+    : 'https://api.keralasellers.in');
 
-const API_BASE_URL = 'https://api.keralasellers.in';
 const API_URL = `${API_BASE_URL}/user/store/products/`;
 
 console.log('🌐 Quick Add API configured:', {
@@ -32,6 +46,7 @@ console.log('🌐 Quick Add API configured:', {
   API_URL,
   ENVIRONMENT: process.env.NODE_ENV
 });
+
 
 export default function QuickAddStockForm({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
