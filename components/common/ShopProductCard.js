@@ -16,21 +16,10 @@ import {
 } from 'lucide-react';
 
 // ✅ Helper function to get API base URL
-const getApiBaseUrl = () => {
-  const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
+// ✅ SINGLE API BASE URL - Works for both dev and production
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+  (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000');
 
-  if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-    return envUrl.trim();
-  }
-
-  if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:8000';
-  }
-
-  return 'https://keralaseller-backend.onrender.com';
-};
-
-const API_BASE_URL = 'https://api.keralasellers.in';
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 
