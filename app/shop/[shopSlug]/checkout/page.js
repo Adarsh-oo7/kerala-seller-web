@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, CreditCard, User, Phone, MapPin, Package, Store, AlertTriangle, CheckCircle, Shield } from 'lucide-react';
+import { ArrowLeft, CreditCard, User, Phone, MapPin, Package, Store, AlertTriangle, CheckCircle, Shield, Truck, Weight } from 'lucide-react';
 import "../../../../styles/Shopslugcheckout.css";
 import SHeader from '../../../../components/common/SHeader';
 import { toast } from "react-toastify";
 import axios from 'axios';
 import { useCart } from '../../../../app/context/CartContext';
 
-// const API_BASE_URL = 'https://api.keralasellers.in';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
 
 // ✅ Razorpay script loader
@@ -56,6 +55,11 @@ export default function ShopCheckoutPage() {
   const [formErrors, setFormErrors] = useState({});
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isBuyNow, setIsBuyNow] = useState(false);
+
+  // ✅ NEW: Delivery calculation state
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [totalWeight, setTotalWeight] = useState(0);
+  const [isFreeDelivery, setIsFreeDelivery] = useState(false);
 
   // ✅ Check login status
   useEffect(() => {
@@ -118,6 +122,40 @@ export default function ShopCheckoutPage() {
 
     loadScript();
   }, []);
+// ✅ NEW: Validate and enrich cart items with weight_kg
+const validateCartItems = async (items) => {
+  console.log('🔍 Validating cart items for weight data...');
+  
+  const enrichedItems = await Promise.all(
+    items.map(async (item) => {
+      // If weight is already present and valid, return as-is
+      if (item.weight_kg !== undefined && item.weight_kg !== null) {
+        return item;
+      }
+
+      // Fetch product data to get weight
+      try {
+        console.log(`📦 Fetching weight for product ${item.id}...`);
+        const response = await axios.get(`${API_BASE_URL}/api/products/${item.id}/`);
+        const product = response.data;
+        
+        return {
+          ...item,
+          weight_kg: product.weight_kg || 0
+        };
+      } catch (error) {
+        console.warn(`⚠️ Failed to fetch weight for product ${item.id}`, error);
+        return {
+          ...item,
+          weight_kg: 0
+        };
+      }
+    })
+  );
+
+  console.log('✅ Cart items enriched with weight data');
+  return enrichedItems;
+};
 
   // ✅ Auto-select payment method when store data is loaded
   useEffect(() => {
@@ -133,6 +171,52 @@ export default function ShopCheckoutPage() {
       }
     }
   }, [storeData, razorpayLoaded, paymentMethod]);
+
+  // ✅ NEW: Calculate delivery charge when cart items change
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      setDeliveryCharge(0);
+      setTotalWeight(0);
+      setIsFreeDelivery(false);
+      return;
+    }
+
+    // Calculate total weight
+    const weight = cartItems.reduce((sum, item) => {
+      const itemWeight = parseFloat(item.weight_kg || 0);
+      return sum + (itemWeight * item.quantity);
+    }, 0);
+
+    setTotalWeight(weight);
+
+    // Calculate subtotal
+    const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    // Delivery logic
+    let charge = 0;
+    let isFree = true;
+
+    if (weight > 0) {
+      // Base charge: ₹50 + ₹10 per kg
+      charge = 50 + (weight * 10);
+      isFree = false;
+
+      // Free delivery conditions
+      if (subtotal >= 500 || weight < 1) {
+        charge = 0;
+        isFree = true;
+      }
+    } else {
+      // No weight data = Free delivery
+      charge = 0;
+      isFree = true;
+    }
+
+    setDeliveryCharge(charge);
+    setIsFreeDelivery(isFree);
+
+    console.log('📦 Delivery calculation:', { weight, subtotal, charge, isFree });
+  }, [cartItems]);
 
   // ✅ Generate shop URLs
   const getShopUrl = (path = '') => {
@@ -203,6 +287,7 @@ export default function ShopCheckoutPage() {
         name: product.name,
         price: product.price,
         quantity: quantity,
+        weight_kg: product.weight_kg || 0,
         image: product.cloudinary_url || product.main_image_url,
         store: product.store
       }]);
@@ -287,16 +372,25 @@ export default function ShopCheckoutPage() {
         return;
       }
 
-      const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
-      const storeCart = multiCarts[actualStoreId] || [];
+const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
+const storeCart = multiCarts[actualStoreId] || [];
 
-      console.log('📦 Cart items for checkout:', storeCart);
+console.log('📦 Raw cart items:', storeCart);
 
-      if (storeCart.length === 0) {
-        console.warn('⚠️ No items in cart, redirecting to cart page');
-        router.push(getShopUrl('/cart'));
-        return;
-      }
+if (storeCart.length === 0) {
+  console.warn('⚠️ No items in cart, redirecting to cart page');
+  router.push(getShopUrl('/cart'));
+  return;
+}
+
+// ✅ VALIDATE AND ENRICH CART ITEMS
+const enrichedCart = await validateCartItems(storeCart);
+console.log('📦 Enriched cart items:', enrichedCart);
+
+setCartItems(enrichedCart);
+await loadStoreAndProfile(actualStoreId, headers);
+setLoading(false);
+
 
       setCartItems(storeCart);
       await loadStoreAndProfile(actualStoreId, headers);
@@ -336,7 +430,9 @@ export default function ShopCheckoutPage() {
     return Object.keys(errors).length === 0;
   };
 
-  const calculateTotal = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  // ✅ UPDATED: Calculate total with delivery
+  const calculateSubtotal = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const calculateTotal = () => calculateSubtotal() + deliveryCharge;
   const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
 
   // ✅ Handle online payment
@@ -405,7 +501,7 @@ export default function ShopCheckoutPage() {
             const verifyData = await verifyResponse.json();
 
             if (verifyResponse.ok && verifyData.success) {
-              // ✅ UPDATED: Clear cart via context
+              // ✅ Clear cart via context
               if (!isBuyNow) {
                 if (clearAllCarts) {
                   clearAllCarts();
@@ -521,7 +617,9 @@ export default function ShopCheckoutPage() {
           price: parseFloat(item.price)
         })),
         payment_method: paymentMethod,
-        seller_phone: actualStoreId
+        seller_phone: actualStoreId,
+        delivery_charge: deliveryCharge, // ✅ Include delivery charge
+        total_weight: totalWeight // ✅ Include weight
       };
 
       console.log('📤 Sending order data:', orderData);
@@ -550,7 +648,7 @@ export default function ShopCheckoutPage() {
         const responseData = await response.json();
 
         if (response.ok) {
-          // ✅ UPDATED: Clear cart via context
+          // ✅ Clear cart via context
           if (!isBuyNow) {
             if (clearAllCarts) {
               clearAllCarts();
@@ -850,6 +948,11 @@ export default function ShopCheckoutPage() {
                     <div className='shopslugcheckoutitemname' style={styles.itemName}>{item.name}</div>
                     <div style={styles.itemDetails}>
                       {formatPrice(item.price)} × {item.quantity}
+                      {item.weight_kg > 0 && (
+                        <span style={{ marginLeft: '8px', color: '#6b7280' }}>
+                          ({item.weight_kg} kg)
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div style={styles.itemTotal}>
@@ -862,12 +965,27 @@ export default function ShopCheckoutPage() {
             <div style={styles.totalSection}>
               <div style={styles.subtotalRow}>
                 <span>Subtotal ({cartItems.length} item{cartItems.length !== 1 ? 's' : ''})</span>
-                <span>{formatPrice(calculateTotal())}</span>
+                <span>{formatPrice(calculateSubtotal())}</span>
               </div>
+              
+              {/* ✅ NEW: Delivery Charge Row */}
               <div style={styles.subtotalRow}>
-                <span>Delivery</span>
-                <span style={{ color: '#10b981', fontWeight: '600' }}>Free</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Truck size={16} />
+                  Delivery
+                  {totalWeight > 0 && (
+                    <span style={{ fontSize: '11px', color: '#6b7280' }}>
+                      ({totalWeight.toFixed(2)} kg)
+                    </span>
+                  )}
+                </span>
+                {isFreeDelivery ? (
+                  <span style={{ color: '#10b981', fontWeight: '700' }}>FREE 🎉</span>
+                ) : (
+                  <span>{formatPrice(deliveryCharge)}</span>
+                )}
               </div>
+
               <div style={styles.totalRow}>
                 <span>Total:</span>
                 <span className='shopslugcheckoutitemname' style={styles.totalAmount}>{formatPrice(calculateTotal())}</span>

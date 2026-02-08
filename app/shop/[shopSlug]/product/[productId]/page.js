@@ -545,11 +545,46 @@ const allImages = React.useMemo(() => {
 }
 
 // ✅ ENHANCED: Product Info Component with Buy Now + Share
+// ✅ ENHANCED: Product Info Component with Buy Now + Share + DELIVERY INFO
 function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isLoggedIn, router }) {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
+  
+  // ✅ NEW: Calculate delivery charge based on weight and price
+  const [deliveryInfo, setDeliveryInfo] = useState({ charge: 0, isFree: true });
+
+  // ✅ Calculate delivery when product or quantity changes
+  useEffect(() => {
+    if (!product) return;
+
+    const weight = product.weight_kg || 0;
+    const price = product.price || 0;
+    const orderTotal = price * quantity;
+    
+    let charge = 0;
+    let isFree = true;
+
+    // Delivery logic
+    if (weight > 0) {
+      // Base charge: ₹50 + ₹10 per kg
+      charge = 50 + (weight * 10);
+      isFree = false;
+      
+      // Free delivery conditions
+      if (orderTotal >= 500 || weight < 1) {
+        charge = 0;
+        isFree = true;
+      }
+    } else {
+      // No weight = Free delivery
+      charge = 0;
+      isFree = true;
+    }
+
+    setDeliveryInfo({ charge, isFree });
+  }, [product, quantity]);
 
   // ✅ Check if product is wishlisted on component mount
   useEffect(() => {
@@ -636,10 +671,7 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
     }
   };
 
-  // ✅ NEW: Buy Now Handler with Direct Payment
-  // NEW Buy Now Handler with Direct Payment
-  // NEW Buy Now Handler with Direct Payment
-  // ✅ FIXED: Buy Now - Redirect to Individual Shop's Checkout
+  // ✅ Buy Now Handler - Redirect to Individual Shop's Checkout
   const handleBuyNow = () => {
     if (!product) return;
 
@@ -664,7 +696,6 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
       return;
     }
 
-
     const shopSlug = generateShopSlug(store);
     const sellerPhone = store?.seller_phone || store?.phone;
 
@@ -685,10 +716,7 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
     router.push(`/shop/${shopSlug}/checkout?buyNow=1&productId=${product.id}&quantity=${quantity}&id=${sellerPhone}`);
   };
 
-
-
-
-  // ✅ NEW: Share Handler
+  // ✅ Share Handler
   const handleShare = async () => {
     const shareData = {
       title: `${product.name} - ${store?.name || 'Kerala Sellers'}`,
@@ -703,15 +731,14 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
       } else {
         // Fallback: copy to clipboard
         await navigator.clipboard.writeText(window.location.href);
-        // alert('Product link copied to clipboard! Share it with your friends.');
-         toast.success(
-        `Product link copied to clipboard! Share it with your friends.`,
-        {
-          position: "top-right",
-          autoClose: 2000,
-          theme: "colored",
-        }
-      );
+        toast.success(
+          `Product link copied to clipboard! Share it with your friends.`,
+          {
+            position: "top-right",
+            autoClose: 2000,
+            theme: "colored",
+          }
+        );
         console.log('✅ Link copied to clipboard');
       }
     } catch (error) {
@@ -719,15 +746,14 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
       // Final fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(window.location.href);
-        // alert('Product link copied to clipboard!');
-         toast.success(
-        `Product link copied to clipboard!`,
-        {
-          position: "top-right",
-          autoClose: 2000,
-          theme: "colored",
-        }
-      );
+        toast.success(
+          `Product link copied to clipboard!`,
+          {
+            position: "top-right",
+            autoClose: 2000,
+            theme: "colored",
+          }
+        );
       } catch (clipboardError) {
         console.error('Clipboard error:', clipboardError);
         // Last resort: show the URL
@@ -765,8 +791,6 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
             <p className='shopslugproductmodel' style={styles.productModel}>Model: {product.model_name}</p>
           )}
 
-
-
           {/* Price */}
           <div style={styles.priceContainer}>
             <span className='shopslugproductprice' style={styles.currentPrice}>{formatPrice(product.price)}</span>
@@ -779,6 +803,40 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
               </>
             )}
           </div>
+
+          {/* ✅ NEW: Delivery Info Section */}
+          <div style={deliveryInfo.isFree ? styles.deliveryInfoFree : styles.deliveryInfoPaid}>
+            <Truck size={20} color={deliveryInfo.isFree ? '#059669' : '#374151'} />
+            <div style={styles.deliveryText}>
+              {deliveryInfo.isFree ? (
+                <>
+                  <span style={styles.freeDeliveryText}>🎉 FREE Delivery</span>
+                  {product.price * quantity < 500 && (
+                    <span style={styles.deliveryHint}>
+                      Free on orders above ₹500
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  <span style={styles.deliveryChargeText}>
+                    Delivery: ₹{deliveryInfo.charge.toLocaleString('en-IN')}
+                  </span>
+                  <span style={styles.deliveryHint}>
+                    Free for orders above ₹500
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* ✅ Weight Info (if available) */}
+          {product.weight_kg && product.weight_kg > 0 && (
+            <div style={styles.weightInfo}>
+              <Package size={16} color="#6b7280" />
+              <span>Weight: {product.weight_kg} kg</span>
+            </div>
+          )}
         </div>
 
         <div className="right-column" style={styles.rightcolumn} >
@@ -864,7 +922,7 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
           )}
         </button>
 
-        {/* ✅ NEW: Buy Now Button */}
+        {/* ✅ Buy Now Button */}
         <button
           className='shopslugproductaddcartbtn'
           onClick={handleBuyNow}
@@ -890,7 +948,7 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
           )}
         </button>
 
-        {/* ✅ ENHANCED: Secondary Actions Row */}
+        {/* ✅ Secondary Actions Row */}
         <div style={styles.secondaryActions}>
           {/* ✅ Wishlist Button */}
           <button
@@ -916,7 +974,7 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
             )}
           </button>
 
-          {/* ✅ NEW: Share Button */}
+          {/* ✅ Share Button */}
           <button
             className='shopslugproductsharebtn'
             onClick={handleShare}
@@ -931,18 +989,10 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
 
       {/* Product Features */}
       <div style={styles.features}>
-        {/* <div style={styles.feature}>
-          <Truck size={16} />
-          <span>Free delivery across Kerala</span>
-        </div> */}
         <div style={styles.feature}>
           <Shield size={16} />
           <span>Genuine product guarantee</span>
         </div>
-        {/* <div style={styles.feature}>
-          <RefreshCw size={16} />
-          <span>Easy returns & exchanges</span>
-        </div> */}
       </div>
     </div>
   );
@@ -1582,6 +1632,73 @@ const styles = {
     padding: '5px 0',
     scrollbarWidth: 'none', // Firefox
   },
+  // Add these to your existing styles object:
+
+  // ✅ NEW: Delivery Info Styles
+  deliveryInfoFree: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px',
+    padding: '14px 16px',
+    backgroundColor: '#f0fdf4',
+    border: '2px solid #86efac',
+    borderRadius: '10px',
+    marginTop: '16px',
+    transition: 'all 0.3s ease'
+  },
+
+  deliveryInfoPaid: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px',
+    padding: '14px 16px',
+    backgroundColor: '#fef3c7',
+    border: '2px solid #fbbf24',
+    borderRadius: '10px',
+    marginTop: '16px',
+    transition: 'all 0.3s ease'
+  },
+
+  deliveryText: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    flex: 1
+  },
+
+  freeDeliveryText: {
+    fontSize: '16px',
+    fontWeight: '700',
+    color: '#059669',
+    letterSpacing: '0.3px'
+  },
+
+  deliveryChargeText: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#374151'
+  },
+
+  deliveryHint: {
+    fontSize: '13px',
+    color: '#6b7280',
+    fontStyle: 'italic',
+    marginTop: '2px'
+  },
+
+  weightInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '14px',
+    color: '#6b7280',
+    marginTop: '10px',
+    padding: '8px 12px',
+    backgroundColor: '#f9fafb',
+    borderRadius: '6px',
+    border: '1px solid #e5e7eb'
+  },
+
 
   thumbnailNavButtonLeft: {
     backgroundColor: '#FDFFF0',

@@ -7,15 +7,12 @@ import Footer from '../../../components/common/Footer';
 import "../../../styles/keralasellerscheckout.css";
 import { toast } from "react-toastify";
 import axios from 'axios';
-import { useCart } from '../../context/CartContext'; // ✅ added
+import { useCart } from '../../context/CartContext';
 
-import { ArrowLeft, CreditCard, User, AlertTriangle, Package, CheckCircle } from 'lucide-react';
-
-// const API_BASE_URL = 'https://api.keralasellers.in';
+import { ArrowLeft, CreditCard, User, AlertTriangle, Package, CheckCircle, Truck, Weight } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
                      (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
-
 
 // ✅ Razorpay script loader
 const loadRazorpayScript = () => {
@@ -37,19 +34,23 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [storeData, setStoreData] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState(''); // ✅ Empty - auto-select based on store settings
+  const [paymentMethod, setPaymentMethod] = useState('');
   const [shippingInfo, setShippingInfo] = useState({
     name: '', phone: '', address: '', city: '', pincode: ''
   });
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [isBuyNow, setIsBuyNow] = useState(false);
+  
+  // ✅ NEW: Delivery charge states
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [deliveryInfo, setDeliveryInfo] = useState(null);
+  const [totalWeight, setTotalWeight] = useState(0);
+  const [calculatingDelivery, setCalculatingDelivery] = useState(false);
 
-  // ✅ from CartContext for proper clearing
   const { clearCartForSeller, clearAllCarts } = useCart();
 
   console.log('🔍 Checkout Debug:');
   console.log('- sellerPhone:', sellerPhone);
-  console.log('- Current URL:', typeof window !== 'undefined' ? window.location.href : 'SSR');
 
   // ✅ Load Razorpay script
   useEffect(() => {
@@ -68,14 +69,6 @@ export default function CheckoutPage() {
     if (storeData && !paymentMethod) {
       const codEnabled = storeData.accepts_cod === true;
       
-      console.log('🔍 Payment Options:', {
-        accepts_cod: storeData.accepts_cod,
-        codEnabled,
-        razorpayLoaded,
-        payment_method: storeData.payment_method
-      });
-
-      // Auto-select first available payment method
       if (codEnabled) {
         setPaymentMethod('COD');
         console.log('✅ Auto-selected COD');
@@ -85,6 +78,13 @@ export default function CheckoutPage() {
       }
     }
   }, [storeData, razorpayLoaded, paymentMethod]);
+
+  // ✅ NEW: Calculate delivery when payment method or cart changes
+  useEffect(() => {
+    if (cartItems.length > 0 && paymentMethod && storeData) {
+      calculateDeliveryCharge();
+    }
+  }, [paymentMethod, cartItems, storeData]);
 
   // ✅ Buy Now + Cart checkout logic
   useEffect(() => {
@@ -101,12 +101,9 @@ export default function CheckoutPage() {
         return;
       }
 
-      // ✅ CHECK FOR BUY NOW PARAMETERS
       const buyNow = searchParams.get('buyNow') === '1';
       const productId = searchParams.get('productId');
       const quantity = parseInt(searchParams.get('quantity') || '1');
-
-      console.log('🔍 Buy Now Check:', { buyNow, productId, quantity });
 
       if (buyNow && productId) {
         setIsBuyNow(true);
@@ -120,6 +117,73 @@ export default function CheckoutPage() {
     initializeCheckout();
   }, [sellerPhone, router, searchParams]);
 
+  // ✅ NEW: Calculate delivery charge from backend
+  const calculateDeliveryCharge = async () => {
+    try {
+      setCalculatingDelivery(true);
+      console.log('📦 Calculating delivery charge...');
+
+      const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
+
+      // Prepare items with weight
+      const itemsWithWeight = await Promise.all(
+        cartItems.map(async (item) => {
+          // Fetch product details to get weight if not already in cart
+          if (!item.weight_kg) {
+            try {
+              const productRes = await axios.get(`${API_BASE_URL}/api/products/${item.id}/`);
+              item.weight_kg = productRes.data.weight_kg || 0;
+            } catch (err) {
+              console.warn(`⚠️ Could not fetch weight for product ${item.id}`);
+              item.weight_kg = 0;
+            }
+          }
+          return {
+            product_id: item.id,
+            quantity: item.quantity,
+            price: item.price,
+            weight_kg: item.weight_kg || 0
+          };
+        })
+      );
+
+      // Calculate total weight
+      const weight = itemsWithWeight.reduce((sum, item) => 
+        sum + (parseFloat(item.weight_kg) * item.quantity), 0
+      );
+      setTotalWeight(weight);
+
+      // Call backend API
+      const response = await axios.post(
+        `${API_BASE_URL}/api/orders/calculate-checkout/`,
+        {
+          seller_phone: sellerPhone,
+          items: itemsWithWeight,
+          payment_method: paymentMethod
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        setDeliveryCharge(response.data.delivery_charge);
+        setDeliveryInfo(response.data.delivery_info);
+        console.log('✅ Delivery calculated:', response.data);
+      }
+    } catch (error) {
+      console.error('❌ Failed to calculate delivery:', error);
+      // Fallback to free delivery
+      setDeliveryCharge(0);
+      setDeliveryInfo({ is_free: true, reason: 'Free delivery' });
+    } finally {
+      setCalculatingDelivery(false);
+    }
+  };
+
   // ✅ Fetch single product for Buy Now
   const fetchSingleProduct = async (productId, quantity, token) => {
     try {
@@ -128,26 +192,21 @@ export default function CheckoutPage() {
       const productResponse = await axios.get(`${API_BASE_URL}/api/products/${productId}/`);
       const product = productResponse.data;
 
-      console.log('✅ Product fetched:', product.name);
-
       setCartItems([{
         id: product.id,
         name: product.name,
         price: product.price,
         quantity: quantity,
         image: product.cloudinary_url || product.main_image_url,
-        store: product.store
+        store: product.store,
+        weight_kg: product.weight_kg || 0 // ✅ Include weight
       }]);
 
       await loadStoreAndProfile(token);
-      
       setLoading(false);
     } catch (error) {
       console.error('❌ Failed to fetch product:', error);
-      toast.error('Failed to load product details', {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error('Failed to load product details');
       router.push('/');
     }
   };
@@ -157,10 +216,7 @@ export default function CheckoutPage() {
     const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
     const sellerCart = multiCarts[sellerPhone] || [];
 
-    console.log('📦 Cart loaded for seller:', sellerPhone, sellerCart);
-
     if (!sellerCart || sellerCart.length === 0) {
-      console.warn('⚠️ No items in cart, redirecting...');
       router.push(`/cart/${sellerPhone}`);
       return;
     }
@@ -184,18 +240,11 @@ export default function CheckoutPage() {
         const storeResData = await storeRes.value.json();
         const store = storeResData.store || storeResData;
         setStoreData(store);
-        
-        console.log('✅ Store data loaded:', {
-          name: store.name,
-          accepts_cod: store.accepts_cod,
-          payment_method: store.payment_method
-        });
       } else {
-        console.warn('⚠️ Store API failed, using fallback');
         setStoreData({
           name: `Store ${sellerPhone}`,
           seller_phone: sellerPhone,
-          accepts_cod: false // ✅ Default to false for safety
+          accepts_cod: false
         });
       }
 
@@ -214,22 +263,16 @@ export default function CheckoutPage() {
     }
   };
 
-  const calculateTotal = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const calculateSubtotal = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const calculateTotal = () => calculateSubtotal() + deliveryCharge;
   const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
 
-  // ✅ Check if COD is enabled for this store (using accepts_cod field)
   const isCODEnabled = () => {
-    if (!storeData) {
-      console.log('⚠️ No store data - COD disabled');
-      return false;
-    }
-    
-    const enabled = storeData.accepts_cod === true;
-    console.log('🔍 COD Check:', { accepts_cod: storeData.accepts_cod, enabled });
-    return enabled;
+    if (!storeData) return false;
+    return storeData.accepts_cod === true;
   };
 
-  // ✅ Enhanced online payment with Razorpay
+  // ✅ Enhanced online payment with delivery charge
   const handleOnlinePayment = async (orderData) => {
     if (!razorpayLoaded) {
       alert('Payment system not loaded. Please refresh and try again.');
@@ -237,8 +280,6 @@ export default function CheckoutPage() {
     }
 
     try {
-      console.log('💳 Starting online payment...');
-
       const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
 
       const createOrderResponse = await fetch(`${API_BASE_URL}/user/orders/create-razorpay-order/`, {
@@ -248,8 +289,12 @@ export default function CheckoutPage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          amount: calculateTotal(),
-          order_data: orderData
+          amount: calculateTotal(), // ✅ Include delivery
+          order_data: {
+            ...orderData,
+            delivery_charge: deliveryCharge, // ✅ Pass delivery charge
+            total_weight_kg: totalWeight
+          }
         })
       });
 
@@ -259,7 +304,6 @@ export default function CheckoutPage() {
       }
 
       const { razorpay_order_id, amount, key_id } = await createOrderResponse.json();
-      console.log('✅ Razorpay order created:', razorpay_order_id);
 
       const options = {
         key: key_id,
@@ -269,8 +313,6 @@ export default function CheckoutPage() {
         description: `Order from ${storeData?.name || 'Store'}`,
         order_id: razorpay_order_id,
         handler: async function (response) {
-          console.log('💳 Payment completed, verifying...');
-
           try {
             const verifyResponse = await fetch(`${API_BASE_URL}/user/orders/verify-payment-and-create-order/`, {
               method: 'POST',
@@ -282,7 +324,11 @@ export default function CheckoutPage() {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
-                order_data: orderData
+                order_data: {
+                  ...orderData,
+                  delivery_charge: deliveryCharge,
+                  total_weight_kg: totalWeight
+                }
               })
             });
 
@@ -290,7 +336,6 @@ export default function CheckoutPage() {
 
             if (verifyResponse.ok && verifyData.success) {
               if (!isBuyNow) {
-                // ✅ Clear cart via context so header/cart update
                 if (clearAllCarts) {
                   clearAllCarts();
                 } else if (clearCartForSeller) {
@@ -298,26 +343,20 @@ export default function CheckoutPage() {
                 }
               }
 
-              console.log('✅ Payment verified and order created');
-              toast.success(`Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`, {
-                position: "top-right",
-                autoClose: 4500,
-              });
-
+              toast.success(`Payment successful! Order #${verifyData.order_id} placed! 🎉`);
               router.push(`/profile/orders`);
             } else {
               throw new Error(verifyData.error || 'Payment verification failed');
             }
           } catch (verifyError) {
             console.error('❌ Payment verification failed:', verifyError);
-            alert(`Payment completed but order creation failed: ${verifyError.message}. Please contact support with payment ID: ${response.razorpay_payment_id}`);
+            alert(`Payment completed but order creation failed: ${verifyError.message}`);
           }
 
           setSubmitting(false);
         },
         modal: {
           ondismiss: function () {
-            console.log('💳 Payment modal closed');
             setSubmitting(false);
           }
         },
@@ -334,7 +373,6 @@ export default function CheckoutPage() {
       const rzp = new window.Razorpay(options);
 
       rzp.on('payment.failed', function (response) {
-        console.error('💳 Payment failed:', response.error);
         alert(`Payment failed: ${response.error.description}`);
         setSubmitting(false);
       });
@@ -348,42 +386,16 @@ export default function CheckoutPage() {
     }
   };
 
-  // ✅ Enhanced order placement
+  // ✅ Enhanced order placement with delivery
   const handlePlaceOrder = async () => {
-    console.log('🔄 Place order clicked');
-    console.log('- Payment method:', paymentMethod);
-    console.log('- COD Enabled:', isCODEnabled());
-    console.log('- Cart items:', cartItems.length);
-    console.log('- Is Buy Now:', isBuyNow);
-
-    // Validation
     if (!shippingInfo.name || !shippingInfo.phone || !shippingInfo.address ||
       !shippingInfo.city || !shippingInfo.pincode || !paymentMethod) {
-      toast.warn('Please fill all required fields and select a payment method.', {
-        position: "top-right",
-        autoClose: 5000,
-        theme: "colored",
-      });
+      toast.warn('Please fill all required fields and select a payment method.');
       return;
     }
 
-    // ✅ Validate COD is allowed
     if (paymentMethod === 'COD' && !isCODEnabled()) {
-      toast.error('Cash on Delivery is not available for this store. Please choose online payment.', {
-        position: "top-right",
-        autoClose: 5000,
-        theme: "colored",
-      });
-      return;
-    }
-
-    if (!sellerPhone || sellerPhone === 'undefined') {
-      alert('Store information not available. Please try again.');
-      return;
-    }
-
-    if (cartItems.length === 0) {
-      alert('Your cart is empty!');
+      toast.error('Cash on Delivery is not available for this store.');
       return;
     }
 
@@ -401,16 +413,13 @@ export default function CheckoutPage() {
           price: parseFloat(item.price)
         })),
         payment_method: paymentMethod,
-        seller_phone: sellerPhone
+        seller_phone: sellerPhone,
+        delivery_charge: deliveryCharge, // ✅ Include delivery
+        total_weight_kg: totalWeight
       };
 
-      console.log('🔍 ORDER DATA:', orderData);
-
       if (paymentMethod === 'ONLINE') {
-        const paymentSuccess = await handleOnlinePayment(orderData);
-        if (!paymentSuccess) {
-          setSubmitting(false);
-        }
+        await handleOnlinePayment(orderData);
       } else {
         const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
 
@@ -424,11 +433,9 @@ export default function CheckoutPage() {
         });
 
         const responseData = await response.json();
-        console.log('📤 COD Response:', responseData);
 
         if (response.ok) {
           if (!isBuyNow) {
-            // ✅ Clear cart via context so header/cart update
             if (clearAllCarts) {
               clearAllCarts();
             } else if (clearCartForSeller) {
@@ -436,23 +443,17 @@ export default function CheckoutPage() {
             }
           }
 
-          toast.success(`Order placed successfully! Order #${responseData.order_id} 🎉`, {
-            position: "top-right",
-            autoClose: 4500,
-          });
+          toast.success(`Order placed successfully! Order #${responseData.order_id} 🎉`);
           router.push(`/profile/orders`);
         } else {
-          const errorMessage = responseData.error || responseData.detail || 'Unknown error';
-          console.error('❌ COD Order failed:', responseData);
-          alert('Order failed: ' + errorMessage);
+          alert('Order failed: ' + (responseData.error || 'Unknown error'));
         }
 
         setSubmitting(false);
       }
     } catch (error) {
       console.error('❌ ORDER ERROR:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Network error occurred';
-      alert('Order failed: ' + errorMessage);
+      alert('Order failed: ' + (error.message || 'Network error'));
       setSubmitting(false);
     }
   };
@@ -463,27 +464,6 @@ export default function CheckoutPage() {
         <Header />
         <div style={{ padding: '50px', textAlign: 'center' }}>
           <div style={{ fontSize: '18px', marginBottom: '20px' }}>Loading checkout...</div>
-          <div style={{ fontSize: '14px', color: '#666' }}>Store: {sellerPhone}</div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (!sellerPhone || sellerPhone === 'undefined') {
-    return (
-      <div>
-        <Header />
-        <div style={{ padding: '50px', textAlign: 'center' }}>
-          <AlertTriangle size={48} color="#ef4444" />
-          <h2>Invalid Store</h2>
-          <p>Store information not available.</p>
-          <button onClick={() => router.push('/')} style={{
-            padding: '12px 24px', backgroundColor: '#007bff', color: 'white',
-            border: 'none', borderRadius: '8px', cursor: 'pointer'
-          }}>
-            Go Home
-          </button>
         </div>
         <Footer />
       </div>
@@ -639,7 +619,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* ✅ FIXED: Payment Method Section */}
+            {/* Payment Method Section */}
             <div style={{ backgroundColor: '#FDFFF0', color: '#1a4845', border: '1px solid #bbbbbbff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', borderRadius: '12px', padding: '30px' }}>
               <h2 className='keralasellerscheckouttitle' style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px' }}>
                 <CreditCard size={20} />
@@ -647,7 +627,6 @@ export default function CheckoutPage() {
               </h2>
 
               <div style={{ marginBottom: '20px' }}>
-                {/* ✅ ONLY SHOW COD IF accepts_cod IS TRUE */}
                 {isCODEnabled() && (
                   <label className='keralasellerscheckoutpayment' style={{
                     alignItems: 'center',
@@ -670,14 +649,7 @@ export default function CheckoutPage() {
                       style={{ marginRight: '12px', accentColor: '#1a4845' }}
                     />
                     <div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          fontWeight: 'bold'
-                        }}
-                      >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
                         <span>Cash on Delivery</span>
                         {paymentMethod === 'COD' && <CheckCircle size={16} color="#10b981" />}
                       </div>
@@ -686,7 +658,6 @@ export default function CheckoutPage() {
                   </label>
                 )}
 
-                {/* ✅ ALWAYS SHOW ONLINE PAYMENT */}
                 <label className='keralasellerscheckoutpayment' style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -709,14 +680,7 @@ export default function CheckoutPage() {
                     disabled={!razorpayLoaded}
                   />
                   <div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontWeight: 'bold'
-                      }}
-                    >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
                       <span>Pay Online {!razorpayLoaded && '(Loading...)'}</span>
                       {paymentMethod === 'ONLINE' && <CheckCircle size={16} color="#10b981" />}
                     </div>
@@ -726,7 +690,6 @@ export default function CheckoutPage() {
                   </div>
                 </label>
 
-                {/* ✅ Show info message if COD is not available */}
                 {!isCODEnabled() && (
                   <div style={{
                     marginTop: '12px',
@@ -741,14 +704,14 @@ export default function CheckoutPage() {
                     gap: '8px'
                   }}>
                     <AlertTriangle size={16} />
-                    <span>Cash on Delivery is not available for this store. Please use online payment.</span>
+                    <span>Cash on Delivery is not available for this store.</span>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Order Summary Section */}
+          {/* ✅ ENHANCED: Order Summary with Delivery */}
           <div style={{ flex: '0 0 400px', backgroundColor: '#FDFFF0', color: '#1a4845', border: '1px solid #bbbbbbff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', borderRadius: '12px', padding: '30px', height: 'fit-content' }}>
             <h2 className='keralasellerscheckouttitle' style={{ fontSize: '18px' }}>ORDER SUMMARY</h2>
 
@@ -771,6 +734,7 @@ export default function CheckoutPage() {
                   <div className='keralasellerscheckoutitemname' style={{ fontSize: '18px' }}>{item.name}</div>
                   <div style={{ color: '#666', fontSize: '12px' }}>
                     {formatPrice(item.price)} × {item.quantity}
+                    {item.weight_kg > 0 && ` • ${item.weight_kg}kg`}
                   </div>
                 </div>
 
@@ -790,19 +754,56 @@ export default function CheckoutPage() {
               <span>
                 Subtotal ({cartItems.length} item{cartItems.length !== 1 ? 's' : ''})
               </span>
-              <span className='keralasellerscheckoutitemname'>{formatPrice(calculateTotal())}</span>
+              <span className='keralasellerscheckoutitemname'>{formatPrice(calculateSubtotal())}</span>
             </div>
 
+            {/* ✅ NEW: Delivery Charge Display */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               marginTop: '8px',
-              fontSize: '14px'
+              fontSize: '14px',
+              padding: '12px',
+              backgroundColor: calculatingDelivery ? '#f9fafb' : 'transparent',
+              borderRadius: '8px'
             }}>
-              <span>Delivery</span>
-              <span style={{ color: '#10b981', fontWeight: '600' }}>Free</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Truck size={16} />
+                <span>Delivery</span>
+                {totalWeight > 0 && (
+                  <span style={{ fontSize: '11px', color: '#666' }}>
+                    ({totalWeight.toFixed(2)}kg)
+                  </span>
+                )}
+              </div>
+              <span style={{ 
+                color: deliveryCharge === 0 ? '#10b981' : '#1a4845', 
+                fontWeight: '600' 
+              }}>
+                {calculatingDelivery ? (
+                  'Calculating...'
+                ) : deliveryCharge === 0 ? (
+                  'Free'
+                ) : (
+                  formatPrice(deliveryCharge)
+                )}
+              </span>
             </div>
+
+            {/* ✅ NEW: Delivery Info Message */}
+            {deliveryInfo && deliveryInfo.reason && (
+              <div style={{
+                fontSize: '12px',
+                color: '#666',
+                padding: '8px 12px',
+                backgroundColor: '#f9fafb',
+                borderRadius: '6px',
+                marginTop: '8px'
+              }}>
+                {deliveryInfo.reason}
+              </div>
+            )}
 
             <div style={{
               display: 'flex',
@@ -813,24 +814,26 @@ export default function CheckoutPage() {
               fontSize: '20px',
             }}>
               <span className='keralasellerscheckoutitemname'>Total:</span>
-              <span className='keralasellerscheckoutitemname' style={{ color: 'rgb(5, 150, 105)', fontWeight: 'bold' }}>{formatPrice(calculateTotal())}</span>
+              <span className='keralasellerscheckoutitemname' style={{ color: 'rgb(5, 150, 105)', fontWeight: 'bold' }}>
+                {formatPrice(calculateTotal())}
+              </span>
             </div>
 
             <button
               className='keralasellerscheckoutbtn'
               onClick={handlePlaceOrder}
-              disabled={submitting || cartItems.length === 0}
+              disabled={submitting || cartItems.length === 0 || calculatingDelivery}
               style={{
                 width: '100%',
                 padding: '16px',
                 backgroundColor:
-                  submitting || cartItems.length === 0 ? '#ccc' : 'rgb(16, 185, 129)',
+                  submitting || cartItems.length === 0 || calculatingDelivery ? '#ccc' : 'rgb(16, 185, 129)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '16px',
                 fontWeight: 'bold',
-                cursor: submitting || cartItems.length === 0 ? 'not-allowed' : 'pointer',
+                cursor: submitting || cartItems.length === 0 || calculatingDelivery ? 'not-allowed' : 'pointer',
                 marginTop: '20px',
                 display: 'flex',
                 alignItems: 'center',
@@ -842,6 +845,8 @@ export default function CheckoutPage() {
               <CreditCard size={20} color="white" />
               {submitting
                 ? 'Processing...'
+                : calculatingDelivery
+                ? 'Calculating...'
                 : `Place Order (${formatPrice(calculateTotal())})`}
             </button>
           </div>
@@ -852,4 +857,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
- 

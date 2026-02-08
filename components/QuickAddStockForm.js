@@ -27,6 +27,8 @@ import axios from 'axios';
 // const API_URL = `${API_BASE_URL}/user/store/products/`;
 
 // ✅ Simple and clean API configuration
+
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
   (process.env.NODE_ENV === 'development' 
     ? 'http://localhost:8000' 
@@ -217,7 +219,7 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
         <form onSubmit={handleSubmit}>
           <div style={styles.formGroup}>
             <label style={styles.label}>Product Name*</label>
-            <input 
+            < input 
               type="text" 
               name="name" 
               value={formData.name} 
@@ -452,7 +454,6 @@ const styles = {
     boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
     animation: 'slideIn 0.3s ease-out'
   },
-
   modalHeader: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -460,7 +461,6 @@ const styles = {
     padding: '20px 24px 16px 24px',
     borderBottom: '1px solid #e5e7eb'
   },
-
   modalTitle: {
     fontSize: '20px',
     fontWeight: '600',
@@ -477,7 +477,6 @@ const styles = {
     padding: '4px 8px',
     borderRadius: '4px'
   },
-
   apiInfo: {
     fontSize: '12px', 
     color: '#6b7280', 
@@ -485,12 +484,10 @@ const styles = {
     marginBottom: '16px',
     fontFamily: 'monospace'
   },
-
   formGroup: { 
     marginBottom: '16px',
     padding: '0 24px'
   },
-
   // ✅ NEW: Form row for side-by-side fields
   formRow: {
     display: 'grid',
@@ -499,7 +496,6 @@ const styles = {
     padding: '0 24px',
     marginBottom: '16px'
   },
-
   label: {
     display: 'block',
     fontSize: '14px',
@@ -507,7 +503,6 @@ const styles = {
     color: '#374151',
     marginBottom: '6px'
   },
-
   input: { 
     width: '100%', 
     padding: '10px 12px', 
@@ -518,7 +513,6 @@ const styles = {
     outline: 'none',
     transition: 'border-color 0.2s'
   },
-
   helpText: {
     fontSize: '12px', 
     color: '#6b7280',

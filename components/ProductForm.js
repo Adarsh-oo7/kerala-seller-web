@@ -1358,7 +1358,7 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
                     {hasChildren ? (
                       <span style={categoryStyles.childrenCount}>
                         {allCategories.filter(cat => cat.parent === category.id).length} subcategories
-                      </span>
+                                            </span>
                     ) : (
                       <span style={categoryStyles.selectHint}>Click to select</span>
                     )}
@@ -1381,13 +1381,15 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
           </div>
         )}
       </div>
-    </div >
+    </div>
+    
   );
 };
 
 // ✅ Smart Stock Input Component
 const SmartStockInput = ({ formData, setFormData }) => {
   const [stockError, setStockError] = useState('');
+
 
   const handleTotalStockChange = (e) => {
     let value = e.target.value.replace('-', '');
@@ -1478,6 +1480,8 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     total_stock: 0,
     online_stock: 0,
     sale_type: 'BOTH',
+    weight_kg: '', // ✅ NEW: Weight field
+
   });
 
   const [mainImageUrl, setMainImageUrl] = useState('');
@@ -1508,6 +1512,8 @@ export default function ProductForm({ product, onClose, onSuccess }) {
         total_stock: product.total_stock || 0,
         online_stock: product.online_stock || 0,
         sale_type: product.sale_type || 'BOTH',
+         weight_kg: product.weight_kg || '', // ✅ NEW: Load existing weight
+
       });
       
       setSelectedCategoryId(product.category || '');
@@ -1574,46 +1580,90 @@ const subImages = product.sub_images
     fetchLimits();
   }, [product]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    
-    // ✅ VALIDATE MODEL NAME LENGTH (MAX 100 CHARACTERS)
-    if (name === 'model_name') {
-      if (value.length > 100) {
-        setModelNameError('Model name cannot exceed 100 characters');
-        return; // Don't update if exceeds limit
-      } else {
-        setModelNameError('');
-        setFormData({ ...formData, [name]: value });
-      }
-      return;
-    }
+const handleChange = (e) => {
+  const { name, value } = e.target;
 
-    if (name === 'price' || name === 'mrp') {
-      let cleanValue = value.replace(/^-/, '');
-      
-      const validation = validatePositiveNumber(cleanValue, name === 'price' ? 'Selling Price' : 'MRP');
-      
-      if (validation.isValid) {
-        setFormData(prev => ({ ...prev, [name]: cleanValue }));
-        setPriceError('');
-        
-        if (name === 'price' && formData.mrp) {
-          if (parseFloat(cleanValue) > parseFloat(formData.mrp)) {
-            setPriceError('Selling price cannot be higher than MRP');
-          }
-        } else if (name === 'mrp' && formData.price) {
-          if (parseFloat(formData.price) > parseFloat(cleanValue)) {
-            setPriceError('MRP cannot be lower than selling price');
-          }
-        }
-      } else if (cleanValue !== '') {
-        setPriceError(validation.error);
-      }
+  // ✅ VALIDATE MODEL NAME LENGTH (MAX 100 CHARACTERS)
+  if (name === 'model_name') {
+    if (value.length > 100) {
+      setModelNameError('Model name cannot exceed 100 characters');
+      return; // Don't update if exceeds limit
     } else {
-      setFormData({ ...formData, [name]: value });
+      setModelNameError('');
     }
-  };
+    setFormData({ ...formData, [name]: value });
+    return;
+  }
+
+  // ✅ NEW: Validate weight
+  if (name === 'weight_kg') {
+    let cleanValue = value.replace(/[^0-9.]/g, '');
+    const validation = validateWeight(cleanValue);
+    
+    if (!validation.isValid) {
+      setError(validation.error);
+    } else {
+      setError('');
+    }
+    
+    setFormData({ ...formData, [name]: cleanValue });
+    return;
+  }
+
+  // Existing price validation...
+  if (name === 'price' || name === 'mrp') {
+    let cleanValue = value.replace(/[^0-9.]/g, '');
+    const validation = validatePositiveNumber(cleanValue, name === 'price' ? 'Selling Price' : 'MRP');
+    
+    if (validation.isValid) {
+      setFormData(prev => ({ ...prev, [name]: cleanValue }));
+      setPriceError('');
+      
+      if (name === 'price' && formData.mrp) {
+        if (parseFloat(cleanValue) > parseFloat(formData.mrp)) {
+          setPriceError('Selling price cannot be higher than MRP');
+        }
+      } else if (name === 'mrp' && formData.price) {
+        if (parseFloat(formData.price) > parseFloat(cleanValue)) {
+          setPriceError('MRP cannot be lower than selling price');
+        }
+      }
+    } else if (cleanValue !== '') {
+      setPriceError(validation.error);
+    }
+  } else {
+    setFormData({ ...formData, [name]: value });
+  }
+};
+
+
+  // ✅ NEW: Weight validation
+const validateWeight = (value) => {
+  if (!value || value === null || value === undefined || value === '') {
+    return { isValid: true, error: null }; // Optional field
+  }
+  
+  const numValue = parseFloat(value);
+  
+  if (isNaN(numValue)) {
+    return { isValid: false, error: 'Weight must be a valid number' };
+  }
+  
+  if (numValue <= 0) {
+    return { isValid: false, error: 'Weight must be greater than 0' };
+  }
+  
+  if (numValue > 1000) {
+    return { isValid: false, error: 'Weight seems too large (max 1000 kg)' };
+  }
+  
+  return { isValid: true, error: null };
+};
+
+
+
+
+
 
 const handleMainImageUpload = (uploadedImages) => {
   if (uploadedImages.length > 0) {
@@ -1683,157 +1733,174 @@ const handleMainImageUpload = (uploadedImages) => {
     setDynamicAttributes(prev => ({ ...prev, [attributeName]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // ✅ VALIDATE MODEL NAME BEFORE SUBMISSION
-    if (formData.model_name && formData.model_name.length > 100) {
-      setError('Model name cannot exceed 100 characters');
-      setModelNameError('Model name cannot exceed 100 characters');
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  // ✅ VALIDATE MODEL NAME BEFORE SUBMISSION
+  if (formData.model_name && formData.model_name.length > 100) {
+    setError('Model name cannot exceed 100 characters');
+    setModelNameError('Model name cannot exceed 100 characters');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  if (!product && limitReached) {
+    setError(
+      `❌ Product limit reached! You have ${productCount}/${subscription.product_limit} products. ` +
+      `Please upgrade your subscription to add more products.`
+    );
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  if (!product && subscription && !subscription.is_active) {
+    setError(
+      'You need an active subscription to add products. ' +
+      'Please visit the subscription page to subscribe.'
+    );
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  if (!mainImageUrl && !product) {
+    setError('Please upload a main product image');
+    return;
+  }
+
+  if (uploadingImages) {
+    setError('Please wait for image uploads to complete');
+    return;
+  }
+
+  if (!selectedCategoryId) {
+    setError('Please select a product category');
+    return;
+  }
+
+  const priceValidation = validatePositiveNumber(formData.price, 'Selling Price');
+  if (!priceValidation.isValid) {
+    setError(priceValidation.error);
+    return;
+  }
+
+  if (formData.mrp) {
+    const mrpValidation = validatePositiveNumber(formData.mrp, 'MRP');
+    if (!mrpValidation.isValid) {
+      setError(mrpValidation.error);
+      return;
+    }
+
+    if (parseFloat(formData.price) > parseFloat(formData.mrp)) {
+      setError('Selling price cannot be higher than MRP');
+      return;
+    }
+  }
+
+  const totalStockValidation = validatePositiveInteger(formData.total_stock, 'Total Stock');
+  if (!totalStockValidation.isValid) {
+    setError(totalStockValidation.error);
+    return;
+  }
+
+  const onlineStockValidation = validatePositiveInteger(formData.online_stock, 'Online Stock');
+  if (!onlineStockValidation.isValid) {
+    setError(onlineStockValidation.error);
+    return;
+  }
+
+  if (formData.online_stock > formData.total_stock) {
+    setError('Online stock cannot be more than total stock');
+    return;
+  }
+
+  // ✅ NEW: Validate weight (optional but if provided must be valid)
+  if (formData.weight_kg && formData.weight_kg !== '') {
+    const weightValidation = validateWeight(formData.weight_kg);
+    if (!weightValidation.isValid) {
+      setError(weightValidation.error);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+  }
 
-    if (!product && limitReached) {
-      setError(
-        `❌ Product limit reached! You have ${productCount}/${subscription.product_limit} products. ` +
-        `Please upgrade your subscription to add more products.`
-      );
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
+  setIsSubmitting(true);
+  setError('');
 
-    if (!product && subscription && !subscription.is_active) {
-      setError(
-        'You need an active subscription to add products. ' +
-        'Please visit the subscription page to subscribe.'
-      );
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-
-    if (!mainImageUrl && !product) {
-      setError('Please upload a main product image');
-      return;
-    }
-
-    if (uploadingImages) {
-      setError('Please wait for image uploads to complete');
-      return;
-    }
-
-    if (!selectedCategoryId) {
-      setError('Please select a product category');
-      return;
-    }
-
-    const priceValidation = validatePositiveNumber(formData.price, 'Selling Price');
-    if (!priceValidation.isValid) {
-      setError(priceValidation.error);
-      return;
-    }
-
-    if (formData.mrp) {
-      const mrpValidation = validatePositiveNumber(formData.mrp, 'MRP');
-      if (!mrpValidation.isValid) {
-        setError(mrpValidation.error);
-        return;
-      }
-
-      if (parseFloat(formData.price) > parseFloat(formData.mrp)) {
-        setError('Selling price cannot be higher than MRP');
-        return;
-      }
-    }
-
-    const totalStockValidation = validatePositiveInteger(formData.total_stock, 'Total Stock');
-    if (!totalStockValidation.isValid) {
-      setError(totalStockValidation.error);
-      return;
-    }
-
-    const onlineStockValidation = validatePositiveInteger(formData.online_stock, 'Online Stock');
-    if (!onlineStockValidation.isValid) {
-      setError(onlineStockValidation.error);
-      return;
-    }
-
-    if (formData.online_stock > formData.total_stock) {
-      setError('Online stock cannot be more than total stock');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError('');
-
-    const submissionData = {
-      ...formData,
-      category: selectedCategoryId ? parseInt(selectedCategoryId) : null,
-      attributes: dynamicAttributes,
-      main_image_url: mainImageUrl,
-      sub_image_urls: subImageUrls.map(img => ({
-        url: img.url,
-        public_id: img.public_id
-      }))
-    };
-
-    console.log('🚀 Submitting product data:', submissionData);
-
-    const url = product
-      ? `${PRODUCTS_API_URL}${product.id}/`
-      : PRODUCTS_API_URL;
-    const method = product ? 'PATCH' : 'POST';
-
-    try {
-      const token = localStorage.getItem('accessToken');
-      const response = await axios({
-        method,
-        url,
-        data: submissionData,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000
-      });
-
-      console.log('✅ Product saved successfully:', response.data);
-      onSuccess();
-    } catch (err) {
-      let errorMessage = 'Something went wrong. Please check your details and try again.';
-
-      if (err.response?.status === 401) {
-        errorMessage = 'Your session has expired. Please log in again.';
-        setTimeout(() => {
-          localStorage.removeItem('accessToken');
-          window.location.href = '/login/seller';
-        }, 2000);
-      } else if (err.response?.data) {
-        if (typeof err.response.data === 'string') {
-          errorMessage = err.response.data;
-        } else if (err.response.data.detail) {
-          errorMessage = err.response.data.detail;
-        } else if (err.response.data.model_name) {
-          errorMessage = Array.isArray(err.response.data.model_name) 
-            ? err.response.data.model_name[0]
-            : err.response.data.model_name;
-          setModelNameError(errorMessage);
-        } else if (err.response.data.category) {
-          errorMessage = 'Please select a valid category';
-        } else if (err.response.data.main_image_url) {
-          errorMessage = 'Main image is required';
-        }
-      } else if (err.code === 'ECONNABORTED') {
-        errorMessage = 'Request is taking too long. Please check your internet connection and try again.';
-      }
-
-      console.error('❌ Product save error:', err);
-      setError(errorMessage);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const submissionData = {
+    ...formData,
+    category: selectedCategoryId ? parseInt(selectedCategoryId) : null,
+    attributes: dynamicAttributes,
+    main_image_url: mainImageUrl,
+    sub_image_urls: subImageUrls.map(img => ({
+      url: img.url,
+      public_id: img.public_id
+    })),
+    weight_kg: formData.weight_kg && formData.weight_kg !== '' ? parseFloat(formData.weight_kg) : null, // ✅ NEW: Include weight
   };
+
+  console.log('🚀 Submitting product data:', submissionData);
+
+  const url = product
+    ? `${PRODUCTS_API_URL}${product.id}/`
+    : PRODUCTS_API_URL;
+  const method = product ? 'PATCH' : 'POST';
+
+  try {
+    const token = localStorage.getItem('accessToken');
+    const response = await axios({
+      method,
+      url,
+      data: submissionData,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000
+    });
+
+    console.log('✅ Product saved successfully:', response.data);
+    onSuccess();
+  } catch (err) {
+    let errorMessage = 'Something went wrong. Please check your details and try again.';
+
+    if (err.response?.status === 401) {
+      errorMessage = 'Your session has expired. Please log in again.';
+      setTimeout(() => {
+        localStorage.removeItem('accessToken');
+        window.location.href = '/login/seller';
+      }, 2000);
+    } else if (err.response?.data) {
+      if (typeof err.response.data === 'string') {
+        errorMessage = err.response.data;
+      } else if (err.response.data.detail) {
+        errorMessage = err.response.data.detail;
+      } else if (err.response.data.model_name) {
+        errorMessage = Array.isArray(err.response.data.model_name) 
+          ? err.response.data.model_name[0]
+          : err.response.data.model_name;
+        setModelNameError(errorMessage);
+      } else if (err.response.data.category) {
+        errorMessage = 'Please select a valid category';
+      } else if (err.response.data.main_image_url) {
+        errorMessage = 'Main image is required';
+      } else if (err.response.data.weight_kg) {
+        // ✅ NEW: Handle weight validation errors from backend
+        errorMessage = Array.isArray(err.response.data.weight_kg) 
+          ? err.response.data.weight_kg[0]
+          : err.response.data.weight_kg;
+      }
+    } else if (err.code === 'ECONNABORTED') {
+      errorMessage = 'Request is taking too long. Please check your internet connection and try again.';
+    }
+
+    console.error('❌ Product save error:', err);
+    setError(errorMessage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
   return (
     <div style={styles.modalOverlay}>
       <div style={styles.modalContent}>
@@ -2092,6 +2159,63 @@ const handleMainImageUpload = (uploadedImages) => {
               </div>
             )}
           </div>
+          <h3 className="dashboardproductmodalsectiontitle" style={styles.sectionTitle}>
+  📦 Product Weight (for Delivery Charges)
+</h3>
+<div className="dashboardproductmodalsectioncontainer" style={styles.sectionContainer}>
+  <div style={styles.formGroup}>
+    <label className="dashboardproductmodalsectionlabel" style={styles.label}>
+      Weight (in kg)
+      <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px', fontWeight: 'normal' }}>
+        Optional
+      </span>
+    </label>
+    <input
+      type="number"
+      name="weight_kg"
+      value={formData.weight_kg}
+      onChange={handleChange}
+      style={styles.input}
+      className="dashboardproductmodalselectinput"
+      step="0.01"
+      min="0"
+      max="1000"
+      placeholder="e.g., 0.5, 2.5, 10"
+      onKeyPress={(e) => {
+        if (e.key === '-') e.preventDefault();
+      }}
+    />
+    <small style={styles.helpText}>
+      💡 <strong>Why add weight?</strong> When the delivery system is enabled, 
+      shipping charges are calculated automatically based on product weight using your configured slabs. 
+      Leave empty if not applicable.
+    </small>
+    {formData.weight_kg && parseFloat(formData.weight_kg) > 0 && (
+      <div style={{
+        marginTop: '12px',
+        padding: '12px 14px',
+        backgroundColor: '#d1fae5',
+        border: '1px solid #10b981',
+        borderRadius: '8px',
+        fontSize: '13px',
+        color: '#065f46',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+      }}>
+        <CheckCircle size={16} />
+        <span>
+          Weight set to <strong>{parseFloat(formData.weight_kg).toFixed(2)} kg</strong> - 
+          Delivery charges will be calculated automatically when the delivery system is enabled
+        </span>
+      </div>
+    )}
+  </div>
+</div>
+
+
+
+<hr style={styles.hr} />
 
           <SmartStockInput formData={formData} setFormData={setFormData} />
 

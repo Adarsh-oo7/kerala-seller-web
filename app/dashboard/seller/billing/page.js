@@ -1,9 +1,7 @@
 'use client';
-
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import '../../../../styles/DashboardBilling.css'
-
 import {
   Search,
   Plus,
@@ -333,19 +331,15 @@ export default function LocalBillingPage() {
       const file = new Blob([htmlResponse.data], { type: 'text/html' });
       const fileURL = URL.createObjectURL(file);
       window.open(fileURL, '_blank');
-
       // Save seller phone for future use
       localStorage.setItem('sellerPhone', sellerPhone);
-
       // Reset form
       setBillItems([]);
       setCustomer({ name: '', phone: '' });
       setSuccess(`✅ Bill ${billId} generated! Stock updated automatically.`);
       setTimeout(() => setSuccess(''), 5000);
-
       // Refresh products to show updated stock
       fetchProducts();
-
     } catch (error) {
       console.error('❌ Billing error:', error);
       console.error('❌ Error response:', error.response?.data);
@@ -1354,13 +1348,11 @@ const styles = {
     color: '#dc2626',
     marginBottom: '4px'
   },
-
   billItems: {
     fontSize: '14px',
     color: '#6b7280',
     marginBottom: '8px'
   },
-
   billType: {
     fontSize: '12px',
     color: '#dc2626',
@@ -1455,6 +1447,6 @@ const styles = {
     fontSize: '13px',
     marginTop: '2px',
   },
-
 };
 
+          
