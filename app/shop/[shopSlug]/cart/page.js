@@ -12,16 +12,15 @@ import {
   Store,
   AlertTriangle,
   Loader,
+  Truck,
+  Weight
 } from 'lucide-react';
 import "../../../../styles/Shopslugcart.css";
 import SHeader from '../../../../components/common/SHeader';
 import { toast } from "react-toastify";
 import { useCart } from '../../../../app/context/CartContext';
 
-// const API_BASE_URL = 'https://api.keralasellers.in';
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
-
 
 export default function ShopCartPage() {
   const { shopSlug } = useParams();
@@ -45,6 +44,11 @@ export default function ShopCartPage() {
   const [stockLimits, setStockLimits] = useState({});
   const [validatingStock, setValidatingStock] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // ✅ NEW: Delivery calculation state
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [totalWeight, setTotalWeight] = useState(0);
+  const [isFreeDelivery, setIsFreeDelivery] = useState(false);
 
   useEffect(() => {
     try {
@@ -116,7 +120,7 @@ export default function ShopCartPage() {
     }
   }, [urlError, actualStoreId, router]);
 
-  // ✅ Load cart from context + store data (UI unchanged)
+  // ✅ Load cart from context + store data
   useEffect(() => {
     const loadCartAndStore = async () => {
       if (!actualStoreId) {
@@ -158,57 +162,116 @@ export default function ShopCartPage() {
     }
   }, [actualStoreId, urlError, carts, getCartBySeller]);
 
-  // ✅ Keep local cartItems in sync with context on any carts change
+  // ✅ Keep local cartItems in sync with context
   useEffect(() => {
     if (!actualStoreId) return;
     const storeCart = carts[actualStoreId] || [];
     setCartItems(storeCart);
   }, [actualStoreId, carts]);
 
-  // ✅ FIXED: Validate stock using backend's online_stock field
-  const validateStock = async () => {
-    if (!actualStoreId || cartItems.length === 0) return;
-
-    setValidatingStock(true);
-    try {
-      const warnings = {};
-      const limits = {};
-
-      for (const item of cartItems) {
-        try {
-          const response = await fetch(
-            `${API_BASE_URL}/shop/${actualStoreId}/products/${item.id}/`
-          );
-          if (response.ok) {
-            const product = await response.json();
-
-            const availableStock =
-              product.online_stock ?? product.total_stock ?? 0;
-
-            limits[item.id] = availableStock;
-
-            if (item.quantity > availableStock) {
-              warnings[item.id] =
-                availableStock === 0
-                  ? 'Out of stock'
-                  : `Only ${availableStock} available`;
-            }
-          }
-        } catch (error) {
-          console.warn(`⚠️ Stock check failed for product ${item.id}:`, error);
-        }
-      }
-
-      setStockLimits(limits);
-      setStockWarnings(warnings);
-    } catch (error) {
-      console.warn('⚠️ Stock validation failed:', error);
-    } finally {
-      setValidatingStock(false);
+  // ✅ NEW: Calculate delivery charge when cart items change
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      setDeliveryCharge(0);
+      setTotalWeight(0);
+      setIsFreeDelivery(false);
+      return;
     }
-  };
 
-  // ✅ IMMEDIATE stock validation (no debounce)
+    // Calculate total weight
+    const weight = cartItems.reduce((sum, item) => {
+      const itemWeight = parseFloat(item.weight_kg || 0);
+      return sum + (itemWeight * item.quantity);
+    }, 0);
+
+    setTotalWeight(weight);
+
+    // Calculate subtotal
+    const subtotal = calculateTotal();
+
+    // Delivery logic
+    let charge = 0;
+    let isFree = true;
+
+    if (weight > 0) {
+      // Base charge: ₹50 + ₹10 per kg
+      charge = 50 + (weight * 10);
+      isFree = false;
+
+      // Free delivery conditions
+      if (subtotal >= 500 || weight < 1) {
+        charge = 0;
+        isFree = true;
+      }
+    } else {
+      // No weight data = Free delivery
+      charge = 0;
+      isFree = true;
+    }
+
+    setDeliveryCharge(charge);
+    setIsFreeDelivery(isFree);
+
+    console.log('📦 Cart delivery calculation:', { weight, subtotal, charge, isFree });
+  }, [cartItems]);
+
+  // ✅ Validate stock using backend's online_stock field
+  // ✅ UPDATED: Validate stock with fallback for missing endpoint
+const validateStock = async () => {
+  if (!actualStoreId || cartItems.length === 0) return;
+
+  setValidatingStock(true);
+  try {
+    const warnings = {};
+    const limits = {};
+
+    for (const item of cartItems) {
+      try {
+        // ✅ Try the product endpoint first
+        let response = await fetch(
+          `${API_BASE_URL}/shop/${actualStoreId}/products/${item.id}/`
+        );
+
+        // ✅ If 404, try the main product API instead
+        if (!response.ok && response.status === 404) {
+          console.log(`⚠️ Shop product endpoint not found for ${item.id}, trying main API`);
+          response = await fetch(`${API_BASE_URL}/api/products/${item.id}/`);
+        }
+
+        if (response.ok) {
+          const product = await response.json();
+
+          const availableStock =
+            product.online_stock ?? product.total_stock ?? 0;
+
+          limits[item.id] = availableStock;
+
+          if (item.quantity > availableStock) {
+            warnings[item.id] =
+              availableStock === 0
+                ? 'Out of stock'
+                : `Only ${availableStock} available`;
+          }
+        } else {
+          // ✅ If both endpoints fail, assume stock is OK
+          console.warn(`⚠️ Could not validate stock for product ${item.id}`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Stock check failed for product ${item.id}:`, error);
+      }
+    }
+
+    setStockLimits(limits);
+    setStockWarnings(warnings);
+  } catch (error) {
+    console.warn('⚠️ Stock validation failed:', error);
+  } finally {
+    setValidatingStock(false);
+  }
+};
+
+
+  // ✅ Stock validation
   useEffect(() => {
     if (cartItems.length > 0 && !loading) {
       validateStock();
@@ -218,59 +281,69 @@ export default function ShopCartPage() {
     }
   }, [cartItems, actualStoreId, loading]);
 
-  // ✅ ASYNC quantity update with real-time stock validation, then context
-  const updateQuantity = async (productId, newQuantity) => {
-    if (newQuantity < 1) return;
+  // ✅ Quantity update with stock validation
+// ✅ UPDATED: Quantity update with fallback endpoint
+const updateQuantity = async (productId, newQuantity) => {
+  if (newQuantity < 1) return;
 
-    const item = cartItems.find(item => item.id === productId);
-    if (!item) return;
+  const item = cartItems.find(item => item.id === productId);
+  if (!item) return;
 
-    if (newQuantity > item.quantity) {
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/shop/${actualStoreId}/products/${productId}/`
-        );
-        if (response.ok) {
-          const product = await response.json();
+  if (newQuantity > item.quantity) {
+    try {
+      // ✅ Try shop endpoint first
+      let response = await fetch(
+        `${API_BASE_URL}/shop/${actualStoreId}/products/${productId}/`
+      );
 
-          const availableStock =
-            product.online_stock ?? product.total_stock ?? 0;
+      // ✅ Fallback to main API if shop endpoint fails
+      if (!response.ok && response.status === 404) {
+        console.log(`⚠️ Shop product endpoint not found, trying main API`);
+        response = await fetch(`${API_BASE_URL}/api/products/${productId}/`);
+      }
 
-          if (newQuantity > availableStock) {
-            toast.error(
-              availableStock === 0
-                ? 'This item is out of stock'
-                : `Only ${availableStock} ${
-                    availableStock === 1 ? 'item' : 'items'
-                  } available in stock`,
-              {
-                position: 'bottom-center',
-                autoClose: 3000,
-                theme: 'colored',
-              }
-            );
+      if (response.ok) {
+        const product = await response.json();
 
-            setStockLimits(prev => ({ ...prev, [productId]: availableStock }));
-            return;
-          }
+        const availableStock =
+          product.online_stock ?? product.total_stock ?? 0;
+
+        if (newQuantity > availableStock) {
+          toast.error(
+            availableStock === 0
+              ? 'This item is out of stock'
+              : `Only ${availableStock} ${
+                  availableStock === 1 ? 'item' : 'items'
+                } available in stock`,
+            {
+              position: 'bottom-center',
+              autoClose: 3000,
+              theme: 'colored',
+            }
+          );
 
           setStockLimits(prev => ({ ...prev, [productId]: availableStock }));
+          return;
         }
-      } catch (error) {
-        console.error('❌ Stock check failed:', error);
-        toast.warning('Unable to verify stock. Please try again.', {
-          position: 'bottom-center',
-          autoClose: 2000,
-        });
-        return;
-      }
-    }
 
-    // ✅ Update via context, not localStorage
-    if (ctxUpdateQuantity && actualStoreId) {
-      ctxUpdateQuantity(actualStoreId, productId, newQuantity);
+        setStockLimits(prev => ({ ...prev, [productId]: availableStock }));
+      } else {
+        // ✅ If validation fails, allow the update
+        console.warn(`⚠️ Could not validate stock for product ${productId}, allowing update`);
+      }
+    } catch (error) {
+      console.error('❌ Stock check failed:', error);
+      // ✅ Allow update if validation fails
+      console.warn('⚠️ Stock validation failed, allowing quantity update');
     }
-  };
+  }
+
+  // ✅ Update via context
+  if (ctxUpdateQuantity && actualStoreId) {
+    ctxUpdateQuantity(actualStoreId, productId, newQuantity);
+  }
+};
+
 
   const isPlusButtonDisabled = (productId, currentQuantity) => {
     const maxStock = stockLimits[productId];
@@ -351,6 +424,11 @@ export default function ShopCartPage() {
       (sum, item) => sum + item.price * item.quantity,
       0
     );
+  };
+
+  // ✅ UPDATED: Calculate grand total with delivery
+  const calculateGrandTotal = () => {
+    return calculateTotal() + deliveryCharge;
   };
 
   const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
@@ -446,7 +524,6 @@ export default function ShopCartPage() {
       <SHeader store={storeData} isLoggedIn={isLoggedIn} />
 
       <div style={styles.container}>
-        {/* All JSX and styles below are exactly your original code */}
         <div style={styles.header}>
           <button onClick={handleBackClick} style={styles.backButton}>
             <ArrowLeft size={20} color="red" />
@@ -560,6 +637,15 @@ export default function ShopCartPage() {
                         <p className="item-price" style={styles.itemPrice}>
                           {formatPrice(item.price)} each
                         </p>
+                        
+                        {/* ✅ NEW: Weight display */}
+                        {item.weight_kg && item.weight_kg > 0 && (
+                          <p style={styles.weightInfo}>
+                            <Weight size={14} />
+                            {item.weight_kg} kg × {item.quantity} = {(item.weight_kg * item.quantity).toFixed(2)} kg
+                          </p>
+                        )}
+
                         {stockWarnings[item.id] && (
                           <p style={styles.stockWarning}>
                             ⚠️ {stockWarnings[item.id]}
@@ -633,10 +719,29 @@ export default function ShopCartPage() {
                     {formatPrice(calculateTotal())}
                   </span>
                 </div>
+
+                {/* ✅ NEW: Delivery Charge Row with Weight */}
                 <div style={styles.summaryRow}>
-                  <span style={styles.summaryLabel}>Delivery</span>
-                  <span style={styles.summaryValue}>Free</span>
+                  <span style={{ ...styles.summaryLabel, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Truck size={16} />
+                    Delivery
+                    {totalWeight > 0 && (
+                      <span style={{ fontSize: '11px', color: '#6b7280' }}>
+                        ({totalWeight.toFixed(2)} kg)
+                      </span>
+                    )}
+                  </span>
+                  {isFreeDelivery ? (
+                    <span style={{ ...styles.summaryValue, color: '#10b981', fontWeight: '700' }}>
+                      FREE 🎉
+                    </span>
+                  ) : (
+                    <span style={styles.summaryValue}>
+                      {formatPrice(deliveryCharge)}
+                    </span>
+                  )}
                 </div>
+
                 {Object.keys(stockWarnings).length > 0 && (
                   <div style={styles.summaryRow}>
                     <span style={styles.summaryLabel}>Stock Issues</span>
@@ -646,12 +751,13 @@ export default function ShopCartPage() {
                     </span>
                   </div>
                 )}
+
                 <div style={styles.totalRow}>
                   <span className="totallabel" style={styles.totalLabel}>
                     Total
                   </span>
                   <span className="totallabel" style={styles.totalValue}>
-                    {formatPrice(calculateTotal())}
+                    {formatPrice(calculateGrandTotal())}
                   </span>
                 </div>
 
@@ -687,7 +793,6 @@ export default function ShopCartPage() {
   );
 }
 
-
 const styles = {
   pageContainer: { minHeight: '100vh', backgroundColor: '#FDFFF0', paddingTop: '130px' },
   container: { backgroundColor: "#FDFFF0", padding: "20px", margin: "0 auto", overflowX: "hidden" },
@@ -695,7 +800,7 @@ const styles = {
   spinner: { width: '32px', height: '32px', border: '3px solid #f3f3f3', borderTop: '3px solid #3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' },
   errorContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 90px)', gap: '20px', textAlign: 'center', padding: '40px' },
   homeButton: { padding: '12px 24px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' },
-  header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', backgroundColor: '#FDFFF0', borderRadius: '12px', padding: '16px', boxShadow: '0px  2px 3px rgba(0,0,0,0.3)' },
+  header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', backgroundColor: '#FDFFF0', borderRadius: '12px', padding: '16px', boxShadow: '0px 2px 3px rgba(0,0,0,0.3)' },
   backButton: { background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', padding: '8px', borderRadius: '6px' },
   title: { fontSize: '24px', fontWeight: '700', color: '#1f2937', flex: 1, textAlign: 'center' },
   clearButton: { background: 'none', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '6px', padding: '8px 12px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' },
@@ -714,6 +819,7 @@ const styles = {
   itemImage: { width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0, border: '1px solid #e5e7eb' },
   itemName: { fontSize: '16px', fontWeight: '600', color: '#1f2937', margin: '0 0 6px 0', lineHeight: '1.4' },
   itemPrice: { fontSize: '14px', color: '#059669', margin: '0 0 4px 0', fontWeight: '600' },
+  weightInfo: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#6b7280', margin: '4px 0 0 0' },
   stockWarning: { fontSize: '12px', color: '#ef4444', fontWeight: '500', margin: '4px 0 0 0' },
   quantityButton: { width: '26px', height: '26px', border: '1px solid #d1d5db', backgroundColor: '#FDFFF0', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', color: '#374151' },
   quantity: { minWidth: '32px', textAlign: 'center', fontWeight: '700', color: '#1f2937', fontSize: '16px' },

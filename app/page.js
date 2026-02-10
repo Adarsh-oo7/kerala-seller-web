@@ -180,263 +180,262 @@ export default function Home() {
   // 🔽 OLD PRODUCT FETCHING CODE - COMMENTED OUT
   // ==========================================
   
-  // const fetchProducts = useCallback(async (page = 1, appliedFilters = filters) => {
-  //   if (page === 1) {
-  //     setIsLoading(true);
-  //   } else {
-  //     setIsLoadingMore(true);
-  //   }
-  //   setError('');
+  const fetchProducts = useCallback(async (page = 1, appliedFilters = filters) => {
+    if (page === 1) {
+      setIsLoading(true);
+    } else {
+      setIsLoadingMore(true);
+    }
+    setError('');
 
-  //   try {
-  //     let url = `${PRODUCTS_API_URL}?page=${page}`;
+    try {
+      let url = `${PRODUCTS_API_URL}?page=${page}`;
 
-  //     // Add filters to URL
-  //     if (appliedFilters.category) {
-  //       url += `&category=${appliedFilters.category}`;
-  //     }
-  //     if (appliedFilters.search) {
-  //       url += `&search=${encodeURIComponent(appliedFilters.search)}`;
-  //     }
+      // Add filters to URL
+      if (appliedFilters.category) {
+        url += `&category=${appliedFilters.category}`;
+      }
+      if (appliedFilters.search) {
+        url += `&search=${encodeURIComponent(appliedFilters.search)}`;
+      }
 
-  //     console.log('Fetching products from:', url);
-  //     const response = await axios.get(url);
-  //     const data = response.data;
-  //     console.log('Products API response:', data);
+      console.log('Fetching products from:', url);
+      const response = await axios.get(url);
+      const data = response.data;
+      console.log('Products API response:', data);
 
-  //     let productList = [];
+      let productList = [];
 
-  //     // ✅ Enhanced response structure handling
-  //     if (Array.isArray(data.results)) {
-  //       productList = data.results;
-  //     } else if (Array.isArray(data.data)) {
-  //       productList = data.data;
-  //     } else if (Array.isArray(data)) {
-  //       productList = data;
-  //     } else if (data.products && Array.isArray(data.products)) {
-  //       productList = data.products;
-  //     } else {
-  //       console.warn('Unexpected API response structure:', data);
-  //       productList = [];
-  //     }
+      // ✅ Enhanced response structure handling
+      if (Array.isArray(data.results)) {
+        productList = data.results;
+      } else if (Array.isArray(data.data)) {
+        productList = data.data;
+      } else if (Array.isArray(data)) {
+        productList = data;
+      } else if (data.products && Array.isArray(data.products)) {
+        productList = data.products;
+      } else {
+        console.warn('Unexpected API response structure:', data);
+        productList = [];
+      }
 
-  //     console.log('Processed product list:', productList.length, 'products');
+      console.log('Processed product list:', productList.length, 'products');
 
-  //     // Set pagination info
-  //     const count = data.count || data.total || productList.length;
-  //     setTotalPages(Math.ceil(count / (data.page_size || 20)));
-  //     setTotalProducts(count);
+      // Set pagination info
+      const count = data.count || data.total || productList.length;
+      setTotalPages(Math.ceil(count / (data.page_size || 20)));
+      setTotalProducts(count);
 
-  //     // Apply client-side filters
-  //     const filteredList = applyClientFilters(productList, appliedFilters);
+      // Apply client-side filters
+      const filteredList = applyClientFilters(productList, appliedFilters);
 
-  //     if (page === 1) {
-  //       setProducts(filteredList);
-  //       setFilteredProducts(filteredList);
-  //     } else {
-  //       setProducts(prev => [...prev, ...filteredList]);
-  //       setFilteredProducts(prev => [...prev, ...filteredList]);
-  //     }
+      if (page === 1) {
+        setProducts(filteredList);
+        setFilteredProducts(filteredList);
+      } else {
+        setProducts(prev => [...prev, ...filteredList]);
+        setFilteredProducts(prev => [...prev, ...filteredList]);
+      }
 
-  //   } catch (error) {
-  //     console.error("Failed to fetch products:", error);
-  //     if (error.response) {
-  //       setError(`Server error: ${error.response.status} - ${error.response.statusText}`);
-  //     } else if (error.request) {
-  //       setError('Network error: Unable to connect to server');
-  //     } else {
-  //       setError('Failed to load products. Please try again.');
-  //     }
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+      if (error.response) {
+        setError(`Server error: ${error.response.status} - ${error.response.statusText}`);
+      } else if (error.request) {
+        setError('Network error: Unable to connect to server');
+      } else {
+        setError('Failed to load products. Please try again.');
+      }
 
-  //     // Set empty arrays to prevent crashes
-  //     if (page === 1) {
-  //       setProducts([]);
-  //       setFilteredProducts([]);
-  //     }
-  //   } finally {
-  //     if (page === 1) {
-  //       setIsLoading(false);
-  //     } else {
-  //       setIsLoadingMore(false);
-  //     }
-  //   }
-  // }, [filters]);
+      // Set empty arrays to prevent crashes
+      if (page === 1) {
+        setProducts([]);
+        setFilteredProducts([]);
+      }
+    } finally {
+      if (page === 1) {
+        setIsLoading(false);
+      } else {
+        setIsLoadingMore(false);
+      }
+    }
+  }, [filters]);
 
-  // const applyClientFilters = (productList, appliedFilters) => {
-  //   if (!Array.isArray(productList)) {
-  //     console.warn('Product list is not an array:', productList);
-  //     return [];
-  //   }
+  const applyClientFilters = (productList, appliedFilters) => {
+    if (!Array.isArray(productList)) {
+      console.warn('Product list is not an array:', productList);
+      return [];
+    }
 
-  //   let filtered = [...productList];
+    let filtered = [...productList];
 
-  //   // Price filter
-  //   if (appliedFilters.priceMin || appliedFilters.priceMax) {
-  //     filtered = filtered.filter(product => {
-  //       const price = parseFloat(product.price) || 0;
-  //       const min = parseFloat(appliedFilters.priceMin) || 0;
-  //       const max = parseFloat(appliedFilters.priceMax) || Infinity;
-  //       return price >= min && price <= max;
-  //     });
-  //   }
+    // Price filter
+    if (appliedFilters.priceMin || appliedFilters.priceMax) {
+      filtered = filtered.filter(product => {
+        const price = parseFloat(product.price) || 0;
+        const min = parseFloat(appliedFilters.priceMin) || 0;
+        const max = parseFloat(appliedFilters.priceMax) || Infinity;
+        return price >= min && price <= max;
+      });
+    }
 
-  //   // Rating filter
-  //   if (appliedFilters.rating) {
-  //     const minRating = parseFloat(appliedFilters.rating);
-  //     filtered = filtered.filter(product =>
-  //       (product.average_rating || 0) >= minRating
-  //     );
-  //   }
+    // Rating filter
+    if (appliedFilters.rating) {
+      const minRating = parseFloat(appliedFilters.rating);
+      filtered = filtered.filter(product =>
+        (product.average_rating || 0) >= minRating
+      );
+    }
 
-  //   // Stock filter
-  //   if (appliedFilters.inStock) {
-  //     filtered = filtered.filter(product =>
-  //       (product.online_stock || 0) > 0
-  //     );
-  //   }
+    // Stock filter
+    if (appliedFilters.inStock) {
+      filtered = filtered.filter(product =>
+        (product.online_stock || 0) > 0
+      );
+    }
 
-  //   // Sort products
-  //   switch (appliedFilters.sortBy) {
-  //     case 'price_low':
-  //       filtered.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
-  //       break;
-  //     case 'price_high':
-  //       filtered.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
-  //       break;
-  //     case 'rating':
-  //       filtered.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
-  //       break;
-  //     case 'newest':
-  //     default:
-  //       filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-  //       break;
-  //   }
+    // Sort products
+    switch (appliedFilters.sortBy) {
+      case 'price_low':
+        filtered.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+        break;
+      case 'price_high':
+        filtered.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
+        break;
+      case 'rating':
+        filtered.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
+        break;
+      case 'newest':
+      default:
+        filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        break;
+    }
 
-  //   return filtered;
-  // };
+    return filtered;
+  };
 
-  // ✅ Enhanced wishlist functionality
-  // const handleToggleWishlist = async (productId) => {
-  //   console.log('🔍 Toggle wishlist for product:', productId);
+  const handleToggleWishlist = async (productId) => {
+    console.log('🔍 Toggle wishlist for product:', productId);
 
-  //   const headers = getAuthHeaders();
-  //   if (!headers) {
-  //     router.push("/login/buyer");
-  //     return;
-  //   }
+    const headers = getAuthHeaders();
+    if (!headers) {
+      router.push("/login/buyer");
+      return;
+    }
 
-  //   if (wishlistLoading.has(productId)) {
-  //     console.log('⏳ Wishlist request already in progress for product:', productId);
-  //     return;
-  //   }
+    if (wishlistLoading.has(productId)) {
+      console.log('⏳ Wishlist request already in progress for product:', productId);
+      return;
+    }
 
-  //   setWishlistLoading(prev => new Set([...prev, productId]));
+    setWishlistLoading(prev => new Set([...prev, productId]));
 
-  //   try {
-  //     console.log('🔄 Sending wishlist toggle request...');
-  //     const response = await axios.post(WISHLIST_TOGGLE_API, {
-  //       product_id: productId
-  //     }, {
-  //       headers,
-  //       timeout: 10000
-  //     });
+    try {
+      console.log('🔄 Sending wishlist toggle request...');
+      const response = await axios.post(WISHLIST_TOGGLE_API, {
+        product_id: productId
+      }, {
+        headers,
+        timeout: 10000
+      });
 
-  //     console.log('✅ Wishlist toggle response:', response.data);
+      console.log('✅ Wishlist toggle response:', response.data);
 
-  //     const updateProducts = (prevProducts) =>
-  //       prevProducts.map(product =>
-  //         product.id === productId
-  //           ? { ...product, isWishlisted: response.data.is_wishlisted }
-  //           : product
-  //       );
+      const updateProducts = (prevProducts) =>
+        prevProducts.map(product =>
+          product.id === productId
+            ? { ...product, isWishlisted: response.data.is_wishlisted }
+            : product
+        );
 
-  //     setProducts(updateProducts);
-  //     setFilteredProducts(updateProducts);
+      setProducts(updateProducts);
+      setFilteredProducts(updateProducts);
 
-  //     const action = response.data.is_wishlisted ? 'added to' : 'removed from';
-  //     const productName = response.data.product_name || 'Product';
-  //     console.log(`✅ ${productName} ${action} wishlist`);
+      const action = response.data.is_wishlisted ? 'added to' : 'removed from';
+      const productName = response.data.product_name || 'Product';
+      console.log(`✅ ${productName} ${action} wishlist`);
 
-  //     showWishlistFeedback(productId, response.data.is_wishlisted, productName);
+      showWishlistFeedback(productId, response.data.is_wishlisted, productName);
 
-  //   } catch (error) {
-  //     console.error('❌ Wishlist toggle error:', error);
+    } catch (error) {
+      console.error('❌ Wishlist toggle error:', error);
 
-  //     if (error.response?.status === 401) {
-  //       localStorage.removeItem('access_token');
-  //       localStorage.removeItem('buyerAccessToken');
-  //       alert('Session expired. Please login again.');
-  //     } else if (error.code === 'ECONNABORTED') {
-  //       alert('Request timeout. Please check your connection and try again.');
-  //     } else {
-  //       const errorMessage = error.response?.data?.error || 'Failed to update wishlist. Please try again.';
-  //       alert(errorMessage);
-  //     }
-  //   } finally {
-  //     setWishlistLoading(prev => {
-  //       const newSet = new Set(prev);
-  //       newSet.delete(productId);
-  //       return newSet;
-  //     });
-  //   }
-  // };
+      if (error.response?.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('buyerAccessToken');
+        alert('Session expired. Please login again.');
+      } else if (error.code === 'ECONNABORTED') {
+        alert('Request timeout. Please check your connection and try again.');
+      } else {
+        const errorMessage = error.response?.data?.error || 'Failed to update wishlist. Please try again.';
+        alert(errorMessage);
+      }
+    } finally {
+      setWishlistLoading(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(productId);
+        return newSet;
+      });
+    }
+  };
 
-  // const showWishlistFeedback = (productId, isWishlisted, productName) => {
-  //   const heartButton = document.querySelector(`[data-product-id="${productId}"] .wishlist-heart`);
-  //   if (heartButton) {
-  //     const originalColor = heartButton.style.color;
-  //     heartButton.style.color = isWishlisted ? '#dc2626' : '#6b7280';
-  //     heartButton.style.transform = 'scale(1.2)';
+  const showWishlistFeedback = (productId, isWishlisted, productName) => {
+    const heartButton = document.querySelector(`[data-product-id="${productId}"] .wishlist-heart`);
+    if (heartButton) {
+      const originalColor = heartButton.style.color;
+      heartButton.style.color = isWishlisted ? '#dc2626' : '#6b7280';
+      heartButton.style.transform = 'scale(1.2)';
 
-  //     setTimeout(() => {
-  //       heartButton.style.transform = 'scale(1)';
-  //     }, 200);
-  //   }
+      setTimeout(() => {
+        heartButton.style.transform = 'scale(1)';
+      }, 200);
+    }
 
-  //   const action = isWishlisted ? 'added to' : 'removed from';
+    const action = isWishlisted ? 'added to' : 'removed from';
 
-  //   toast.success(`Item ${action} wishlist`, {
-  //     position: "top-right",
-  //     autoClose: 1500,
-  //     theme: "colored",
-  //   });
-  //   console.log(`💖 ${productName} ${action} wishlist!`);
-  // };
+    toast.success(`Item ${action} wishlist`, {
+      position: "top-right",
+      autoClose: 1500,
+      theme: "colored",
+    });
+    console.log(`💖 ${productName} ${action} wishlist!`);
+  };
 
-  // const checkWishlistStatus = async (productIds) => {
-  //   const headers = getAuthHeaders();
-  //   if (!headers || productIds.length === 0) return;
+  const checkWishlistStatus = async (productIds) => {
+    const headers = getAuthHeaders();
+    if (!headers || productIds.length === 0) return;
 
-  //   try {
-  //     console.log('🔍 Checking wishlist status for products:', productIds.length);
+    try {
+      console.log('🔍 Checking wishlist status for products:', productIds.length);
 
-  //     const promises = productIds.slice(0, 10).map(id =>
-  //       axios.get(`${WISHLIST_CHECK_API}?product_id=${id}`, { headers, timeout: 5000 })
-  //         .then(response => ({ id, isWishlisted: response.data.is_wishlisted }))
-  //         .catch(error => {
-  //           console.warn(`Failed to check wishlist for product ${id}:`, error);
-  //           return { id, isWishlisted: false };
-  //         })
-  //     );
+      const promises = productIds.slice(0, 10).map(id =>
+        axios.get(`${WISHLIST_CHECK_API}?product_id=${id}`, { headers, timeout: 5000 })
+          .then(response => ({ id, isWishlisted: response.data.is_wishlisted }))
+          .catch(error => {
+            console.warn(`Failed to check wishlist for product ${id}:`, error);
+            return { id, isWishlisted: false };
+          })
+      );
 
-  //     const results = await Promise.all(promises);
-  //     console.log('✅ Wishlist status results:', results);
+      const results = await Promise.all(promises);
+      console.log('✅ Wishlist status results:', results);
 
-  //     const updateProductsWithWishlist = (prevProducts) =>
-  //       prevProducts.map(product => {
-  //         const wishlistInfo = results.find(r => r.id === product.id);
-  //         return wishlistInfo
-  //           ? { ...product, isWishlisted: wishlistInfo.isWishlisted }
-  //           : product;
-  //       });
+      const updateProductsWithWishlist = (prevProducts) =>
+        prevProducts.map(product => {
+          const wishlistInfo = results.find(r => r.id === product.id);
+          return wishlistInfo
+            ? { ...product, isWishlisted: wishlistInfo.isWishlisted }
+            : product;
+        });
 
-  //     setProducts(updateProductsWithWishlist);
-  //     setFilteredProducts(updateProductsWithWishlist);
+      setProducts(updateProductsWithWishlist);
+      setFilteredProducts(updateProductsWithWishlist);
 
-  //   } catch (error) {
-  //     console.warn('Error checking wishlist status:', error);
-  //   }
-  // };
+    } catch (error) {
+      console.warn('Error checking wishlist status:', error);
+    }
+  };
 
   // ✅ Improved responsive grid
   const gridColumns = useMemo(() => {
@@ -451,25 +450,24 @@ export default function Home() {
     return '20px';
   }, [isMobile, isTablet]);
 
-  // Effect for debounced search
-  // useEffect(() => {
-  //   if (debouncedSearchTerm !== filters.search) {
-  //     const newFilters = {
-  //       ...filters,
-  //       search: debouncedSearchTerm
-  //     };
-  //     setFilters(newFilters);
-  //     setCurrentPage(1);
-  //     fetchProducts(1, newFilters);
-  //   }
-  // }, [debouncedSearchTerm]);
+  useEffect(() => {
+    if (debouncedSearchTerm !== filters.search) {
+      const newFilters = {
+        ...filters,
+        search: debouncedSearchTerm
+      };
+      setFilters(newFilters);
+      setCurrentPage(1);
+      fetchProducts(1, newFilters);
+    }
+  }, [debouncedSearchTerm]);
 
-  // useEffect(() => {
-  //   if (filteredProducts.length > 0 && currentPage === 1) {
-  //     const productIds = filteredProducts.map(p => p.id);
-  //     checkWishlistStatus(productIds);
-  //   }
-  // }, [filteredProducts.length, currentPage]);
+  useEffect(() => {
+    if (filteredProducts.length > 0 && currentPage === 1) {
+      const productIds = filteredProducts.map(p => p.id);
+      checkWishlistStatus(productIds);
+    }
+  }, [filteredProducts.length, currentPage]);
 
   useEffect(() => {
     fetchCategories();
@@ -477,105 +475,105 @@ export default function Home() {
     setIsLoading(false); // ✅ Set loading to false immediately
   }, [fetchCategories]);
 
-  // const loadMoreProducts = useCallback(() => {
-  //   if (currentPage < totalPages && !isLoading && !isLoadingMore) {
-  //     const nextPage = currentPage + 1;
-  //     setCurrentPage(nextPage);
-  //     fetchProducts(nextPage);
-  //   }
-  // }, [currentPage, totalPages, isLoading, isLoadingMore, fetchProducts]);
+  const loadMoreProducts = useCallback(() => {
+    if (currentPage < totalPages && !isLoading && !isLoadingMore) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      fetchProducts(nextPage);
+    }
+  }, [currentPage, totalPages, isLoading, isLoadingMore, fetchProducts]);
 
-  // useInfiniteScroll(
-  //   loadMoreProducts,
-  //   currentPage < totalPages,
-  //   isLoading || isLoadingMore
-  // );
+  useInfiniteScroll(
+    loadMoreProducts,
+    currentPage < totalPages,
+    isLoading || isLoadingMore
+  );
 
-  // const handleSearchChange = (e) => {
-  //   const value = e.target.value;
-  //   setSearchTerm(value);
-  // };
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+  };
 
-  // const handleClearSearch = () => {
-  //   setSearchTerm('');
-  //   const newFilters = {
-  //     ...filters,
-  //     search: ''
-  //   };
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    const newFilters = {
+      ...filters,
+      search: ''
+    };
 
-  //   setFilters(newFilters);
-  //   setCurrentPage(1);
-  //   fetchProducts(1, newFilters);
-  // };
+    setFilters(newFilters);
+    setCurrentPage(1);
+    fetchProducts(1, newFilters);
+  };
 
-  // const handleCategoryClick = (categoryId, categoryName) => {
-  //   const newFilters = {
-  //     ...filters,
-  //     category: categoryId.toString(),
-  //     search: ''
-  //   };
+  const handleCategoryClick = (categoryId, categoryName) => {
+    const newFilters = {
+      ...filters,
+      category: categoryId.toString(),
+      search: ''
+    };
 
-  //   setFilters(newFilters);
-  //   setSearchTerm('');
-  //   setCurrentPage(1);
-  //   fetchProducts(1, newFilters);
+    setFilters(newFilters);
+    setSearchTerm('');
+    setCurrentPage(1);
+    fetchProducts(1, newFilters);
 
-  //   const productsSection = document.querySelector('[data-products-section]');
-  //   if (productsSection) {
-  //     productsSection.scrollIntoView({ behavior: 'smooth' });
-  //   }
-  // };
+    const productsSection = document.querySelector('[data-products-section]');
+    if (productsSection) {
+      productsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
-  // const handleFilterChange = (newFilters) => {
-  //   setFilters(newFilters);
-  //   setCurrentPage(1);
-  //   fetchProducts(1, newFilters);
-  // };
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setCurrentPage(1);
+    fetchProducts(1, newFilters);
+  };
 
-  // const handleAddToCart = (e, product) => {
-  //   e.preventDefault();
-  //   e.stopPropagation();
+  const handleAddToCart = (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-  //   if (!product) {
-  //     alert("Product information is missing.");
-  //     return;
-  //   }
+    if (!product) {
+      alert("Product information is missing.");
+      return;
+    }
 
-  //   const sellerPhone = product.store?.seller_phone ||
-  //     product.seller_phone ||
-  //     product.store?.phone ||
-  //     product.phone;
+    const sellerPhone = product.store?.seller_phone ||
+      product.seller_phone ||
+      product.store?.phone ||
+      product.phone;
 
-  //   if (sellerPhone) {
-  //     addToCart(sellerPhone, product);
-  //     toast.success("Added to cart!", {
-  //       position: "top-right",
-  //       autoClose: 1500,
-  //       hideProgressBar: false,
-  //       closeOnClick: true,
-  //       pauseOnHover: true,
-  //       draggable: true,
-  //       theme: "colored",
-  //     });
-  //   } else {
-  //     alert("Could not add to cart: seller information is missing.");
-  //     console.log('Product data:', product);
-  //   }
-  // };
+    if (sellerPhone) {
+      addToCart(sellerPhone, product);
+      toast.success("Added to cart!", {
+        position: "top-right",
+        autoClose: 1500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
+    } else {
+      alert("Could not add to cart: seller information is missing.");
+      console.log('Product data:', product);
+    }
+  };
 
-  // const handleRetry = () => {
-  //   setError('');
-  //   fetchCategories();
-  //   fetchProducts(1);
-  // };
+  const handleRetry = () => {
+    setError('');
+    fetchCategories();
+    fetchProducts(1);
+  };
 
-  // useEffect(() => {
-  //   if (showFilters) {
-  //     document.body.style.overflow = 'hidden';
-  //   } else {
-  //     document.body.style.overflow = '';
-  //   }
-  // }, [showFilters]);
+  useEffect(() => {
+    if (showFilters) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [showFilters]);
 
   // ==========================================
   // 🔼 END OF COMMENTED OLD CODE
@@ -616,7 +614,7 @@ export default function Home() {
             🔽 OLD SEARCH AND FILTERS - COMMENTED OUT
             ========================================== */}
         
-        {/* <div style={dynamicStyles.searchSection}>
+        <div style={dynamicStyles.searchSection}>
           <div style={dynamicStyles.searchContainer}>
             <div className='keralasellershomepagesearchwrapper' style={dynamicStyles.searchInputWrapper}>
               <Search size={20} className='keralasellershomepagesearchicon' style={dynamicStyles.searchIcon} />
@@ -635,9 +633,9 @@ export default function Home() {
               )}
             </div>
           </div>
-        </div> */}
+        </div> 
 
-        {/* <div style={dynamicStyles.productsHeader}>
+         <div style={dynamicStyles.productsHeader}>
           <div style={dynamicStyles.headerLeft}>
             <h2 className='keralasellershomepagetitle' style={dynamicStyles.sectionTitle}>All Products</h2>
             {searchTerm && (
@@ -661,9 +659,9 @@ export default function Home() {
               Filters {showFilters ? '▲' : '▼'}
             </button>
           </div>
-        </div> */}
+        </div> 
 
-        {/* {error && (
+         {error && (
           <div style={dynamicStyles.errorContainer}>
             <AlertCircle size={24} />
             <div>
@@ -674,9 +672,9 @@ export default function Home() {
               </button>
             </div>
           </div>
-        )} */}
+        )}
 
-        {/* {showFilters && (
+        {showFilters && (
           <div
             className="filter-sidebar-overlay"
             onClick={() => setShowFilters(false)}
@@ -701,14 +699,14 @@ export default function Home() {
               />
             </div>
           </div>
-        )} */}
+        )}
 
         {/* ==========================================
             🔽 OLD PRODUCTS GRID - COMMENTED OUT
             ========================================== */}
 
 
-        {/* {isLoading && currentPage === 1 ? (
+        {isLoading && currentPage === 1 ? (
           <div style={dynamicStyles.loadingGrid}>
             {Array.from({ length: isMobile ? 4 : 8 }).map((_, index) => (
               <div key={index} style={dynamicStyles.skeletonWrapper}>
@@ -736,6 +734,7 @@ export default function Home() {
                     data-product-id={product.id}
                     style={{ flex: '1 0 210px', maxWidth: '220px' }}
                   >
+                    
                     <ProductCard
                       id={product.id}
                       title={product.name || 'Product Name'}
@@ -806,31 +805,27 @@ export default function Home() {
               </div>
             )}
           </>
-        )} */}
+        )}
         {/* ==========================================
             ✅ NEW COMING SOON SECTION
             ========================================== */}
 
 
-        <div style={dynamicStyles.comingSoonContainer}>
+        {/* <div style={dynamicStyles.comingSoonContainer}>
           <div style={dynamicStyles.comingSoonContent}>
-            {/* Animated Icon */}
             <div style={dynamicStyles.iconWrapper}>
               <Package size={80} color='#1a4845' strokeWidth={1.5} />
             </div>
 
-            {/* Main Heading */}
             <h1 style={dynamicStyles.comingSoonTitle}>
               Products Coming Soon!
             </h1>
 
-            {/* Subtitle */}
             <p style={dynamicStyles.comingSoonSubtitle}>
               We're building Kerala's largest marketplace for local sellers.
               Be among the first to showcase your products to thousands of customers!
             </p>
 
-            {/* Features Grid */}
             <div style={dynamicStyles.featuresGrid}>
               <div style={dynamicStyles.featureCard}>
                 <div style={dynamicStyles.featureIcon}>🏪</div>
@@ -851,7 +846,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* CTA Buttons */}
             <div style={dynamicStyles.ctaContainer}>
               <Link href="/register/seller" style={{ textDecoration: 'none' }}>
                 <button style={dynamicStyles.primaryButton}>
@@ -866,7 +860,6 @@ export default function Home() {
                 </button>
               </Link>
             </div>
-            {/* Stats */}
             <div style={dynamicStyles.statsContainer}>
               <div style={dynamicStyles.statItem}>
                 <div style={dynamicStyles.statNumber}>500+</div>
@@ -884,7 +877,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Notification Signup */}
             <div style={dynamicStyles.notifyContainer}>
               <p style={dynamicStyles.notifyText}>Get notified when we launch:</p>
               <div style={dynamicStyles.notifyInputWrapper}>
@@ -899,7 +891,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
       </div>
 

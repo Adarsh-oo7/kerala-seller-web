@@ -28,6 +28,8 @@ import { Trash2 } from "lucide-react";
 // const API_URL = `${API_BASE_URL}/user/store/products/`;
 
 // ✅ Simple and clean API configuration
+
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
   (process.env.NODE_ENV === 'development' 
     ? 'http://localhost:8000' 
@@ -216,14 +218,13 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
 
         <form onSubmit={handleSubmit}>
           <div style={styles.formGroup}>
-            <label className='dashboardproductmodalsectionlabel' style={styles.label}>Product Name*</label>
-            <input
-              className='dashboardproductmodalselectinput'
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
+            <label style={styles.label}>Product Name*</label>
+            < input 
+              type="text" 
+              name="name" 
+              value={formData.name} 
+              onChange={handleChange} 
+              required 
               style={styles.input}
               placeholder="Enter product name"
               disabled={isSaving}
@@ -466,7 +467,6 @@ const styles = {
     boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
     animation: 'slideIn 0.3s ease-out'
   },
-
   modalHeader: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -474,7 +474,6 @@ const styles = {
     padding: '20px 24px 16px 24px',
     borderBottom: '1px solid #e5e7eb'
   },
-
   modalTitle: {
     fontSize: '20px',
     fontWeight: '600',
@@ -491,7 +490,6 @@ const styles = {
     padding: '4px 8px',
     borderRadius: '4px'
   },
-
   apiInfo: {
     fontSize: '12px',
     color: '#6b7280',
@@ -499,12 +497,10 @@ const styles = {
     marginBottom: '16px',
     fontFamily: 'monospace'
   },
-
-  formGroup: {
+  formGroup: { 
     marginBottom: '16px',
     padding: '0 24px'
   },
-
   // ✅ NEW: Form row for side-by-side fields
   formRow: {
     display: 'grid',
@@ -513,7 +509,6 @@ const styles = {
     // padding: '0 24px',
     marginBottom: '16px'
   },
-
   label: {
     display: 'block',
     fontSize: '14px',
@@ -521,19 +516,17 @@ const styles = {
     color: '#374151',
     marginBottom: '6px'
   },
-
-  input: {
-    width: '100%',
-    padding: '10px 12px',
-    boxSizing: 'border-box',
-    border: '1px solid #000000ff',
+  input: { 
+    width: '100%', 
+    padding: '10px 12px', 
+    boxSizing: 'border-box', 
+    border: '1px solid #d1d5db', 
     borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
     backgroundColor: 'rgb(253, 255, 240)',
     transition: 'border-color 0.2s'
   },
-
   helpText: {
     fontSize: '12px',
     color: '#6b7280',

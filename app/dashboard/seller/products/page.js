@@ -25,20 +25,16 @@ import {
   BarChart3,
   ShoppingCart,
   IndianRupee,
-  Layers
+  Layers,
+  Truck, // ✅ NEW: For delivery settings
+  Settings // ✅ NEW: For settings icon
 } from 'lucide-react';
-
-// const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
-// const API_URL = `${API_BASE_URL}/api/products/`;
-// const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
                      (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
 
-
 const API_URL = `${API_BASE_URL}/api/products/`;
 const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
-
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
@@ -54,7 +50,59 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState('table');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
+  
+  // ✅ NEW: Delivery settings state
+  const [deliveryConfig, setDeliveryConfig] = useState(null);
+  const [loadingDelivery, setLoadingDelivery] = useState(false);
+  const [showDeliveryToggle, setShowDeliveryToggle] = useState(false);
+  
   const router = useRouter();
+
+  // ✅ NEW: Fetch delivery configuration
+  const fetchDeliveryConfig = useCallback(async () => {
+    const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
+    if (!token) return;
+
+    try {
+      setLoadingDelivery(true);
+      const response = await axios.get(`${API_BASE_URL}/user/store/delivery-slabs/config/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDeliveryConfig(response.data);
+      console.log('✅ Delivery config loaded:', response.data);
+    } catch (err) {
+      console.log('⚠️ No delivery config found');
+      setDeliveryConfig(null);
+    } finally {
+      setLoadingDelivery(false);
+    }
+  }, []);
+
+  // ✅ NEW: Toggle delivery system
+  const toggleDeliverySystem = async () => {
+    const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
+    if (!token || !deliveryConfig) return;
+
+    try {
+      setLoadingDelivery(true);
+      const newEnabledState = !deliveryConfig.enabled;
+      
+      await axios.post(`${API_BASE_URL}/user/store/delivery-slabs/update_config/`, {
+        ...deliveryConfig,
+        enabled: newEnabledState
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setDeliveryConfig({ ...deliveryConfig, enabled: newEnabledState });
+      alert(`✅ Delivery system ${newEnabledState ? 'enabled' : 'disabled'} successfully!`);
+    } catch (err) {
+      console.error('❌ Failed to toggle delivery system:', err);
+      alert('Failed to update delivery settings. Please try again.');
+    } finally {
+      setLoadingDelivery(false);
+    }
+  };
 
   // ✅ Fetch subscription data
   const fetchSubscription = useCallback(async () => {
@@ -97,7 +145,6 @@ export default function ProductsPage() {
 
       console.log('✅ API Response:', response.data);
 
-      // Handle different response structures
       let productsData = [];
       if (Array.isArray(response.data)) {
         productsData = response.data;
@@ -132,7 +179,8 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchSubscription();
     fetchProducts();
-  }, [fetchSubscription, fetchProducts]);
+    fetchDeliveryConfig(); // ✅ NEW: Fetch delivery config on load
+  }, [fetchSubscription, fetchProducts, fetchDeliveryConfig]);
 
   // ✅ Enhanced filtering and sorting
   useEffect(() => {
@@ -244,16 +292,13 @@ export default function ProductsPage() {
     }
   };
 
-  // ✅ FIXED: Enforce product limit based on subscription
   const handleOpenModal = (product = null) => {
-    // Allow editing existing products without restriction
     if (product) {
       setEditingProduct(product);
       setIsModalOpen(true);
       return;
     }
 
-    // ✅ Check if subscription is active
     if (!subscription?.is_active) {
       if (window.confirm('You need an active subscription to add products.\n\nWould you like to subscribe now?')) {
         router.push('/dashboard/seller/subscription');
@@ -261,7 +306,6 @@ export default function ProductsPage() {
       return;
     }
 
-    // ✅ NEW: Check product limit
     const currentProductCount = products.length;
     const productLimit = subscription.product_limit || 0;
 
@@ -272,7 +316,6 @@ export default function ProductsPage() {
     });
 
     if (currentProductCount >= productLimit) {
-      // ✅ Show upgrade message when limit is reached
       if (window.confirm(
         `You've reached your product limit (${currentProductCount}/${productLimit}).\n\n` +
         `Upgrade your subscription to add more products.\n\n` +
@@ -283,7 +326,6 @@ export default function ProductsPage() {
       return;
     }
 
-    // ✅ Limit not reached, allow adding product
     setEditingProduct(null);
     setIsModalOpen(true);
   };
@@ -349,7 +391,6 @@ export default function ProductsPage() {
     };
   };
 
-  // ✅ NEW: Calculate remaining product slots
   const getRemainingSlots = () => {
     if (!subscription?.is_active) return 0;
     const limit = subscription.product_limit || 0;
@@ -384,7 +425,6 @@ export default function ProductsPage() {
   const analytics = getAnalytics();
   const remainingSlots = getRemainingSlots();
 
-  // ✅ Enhanced Grid View Component
   const GridView = () => (
     <div className='dashboardproductgridcontainer' style={styles.gridContainer}>
       {filteredProducts.map(product => {
@@ -461,6 +501,53 @@ export default function ProductsPage() {
 
   return (
     <div className='dashboardproductpagecontainer' style={styles.container}>
+      {/* ✅ NEW: Delivery Settings Banner */}
+      {deliveryConfig && (
+        <div style={styles.deliveryBanner}>
+          <div style={styles.deliveryBannerLeft}>
+            <Truck size={24} style={{ color: deliveryConfig.enabled ? '#059669' : '#6b7280' }} />
+            <div>
+              <h3 style={styles.deliveryBannerTitle}>
+                Delivery Charge System
+              </h3>
+              <p style={styles.deliveryBannerSubtitle}>
+                {deliveryConfig.enabled 
+                  ? '✅ Active - Automatic weight-based calculation' 
+                  : '⚠️ Inactive - Using product-level delivery charges'}
+              </p>
+            </div>
+          </div>
+          <div style={styles.deliveryBannerRight}>
+            <button
+              onClick={() => router.push('/dashboard/seller/products/delivery-settings')}
+              style={styles.deliverySettingsBtn}
+              title="Configure delivery settings"
+            >
+              <Settings size={16} />
+              Configure
+            </button>
+            <button
+              onClick={toggleDeliverySystem}
+              disabled={loadingDelivery}
+              style={{
+                ...styles.deliveryToggleBtn,
+                backgroundColor: deliveryConfig.enabled ? '#059669' : '#6b7280',
+                opacity: loadingDelivery ? 0.6 : 1
+              }}
+              title={deliveryConfig.enabled ? 'Disable delivery system' : 'Enable delivery system'}
+            >
+              {loadingDelivery ? (
+                <div style={styles.smallSpinner}></div>
+              ) : (
+                <>
+                  {deliveryConfig.enabled ? 'Enabled' : 'Disabled'}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ✅ Enhanced Header with Product Limit Display */}
       <div className='dashboardproductheader' style={styles.header}>
         <div>
@@ -541,6 +628,9 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      {/* Rest of the component remains the same... */}
+      {/* Search, Filters, Table/Grid view code continues here */}
+      
       {/* ✅ Enhanced Search and Filters */}
       <div style={styles.filtersContainer}>
         <div className="dashboard-search-sort" style={styles.searchAndSort}>
@@ -579,14 +669,13 @@ export default function ProductsPage() {
             </div>
 
             <div style={styles.viewToggle}>
-
               <button
                 className='dashboardproducttogglebtn'
                 onClick={() => setViewMode('table')}
-                disabled={window.innerWidth < 768} // disable on small screens
+                disabled={window.innerWidth < 768}
                 style={{
                   ...styles.viewButton,
-                  opacity: window.innerWidth < 768 ? 0.4 : 1, // fade when disabled
+                  opacity: window.innerWidth < 768 ? 0.4 : 1,
                   cursor: window.innerWidth < 768 ? 'not-allowed' : 'pointer',
                   ...(viewMode === 'table' ? styles.activeViewButton : {}),
                 }}
@@ -812,7 +901,6 @@ export default function ProductsPage() {
         )
       }
 
-      {/* Add CSS animations */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -824,37 +912,35 @@ export default function ProductsPage() {
           to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Target your tableWrapper scroll area */
-  .custom-scroll::-webkit-scrollbar {
-    height: 2px;   /* for horizontal scrollbar */
-    width: 2px;    /* for vertical scrollbar */
-  }
+        .custom-scroll::-webkit-scrollbar {
+          height: 2px;
+          width: 2px;
+        }
 
-  .custom-scroll::-webkit-scrollbar-track {
-    background: #f1f1f1;  /* track background */
-    border-radius: 6px;
-  }
+        .custom-scroll::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 6px;
+        }
 
-  .custom-scroll::-webkit-scrollbar-thumb {
-    background: #f1f1f1;  /* thumb (scroll handle) color */
-    border-radius: 6px;
-  }
+        .custom-scroll::-webkit-scrollbar-thumb {
+          background: #f1f1f1;
+          border-radius: 6px;
+        }
 
-  .custom-scroll::-webkit-scrollbar-thumb:hover {
-    background: #f1f1f1;  /* darker on hover */
-  }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+          background: #f1f1f1;
+        }
 
-  /* Firefox support */
-  .custom-scroll {
-    scrollbar-width: thin;
-    scrollbar-color: #175E54 #f1f1f1;
-  }
+        .custom-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #175E54 #f1f1f1;
+        }
       `}</style>
     </div >
   );
 }
 
-// ✅ Enhanced styles with better mobile support
+// ✅ Enhanced styles with delivery banner
 const styles = {
   container: {
     padding: '0px 0px 0px 24px',
@@ -862,7 +948,79 @@ const styles = {
     margin: '0 auto',
     animation: 'fadeIn 0.6s ease-out'
   },
-    limitBadge: {
+  
+  // ✅ NEW: Delivery Banner Styles
+  deliveryBanner: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '16px 20px',
+    marginBottom: '24px',
+    backgroundColor: '#f0fdf4',
+    border: '1px solid #86efac',
+    borderRadius: '12px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    flexWrap: 'wrap',
+    gap: '16px'
+  },
+  
+  deliveryBannerLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px'
+  },
+  
+  deliveryBannerTitle: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1f2937',
+    margin: '0 0 4px 0'
+  },
+  
+  deliveryBannerSubtitle: {
+    fontSize: '13px',
+    color: '#6b7280',
+    margin: 0
+  },
+  
+  deliveryBannerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px'
+  },
+  
+  deliverySettingsBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '8px 16px',
+    backgroundColor: '#ffffff',
+    color: '#374151',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'all 0.2s'
+  },
+  
+  deliveryToggleBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '8px 16px',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '600',
+    transition: 'all 0.2s',
+    minWidth: '100px',
+    justifyContent: 'center'
+  },
+  
+  limitBadge: {
     color: '#059669',
     fontWeight: '600',
     fontSize: '13px'
@@ -1001,18 +1159,18 @@ const styles = {
   searchAndSort: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between", // spreads them across the row
+    justifyContent: "space-between",
     gap: "20px",
     width: "100%",
   },
   searchContainer: {
     display: "flex",
     alignItems: "center",
-    flex: 1, // searchbar takes remaining space
+    flex: 1,
     backgroundColor: '#FDFFF0',
     borderRadius: "8px",
     padding: "8px 6px",
-    maxWidth: "920px", // optional: limit width
+    maxWidth: "920px",
     border: '1px solid rgba(42, 108, 72, 0.3)',
   },
   searchIcon: {
@@ -1027,7 +1185,7 @@ const styles = {
     fontSize: "14px",
   },
   sortContainer: {
-    flexShrink: 0, // don't stretch
+    flexShrink: 0,
   },
   sortSelect: {
     padding: "8px 6px",
@@ -1103,7 +1261,7 @@ const styles = {
 
   cardImageContainer: {
     position: 'relative',
-    height: '160px', // 🟢 reduced from 215px
+    height: '160px',
     overflow: 'hidden',
   },
 
@@ -1120,11 +1278,11 @@ const styles = {
   },
 
   cardContent: {
-    padding: '8px 10px', // 🟢 smaller padding
+    padding: '8px 10px',
   },
 
   cardTitle: {
-    fontSize: '14px', // 🟢 reduced
+    fontSize: '14px',
     fontWeight: '600',
     color: '#1f2937',
     margin: '0 0 6px 0',
@@ -1145,7 +1303,7 @@ const styles = {
   },
 
   cardPrice: {
-    fontSize: '15px', // 🟢 smaller
+    fontSize: '15px',
     fontWeight: '700',
     color: '#059669',
   },
@@ -1169,7 +1327,7 @@ const styles = {
     backgroundColor: '#eff6ff',
     color: '#1e40af',
     borderRadius: '6px',
-    fontSize: '9px', // 🟢 reduced
+    fontSize: '9px',
     fontWeight: '500',
   },
 
@@ -1182,7 +1340,7 @@ const styles = {
 
   cardButton: {
     flex: 1,
-    padding: '6px 8px', // 🟢 smaller
+    padding: '6px 8px',
     backgroundColor: '#6b7280',
     color: 'white',
     border: 'none',
@@ -1198,7 +1356,6 @@ const styles = {
   cardButtonDanger: {
     backgroundColor: '#ef4444',
   },
-
 
   // Buttons
   buttonPrimary: {
@@ -1246,8 +1403,6 @@ const styles = {
   },
 
   // Table
-
-
   tableContainer: {
     width: "100%",
     marginTop: "20px",
@@ -1256,9 +1411,9 @@ const styles = {
   tableWrapper: {
     backgroundColor: '#FDFFF0',
     width: "100%",
-    overflowX: "auto",  // ✅ Enables horizontal scroll
-    overflowY: "auto",  // ✅ Enables vertical scroll
-    maxHeight: "67vh",  // ✅ Limits height and adds vertical scroll if needed
+    overflowX: "auto",
+    overflowY: "auto",
+    maxHeight: "67vh",
     borderRadius: "12px",
     border: '1px solid #175E54',
   },
@@ -1266,7 +1421,7 @@ const styles = {
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    minWidth: "800px", // ✅ Ensures scroll when screen is smaller
+    minWidth: "800px",
   },
   th: {
     position: "sticky",
@@ -1287,7 +1442,6 @@ const styles = {
     transition: "box-shadow 0.2s ease",
   },
 
-
   tr: {
     borderBottom: "1px solid #f1f1f1",
   },
@@ -1295,7 +1449,7 @@ const styles = {
     padding: "12px",
     verticalAlign: "middle",
     borderTop: '1px solid #175E54',
-    whiteSpace: "nowrap", // ✅ Prevents long text wrapping (makes scroll work better)
+    whiteSpace: "nowrap",
   },
 
   // Product Info
@@ -1404,4 +1558,3 @@ const styles = {
     color: '#6b7280'
   }
 };
-

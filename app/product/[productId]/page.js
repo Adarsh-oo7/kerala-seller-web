@@ -676,6 +676,30 @@ export default function ProductDetailPage() {
             minimumFractionDigits: 0
         }).format(price);
     };
+// Add these functions after formatPrice (around line 395)
+
+// ✅ Get delivery info from product data
+const getDeliveryInfo = () => {
+    if (!product) return { estimate: 'FREE', description: 'Free delivery' };
+    
+    // Use backend's delivery_info if available
+    if (product.delivery_info) {
+        return product.delivery_info;
+    }
+    
+    // Fallback for older API responses
+    return {
+        estimate: product.delivery_estimate || 'FREE',
+        is_free: !product.has_delivery_charges || product.delivery_estimate === 'FREE',
+        description: 'Free delivery across Kerala'
+    };
+};
+
+// ✅ Check if delivery is free
+const isDeliveryFree = () => {
+    const deliveryInfo = getDeliveryInfo();
+    return deliveryInfo.is_free;
+};
 
     // Add to Cart: adds current product & quantity to the cart
     const handleAddToCart = async () => {
@@ -951,20 +975,47 @@ const handleBuyNow = () => {
                                 </button>
                             </div>
                             {/* Product Features */}
-                            <div style={styles.features}>
-                                <div style={styles.feature}>
-                                    <Truck size={16} />
-                                    <span>Free delivery across Kerala</span>
-                                </div>
-                                <div style={styles.feature}>
-                                    <Shield size={16} />
-                                    <span>Genuine product guarantee</span>
-                                </div>
-                                <div style={styles.feature}>
-                                    <RefreshCw size={16} />
-                                    <span>Easy returns & exchanges</span>
-                                </div>
-                            </div>
+                           {/* Product Features - WITH DELIVERY INFO */}
+<div style={styles.features}>
+    <div style={styles.feature}>
+        <Truck size={16} />
+        <span>
+            {(() => {
+                const deliveryInfo = getDeliveryInfo();
+                if (deliveryInfo.is_free) {
+                    return (
+                        <>
+                            <strong style={{ color: '#059669' }}>✓ FREE Delivery</strong>
+                            {' '}across Kerala
+                        </>
+                    );
+                } else {
+                    return (
+                        <>
+                            <strong style={{ color: '#1a4845' }}>
+                                Delivery: {deliveryInfo.estimate}
+                            </strong>
+                            {product.weight_kg && (
+                                <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '6px' }}>
+                                    ({product.weight_kg}kg)
+                                </span>
+                            )}
+                        </>
+                    );
+                }
+            })()}
+        </span>
+    </div>
+    <div style={styles.feature}>
+        <Shield size={16} />
+        <span>Genuine product guarantee</span>
+    </div>
+    <div style={styles.feature}>
+        <RefreshCw size={16} />
+        <span>Easy returns & exchanges</span>
+    </div>
+</div>
+
                         </div>
 
                     </div>
