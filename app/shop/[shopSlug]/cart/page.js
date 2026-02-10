@@ -45,10 +45,15 @@ export default function ShopCartPage() {
   const [validatingStock, setValidatingStock] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // ✅ NEW: Delivery calculation state
+  // ✅ Delivery calculation state
   const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [subtotal, setSubtotal] = useState(0);
+  const [grandTotal, setGrandTotal] = useState(0);
   const [totalWeight, setTotalWeight] = useState(0);
   const [isFreeDelivery, setIsFreeDelivery] = useState(false);
+  const [deliveryReason, setDeliveryReason] = useState('');
+  const [calculating, setCalculating] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('COD');
 
   useEffect(() => {
     try {
@@ -138,7 +143,14 @@ export default function ShopCartPage() {
         const response = await fetch(`${API_BASE_URL}/shop/${actualStoreId}/`);
         if (response.ok) {
           const data = await response.json();
-          setStoreData(data.store || data);
+          const store = data.store || data;
+          setStoreData(store);
+          
+          if (store.accepts_cod) {
+            setPaymentMethod('COD');
+          } else {
+            setPaymentMethod('ONLINE');
+          }
         } else {
           setStoreData({
             name: `Store ${actualStoreId}`,
@@ -162,116 +174,164 @@ export default function ShopCartPage() {
     }
   }, [actualStoreId, urlError, carts, getCartBySeller]);
 
-  // ✅ Keep local cartItems in sync with context
   useEffect(() => {
     if (!actualStoreId) return;
     const storeCart = carts[actualStoreId] || [];
     setCartItems(storeCart);
   }, [actualStoreId, carts]);
 
-  // ✅ NEW: Calculate delivery charge when cart items change
+  // ✅ Calculate delivery charge via backend API
   useEffect(() => {
-    if (cartItems.length === 0) {
+    if (cartItems.length === 0 || !actualStoreId) {
       setDeliveryCharge(0);
+      setSubtotal(0);
+      setGrandTotal(0);
       setTotalWeight(0);
       setIsFreeDelivery(false);
+      setDeliveryReason('');
       return;
     }
 
-    // Calculate total weight
-    const weight = cartItems.reduce((sum, item) => {
-      const itemWeight = parseFloat(item.weight_kg || 0);
-      return sum + (itemWeight * item.quantity);
-    }, 0);
-
-    setTotalWeight(weight);
-
-    // Calculate subtotal
-    const subtotal = calculateTotal();
-
-    // Delivery logic
-    let charge = 0;
-    let isFree = true;
-
-    if (weight > 0) {
-      // Base charge: ₹50 + ₹10 per kg
-      charge = 50 + (weight * 10);
-      isFree = false;
-
-      // Free delivery conditions
-      if (subtotal >= 500 || weight < 1) {
-        charge = 0;
-        isFree = true;
-      }
-    } else {
-      // No weight data = Free delivery
-      charge = 0;
-      isFree = true;
-    }
-
-    setDeliveryCharge(charge);
-    setIsFreeDelivery(isFree);
-
-    console.log('📦 Cart delivery calculation:', { weight, subtotal, charge, isFree });
-  }, [cartItems]);
-
-  // ✅ Validate stock using backend's online_stock field
-  // ✅ UPDATED: Validate stock with fallback for missing endpoint
-const validateStock = async () => {
-  if (!actualStoreId || cartItems.length === 0) return;
-
-  setValidatingStock(true);
-  try {
-    const warnings = {};
-    const limits = {};
-
-    for (const item of cartItems) {
+    const calculateDeliveryCharge = async () => {
       try {
-        // ✅ Try the product endpoint first
-        let response = await fetch(
-          `${API_BASE_URL}/shop/${actualStoreId}/products/${item.id}/`
-        );
+        setCalculating(true);
+        
+        console.log('📊 Calculating cart delivery charge via backend API...');
 
-        // ✅ If 404, try the main product API instead
-        if (!response.ok && response.status === 404) {
-          console.log(`⚠️ Shop product endpoint not found for ${item.id}, trying main API`);
-          response = await fetch(`${API_BASE_URL}/api/products/${item.id}/`);
+        const token = localStorage.getItem('buyerAccessToken') || 
+                     localStorage.getItem('access_token');
+
+        if (!token) {
+          console.warn('⚠️ No token, using fallback calculation');
+          const fallbackSubtotal = cartItems.reduce((sum, item) => 
+            sum + (parseFloat(item.price) * item.quantity), 0
+          );
+          setSubtotal(fallbackSubtotal);
+          setGrandTotal(fallbackSubtotal);
+          setDeliveryCharge(0);
+          setIsFreeDelivery(false);
+          setCalculating(false);
+          return;
         }
 
-        if (response.ok) {
-          const product = await response.json();
+        const response = await fetch(`${API_BASE_URL}/user/orders/calculate-checkout/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            seller_phone: actualStoreId,
+            items: cartItems.map(item => ({
+              product_id: item.id,
+              quantity: item.quantity,
+              price: item.price,
+              weight_kg: item.weight_kg || 0
+            })),
+            payment_method: paymentMethod
+          })
+        });
 
-          const availableStock =
-            product.online_stock ?? product.total_stock ?? 0;
+        const data = await response.json();
 
-          limits[item.id] = availableStock;
-
-          if (item.quantity > availableStock) {
-            warnings[item.id] =
-              availableStock === 0
-                ? 'Out of stock'
-                : `Only ${availableStock} available`;
-          }
+        if (data.success) {
+          const deliveryAmount = parseFloat(data.delivery_charge || 0);
+          const subtotalAmount = parseFloat(data.subtotal || 0);
+          const totalAmount = parseFloat(data.grand_total || 0);
+          const weight = parseFloat(data.total_weight_kg || 0);
+          
+          setSubtotal(subtotalAmount);
+          setDeliveryCharge(deliveryAmount);
+          setGrandTotal(totalAmount);
+          setTotalWeight(weight);
+          setIsFreeDelivery(data.is_free_delivery || false);
+          setDeliveryReason(data.reason || '');
+          
+          console.log('✅ Cart delivery calculated:', {
+            delivery: deliveryAmount,
+            subtotal: subtotalAmount,
+            total: totalAmount,
+            weight: weight,
+            reason: data.reason
+          });
         } else {
-          // ✅ If both endpoints fail, assume stock is OK
-          console.warn(`⚠️ Could not validate stock for product ${item.id}`);
+          throw new Error(data.error || 'Calculation failed');
         }
+
       } catch (error) {
-        console.warn(`⚠️ Stock check failed for product ${item.id}:`, error);
+        console.error('❌ Cart delivery calculation error:', error);
+        
+        const fallbackSubtotal = cartItems.reduce((sum, item) => 
+          sum + (parseFloat(item.price) * item.quantity), 0
+        );
+        
+        const fallbackWeight = cartItems.reduce((sum, item) => 
+          sum + (parseFloat(item.weight_kg || 0) * item.quantity), 0
+        );
+        
+        setSubtotal(fallbackSubtotal);
+        setGrandTotal(fallbackSubtotal);
+        setDeliveryCharge(0);
+        setTotalWeight(fallbackWeight);
+        setIsFreeDelivery(false);
+        setDeliveryReason('Unable to calculate delivery');
+        
+      } finally {
+        setCalculating(false);
       }
+    };
+
+    calculateDeliveryCharge();
+
+  }, [cartItems, actualStoreId, paymentMethod]);
+
+  const validateStock = async () => {
+    if (!actualStoreId || cartItems.length === 0) return;
+
+    setValidatingStock(true);
+    try {
+      const warnings = {};
+      const limits = {};
+
+      for (const item of cartItems) {
+        try {
+          let response = await fetch(
+            `${API_BASE_URL}/shop/${actualStoreId}/products/${item.id}/`
+          );
+
+          if (!response.ok && response.status === 404) {
+            console.log(`⚠️ Shop product endpoint not found for ${item.id}, trying main API`);
+            response = await fetch(`${API_BASE_URL}/api/products/${item.id}/`);
+          }
+
+          if (response.ok) {
+            const product = await response.json();
+            const availableStock = product.online_stock ?? product.total_stock ?? 0;
+            limits[item.id] = availableStock;
+
+            if (item.quantity > availableStock) {
+              warnings[item.id] =
+                availableStock === 0
+                  ? 'Out of stock'
+                  : `Only ${availableStock} available`;
+            }
+          } else {
+            console.warn(`⚠️ Could not validate stock for product ${item.id}`);
+          }
+        } catch (error) {
+          console.warn(`⚠️ Stock check failed for product ${item.id}:`, error);
+        }
+      }
+
+      setStockLimits(limits);
+      setStockWarnings(warnings);
+    } catch (error) {
+      console.warn('⚠️ Stock validation failed:', error);
+    } finally {
+      setValidatingStock(false);
     }
+  };
 
-    setStockLimits(limits);
-    setStockWarnings(warnings);
-  } catch (error) {
-    console.warn('⚠️ Stock validation failed:', error);
-  } finally {
-    setValidatingStock(false);
-  }
-};
-
-
-  // ✅ Stock validation
   useEffect(() => {
     if (cartItems.length > 0 && !loading) {
       validateStock();
@@ -281,69 +341,59 @@ const validateStock = async () => {
     }
   }, [cartItems, actualStoreId, loading]);
 
-  // ✅ Quantity update with stock validation
-// ✅ UPDATED: Quantity update with fallback endpoint
-const updateQuantity = async (productId, newQuantity) => {
-  if (newQuantity < 1) return;
+  const updateQuantity = async (productId, newQuantity) => {
+    if (newQuantity < 1) return;
 
-  const item = cartItems.find(item => item.id === productId);
-  if (!item) return;
+    const item = cartItems.find(item => item.id === productId);
+    if (!item) return;
 
-  if (newQuantity > item.quantity) {
-    try {
-      // ✅ Try shop endpoint first
-      let response = await fetch(
-        `${API_BASE_URL}/shop/${actualStoreId}/products/${productId}/`
-      );
+    if (newQuantity > item.quantity) {
+      try {
+        let response = await fetch(
+          `${API_BASE_URL}/shop/${actualStoreId}/products/${productId}/`
+        );
 
-      // ✅ Fallback to main API if shop endpoint fails
-      if (!response.ok && response.status === 404) {
-        console.log(`⚠️ Shop product endpoint not found, trying main API`);
-        response = await fetch(`${API_BASE_URL}/api/products/${productId}/`);
-      }
-
-      if (response.ok) {
-        const product = await response.json();
-
-        const availableStock =
-          product.online_stock ?? product.total_stock ?? 0;
-
-        if (newQuantity > availableStock) {
-          toast.error(
-            availableStock === 0
-              ? 'This item is out of stock'
-              : `Only ${availableStock} ${
-                  availableStock === 1 ? 'item' : 'items'
-                } available in stock`,
-            {
-              position: 'bottom-center',
-              autoClose: 3000,
-              theme: 'colored',
-            }
-          );
-
-          setStockLimits(prev => ({ ...prev, [productId]: availableStock }));
-          return;
+        if (!response.ok && response.status === 404) {
+          console.log(`⚠️ Shop product endpoint not found, trying main API`);
+          response = await fetch(`${API_BASE_URL}/api/products/${productId}/`);
         }
 
-        setStockLimits(prev => ({ ...prev, [productId]: availableStock }));
-      } else {
-        // ✅ If validation fails, allow the update
-        console.warn(`⚠️ Could not validate stock for product ${productId}, allowing update`);
+        if (response.ok) {
+          const product = await response.json();
+          const availableStock = product.online_stock ?? product.total_stock ?? 0;
+
+          if (newQuantity > availableStock) {
+            toast.error(
+              availableStock === 0
+                ? 'This item is out of stock'
+                : `Only ${availableStock} ${
+                    availableStock === 1 ? 'item' : 'items'
+                  } available in stock`,
+              {
+                position: 'bottom-center',
+                autoClose: 3000,
+                theme: 'colored',
+              }
+            );
+
+            setStockLimits(prev => ({ ...prev, [productId]: availableStock }));
+            return;
+          }
+
+          setStockLimits(prev => ({ ...prev, [productId]: availableStock }));
+        } else {
+          console.warn(`⚠️ Could not validate stock for product ${productId}, allowing update`);
+        }
+      } catch (error) {
+        console.error('❌ Stock check failed:', error);
+        console.warn('⚠️ Stock validation failed, allowing quantity update');
       }
-    } catch (error) {
-      console.error('❌ Stock check failed:', error);
-      // ✅ Allow update if validation fails
-      console.warn('⚠️ Stock validation failed, allowing quantity update');
     }
-  }
 
-  // ✅ Update via context
-  if (ctxUpdateQuantity && actualStoreId) {
-    ctxUpdateQuantity(actualStoreId, productId, newQuantity);
-  }
-};
-
+    if (ctxUpdateQuantity && actualStoreId) {
+      ctxUpdateQuantity(actualStoreId, productId, newQuantity);
+    }
+  };
 
   const isPlusButtonDisabled = (productId, currentQuantity) => {
     const maxStock = stockLimits[productId];
@@ -417,18 +467,6 @@ const updateQuantity = async (productId, newQuantity) => {
         className: 'cart-remove-toast-wrapper',
       }
     );
-  };
-
-  const calculateTotal = () => {
-    return cartItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-  };
-
-  // ✅ UPDATED: Calculate grand total with delivery
-  const calculateGrandTotal = () => {
-    return calculateTotal() + deliveryCharge;
   };
 
   const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
@@ -548,10 +586,10 @@ const updateQuantity = async (productId, newQuantity) => {
             Shopping at {storeData?.name || `Store ${actualStoreId}`} •{' '}
             {cartItems.length} item{cartItems.length !== 1 ? 's' : ''}
           </span>
-          {validatingStock && (
+          {(validatingStock || calculating) && (
             <div style={styles.stockValidating}>
               <Loader size={12} />
-              <span>Checking stock...</span>
+              <span>{validatingStock ? 'Checking stock...' : 'Calculating...'}</span>
             </div>
           )}
         </div>
@@ -638,7 +676,6 @@ const updateQuantity = async (productId, newQuantity) => {
                           {formatPrice(item.price)} each
                         </p>
                         
-                        {/* ✅ NEW: Weight display */}
                         {item.weight_kg && item.weight_kg > 0 && (
                           <p style={styles.weightInfo}>
                             <Weight size={14} />
@@ -716,28 +753,37 @@ const updateQuantity = async (productId, newQuantity) => {
                     Items ({cartItems.length})
                   </span>
                   <span style={styles.summaryValue}>
-                    {formatPrice(calculateTotal())}
+                    {formatPrice(subtotal)}
                   </span>
                 </div>
 
-                {/* ✅ NEW: Delivery Charge Row with Weight */}
+                {/* ✅ UPDATED: Delivery shown as "+ ₹XX Extra" or "FREE" */}
                 <div style={styles.summaryRow}>
-                  <span style={{ ...styles.summaryLabel, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Truck size={16} />
-                    Delivery
-                    {totalWeight > 0 && (
-                      <span style={{ fontSize: '11px', color: '#6b7280' }}>
-                        ({totalWeight.toFixed(2)} kg)
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ ...styles.summaryLabel, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Truck size={16} />
+                      Delivery Charge
+                      {totalWeight > 0 && (
+                        <span style={{ fontSize: '11px', color: '#6b7280' }}>
+                          ({totalWeight.toFixed(2)}kg)
+                        </span>
+                      )}
+                    </span>
+                    {deliveryReason && !calculating && (
+                      <span style={{ fontSize: '10px', color: '#6b7280', fontStyle: 'italic' }}>
+                        {deliveryReason}
                       </span>
                     )}
-                  </span>
-                  {isFreeDelivery ? (
-                    <span style={{ ...styles.summaryValue, color: '#10b981', fontWeight: '700' }}>
+                  </div>
+                  {calculating ? (
+                    <span style={{ color: '#6b7280', fontSize: '12px' }}>Calculating...</span>
+                  ) : isFreeDelivery ? (
+                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '15px' }}>
                       FREE 🎉
                     </span>
                   ) : (
-                    <span style={styles.summaryValue}>
-                      {formatPrice(deliveryCharge)}
+                    <span style={{ color: '#ef4444', fontWeight: '600', fontSize: '15px' }}>
+                      + {formatPrice(deliveryCharge)} Extra
                     </span>
                   )}
                 </div>
@@ -757,7 +803,7 @@ const updateQuantity = async (productId, newQuantity) => {
                     Total
                   </span>
                   <span className="totallabel" style={styles.totalValue}>
-                    {formatPrice(calculateGrandTotal())}
+                    {calculating ? 'Calculating...' : formatPrice(grandTotal)}
                   </span>
                 </div>
 
@@ -767,14 +813,14 @@ const updateQuantity = async (productId, newQuantity) => {
                   style={{
                     ...styles.checkoutButton,
                     backgroundColor:
-                      cartItems.length === 0 ? '#ccc' : '#10b981',
+                      (cartItems.length === 0 || calculating) ? '#ccc' : '#10b981',
                     cursor:
-                      cartItems.length === 0 ? 'not-allowed' : 'pointer',
+                      (cartItems.length === 0 || calculating) ? 'not-allowed' : 'pointer',
                   }}
-                  disabled={cartItems.length === 0}
+                  disabled={cartItems.length === 0 || calculating}
                 >
                   <CreditCard size={18} />
-                  Proceed to Checkout
+                  {calculating ? 'Calculating...' : 'Proceed to Checkout'}
                 </button>
 
                 <button
@@ -805,7 +851,7 @@ const styles = {
   title: { fontSize: '24px', fontWeight: '700', color: '#1f2937', flex: 1, textAlign: 'center' },
   clearButton: { background: 'none', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '6px', padding: '8px 12px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' },
   storeIndicator: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1a4845', border: '1px solid white', borderRadius: '8px', padding: '12px 16px', marginBottom: '16px', fontSize: '14px', color: 'white', fontWeight: '500' },
-  stockValidating: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#6b7280' },
+  stockValidating: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#e5e7eb' },
   stockAlert: { display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#fef3c7', border: '1px solid #f59e0b', borderRadius: '8px', padding: '12px 16px', marginBottom: '16px', fontSize: '14px', color: '#92400e', fontWeight: '500' },
   emptyState: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '60px', backgroundColor: '#FDFFF0', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' },
   shopButton: { padding: '12px 24px', backgroundColor: '#1a4845', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', marginTop: '20px', fontSize: '16px', fontWeight: '600', transition: 'all 0.2s' },
@@ -828,7 +874,7 @@ const styles = {
   cartLayout: { display: "grid", gridTemplateColumns: "1fr 350px", gap: "20px", alignItems: "start" },
   cartItemsSection: { display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 },
   cartSummarySection: { position: "sticky", top: "110px", minWidth: 0 },
-  summaryRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', marginBottom: '12px', borderBottom: '1px solid #f3f4f6' },
+  summaryRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '12px', marginBottom: '12px', borderBottom: '1px solid #f3f4f6' },
   summaryLabel: { fontSize: '15px', color: '#6b7280', fontWeight: '500' },
   summaryValue: { fontSize: '15px', color: '#1f2937', fontWeight: '600' },
   summaryWarning: { fontSize: '15px', color: '#ef4444', fontWeight: '600' },

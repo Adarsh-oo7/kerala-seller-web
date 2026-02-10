@@ -95,28 +95,64 @@ const getBestImageUrl = (product, imageType = 'main', size = 'default') => {
 
 
 // ✅ Enhanced Image Gallery Component with Mobile Square Support
+// ✅ Helper to validate URLs
+const isValidUrl = (url) => {
+    return url && typeof url === 'string' && url.trim().length > 10 && 
+           (url.startsWith('http') || url.startsWith('/'));
+};
+
+// ✅ Enhanced Image Gallery Component with Robust Fallbacks
 function ProductImageGallery({ product }) {
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [isZoomed, setIsZoomed] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
 
-    // Combine main image and sub-images
-    // ✅ FIXED: Combine main image and sub-images with Cloudinary priority
+    // ✅ FIXED: Build main image URLs with same logic as ProductCard
+    const getMainImageUrl = () => {
+        // Priority 1: Valid Cloudinary URL
+        if (isValidUrl(product.cloudinary_url)) {
+            return product.cloudinary_url;
+        }
+        // Priority 2: Use getBestImageUrl fallback
+        return getBestImageUrl(product, 'main');
+    };
+
+    const getMainThumbUrl = () => {
+        if (isValidUrl(product.cloudinary_url)) {
+            return product.cloudinary_url;
+        }
+        return getBestImageUrl(product, 'thumbnail');
+    };
+
+    const getMainLargeUrl = () => {
+        if (isValidUrl(product.cloudinary_url)) {
+            return product.cloudinary_url;
+        }
+        return getBestImageUrl(product, 'large');
+    };
+
+    // ✅ FIXED: Combine main image and sub-images with robust fallbacks
     const allImages = [
         {
-            url: product.cloudinary_url || getBestImageUrl(product, 'main'),
-            thumbnail: product.cloudinary_url || getBestImageUrl(product, 'thumbnail'),
-            large: product.cloudinary_url || getBestImageUrl(product, 'large'),
+            url: getMainImageUrl(),
+            thumbnail: getMainThumbUrl(),
+            large: getMainLargeUrl(),
             alt: product.name
         },
-        ...(product.sub_images || []).map((subImage, index) => ({
-            url: subImage.cloudinary_image_url || subImage.image_url || subImage.thumbnail_url || getBestImageUrl({ main_image_url: subImage.image }),
-            thumbnail: subImage.cloudinary_image_url || subImage.thumbnail_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
-            large: subImage.cloudinary_image_url || subImage.large_url || subImage.image_url || getBestImageUrl({ main_image_url: subImage.image }),
-            alt: `${product.name} - Image ${index + 2}`
-        }))
-    ];
+        ...(product.sub_images || []).map((subImage, index) => {
+            // Try cloudinary first, then other fields
+            const cloudinaryUrl = subImage.cloudinary_image_url;
+            const fallbackUrl = subImage.image_url || subImage.thumbnail_url || subImage.image;
+            const resolvedUrl = getBestImageUrl({ main_image_url: fallbackUrl });
 
+            return {
+                url: isValidUrl(cloudinaryUrl) ? cloudinaryUrl : resolvedUrl,
+                thumbnail: isValidUrl(cloudinaryUrl) ? cloudinaryUrl : (subImage.thumbnail_url || resolvedUrl),
+                large: isValidUrl(cloudinaryUrl) ? cloudinaryUrl : (subImage.large_url || resolvedUrl),
+                alt: `${product.name} - Image ${index + 2}`
+            };
+        })
+    ];
 
     const handlePrevious = () => {
         setSelectedImageIndex((prev) =>
@@ -138,6 +174,9 @@ function ProductImageGallery({ product }) {
     };
 
     const currentImage = allImages[selectedImageIndex];
+
+    // ✅ Debug log (optional - remove after testing)
+    console.log('🖼️ Gallery image URL:', currentImage.large, 'Product ID:', product.id);
 
     return (
         <div style={styles.imageGallery} className="image-gallery">
@@ -170,6 +209,7 @@ function ProductImageGallery({ product }) {
                         }}
                         onLoad={() => setImageLoaded(true)}
                         onError={(e) => {
+                            console.error('❌ Image failed to load:', e.target.src);
                             e.target.src = 'https://placehold.co/600x400?text=No+Image';
                             setImageLoaded(true);
                         }}
@@ -241,6 +281,7 @@ function ProductImageGallery({ product }) {
         </div>
     );
 }
+
 
 // Enhanced Review Form Component
 function ReviewForm({ productId, onReviewSubmitted }) {
