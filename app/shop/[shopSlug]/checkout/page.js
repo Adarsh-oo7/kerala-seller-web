@@ -56,10 +56,14 @@ export default function ShopCheckoutPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isBuyNow, setIsBuyNow] = useState(false);
 
-  // ✅ NEW: Delivery calculation state
+  // ✅ Delivery calculation state
   const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [subtotal, setSubtotal] = useState(0);
+  const [grandTotal, setGrandTotal] = useState(0);
   const [totalWeight, setTotalWeight] = useState(0);
   const [isFreeDelivery, setIsFreeDelivery] = useState(false);
+  const [deliveryReason, setDeliveryReason] = useState('');
+  const [calculating, setCalculating] = useState(false);
 
   // ✅ Check login status
   useEffect(() => {
@@ -122,40 +126,41 @@ export default function ShopCheckoutPage() {
 
     loadScript();
   }, []);
-// ✅ NEW: Validate and enrich cart items with weight_kg
-const validateCartItems = async (items) => {
-  console.log('🔍 Validating cart items for weight data...');
-  
-  const enrichedItems = await Promise.all(
-    items.map(async (item) => {
-      // If weight is already present and valid, return as-is
-      if (item.weight_kg !== undefined && item.weight_kg !== null) {
-        return item;
-      }
 
-      // Fetch product data to get weight
-      try {
-        console.log(`📦 Fetching weight for product ${item.id}...`);
-        const response = await axios.get(`${API_BASE_URL}/api/products/${item.id}/`);
-        const product = response.data;
-        
-        return {
-          ...item,
-          weight_kg: product.weight_kg || 0
-        };
-      } catch (error) {
-        console.warn(`⚠️ Failed to fetch weight for product ${item.id}`, error);
-        return {
-          ...item,
-          weight_kg: 0
-        };
-      }
-    })
-  );
+  // ✅ Validate and enrich cart items with weight_kg
+  const validateCartItems = async (items) => {
+    console.log('🔍 Validating cart items for weight data...');
+    
+    const enrichedItems = await Promise.all(
+      items.map(async (item) => {
+        // If weight is already present and valid, return as-is
+        if (item.weight_kg !== undefined && item.weight_kg !== null) {
+          return item;
+        }
 
-  console.log('✅ Cart items enriched with weight data');
-  return enrichedItems;
-};
+        // Fetch product data to get weight
+        try {
+          console.log(`📦 Fetching weight for product ${item.id}...`);
+          const response = await axios.get(`${API_BASE_URL}/api/products/${item.id}/`);
+          const product = response.data;
+          
+          return {
+            ...item,
+            weight_kg: product.weight_kg || 0
+          };
+        } catch (error) {
+          console.warn(`⚠️ Failed to fetch weight for product ${item.id}`, error);
+          return {
+            ...item,
+            weight_kg: 0
+          };
+        }
+      })
+    );
+
+    console.log('✅ Cart items enriched with weight data');
+    return enrichedItems;
+  };
 
   // ✅ Auto-select payment method when store data is loaded
   useEffect(() => {
@@ -172,51 +177,117 @@ const validateCartItems = async (items) => {
     }
   }, [storeData, razorpayLoaded, paymentMethod]);
 
-  // ✅ NEW: Calculate delivery charge when cart items change
+  // ✅ NEW: Calculate delivery charge via backend API
   useEffect(() => {
-    if (cartItems.length === 0) {
+    if (cartItems.length === 0 || !actualStoreId) {
       setDeliveryCharge(0);
+      setSubtotal(0);
+      setGrandTotal(0);
       setTotalWeight(0);
       setIsFreeDelivery(false);
+      setDeliveryReason('');
       return;
     }
 
-    // Calculate total weight
-    const weight = cartItems.reduce((sum, item) => {
-      const itemWeight = parseFloat(item.weight_kg || 0);
-      return sum + (itemWeight * item.quantity);
-    }, 0);
+    const calculateDeliveryCharge = async () => {
+      try {
+        setCalculating(true);
+        
+        console.log('📊 Calculating delivery charge via backend API...');
 
-    setTotalWeight(weight);
+        // Get token
+        const token = localStorage.getItem('buyerAccessToken') || 
+                     localStorage.getItem('access_token');
 
-    // Calculate subtotal
-    const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        if (!token) {
+          console.warn('⚠️ No token, using fallback calculation');
+          const fallbackSubtotal = cartItems.reduce((sum, item) => 
+            sum + (parseFloat(item.price) * item.quantity), 0
+          );
+          setSubtotal(fallbackSubtotal);
+          setGrandTotal(fallbackSubtotal);
+          setDeliveryCharge(0);
+          setIsFreeDelivery(false);
+          setCalculating(false);
+          return;
+        }
 
-    // Delivery logic
-    let charge = 0;
-    let isFree = true;
+        // ✅ Call backend API
+        const response = await fetch(`${API_BASE_URL}/user/orders/calculate-checkout/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            seller_phone: actualStoreId,
+            items: cartItems.map(item => ({
+              product_id: item.id,
+              quantity: item.quantity,
+              price: item.price,
+              weight_kg: item.weight_kg || 0
+            })),
+            payment_method: paymentMethod || 'COD'
+          })
+        });
 
-    if (weight > 0) {
-      // Base charge: ₹50 + ₹10 per kg
-      charge = 50 + (weight * 10);
-      isFree = false;
+        const data = await response.json();
 
-      // Free delivery conditions
-      if (subtotal >= 500 || weight < 1) {
-        charge = 0;
-        isFree = true;
+        if (data.success) {
+          const deliveryAmount = parseFloat(data.delivery_charge || 0);
+          const subtotalAmount = parseFloat(data.subtotal || 0);
+          const totalAmount = parseFloat(data.grand_total || 0);
+          const weight = parseFloat(data.total_weight_kg || 0);
+          
+          setSubtotal(subtotalAmount);
+          setDeliveryCharge(deliveryAmount);
+          setGrandTotal(totalAmount);
+          setTotalWeight(weight);
+          setIsFreeDelivery(data.is_free_delivery || false);
+          setDeliveryReason(data.reason || '');
+          
+          console.log('✅ Delivery charge calculated:', {
+            delivery: deliveryAmount,
+            subtotal: subtotalAmount,
+            total: totalAmount,
+            weight: weight,
+            reason: data.reason
+          });
+        } else {
+          throw new Error(data.error || 'Calculation failed');
+        }
+
+      } catch (error) {
+        console.error('❌ Delivery calculation error:', error);
+        
+        // Fallback calculation
+        const fallbackSubtotal = cartItems.reduce((sum, item) => 
+          sum + (parseFloat(item.price) * item.quantity), 0
+        );
+        
+        const fallbackWeight = cartItems.reduce((sum, item) => 
+          sum + (parseFloat(item.weight_kg || 0) * item.quantity), 0
+        );
+        
+        setSubtotal(fallbackSubtotal);
+        setGrandTotal(fallbackSubtotal);
+        setDeliveryCharge(0);
+        setTotalWeight(fallbackWeight);
+        setIsFreeDelivery(false);
+        setDeliveryReason('Unable to calculate delivery charges');
+        
+        toast.warning('Using estimated delivery charges', {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      } finally {
+        setCalculating(false);
       }
-    } else {
-      // No weight data = Free delivery
-      charge = 0;
-      isFree = true;
-    }
+    };
 
-    setDeliveryCharge(charge);
-    setIsFreeDelivery(isFree);
+    calculateDeliveryCharge();
 
-    console.log('📦 Delivery calculation:', { weight, subtotal, charge, isFree });
-  }, [cartItems]);
+  }, [cartItems, actualStoreId, paymentMethod]); // ✅ Recalculate when payment method changes
 
   // ✅ Generate shop URLs
   const getShopUrl = (path = '') => {
@@ -372,27 +443,22 @@ const validateCartItems = async (items) => {
         return;
       }
 
-const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
-const storeCart = multiCarts[actualStoreId] || [];
+      const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
+      const storeCart = multiCarts[actualStoreId] || [];
 
-console.log('📦 Raw cart items:', storeCart);
+      console.log('📦 Raw cart items:', storeCart);
 
-if (storeCart.length === 0) {
-  console.warn('⚠️ No items in cart, redirecting to cart page');
-  router.push(getShopUrl('/cart'));
-  return;
-}
+      if (storeCart.length === 0) {
+        console.warn('⚠️ No items in cart, redirecting to cart page');
+        router.push(getShopUrl('/cart'));
+        return;
+      }
 
-// ✅ VALIDATE AND ENRICH CART ITEMS
-const enrichedCart = await validateCartItems(storeCart);
-console.log('📦 Enriched cart items:', enrichedCart);
+      // ✅ VALIDATE AND ENRICH CART ITEMS
+      const enrichedCart = await validateCartItems(storeCart);
+      console.log('📦 Enriched cart items:', enrichedCart);
 
-setCartItems(enrichedCart);
-await loadStoreAndProfile(actualStoreId, headers);
-setLoading(false);
-
-
-      setCartItems(storeCart);
+      setCartItems(enrichedCart);
       await loadStoreAndProfile(actualStoreId, headers);
       setLoading(false);
     };
@@ -430,9 +496,7 @@ setLoading(false);
     return Object.keys(errors).length === 0;
   };
 
-  // ✅ UPDATED: Calculate total with delivery
-  const calculateSubtotal = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const calculateTotal = () => calculateSubtotal() + deliveryCharge;
+  // ✅ Price formatting
   const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
 
   // ✅ Handle online payment
@@ -455,7 +519,7 @@ setLoading(false);
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          amount: calculateTotal(),
+          amount: grandTotal,
           order_data: orderData
         })
       });
@@ -571,7 +635,7 @@ setLoading(false);
     console.log('🔄 Placing order...');
 
     if (!validateForm()) {
-      toast.warning('Please fill the form', {
+      toast.warning('Please fill in all required fields correctly', {
         position: "top-center",
         autoClose: 2000,
         theme: "colored",
@@ -617,9 +681,7 @@ setLoading(false);
           price: parseFloat(item.price)
         })),
         payment_method: paymentMethod,
-        seller_phone: actualStoreId,
-        delivery_charge: deliveryCharge, // ✅ Include delivery charge
-        total_weight: totalWeight // ✅ Include weight
+        seller_phone: actualStoreId
       };
 
       console.log('📤 Sending order data:', orderData);
@@ -950,7 +1012,7 @@ setLoading(false);
                       {formatPrice(item.price)} × {item.quantity}
                       {item.weight_kg > 0 && (
                         <span style={{ marginLeft: '8px', color: '#6b7280' }}>
-                          ({item.weight_kg} kg)
+                          • {item.weight_kg}kg
                         </span>
                       )}
                     </div>
@@ -965,22 +1027,31 @@ setLoading(false);
             <div style={styles.totalSection}>
               <div style={styles.subtotalRow}>
                 <span>Subtotal ({cartItems.length} item{cartItems.length !== 1 ? 's' : ''})</span>
-                <span>{formatPrice(calculateSubtotal())}</span>
+                <span>{formatPrice(subtotal)}</span>
               </div>
               
               {/* ✅ NEW: Delivery Charge Row */}
               <div style={styles.subtotalRow}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Truck size={16} />
-                  Delivery
-                  {totalWeight > 0 && (
-                    <span style={{ fontSize: '11px', color: '#6b7280' }}>
-                      ({totalWeight.toFixed(2)} kg)
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Truck size={16} />
+                    Delivery
+                    {totalWeight > 0 && (
+                      <span style={{ fontSize: '11px', color: '#6b7280' }}>
+                        ({totalWeight.toFixed(2)}kg)
+                      </span>
+                    )}
+                  </span>
+                  {deliveryReason && (
+                    <span style={{ fontSize: '10px', color: '#6b7280', fontStyle: 'italic' }}>
+                      {deliveryReason}
                     </span>
                   )}
-                </span>
-                {isFreeDelivery ? (
-                  <span style={{ color: '#10b981', fontWeight: '700' }}>FREE 🎉</span>
+                </div>
+                {calculating ? (
+                  <span style={{ color: '#6b7280', fontSize: '12px' }}>Calculating...</span>
+                ) : isFreeDelivery ? (
+                  <span style={{ color: '#10b981', fontWeight: '700' }}>FREE</span>
                 ) : (
                   <span>{formatPrice(deliveryCharge)}</span>
                 )}
@@ -988,25 +1059,29 @@ setLoading(false);
 
               <div style={styles.totalRow}>
                 <span>Total:</span>
-                <span className='shopslugcheckoutitemname' style={styles.totalAmount}>{formatPrice(calculateTotal())}</span>
+                <span className='shopslugcheckoutitemname' style={styles.totalAmount}>
+                  {calculating ? 'Calculating...' : formatPrice(grandTotal)}
+                </span>
               </div>
             </div>
 
             <button
               className='shopslugcheckoutbtn'
               onClick={handlePlaceOrder}
-              disabled={submitting || cartItems.length === 0}
+              disabled={submitting || cartItems.length === 0 || calculating}
               style={{
                 ...styles.placeOrderButton,
-                backgroundColor: (submitting || cartItems.length === 0) ? '#ccc' : '#10b981',
-                cursor: (submitting || cartItems.length === 0) ? 'not-allowed' : 'pointer'
+                backgroundColor: (submitting || cartItems.length === 0 || calculating) ? '#ccc' : '#10b981',
+                cursor: (submitting || cartItems.length === 0 || calculating) ? 'not-allowed' : 'pointer'
               }}
             >
               <CreditCard size={18} />
-              {submitting ? (
+              {calculating ? (
+                'Calculating...'
+              ) : submitting ? (
                 paymentMethod === 'ONLINE' ? 'Processing Payment...' : 'Placing Order...'
               ) : (
-                `Place Order (${formatPrice(calculateTotal())})`
+                `Place Order (${formatPrice(grandTotal)})`
               )}
             </button>
 
@@ -1130,7 +1205,7 @@ const styles = {
     marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e5e7eb'
   },
   subtotalRow: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
     marginBottom: '8px', fontSize: '14px', color: '#6b7280'
   },
   totalRow: {
