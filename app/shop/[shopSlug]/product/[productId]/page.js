@@ -1137,12 +1137,8 @@ function RelatedProductCard({ product, shopSlug, sellerPhone }) {
       </Link>
     </div>
 
-
-
-
   );
 }
-
 // ✅ ENHANCED: Main Product Page Component with Reviews + Wishlist
 function ShopProductPageContent() {
   const [product, setProduct] = useState(null);
@@ -1180,6 +1176,8 @@ function ShopProductPageContent() {
       setReviewsLoading(false);
     }
   };
+
+
 
   // ✅ NEW: Check review permission
   const checkReviewPermission = async () => {
@@ -1599,7 +1597,6 @@ const styles = {
     borderRadius: '12px',
     position: 'relative',
   },
-
   mainImage: {
     width: '100%',
     height: '100%',
