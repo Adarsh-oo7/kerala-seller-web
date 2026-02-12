@@ -553,38 +553,48 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
   const [buyingNow, setBuyingNow] = useState(false);
   
   // ✅ NEW: Calculate delivery charge based on weight and price
-  const [deliveryInfo, setDeliveryInfo] = useState({ charge: 0, isFree: true });
+const [deliveryInfo, setDeliveryInfo] = useState({ charge: 0, isFree: true, hasDelivery: false });
 
-  // ✅ Calculate delivery when product or quantity changes
-  useEffect(() => {
+// ✅ FIXED: Calculate delivery ONLY if seller has it enabled
+useEffect(() => {
     if (!product) return;
-
+    
+    // ✅ Check if seller has delivery charges configured
+    const hasDeliveryEnabled = product.delivery_info?.has_charges_configured === true;
+    
+    if (!hasDeliveryEnabled) {
+        // Seller has disabled delivery charges
+        setDeliveryInfo({ charge: 0, isFree: true, hasDelivery: false });
+        return;
+    }
+    
+    // ✅ Only calculate if delivery is enabled
     const weight = product.weight_kg || 0;
     const price = product.price || 0;
     const orderTotal = price * quantity;
-    
     let charge = 0;
     let isFree = true;
-
-    // Delivery logic
+    
+    // Delivery logic (from backend)
     if (weight > 0) {
-      // Base charge: ₹50 + ₹10 per kg
-      charge = 50 + (weight * 10);
-      isFree = false;
-      
-      // Free delivery conditions
-      if (orderTotal >= 500 || weight < 1) {
+        // Base charge: ₹50 + ₹10 per kg
+        charge = 50 + (weight * 10);
+        isFree = false;
+        
+        // Free delivery conditions
+        if (orderTotal >= 500 && weight <= 1) {
+            charge = 0;
+            isFree = true;
+        }
+    } else {
+        // No weight = Free delivery
         charge = 0;
         isFree = true;
-      }
-    } else {
-      // No weight = Free delivery
-      charge = 0;
-      isFree = true;
     }
+    
+    setDeliveryInfo({ charge, isFree, hasDelivery: true });
+}, [product, quantity]);
 
-    setDeliveryInfo({ charge, isFree });
-  }, [product, quantity]);
 
   // ✅ Check if product is wishlisted on component mount
   useEffect(() => {
@@ -805,30 +815,40 @@ function ProductInfo({ product, store, onAddToCart, isLoading, cartQuantity, isL
           </div>
 
           {/* ✅ NEW: Delivery Info Section */}
-          <div style={deliveryInfo.isFree ? styles.deliveryInfoFree : styles.deliveryInfoPaid}>
+{/* ✅ FIXED: Only show delivery if enabled */}
+{deliveryInfo.hasDelivery && (
+    <>
+        <div style={deliveryInfo.isFree ? styles.deliveryInfoFree : styles.deliveryInfoPaid}>
             <Truck size={20} color={deliveryInfo.isFree ? '#059669' : '#374151'} />
             <div style={styles.deliveryText}>
-              {deliveryInfo.isFree ? (
-                <>
-                  <span style={styles.freeDeliveryText}>🎉 FREE Delivery</span>
-                  {product.price * quantity < 500 && (
-                    <span style={styles.deliveryHint}>
-                      Free on orders above ₹500
-                    </span>
-                  )}
-                </>
-              ) : (
-                <>
-                  <span style={styles.deliveryChargeText}>
-                    Delivery: ₹{deliveryInfo.charge.toLocaleString('en-IN')}
-                  </span>
-                  <span style={styles.deliveryHint}>
-                    Free for orders above ₹500
-                  </span>
-                </>
-              )}
+                {deliveryInfo.isFree ? (
+                    <>
+                        <span style={styles.freeDeliveryText}>FREE Delivery</span>
+                        {product.price * quantity < 500 && (
+                            <span style={styles.deliveryHint}>Free on orders above ₹500</span>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        <span style={styles.deliveryChargeText}>
+                            Delivery: ₹{deliveryInfo.charge.toLocaleString('en-IN')}
+                        </span>
+                        <span style={styles.deliveryHint}>Free for orders above ₹500</span>
+                    </>
+                )}
             </div>
-          </div>
+        </div>
+
+        {/* Weight Info if available */}
+        {product.weight_kg && product.weight_kg > 0 && (
+            <div style={styles.weightInfo}>
+                <Package size={16} color="#6b7280" />
+                <span>Weight: {product.weight_kg} kg</span>
+            </div>
+        )}
+    </>
+)}
+
 
           {/* ✅ Weight Info (if available) */}
           {product.weight_kg && product.weight_kg > 0 && (
@@ -2544,3 +2564,6 @@ const styles = {
     color: '#888',
   },
 };
+
+
+

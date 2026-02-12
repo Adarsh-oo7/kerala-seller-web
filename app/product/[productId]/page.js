@@ -373,7 +373,6 @@ function ReviewForm({ productId, onReviewSubmitted }) {
                         {comment.length}/500 characters (minimum 10 required)
                     </small>
                 </div>
-
                 <button
                     type="submit"
                     disabled={isSubmitting || comment.trim().length < 10}
@@ -929,9 +928,6 @@ const handleBuyNow = () => {
                                 </div>
                             </div>
                         </div>
-
-
-
 
                         <div style={styles.actionButtons} className='keralasellersproductactnbtngap'>
                             <button
