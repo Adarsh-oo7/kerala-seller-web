@@ -471,48 +471,82 @@ export default function ShopCartPage() {
 
   const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
 
-  const handleCheckout = () => {
-    if (!actualStoreId) {
-      alert('Store ID not found. Please refresh the page and try again.');
-      return;
-    }
+const handleCheckout = () => {
+  // ✅ STEP 1: Check if user is logged in FIRST
+  const token =
+    localStorage.getItem('buyerAccessToken') ||
+    localStorage.getItem('access_token') ||
+    localStorage.getItem('accessToken');
+  
+  if (!token) {
+    console.log('❌ User not logged in, redirecting to login');
+    
+    // Save current cart URL as redirect target
+    const currentUrl = getShopUrl('/cart');
+    const loginUrl = getShopUrl('/login');
+    
+    toast.info('Please login to proceed to checkout', {
+      position: 'top-center',
+      autoClose: 2000,
+      theme: 'colored',
+    });
+    
+    // Redirect to login with return URL
+    router.push(`${loginUrl}?redirect=${encodeURIComponent(currentUrl)}`);
+    return;
+  }
 
-    if (cartItems.length === 0) {
-      alert('Your cart is empty!');
-      return;
-    }
+  // ✅ STEP 2: Validate store ID
+  if (!actualStoreId) {
+    toast.error('Store ID not found. Please refresh the page and try again.', {
+      position: 'top-center',
+      autoClose: 3000,
+      theme: 'colored',
+    });
+    return;
+  }
 
-    const invalidItems = cartItems.filter(
-      item => !item.id || !item.name || !item.price || item.quantity < 1
+  // ✅ STEP 3: Check if cart is empty
+  if (cartItems.length === 0) {
+    toast.warning('Your cart is empty!', {
+      position: 'top-center',
+      autoClose: 2000,
+      theme: 'colored',
+    });
+    return;
+  }
+
+  // ✅ STEP 4: Validate cart items
+  const invalidItems = cartItems.filter(
+    item => !item.id || !item.name || !item.price || item.quantity < 1
+  );
+
+  if (invalidItems.length > 0) {
+    toast.error(
+      'Some items in your cart are invalid. Please refresh the page and try again.',
+      {
+        position: 'top-center',
+        autoClose: 3000,
+        theme: 'colored',
+      }
     );
+    return;
+  }
 
-    if (invalidItems.length > 0) {
-      alert(
-        'Some items in your cart are invalid. Please refresh the page and try again.'
-      );
-      return;
-    }
+  // ✅ STEP 5: Check stock issues
+  const hasStockIssues = Object.keys(stockWarnings).length > 0;
+  if (hasStockIssues) {
+    const proceed = window.confirm(
+      'Some items in your cart have stock issues. Do you want to continue anyway? You may need to adjust quantities during checkout.'
+    );
+    if (!proceed) return;
+  }
 
-    const hasStockIssues = Object.keys(stockWarnings).length > 0;
-    if (hasStockIssues) {
-      const proceed = window.confirm(
-        'Some items in your cart have stock issues. Do you want to continue anyway? You may need to adjust quantities during checkout.'
-      );
-      if (!proceed) return;
-    }
+  // ✅ STEP 6: Proceed to checkout
+  console.log('✅ User authenticated, proceeding to checkout');
+  router.push(getShopUrl('/checkout'));
+};
 
-    const token =
-      localStorage.getItem('access_token') ||
-      localStorage.getItem('buyerAccessToken');
-    if (!token) {
-      const loginUrl = getShopUrl('/login');
-      const currentUrl = getShopUrl('/cart');
-      router.push(`${loginUrl}?redirect=${encodeURIComponent(currentUrl)}`);
-      return;
-    }
-
-    router.push(getShopUrl('/checkout'));
-  };
 
   const handleBackClick = () => router.push(getShopUrl(''));
   const handleContinueShopping = () => router.push(getShopUrl(''));
@@ -806,22 +840,55 @@ export default function ShopCartPage() {
                     {calculating ? 'Calculating...' : formatPrice(grandTotal)}
                   </span>
                 </div>
+                {!isLoggedIn && cartItems.length > 0 && (
+  <div style={{
+    backgroundColor: '#dbeafe',
+    border: '1px solid #3b82f6',
+    borderRadius: '8px',
+    padding: '12px',
+    marginBottom: '12px',
+    fontSize: '13px',
+    color: '#1e40af',
+    textAlign: 'center',
+    fontWeight: '500'
+  }}>
+    ℹ️ Please login to complete your purchase
+  </div>
+)}
 
-                <button
-                  className="proceedbtn"
-                  onClick={handleCheckout}
-                  style={{
-                    ...styles.checkoutButton,
-                    backgroundColor:
-                      (cartItems.length === 0 || calculating) ? '#ccc' : '#10b981',
-                    cursor:
-                      (cartItems.length === 0 || calculating) ? 'not-allowed' : 'pointer',
-                  }}
-                  disabled={cartItems.length === 0 || calculating}
-                >
-                  <CreditCard size={18} />
-                  {calculating ? 'Calculating...' : 'Proceed to Checkout'}
-                </button>
+
+ <button
+  className="proceedbtn"
+  onClick={handleCheckout}
+  style={{
+    ...styles.checkoutButton,
+    backgroundColor:
+      (cartItems.length === 0 || calculating) ? '#ccc' : 
+      !isLoggedIn ? '#3b82f6' : // Blue for login
+      '#10b981', // Green for checkout
+    cursor:
+      (cartItems.length === 0 || calculating) ? 'not-allowed' : 'pointer',
+  }}
+  disabled={cartItems.length === 0 || calculating}
+>
+  {!isLoggedIn ? (
+    <>
+      <CreditCard size={18} />
+      Login to Checkout
+    </>
+  ) : calculating ? (
+    <>
+      <Loader size={18} className="spinning" />
+      Calculating...
+    </>
+  ) : (
+    <>
+      <CreditCard size={18} />
+      Proceed to Checkout
+    </>
+  )}
+</button>
+
 
                 <button
                   className="continuebtn"

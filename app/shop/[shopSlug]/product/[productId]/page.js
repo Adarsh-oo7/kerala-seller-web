@@ -1702,7 +1702,6 @@ const styles = {
     fontStyle: 'italic',
     marginTop: '2px'
   },
-
   weightInfo: {
     display: 'flex',
     alignItems: 'center',
@@ -1715,8 +1714,6 @@ const styles = {
     borderRadius: '6px',
     border: '1px solid #e5e7eb'
   },
-
-
   thumbnailNavButtonLeft: {
     backgroundColor: '#FDFFF0',
     color: 'black',
@@ -1730,7 +1727,6 @@ const styles = {
     cursor: 'pointer',
     flexShrink: 0,
   },
-
   thumbnailNavButtonRight: {
     backgroundColor: '#FDFFF0',
     color: 'black',
