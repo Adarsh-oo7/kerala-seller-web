@@ -502,7 +502,7 @@ export default function ProductsPage() {
   return (
     <div className='dashboardproductpagecontainer' style={styles.container}>
       {/* ✅ NEW: Delivery Settings Banner */}
-      {deliveryConfig && (
+      {/* {deliveryConfig && (
         <div style={styles.deliveryBanner}>
           <div style={styles.deliveryBannerLeft}>
             <Truck size={24} style={{ color: deliveryConfig.enabled ? '#059669' : '#6b7280' }} />
@@ -546,7 +546,7 @@ export default function ProductsPage() {
             </button>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* ✅ Enhanced Header with Product Limit Display */}
       <div className='dashboardproductheader' style={styles.header}>
