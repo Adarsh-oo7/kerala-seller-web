@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -15,6 +14,7 @@ import {
   Truck,
   Weight
 } from 'lucide-react';
+
 import "../../../../styles/Shopslugcart.css";
 import SHeader from '../../../../components/common/SHeader';
 import { toast } from "react-toastify";
