@@ -74,7 +74,7 @@ export default function CancellationRefundPolicy() {
 
                     <h2>Contact</h2>
                     <p>
-                        support@keralasellers.com
+                        keralasellers.in@gmail.com
                     </p>
 
                     <p className="note">

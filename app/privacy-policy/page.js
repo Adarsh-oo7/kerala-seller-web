@@ -15,7 +15,7 @@ export default function PrivacyPage() {
                 </p>
 
                 <p className="note">
-                    <strong>Note:</strong> Our privacy policy is subject to change time to time without notice. To make sure you are aware of the changes, please review this policy periodically. Also this privacy statement does not apply to our business partners, affiliates or other third parties. Please review the privacy statements of the other parties with whom you may interact.
+                    <strong className="notehead">Note:</strong> Our privacy policy is subject to change time to time without notice. To make sure you are aware of the changes, please review this policy periodically. Also this privacy statement does not apply to our business partners, affiliates or other third parties. Please review the privacy statements of the other parties with whom you may interact.
                 </p>
 
                 <p>
@@ -37,7 +37,7 @@ export default function PrivacyPage() {
                 </ul>
 
                 <p className="note">
-                    <strong>Note:</strong> User generated content on the site shared by users via reviews, blogs, online chat or instant messages, discussion boards, forums, user testimonials etc. are not considered as personal information and is not subject to the terms of this privacy policy.
+                    <strong className="notehead">Note:</strong> User generated content on the site shared by users via reviews, blogs, online chat or instant messages, discussion boards, forums, user testimonials etc. are not considered as personal information and is not subject to the terms of this privacy policy.
                 </p>
 
                 <h2>How does www.keralasellers.in utilize user or customer information?</h2>

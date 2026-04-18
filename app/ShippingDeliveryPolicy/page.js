@@ -95,7 +95,7 @@ export default function ShippingDeliveryPolicy() {
                         For shipping-related queries, customers should contact the respective
                         seller directly. For platform-related assistance, you may reach us at:
                         <br />
-                        <strong>support@keralasellers.com</strong>
+                        <strong>keralasellers.in@gmail.com</strong>
                     </p>
 
                     <p className="note">
