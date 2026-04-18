@@ -7,10 +7,10 @@ export default function Footer() {
     <footer className="footer">
       <div className="footer-left">© 2025 DPS</div>
       <nav className="footer-links">
-        <a href="#">Privacy policy</a>
-        <a href="#">Terms and Conditions</a>
-        <a href="#">Cancellation and Refund</a>
-        <a href="#">Shipping and Delivery</a>
+        <a href="/privacy-policy">Privacy policy</a>
+        <a href="/terms-conditions">Terms and Conditions</a>
+        <a href="/CancellationRefundPolicy">Cancellation and Refund</a>
+        <a href="/ShippingDeliveryPolicy">Shipping and Delivery</a>
       </nav>
       <div className="footer-socials">
         <a href="https://www.facebook.com/profile.php?id=61579701681445" target="blank" aria-label="Facebook">

@@ -1,0 +1,99 @@
+.privacy-container {
+    max-width: 1200px;
+    margin: auto;
+    padding: clamp(20px, 4vw, 60px) clamp(16px, 4vw, 40px);
+    font-family: Arial, sans-serif;
+    color: #222;
+    line-height: 1.7;
+}
+
+/* HERO SECTION */
+.privacy-hero {
+    color: #1a4845;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+
+}
+
+/* HEADING */
+.privacy-hero h1 {
+    font-size: clamp(22px, 3vw, 35px);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-top: 20px;
+}
+
+
+h2 {
+    font-size: clamp(16px, 2.5vw, 25px);
+    margin-top: clamp(20px, 3vw, 40px);
+    margin-bottom: 10px;
+}
+
+/* TEXT */
+p {
+    font-size: clamp(14px, 1.5vw, 17px);
+    margin-bottom: 15px;
+}
+
+/* LIST */
+ul {
+    padding-left: clamp(16px, 2vw, 24px);
+    margin-bottom: 20px;
+}
+
+li {
+    font-size: clamp(14px, 1.5vw, 17px);
+    margin-bottom: 10px;
+}
+
+/* NOTE BOX */
+.note {
+    background: #f5f5f5;
+    padding: clamp(10px, 2vw, 16px);
+    border-left: 4px solid #1a4845;
+    font-size: clamp(13px, 1.4vw, 15px);
+}
+
+/* LINKS */
+a {
+    color: #1a4845;
+    text-decoration: none;
+    word-break: break-word;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* 📱 EXTRA SMALL DEVICES (≤480px) */
+@media (max-width: 480px) {
+    .privacy-container {
+        padding: 20px 14px;
+    }
+
+    h1 {
+        letter-spacing: -0.5px;
+    }
+}
+
+/* 📲 TABLETS (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+    .privacy-container {
+        padding: 30px 20px;
+    }
+}
+
+/* 💻 LARGE SCREENS (≥1400px) */
+@media (min-width: 1400px) {
+    .privacy-container {
+        max-width: 1300px;
+    }
+
+    p,
+    li {
+        line-height: 1.8;
+    }
+}
