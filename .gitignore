@@ -1,35 +1,44 @@
-# === Next.js ===
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
 /.next/
 /out/
-build/
-.vercel/
 
-# === Dependencies ===
-node_modules/
+# production
+/build
 
-# === Secrets — NEVER COMMIT ===
-.env
-.env.*
-!.env.example
-!.env.local.example
-
-# === Expo (should not be in web project) ===
-.expo/
-
-# === Debug files accidentally committed ===
-exit
-tatus
-"h origin newdata --force"
-
-# === OS / IDE ===
+# misc
 .DS_Store
-Thumbs.db
-.idea/
-.vscode/
-*.swp
-*.swo
+*.pem
 
-# === Logs ===
-*.log
+# debug
 npm-debug.log*
 yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+
+.env.local
