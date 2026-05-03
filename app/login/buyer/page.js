@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
+import api from '../../../app/lib/api';
 import "../../../styles/BuyerLogin.css";
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
@@ -410,62 +411,45 @@ function LoginContent() {
     }, [router, searchParams, currentStoreInfo]);
 
     // âœ… Check for existing token on mount
-    useEffect(() => {
-        const token = localStorage.getItem('buyerAccessToken') || localStorage.getItem('access_token');
-        if (token) {
-            console.log('ðŸ” Existing token found, redirecting...');
-            handleLoginSuccess(token);
-        }
-    }, [handleLoginSuccess]);
+useEffect(() => {
+    const token = localStorage.getItem('buyerAccessToken') || localStorage.getItem('access_token');
+    if (token) {
+        console.log('🔐 Existing token found, redirecting...');
+        const redirectTo = searchParams.get('redirect');
+        router.push(redirectTo ? decodeURIComponent(redirectTo) : '/profile');
+    }
+}, []);
 
     // âœ… Enhanced Google Login Handler
-    const handleGoogleSuccess = async (credentialResponse) => {
-        try {
-            console.log('ðŸ” Google credential received, processing...');
+// At the top of BuyerLogin.js, import your configured api instance
 
-            const response = await axios.post(GOOGLE_LOGIN_API, {
-                credential: credentialResponse.credential,
-                store_context: currentStoreInfo.isInStore ? currentStoreInfo.storeId : null
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                timeout: 15000
-            });
+// Then in handleGoogleSuccess, replace axios.post with api.post:
+const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+        console.log('🔐 Google credential received, processing...');
 
-            console.log('âœ… Google login response:', response.data);
+        const response = await api.post('/user/buyer/login/google/', {  // ✅ relative path
+            credential: credentialResponse.credential,
+            store_context: currentStoreInfo.isInStore ? currentStoreInfo.storeId : null
+        }, {
+            timeout: 15000
+        });
 
-            const token = response.data.access_token ||
-                response.data.token ||
-                response.data.access;
+        const token = response.data.access_token ||
+            response.data.token ||
+            response.data.access;
 
-            if (token) {
-                handleLoginSuccess(token, response.data);
-            } else {
-                throw new Error('No token received from server');
-            }
-
-        } catch (error) {
-            console.error("âŒ Google login failed:", error);
-
-            let errorMessage = 'Google login failed. Please try again.';
-
-            if (error.response?.status === 400) {
-                errorMessage = 'Invalid Google credential. Please try again.';
-            } else if (error.response?.status === 403) {
-                errorMessage = 'Google account not verified. Please complete your account setup.';
-            } else if (error.code === 'ECONNABORTED') {
-                errorMessage = 'Request timed out. Please try again.';
-            } else if (error.response?.data) {
-                errorMessage = error.response.data.error ||
-                    error.response.data.message ||
-                    errorMessage;
-            }
-
-            alert(errorMessage);
+        if (token) {
+            handleLoginSuccess(token, response.data);
+        } else {
+            throw new Error('No token received from server');
         }
-    };
+
+    } catch (error) {
+        console.error('❌ Google login failed:', error);
+        alert('Google login failed. Please try again.');
+    }
+};
 
     const handleGoogleError = (error) => {
         console.error('âŒ Google login error:', error);
