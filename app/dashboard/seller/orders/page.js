@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
@@ -17,12 +17,12 @@ import {
 // const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/`;
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
 const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/`;
 
-console.log('🔔 Notifications:', {
+console.log('ðŸ”” Notifications:', {
   API_BASE_URL,
   ORDERS_API_URL,
   usingLocal: process.env.NEXT_PUBLIC_API_BASE_URL
@@ -264,7 +264,7 @@ function OrderCard({ order, getStatusStyle, getPaymentStatusStyle }) {
               color: 'rgb(23, 94, 84)',
             }}
           >
-            ₹ {parseFloat(order.total_amount).toFixed(2)}
+            â‚¹ {parseFloat(order.total_amount).toFixed(2)}
           </span>
         </div>
 
@@ -297,7 +297,7 @@ export default function OrdersListPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
-  const [searchTerm, setSearchTerm] = useState(''); // ✅ Real-time search input
+  const [searchTerm, setSearchTerm] = useState(''); // âœ… Real-time search input
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
   const [sortBy, setSortBy] = useState('-created_at');
@@ -334,7 +334,7 @@ export default function OrdersListPage() {
     }
   }, [getAuthHeaders]);
 
-  // ✅ FIXED: Fetch all orders once from backend
+  // âœ… FIXED: Fetch all orders once from backend
   const fetchOrdersData = async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -382,11 +382,11 @@ export default function OrdersListPage() {
         url += `?${params.toString()}`;
       }
 
-      console.log('📡 Fetching all orders:', url);
+      console.log('ðŸ“¡ Fetching all orders:', url);
       const response = await axios.get(url, { headers });
 
       const orderData = response.data.results || response.data || [];
-      console.log('✅ Fetched orders:', orderData.length);
+      console.log('âœ… Fetched orders:', orderData.length);
 
       setAllOrders(orderData);
 
@@ -398,7 +398,7 @@ export default function OrdersListPage() {
       setOrderStats(stats);
 
     } catch (error) {
-      console.error('❌ Error:', error);
+      console.error('âŒ Error:', error);
       if (error.response?.status === 401) {
         setError('Session expired.');
         setTimeout(() => router.push('/login/seller'), 2000);
@@ -410,8 +410,8 @@ export default function OrdersListPage() {
     }
   };
 
-  // ✅ NEW: Client-side filtering & searching in real-time
-  // ✅ FIXED: Combined client-side filtering with ALL filters
+  // âœ… NEW: Client-side filtering & searching in real-time
+  // âœ… FIXED: Combined client-side filtering with ALL filters
   const applyClientFilters = useCallback(() => {
     let filtered = [...allOrders];
 
@@ -482,7 +482,7 @@ export default function OrdersListPage() {
       }
     });
 
-    console.log(`✅ Filtered orders: ${filtered.length} (Status: ${statusFilter}, Payment: ${paymentFilter}, Search: "${searchTerm}")`);
+    console.log(`âœ… Filtered orders: ${filtered.length} (Status: ${statusFilter}, Payment: ${paymentFilter}, Search: "${searchTerm}")`);
     setDisplayedOrders(filtered);
   }, [allOrders, searchTerm, statusFilter, paymentFilter, dateFilter, minAmount, maxAmount, sortBy]);
 
@@ -509,17 +509,17 @@ export default function OrdersListPage() {
     setSortBy('-created_at');
   };
 
-  // ✅ Initial load
+  // âœ… Initial load
   useEffect(() => {
     fetchOrdersData();
   }, []);
 
-  // ✅ Fetch when backend filters change
+  // âœ… Fetch when backend filters change
   useEffect(() => {
     fetchOrdersData();
   }, [statusFilter, paymentFilter, dateFilter, minAmount, maxAmount, sortBy]);
 
-  // ✅ Apply client-side search when search term changes (NO API CALL)
+  // âœ… Apply client-side search when search term changes (NO API CALL)
   useEffect(() => {
     applyClientFilters();
   }, [searchTerm, applyClientFilters]);
@@ -647,7 +647,7 @@ export default function OrdersListPage() {
         </div>
       </div>
 
-      {/* ✅ IMPROVED: Real-time search (NO button needed) */}
+      {/* âœ… IMPROVED: Real-time search (NO button needed) */}
       <div style={styles.searchContainer}>
         <Search className='dashboardorderfiltericon' size={18} style={styles.searchIcon} />
         <input
@@ -659,7 +659,7 @@ export default function OrdersListPage() {
           style={styles.searchInput}
         />
 
-        {/* ✅ Clear button when searching */}
+        {/* âœ… Clear button when searching */}
         {searchTerm && (
           <button className='dashboardorderclearsearchicon' onClick={() => setSearchTerm('')} style={styles.clearInsideInput}>
             <X size={16} />
@@ -671,7 +671,7 @@ export default function OrdersListPage() {
 
       {searchTerm && (
         <div style={styles.searchResultsInfo}>
-          🔍 Found <strong>{displayedOrders.length}</strong> order(s) matching "{searchTerm}"
+          ðŸ” Found <strong>{displayedOrders.length}</strong> order(s) matching "{searchTerm}"
         </div>
       )}
 
@@ -704,7 +704,7 @@ export default function OrdersListPage() {
             onClick={() => setShowAdvancedFilters(false)}
             style={styles.closeBtn}
           >
-            ✕
+            âœ•
           </button>
         </div>
         <div className="mobile-filter-wrapper">
@@ -894,4 +894,5 @@ const styles = {
 },
 
 };
+
 

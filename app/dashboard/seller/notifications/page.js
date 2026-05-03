@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
@@ -16,16 +16,16 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
+// âœ… Using environment variables for API URLs
 // const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
 // const NOTIFICATIONS_API = `${API_BASE_URL}/api/notifications/`;
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const NOTIFICATIONS_API = `${API_BASE_URL}/api/notifications/`;
 
-console.log('🔔 Notifications:', API_BASE_URL);
+console.log('ðŸ”” Notifications:', API_BASE_URL);
 
 
 
@@ -38,7 +38,7 @@ export default function NotificationsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const router = useRouter();
 
-  // ✅ Authentication headers
+  // âœ… Authentication headers
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
@@ -48,7 +48,7 @@ export default function NotificationsPage() {
     return { 'Authorization': `Bearer ${token}` };
   }, [router]);
 
-  // ✅ Fetch notifications from API
+  // âœ… Fetch notifications from API
   const fetchNotifications = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -104,8 +104,8 @@ export default function NotificationsPage() {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  // ✅ NEW: Handle notification click with navigation
-// ✅ FIXED: Handle notification click with correct navigation
+  // âœ… NEW: Handle notification click with navigation
+// âœ… FIXED: Handle notification click with correct navigation
 const handleNotificationClick = async (notification) => {
   const headers = getAuthHeaders();
   if (!headers) return;
@@ -122,32 +122,32 @@ const handleNotificationClick = async (notification) => {
     }
   }
 
-  // ✅ FIXED: Navigate to the correct seller dashboard routes
+  // âœ… FIXED: Navigate to the correct seller dashboard routes
   if (notification.link) {
     let correctLink = notification.link;
     
-    // Fix /dashboard/orders → /dashboard/seller/orders
+    // Fix /dashboard/orders â†’ /dashboard/seller/orders
     if (correctLink.startsWith('/dashboard/orders')) {
       correctLink = correctLink.replace('/dashboard/orders', '/dashboard/seller/orders');
     }
-    // Fix /dashboard/stock → /dashboard/seller/stock
+    // Fix /dashboard/stock â†’ /dashboard/seller/stock
     else if (correctLink.startsWith('/dashboard/stock')) {
       correctLink = correctLink.replace('/dashboard/stock', '/dashboard/seller/stock');
     }
-    // Fix /dashboard/products → /dashboard/seller/products
+    // Fix /dashboard/products â†’ /dashboard/seller/products
     else if (correctLink.startsWith('/dashboard/products')) {
       correctLink = correctLink.replace('/dashboard/products', '/dashboard/seller/products');
     }
-    // Fix /dashboard/analytics → /dashboard/seller/analytics
+    // Fix /dashboard/analytics â†’ /dashboard/seller/analytics
     else if (correctLink.startsWith('/dashboard/analytics')) {
       correctLink = correctLink.replace('/dashboard/analytics', '/dashboard/seller/analytics');
     }
-    // Fix any other /dashboard/* → /dashboard/seller/*
+    // Fix any other /dashboard/* â†’ /dashboard/seller/*
     else if (correctLink.startsWith('/dashboard/') && !correctLink.startsWith('/dashboard/seller/')) {
       correctLink = correctLink.replace('/dashboard/', '/dashboard/seller/');
     }
     
-    console.log('✅ Navigating to:', correctLink);
+    console.log('âœ… Navigating to:', correctLink);
     router.push(correctLink);
   }
 };
@@ -219,7 +219,7 @@ const handleNotificationClick = async (notification) => {
 
     if (lowercaseMessage.includes('order')) {
       return <ShoppingCart className='dashboardnotificationcarticon' size={20} color="#3b82f6" />;
-    } else if (lowercaseMessage.includes('payment') || lowercaseMessage.includes('payout') || lowercaseMessage.includes('₹')) {
+    } else if (lowercaseMessage.includes('payment') || lowercaseMessage.includes('payout') || lowercaseMessage.includes('â‚¹')) {
       return <IndianRupee className='dashboardnotificationcarticon' size={20} color="#059669" />;
     } else if (lowercaseMessage.includes('product') || lowercaseMessage.includes('stock')) {
       return <Package className='dashboardnotificationcarticon' size={20} color="#8b5cf6" />;
@@ -717,4 +717,5 @@ const styles = {
     padding: '40px'
   }
 };
+
 

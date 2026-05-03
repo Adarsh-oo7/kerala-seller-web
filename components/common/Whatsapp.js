@@ -27,10 +27,7 @@ const getApiBaseUrl = () => {
   if (envUrl && envUrl.trim() !== "" && envUrl !== "undefined") {
     return envUrl.trim();
   }
-  if (process.env.NODE_ENV === "development") {
-    return "http://localhost:8000";
-  }
-  return "https://keralaseller-backend.onrender.com";
+  return "https://api.keralasellers.in";
 };
 
 // 🔥 FUNCTION TO GET STORE NAME (same as About page)

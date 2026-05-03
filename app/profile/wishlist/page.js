@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useCart } from '../../context/CartContext'; // Please adjust path correctly
 
 import { useState, useEffect, useCallback } from 'react';
@@ -25,7 +25,7 @@ import {
   List
 } from 'lucide-react';
 
-// ✅ Enhanced API base URL function
+// âœ… Enhanced API base URL function
 // const getApiBaseUrl = () => {
 //   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 //   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
@@ -41,15 +41,15 @@ import {
 // const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 // const CART_API = `${API_BASE_URL}/api/cart/add/`;
 
-// console.log('🔍 Wishlist API URLs:', { API_BASE_URL, WISHLIST_API, CART_API });
+// console.log('ðŸ” Wishlist API URLs:', { API_BASE_URL, WISHLIST_API, CART_API });
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const CART_API = `${API_BASE_URL}/api/cart/add/`;
 
-console.log('🛒 Wishlist/Cart APIs:', { 
+console.log('ðŸ›’ Wishlist/Cart APIs:', { 
   API_BASE_URL, 
   LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL,
   WISHLIST_API, 
@@ -68,14 +68,14 @@ export default function WishlistPage() {
   const router = useRouter();
   const { addToCart } = useCart();
 
-  // ✅ FIXED: Better token detection
+  // âœ… FIXED: Better token detection
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('access_token') ||
       localStorage.getItem('buyerAccessToken') ||
       localStorage.getItem('buyerToken') ||
       localStorage.getItem('accessToken');
 
-    console.log('🔍 Auth token found:', !!token);
+    console.log('ðŸ” Auth token found:', !!token);
 
     if (!token) {
       return null;
@@ -83,7 +83,7 @@ export default function WishlistPage() {
     return { 'Authorization': `Bearer ${token}` };
   }, []);
 
-  // ✅ FIXED: Proper image URL construction
+  // âœ… FIXED: Proper image URL construction
   const getImageUrl = useCallback((imageUrl) => {
     if (!imageUrl) {
       return 'https://via.placeholder.com/300x300/e9ecef/6c757d?text=No+Image';
@@ -97,7 +97,7 @@ export default function WishlistPage() {
     // If it's a relative URL starting with /media/ or /static/
     if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
       const fullUrl = `${API_BASE_URL}${imageUrl}`;
-      console.log('🖼️ Constructed image URL:', fullUrl);
+      console.log('ðŸ–¼ï¸ Constructed image URL:', fullUrl);
       return fullUrl;
     }
 
@@ -113,27 +113,27 @@ export default function WishlistPage() {
   const loadWishlistFromAPI = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) {
-      console.log('❌ No auth headers, loading from localStorage');
+      console.log('âŒ No auth headers, loading from localStorage');
       loadWishlistFromLocalStorage();
       return;
     }
 
     try {
-      console.log('🔍 Loading wishlist from API:', WISHLIST_API);
+      console.log('ðŸ” Loading wishlist from API:', WISHLIST_API);
       const response = await axios.get(WISHLIST_API, { headers });
 
       const wishlistData = response.data;
-      console.log('✅ Wishlist API response:', wishlistData);
+      console.log('âœ… Wishlist API response:', wishlistData);
 
       let items = [];
 
-      // ✅ ENHANCED: Better data extraction
+      // âœ… ENHANCED: Better data extraction
       if (wishlistData && wishlistData.items && Array.isArray(wishlistData.items)) {
         items = wishlistData.items.map(item => {
           const product = item.product || item;
           return {
             ...product,
-            // ✅ FIXED: Ensure proper image URL construction
+            // âœ… FIXED: Ensure proper image URL construction
             main_image_url: getImageUrl(product.main_image_url || product.image_url || product.image),
             image_url: getImageUrl(product.image_url || product.main_image_url || product.image)
           };
@@ -155,16 +155,16 @@ export default function WishlistPage() {
         });
       }
 
-      console.log('✅ Processed wishlist items:', items.length, items);
+      console.log('âœ… Processed wishlist items:', items.length, items);
       setWishlistItems(items);
 
       // Sync with localStorage
       localStorage.setItem('wishlist', JSON.stringify(items));
 
     } catch (error) {
-      console.error('❌ API wishlist failed:', error);
+      console.error('âŒ API wishlist failed:', error);
       if (error.response?.status === 401) {
-        console.log('🔐 Authentication failed, clearing tokens');
+        console.log('ðŸ” Authentication failed, clearing tokens');
         ['access_token', 'buyerAccessToken', 'buyerToken', 'accessToken'].forEach(key => {
           localStorage.removeItem(key);
         });
@@ -175,13 +175,13 @@ export default function WishlistPage() {
 
   const loadWishlistFromLocalStorage = () => {
     try {
-      console.log('🔍 Loading wishlist from localStorage');
+      console.log('ðŸ” Loading wishlist from localStorage');
       const savedWishlist = localStorage.getItem('wishlist');
       if (savedWishlist) {
         const parsedWishlist = JSON.parse(savedWishlist);
         const items = Array.isArray(parsedWishlist) ? parsedWishlist : [];
 
-        // ✅ FIXED: Ensure image URLs are properly constructed even from localStorage
+        // âœ… FIXED: Ensure image URLs are properly constructed even from localStorage
         const itemsWithImages = items.map(item => ({
           ...item,
           main_image_url: getImageUrl(item.main_image_url || item.image_url || item.image),
@@ -189,12 +189,12 @@ export default function WishlistPage() {
         }));
 
         setWishlistItems(itemsWithImages);
-        console.log('✅ Loaded from localStorage:', itemsWithImages.length, 'items');
+        console.log('âœ… Loaded from localStorage:', itemsWithImages.length, 'items');
       } else {
         setWishlistItems([]);
       }
     } catch (error) {
-      console.error('❌ Error loading wishlist from localStorage:', error);
+      console.error('âŒ Error loading wishlist from localStorage:', error);
       setWishlistItems([]);
     }
   };
@@ -206,7 +206,7 @@ export default function WishlistPage() {
     try {
       await loadWishlistFromAPI();
     } catch (error) {
-      console.error('❌ Error loading wishlist:', error);
+      console.error('âŒ Error loading wishlist:', error);
       setError('Failed to load wishlist. Please try again.');
     } finally {
       setIsLoading(false);
@@ -217,7 +217,7 @@ export default function WishlistPage() {
     loadWishlist();
   }, [loadWishlist]);
 
-  // ✅ ENHANCED: Better removal with API integration
+  // âœ… ENHANCED: Better removal with API integration
   const removeFromWishlist = async (productId) => {
     setIsUpdating(prev => ({ ...prev, [productId]: 'removing' }));
 
@@ -227,24 +227,24 @@ export default function WishlistPage() {
 
       if (headers) {
         try {
-          console.log('🗑️ Removing from API wishlist:', productId);
+          console.log('ðŸ—‘ï¸ Removing from API wishlist:', productId);
 
           // Try different API endpoints for removal
           try {
             await axios.post(`${API_BASE_URL}/api/wishlist/toggle_product/`, {
               product_id: productId
             }, { headers });
-            console.log('✅ Removed via toggle API');
+            console.log('âœ… Removed via toggle API');
           } catch (toggleError) {
             // Fallback to direct removal
             await axios.delete(`${WISHLIST_API}remove_product/`, {
               headers,
               data: { product_id: productId }
             });
-            console.log('✅ Removed via remove_product API');
+            console.log('âœ… Removed via remove_product API');
           }
         } catch (apiError) {
-          console.warn('⚠️ API removal failed, continuing with local removal:', apiError);
+          console.warn('âš ï¸ API removal failed, continuing with local removal:', apiError);
         }
       }
 
@@ -252,11 +252,11 @@ export default function WishlistPage() {
       const updatedWishlist = wishlistItems.filter(item => item.id !== productId);
       setWishlistItems(updatedWishlist);
       localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
-      console.log('✅ Item removed from wishlist');
+      console.log('âœ… Item removed from wishlist');
       toast.error("Removed from wishlist");
 
     } catch (error) {
-      console.error('❌ Error removing from wishlist:', error);
+      console.error('âŒ Error removing from wishlist:', error);
       setError('Failed to remove item. Please try again.');
     } finally {
       setIsUpdating(prev => ({ ...prev, [productId]: null }));
@@ -362,7 +362,7 @@ export default function WishlistPage() {
             <AlertCircle size={16} />
             <span>{error}</span>
             <button onClick={() => setError('')} style={styles.closeAlert}>
-              ×
+              Ã—
             </button>
           </div>
         )}
@@ -386,7 +386,7 @@ export default function WishlistPage() {
             {/* Filters and Controls */}
             <div style={styles.controlsSection}>
               <div style={styles.controlsRow}>
-                {/* Left side — Sort */}
+                {/* Left side â€” Sort */}
                 <div style={styles.sortContainer}>
                   {/* <label style={styles.sortLabel}>Sort by:</label> */}
                   <select
@@ -403,7 +403,7 @@ export default function WishlistPage() {
                   </select>
                 </div>
 
-                {/* Right side — Search */}
+                {/* Right side â€” Search */}
                 <div style={styles.searchContainer}>
                   <Search size={18} style={styles.searchIcon} />
                   <input
@@ -422,17 +422,17 @@ export default function WishlistPage() {
             {/* Wishlist Items */}
             <div className='profilewishlistgrid' style={viewMode === 'grid' ? styles.wishlistGrid : styles.wishlistList}>
               {filteredAndSortedItems.map((product) => {
-                // 🧮 Calculate discount %
+                // ðŸ§® Calculate discount %
                 const discount = calculateDiscount(product.price, product.mrp);
 
-                // 🏷️ Stock conditions
+                // ðŸ·ï¸ Stock conditions
                 const isOutOfStock = (product.online_stock || 0) <= 0;
 
-                // 🔄 UI loading states (for wishlist/cart updates)
+                // ðŸ”„ UI loading states (for wishlist/cart updates)
                 const isRemoving = isUpdating[product.id] === 'removing';
                 const isAddingToCart = isUpdating[product.id] === 'adding_to_cart';
 
-                // 🖼️ Safe image URL fallback
+                // ðŸ–¼ï¸ Safe image URL fallback
                 const imageUrl =
                   product.main_image_url ||
                   product.image_url ||
@@ -446,7 +446,7 @@ export default function WishlistPage() {
                     style={styles.shopProductCard}
                     data-product-id={product.id}
                   >
-                    {/* ✅ Image section */}
+                    {/* âœ… Image section */}
                     <div className="product-image-wrapper" style={styles.productImageWrapper}>
                       <img
                         src={imageUrl}
@@ -454,11 +454,11 @@ export default function WishlistPage() {
                         style={styles.productImageLink}
                         onError={(e) => handleImageError(e, product.name)}
                         onLoad={() =>
-                          console.log('✅ Image loaded successfully for:', product.name)
+                          console.log('âœ… Image loaded successfully for:', product.name)
                         }
                       />
 
-                      {/* ⭐ Rating Overlay */}
+                      {/* â­ Rating Overlay */}
                       <div style={styles.ratingOverlay}>
                         <div style={styles.ratingLeft}>
                           <Star
@@ -482,7 +482,7 @@ export default function WishlistPage() {
                         )}
                       </div>
 
-                      {/* 🏷️ Product badges */}
+                      {/* ðŸ·ï¸ Product badges */}
                       <div className="product-badges" style={styles.productBadges}>
                         {discount > 0 && (
                           <span className="badge discount" style={styles.badgeDiscount}>
@@ -501,7 +501,7 @@ export default function WishlistPage() {
                         )}
                       </div>
 
-                      {/* ❤️ Quick Actions */}
+                      {/* â¤ï¸ Quick Actions */}
                       <div className="quick-actions" style={styles.quickActions}>
                         <button
                           onClick={() => removeFromWishlist(product.id)}
@@ -522,7 +522,7 @@ export default function WishlistPage() {
                       </div>
                     </div>
 
-                    {/* 🧾 Product info */}
+                    {/* ðŸ§¾ Product info */}
                     <div className="product-info" style={styles.productInfo}>
                       <div className="product-header" style={{ ...styles.productHeader, minWidth: 0 }}>
                         <h3
@@ -555,7 +555,7 @@ export default function WishlistPage() {
                         </h3>
                       </div>
 
-                      {/* 💰 Pricing */}
+                      {/* ðŸ’° Pricing */}
                       <div className="product-pricing" style={styles.productPricing}>
                         <div className="price-section" style={styles.priceSection}>
                           <span className="current-price" style={styles.currentPrice}>
@@ -569,7 +569,7 @@ export default function WishlistPage() {
                         </div>
                       </div>
 
-                      {/* 🛒 Add to Cart Button */}
+                      {/* ðŸ›’ Add to Cart Button */}
                       <button
                         className="shopslugprofilewishlistaddtocartbtn"
                         onClick={() => handleAddToCart(product)}
@@ -818,16 +818,16 @@ const styles = {
 
   controlsRow: {
     display: 'flex',
-    justifyContent: 'space-between', // ✅ puts sort left, search right
+    justifyContent: 'space-between', // âœ… puts sort left, search right
     alignItems: 'center',
     gap: '16px',
-    flexWrap: 'wrap', // ✅ keeps it responsive
+    flexWrap: 'wrap', // âœ… keeps it responsive
   },
 
   searchContainer: {
     position: 'relative',
-    width: '250px',           // ✅ fixed width for desktop
-    maxWidth: '100%',         // ✅ responsive on mobile
+    width: '250px',           // âœ… fixed width for desktop
+    maxWidth: '100%',         // âœ… responsive on mobile
   },
 
   searchIcon: {
@@ -897,19 +897,19 @@ const styles = {
     boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
   },
 
-  // ✅ FIXED: Responsive Wishlist Grid
+  // âœ… FIXED: Responsive Wishlist Grid
 
 
   wishlistGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
     gap: '16px',
-    justifyContent: 'center',      // ✅ centers cards
+    justifyContent: 'center',      // âœ… centers cards
     justifyItems: 'center',
     width: '100%',
     maxWidth: '1200px',
-    margin: '0 auto',              // ✅ centers the grid itself
-    padding: '10px 0', // ✅ equal side padding responsive
+    margin: '0 auto',              // âœ… centers the grid itself
+    padding: '10px 0', // âœ… equal side padding responsive
     boxSizing: 'border-box',
   },
 
@@ -923,8 +923,8 @@ const styles = {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    backgroundColor: '#f3f4f6', // ✅ ADDED: Background color while loading
-    transition: 'opacity 0.3s ease' // ✅ ADDED: Smooth transition
+    backgroundColor: '#f3f4f6', // âœ… ADDED: Background color while loading
+    transition: 'opacity 0.3s ease' // âœ… ADDED: Smooth transition
   },
   removeButton: {
     position: 'absolute', top: '12px', right: '12px',
@@ -1218,7 +1218,7 @@ const styles = {
 
 
 
-  // ✅ Rating overlay (existing) - on image
+  // âœ… Rating overlay (existing) - on image
   ratingOverlay: {
     position: "absolute",
     bottom: "0px",
@@ -1264,5 +1264,6 @@ const styles = {
     fontSize: '14px'
   }
 };
+
 
 

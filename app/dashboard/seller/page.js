@@ -27,18 +27,18 @@ import {
 //     // 1. Check explicit env vars first
 //     const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 //     if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-//         console.log('🌐 Env var:', envUrl);
+//         console.log('ðŸŒ Env var:', envUrl);
 //         return envUrl.trim();
 //     }
     
-//     // 2. ✅ FIXED: Smart hostname detection
+//     // 2. âœ… FIXED: Smart hostname detection
 //     if (typeof window !== 'undefined') {
 //         const hostname = window.location.hostname;
 //         if (hostname === 'localhost' || hostname === '127.0.0.1') {
-//             console.log('🌐 Local dev: Using localhost:8000');
+//             console.log('ðŸŒ Local dev: Using localhost:8000');
 //             return 'https://api.keralasellers.in';
 //         }
-//         console.log('📦 Production: Using api.keralasellers.in');
+//         console.log('ðŸ“¦ Production: Using api.keralasellers.in');
 //         return 'https://api.keralasellers.in';
 //     }
     
@@ -50,22 +50,22 @@ import {
 // const API_BASE_URL = 'https://api.keralasellers.in';
 // const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
 // const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
-// const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`; // ✅ Added
+// const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`; // âœ… Added
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
 const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
 const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
 
-console.log('🏪 Layout APIs:', API_BASE_URL);
+console.log('ðŸª Layout APIs:', API_BASE_URL);
 
 
 const getFrontendBaseUrl = () => {
     if (typeof window !== 'undefined') {
         return `${window.location.protocol}//${window.location.host}`;
     }
-    return process.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'http://localhost:3000';
+    return process.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'https://keralasellers.in';
 };
 
 const generateShopSlug = (shop) => {
@@ -200,7 +200,7 @@ function StoreLink({ storeData, phone, copySuccess, onCopy, onVisit }) {
     );
 }
 
-// ✅ NEW: Subscription prompt component
+// âœ… NEW: Subscription prompt component
 function SubscriptionPromptCard() {
     return (
         <div style={styles.card}>
@@ -259,7 +259,7 @@ function SubscriptionPromptCard() {
 export default function SellerDashboardOverview() {
     const [dashboardData, setDashboardData] = useState(null);
     const [storeData, setStoreData] = useState(null);
-    const [subscription, setSubscription] = useState(null); // ✅ Added
+    const [subscription, setSubscription] = useState(null); // âœ… Added
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [copySuccess, setCopySuccess] = useState(false);
@@ -272,7 +272,7 @@ export default function SellerDashboardOverview() {
         return token ? { Authorization: `Bearer ${token}` } : null;
     }, []);
 
-    // ✅ NEW: Fetch subscription
+    // âœ… NEW: Fetch subscription
     const fetchSubscription = useCallback(async () => {
         const headers = getAuthHeaders();
         if (!headers) return;
@@ -280,9 +280,9 @@ export default function SellerDashboardOverview() {
         try {
             const response = await axios.get(SUBSCRIPTION_API_URL, { headers });
             setSubscription(response.data);
-            console.log('✅ Subscription loaded:', response.data);
+            console.log('âœ… Subscription loaded:', response.data);
         } catch (err) {
-            console.log('⚠️ No active subscription found');
+            console.log('âš ï¸ No active subscription found');
             setSubscription(null);
         }
     }, [getAuthHeaders]);
@@ -298,21 +298,21 @@ export default function SellerDashboardOverview() {
         setError('');
 
         try {
-            console.log('🔍 Fetching dashboard data...');
+            console.log('ðŸ” Fetching dashboard data...');
 
             const [dashboardRes, storeRes] = await Promise.all([
                 axios.get(DASHBOARD_API_URL, { headers, timeout: 15000 }),
                 axios.get(PROFILE_API_URL, { headers, timeout: 15000 }).catch(() => null)
             ]);
 
-            console.log('✅ Dashboard data received:', dashboardRes.data);
-            console.log('✅ Store profile data:', storeRes?.data);
+            console.log('âœ… Dashboard data received:', dashboardRes.data);
+            console.log('âœ… Store profile data:', storeRes?.data);
 
             setDashboardData(dashboardRes.data);
             setStoreData(storeRes?.data?.store_profile || storeRes?.data || null);
 
         } catch (error) {
-            console.error('❌ Failed to fetch dashboard data:', error);
+            console.error('âŒ Failed to fetch dashboard data:', error);
             if (error.response?.status === 401) {
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('buyerAccessToken');
@@ -330,7 +330,7 @@ export default function SellerDashboardOverview() {
 
     useEffect(() => {
         fetchDashboardData();
-        fetchSubscription(); // ✅ Added
+        fetchSubscription(); // âœ… Added
     }, [fetchDashboardData, fetchSubscription]);
 
     const copyStoreLink = async (url) => {
@@ -439,7 +439,7 @@ export default function SellerDashboardOverview() {
                     <div className='dashboardoverviewstatcontainer' style={styles.statsContainer}>
                         <StatCard
                             title="Total Revenue"
-                            value={`₹${(dashboardData.analytics?.total_revenue || 0).toLocaleString('en-IN')}`}
+                            value={`â‚¹${(dashboardData.analytics?.total_revenue || 0).toLocaleString('en-IN')}`}
                             icon={<IndianRupee className='dashboardoverviewstaticon' />}
                             color="#3e7572ff"
                             bgColor="rgba(255, 238, 175, 1)"
@@ -468,7 +468,7 @@ export default function SellerDashboardOverview() {
                     </div>
 
                     <div className='dashboardoverviewgridcontainer' style={styles.gridContainer}>
-                        {/* ✅ Conditional rendering based on subscription */}
+                        {/* âœ… Conditional rendering based on subscription */}
                         {subscription?.is_active ? (
                             <StoreLink
                                 storeData={storeData}
@@ -1027,7 +1027,7 @@ const styles = {
         lineHeight: '1.5',
     },
 
-    // ✅ NEW: Subscription prompt styles
+    // âœ… NEW: Subscription prompt styles
     subscriptionPrompt: {
         textAlign: 'center',
         padding: '30px 20px',
@@ -1131,5 +1131,6 @@ const styles = {
         boxShadow: '0 4px 12px rgba(42, 108, 72, 0.3)',
     }
 };
+
 
 

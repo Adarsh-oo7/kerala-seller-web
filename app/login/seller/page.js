@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -25,14 +25,14 @@ import {
   CheckCircle,
 } from 'lucide-react';
 
-// ✅ API configuration
+// âœ… API configuration
 // const getApiBaseUrl = () => {
 //   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 //   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
 //     return envUrl.trim();
 //   }
   
-//   // ✅ FIXED: Use hostname instead of NODE_ENV
+//   // âœ… FIXED: Use hostname instead of NODE_ENV
 //   if (typeof window !== 'undefined') {
 //     const hostname = window.location.hostname;
 //     if (hostname === 'localhost' || hostname === '127.0.0.1') {
@@ -48,18 +48,18 @@ import {
 // const API_BASE_URL = 'https://api.keralasellers.in';
 // const LOGIN_API_URL = `${API_BASE_URL}/user/login/`;
 
-// console.log('🌐 Seller Login API URLs configured:', {
+// console.log('ðŸŒ Seller Login API URLs configured:', {
 //   API_BASE_URL,
 //   LOGIN_API_URL
 // });
 
-// ✅ PROVEN working (BuyerLogin tested)
+// âœ… PROVEN working (BuyerLogin tested)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const LOGIN_API_URL = `${API_BASE_URL}/user/login/`;
 
-console.log('🌐 Seller Login:', {
+console.log('ðŸŒ Seller Login:', {
   API_BASE_URL,
   LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL || 'none',
   LOGIN_API_URL
@@ -192,7 +192,7 @@ function LoginForm() {
           return;
         }
 
-        console.log('🔍 Checking existing seller token...');
+        console.log('ðŸ” Checking existing seller token...');
 
         const response = await axios.get(`${API_BASE_URL}/user/dashboard/`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -200,13 +200,13 @@ function LoginForm() {
         });
 
         if (response.status === 200) {
-          console.log('✅ Valid seller token found, redirecting...');
+          console.log('âœ… Valid seller token found, redirecting...');
           const redirectUrl = redirect || '/dashboard/seller';
           router.replace(redirectUrl);
           return;
         }
       } catch (error) {
-        console.log('❌ Token invalid or expired, clearing auth data');
+        console.log('âŒ Token invalid or expired, clearing auth data');
         localStorage.removeItem('accessToken');
         localStorage.removeItem('access_token');
         localStorage.removeItem('sellerInfo');
@@ -245,7 +245,7 @@ function LoginForm() {
     if (error) setError('');
   };
 
-  // ✅ SIMPLIFIED ONBOARDING - NO COUPON PAGE
+  // âœ… SIMPLIFIED ONBOARDING - NO COUPON PAGE
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -273,7 +273,7 @@ function LoginForm() {
     setFieldErrors({});
 
     try {
-      console.log('🔍 Attempting seller login with phone:', phone);
+      console.log('ðŸ” Attempting seller login with phone:', phone);
 
       const response = await axios.post(LOGIN_API_URL, {
         phone: phone.trim(),
@@ -284,7 +284,7 @@ function LoginForm() {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      console.log('✅ Login response received:', response.data);
+      console.log('âœ… Login response received:', response.data);
 
       const token = response.data.access_token || response.data.token || response.data.access;
 
@@ -293,7 +293,7 @@ function LoginForm() {
       }
 
       const { seller, debug_info } = response.data;
-      console.log('✅ Login successful for:', debug_info?.admin_user_email || seller?.email || phone);
+      console.log('âœ… Login successful for:', debug_info?.admin_user_email || seller?.email || phone);
 
       // Clear old tokens
       localStorage.removeItem('accessToken');
@@ -314,9 +314,9 @@ function LoginForm() {
         localStorage.setItem('rememberSeller', 'true');
       }
 
-      // ✅ SIMPLIFIED: Check onboarding status (NO COUPON CHECK)
+      // âœ… SIMPLIFIED: Check onboarding status (NO COUPON CHECK)
       try {
-        console.log('🔍 Checking seller onboarding status...');
+        console.log('ðŸ” Checking seller onboarding status...');
         
         const statusResponse = await axios.get(
           `${API_BASE_URL}/users/seller/onboarding/status/`,
@@ -328,26 +328,26 @@ function LoginForm() {
           razorpay_connected 
         } = statusResponse.data;
 
-        console.log('✅ Onboarding status:', statusResponse.data);
+        console.log('âœ… Onboarding status:', statusResponse.data);
 
-        // ✅ Simplified redirect logic (Login → Settings → Payments)
+        // âœ… Simplified redirect logic (Login â†’ Settings â†’ Payments)
         let redirectUrl;
 
         if (!store_setup_completed) {
           redirectUrl = '/dashboard/seller/settings';
-          console.log('📍 Redirecting to: Setup Store (Settings)');
+          console.log('ðŸ“ Redirecting to: Setup Store (Settings)');
         } else if (!razorpay_connected) {
           redirectUrl = '/dashboard/seller/payments';
-          console.log('📍 Redirecting to: Connect Razorpay (Payments)');
+          console.log('ðŸ“ Redirecting to: Connect Razorpay (Payments)');
         } else if (redirect) {
           redirectUrl = decodeURIComponent(redirect);
-          console.log('📍 Redirecting to: Custom redirect');
+          console.log('ðŸ“ Redirecting to: Custom redirect');
         } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
           redirectUrl = `/store/${currentStoreInfo.storeId}/dashboard`;
-          console.log('📍 Redirecting to: Store Dashboard');
+          console.log('ðŸ“ Redirecting to: Store Dashboard');
         } else {
           redirectUrl = '/dashboard/seller';
-          console.log('📍 Redirecting to: Main Dashboard');
+          console.log('ðŸ“ Redirecting to: Main Dashboard');
         }
 
         setTimeout(() => {
@@ -355,7 +355,7 @@ function LoginForm() {
         }, 500);
 
       } catch (statusError) {
-        console.error('⚠️ Failed to check onboarding status:', statusError);
+        console.error('âš ï¸ Failed to check onboarding status:', statusError);
         
         // Fallback - go to settings if onboarding status check fails
         const fallbackUrl = '/dashboard/seller/settings';
@@ -366,8 +366,8 @@ function LoginForm() {
       }
 
     } catch (err) {
-      console.error('❌ Login error:', err);
-      console.error('❌ Error response:', err.response?.data);
+      console.error('âŒ Login error:', err);
+      console.error('âŒ Error response:', err.response?.data);
 
       let errorMessage = 'Login failed. Please check your credentials.';
 
@@ -440,7 +440,7 @@ function LoginForm() {
         <div style={styles.loadingContainer}>
           <div style={styles.spinner}></div>
           <p>Checking authentication...</p>
-          <p style={styles.loadingSubtext}>🌐 Connected to: {API_BASE_URL}</p>
+          <p style={styles.loadingSubtext}>ðŸŒ Connected to: {API_BASE_URL}</p>
         </div>
       </div>
     );
@@ -616,7 +616,7 @@ function LoginLoading() {
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
         <p>Loading seller login...</p>
-        <p style={styles.loadingSubtext}>🌐 Connected to: {API_BASE_URL}</p>
+        <p style={styles.loadingSubtext}>ðŸŒ Connected to: {API_BASE_URL}</p>
       </div>
     </div>
   );
@@ -707,5 +707,6 @@ const styles = {
   buyerText: { fontSize: '0.9rem', color: '#6b7280', margin: '0 0 8px 0' },
   buyerLinkButton: { display: 'inline-block', padding: '8px 16px', backgroundColor: '#059669', color: 'white', textDecoration: 'none', borderRadius: '6px', fontSize: '0.9rem', fontWeight: '500', transition: 'background-color 0.2s' }
 };
+
 
 

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -25,7 +25,7 @@ import {
     CheckCircle
 } from 'lucide-react';
 
-// ✅ Enhanced API configuration
+// âœ… Enhanced API configuration
 // const getApiBaseUrl = () => {
 //     const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 //     if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
@@ -42,20 +42,20 @@ import {
 // const GOOGLE_LOGIN_API = `${API_BASE_URL}/user/buyer/login/google/`;
 // const EMAIL_LOGIN_API = `${API_BASE_URL}/user/buyer/login/`;
 
-// console.log('🌐 Buyer Login API URLs configured:', {
+// console.log('ðŸŒ Buyer Login API URLs configured:', {
 //     API_BASE_URL,
 //     GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'Not configured'
 // });
 
-// ✅ Works local (.env.local) + production (Vercel)
+// âœ… Works local (.env.local) + production (Vercel)
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const GOOGLE_LOGIN_API = `${API_BASE_URL}/user/buyer/login/google/`;
 const EMAIL_LOGIN_API = `${API_BASE_URL}/user/buyer/login/`;
 
-console.log('🌐 Buyer Login APIs:', {
+console.log('ðŸŒ Buyer Login APIs:', {
     API_BASE_URL,
     GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'Not set',
     LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -63,7 +63,7 @@ console.log('🌐 Buyer Login APIs:', {
 });
 
 
-// ✅ Enhanced EmailLoginForm with better UX
+// âœ… Enhanced EmailLoginForm with better UX
 function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -126,7 +126,7 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
         setIsLoading(true);
 
         try {
-            console.log('🔐 Attempting buyer login for:', email.trim());
+            console.log('ðŸ” Attempting buyer login for:', email.trim());
 
             const response = await axios.post(EMAIL_LOGIN_API, {
                 email: email.trim().toLowerCase(),
@@ -135,7 +135,7 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
                 timeout: 15000
             });
 
-            console.log('✅ Login successful:', response.data);
+            console.log('âœ… Login successful:', response.data);
 
             // Handle different token field names
             const token = response.data.access_token ||
@@ -149,7 +149,7 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
             onLoginSuccess(token, response.data);
 
         } catch (err) {
-            console.error('❌ Login error:', err);
+            console.error('âŒ Login error:', err);
 
             let errorMessage = 'Login failed. Please try again.';
 
@@ -176,7 +176,7 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
 
     return (
         <form onSubmit={handleSubmit} style={styles.form}>
-            {/* ✅ Store context indicator */}
+            {/* âœ… Store context indicator */}
             {currentStoreInfo.isInStore && (
                 <div style={styles.storeNotice}>
                     <Globe size={16} />
@@ -365,13 +365,13 @@ const FloatingIcons = ({ totalIcons = 12 }) => {
 
 
 
-// ✅ Enhanced LoginContent with store awareness
+// âœ… Enhanced LoginContent with store awareness
 function LoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
 
-    // ✅ Get current store info from URL
+    // âœ… Get current store info from URL
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const currentPath = window.location.pathname;
@@ -384,7 +384,7 @@ function LoginContent() {
     }, []);
 
     const handleLoginSuccess = useCallback((token, userData = {}) => {
-        console.log('🎉 Login successful, storing token and redirecting...');
+        console.log('ðŸŽ‰ Login successful, storing token and redirecting...');
 
         // Store token with multiple keys for compatibility
         localStorage.setItem('access_token', token);
@@ -395,7 +395,7 @@ function LoginContent() {
             localStorage.setItem('userInfo', JSON.stringify(userData.user));
         }
 
-        // ✅ Store-aware redirect logic
+        // âœ… Store-aware redirect logic
         const redirectTo = searchParams.get('redirect');
 
         if (redirectTo) {
@@ -409,19 +409,19 @@ function LoginContent() {
         }
     }, [router, searchParams, currentStoreInfo]);
 
-    // ✅ Check for existing token on mount
+    // âœ… Check for existing token on mount
     useEffect(() => {
         const token = localStorage.getItem('buyerAccessToken') || localStorage.getItem('access_token');
         if (token) {
-            console.log('🔍 Existing token found, redirecting...');
+            console.log('ðŸ” Existing token found, redirecting...');
             handleLoginSuccess(token);
         }
     }, [handleLoginSuccess]);
 
-    // ✅ Enhanced Google Login Handler
+    // âœ… Enhanced Google Login Handler
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
-            console.log('🔍 Google credential received, processing...');
+            console.log('ðŸ” Google credential received, processing...');
 
             const response = await axios.post(GOOGLE_LOGIN_API, {
                 credential: credentialResponse.credential,
@@ -434,7 +434,7 @@ function LoginContent() {
                 timeout: 15000
             });
 
-            console.log('✅ Google login response:', response.data);
+            console.log('âœ… Google login response:', response.data);
 
             const token = response.data.access_token ||
                 response.data.token ||
@@ -447,7 +447,7 @@ function LoginContent() {
             }
 
         } catch (error) {
-            console.error("❌ Google login failed:", error);
+            console.error("âŒ Google login failed:", error);
 
             let errorMessage = 'Google login failed. Please try again.';
 
@@ -468,13 +468,13 @@ function LoginContent() {
     };
 
     const handleGoogleError = (error) => {
-        console.error('❌ Google login error:', error);
+        console.error('âŒ Google login error:', error);
         alert('Google login failed. Please try again or use email login.');
     };
 
 
 
-    // ✅ Store-aware links
+    // âœ… Store-aware links
     const getForgotPasswordLink = () => {
         const redirectParam = searchParams.get('redirect') ? `?redirect=${encodeURIComponent(searchParams.get('redirect'))}` : '';
         if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
@@ -547,7 +547,7 @@ function LoginContent() {
                         />
                     </div>
 
-                    {/* ✅ Security badges */}
+                    {/* âœ… Security badges */}
                     <div style={styles.securityBadges}>
                         <div style={styles.securityBadge}>
                             <Shield size={14} />
@@ -571,7 +571,7 @@ function LoginContent() {
                         </Link>
                     </div>
 
-                    {/* ✅ Seller login link */}
+                    {/* âœ… Seller login link */}
                     <div style={styles.sellerLink}>
                         <p style={styles.sellerText}>Are you a seller?</p>
                         <Link href="/login/seller" style={styles.sellerLinkButton}>
@@ -585,7 +585,7 @@ function LoginContent() {
     );
 }
 
-// ✅ Enhanced Loading component
+// âœ… Enhanced Loading component
 function LoginLoading() {
     return (
         <div style={styles.pageContainer}>
@@ -605,7 +605,7 @@ function LoginLoading() {
                     <div style={styles.loadingContainer}>
                         <div style={styles.spinner}></div>
                         <p>Loading sign in form...</p>
-                        <p style={styles.loadingSubtext}>🌐 Connected to: {API_BASE_URL}</p>
+                        <p style={styles.loadingSubtext}>ðŸŒ Connected to: {API_BASE_URL}</p>
                     </div>
                 </div>
             </div>
@@ -613,7 +613,7 @@ function LoginLoading() {
     );
 }
 
-// ✅ Enhanced main component with better error handling
+// âœ… Enhanced main component with better error handling
 export default function BuyerLoginPage() {
     const [configError, setConfigError] = useState('');
 
@@ -661,7 +661,7 @@ export default function BuyerLoginPage() {
 }
 
 
-// ✅ Enhanced styles with new components
+// âœ… Enhanced styles with new components
 const styles = {
     pageContainer: {
         minHeight: '100vh',
@@ -721,7 +721,7 @@ const styles = {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: 'calc(100vh - 170px)', // ✅ UPDATE: Account for SHeader
+        minHeight: 'calc(100vh - 170px)', // âœ… UPDATE: Account for SHeader
         padding: '20px',
         backgroundColor: '#FDFFF0'
     },
@@ -786,7 +786,7 @@ const styles = {
         margin: 0
     },
 
-    // ✅ Store notice
+    // âœ… Store notice
     storeNotice: {
         display: 'flex',
         alignItems: 'center',
@@ -952,7 +952,7 @@ const styles = {
         marginBottom: '24px'
     },
 
-    // ✅ Security badges
+    // âœ… Security badges
     securityBadges: {
         display: 'flex',
         justifyContent: 'center',
@@ -989,7 +989,7 @@ const styles = {
         color: '#d1d5db'
     },
 
-    // ✅ Seller link section
+    // âœ… Seller link section
     sellerLink: {
         marginTop: '24px',
         padding: '16px',
@@ -1033,7 +1033,7 @@ const styles = {
     }
 };
 
-// ✅ Enhanced CSS animations
+// âœ… Enhanced CSS animations
 if (typeof document !== 'undefined') {
     const style = document.createElement('style');
     style.textContent = `
@@ -1067,5 +1067,6 @@ if (typeof document !== 'undefined') {
     `;
     document.head.appendChild(style);
 }
+
 
 

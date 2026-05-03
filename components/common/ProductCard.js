@@ -7,7 +7,7 @@ import "../../styles/ProductCard.css";
 
 // ✅ Enhanced API base URL function
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-  (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000');
+  'https://api.keralasellers.in';
 
 export default function ProductCard({
   id,

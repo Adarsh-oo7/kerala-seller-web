@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -26,7 +26,7 @@ import {
   Minus, ChevronDown, X
 } from 'lucide-react';
 
-// ✅ Enhanced API Configuration
+// âœ… Enhanced API Configuration
 // const getApiBaseUrl = () => {
 //   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 
@@ -45,11 +45,11 @@ import {
 // const HISTORY_API_URL = `${API_BASE_URL}/user/store/stock-history/`;
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const HISTORY_API_URL = `${API_BASE_URL}/user/store/stock-history/`;
 
-console.log('📊 Stock History:', API_BASE_URL);
+console.log('ðŸ“Š Stock History:', API_BASE_URL);
 
 
 
@@ -68,7 +68,7 @@ export default function StockHistoryPage() {
   });
   const router = useRouter();
 
-  // ✅ Enhanced authentication check
+  // âœ… Enhanced authentication check
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken') ||
       localStorage.getItem('buyerAccessToken') ||
@@ -76,7 +76,7 @@ export default function StockHistoryPage() {
     return token ? { Authorization: `Bearer ${token}` } : null;
   }, []);
 
-  // ✅ Mock data for demonstration (remove when backend is ready)
+  // âœ… Mock data for demonstration (remove when backend is ready)
   const mockData = [
     {
       id: 1,
@@ -141,26 +141,26 @@ export default function StockHistoryPage() {
     setError('');
 
     try {
-      console.log('🔍 Fetching stock history from:', HISTORY_API_URL);
+      console.log('ðŸ” Fetching stock history from:', HISTORY_API_URL);
       const response = await axios.get(HISTORY_API_URL, { headers });
 
       const historyData = response.data.results || response.data || [];
-      console.log(`✅ Received ${historyData.length} stock history records`);
+      console.log(`âœ… Received ${historyData.length} stock history records`);
 
       // Use real data if available, otherwise use mock data
       const dataToUse = historyData.length > 0 ? historyData : mockData;
       setHistory(dataToUse);
       setFilteredHistory(dataToUse);
     } catch (error) {
-      console.error('❌ Failed to fetch stock history:', error);
+      console.error('âŒ Failed to fetch stock history:', error);
       if (error.response?.status === 401) {
         router.push('/login/seller?message=Session expired');
       } else if (error.response?.status === 404) {
-        console.log('📝 Stock history endpoint not found, using mock data');
+        console.log('ðŸ“ Stock history endpoint not found, using mock data');
         setHistory(mockData);
         setFilteredHistory(mockData);
       } else {
-        console.log('📝 Using mock data due to API error');
+        console.log('ðŸ“ Using mock data due to API error');
         setHistory(mockData);
         setFilteredHistory(mockData);
       }
@@ -169,7 +169,7 @@ export default function StockHistoryPage() {
     }
   }, [getAuthHeaders, router]);
 
-  // ✅ Enhanced filtering logic
+  // âœ… Enhanced filtering logic
   const applyFilters = useCallback(() => {
     let filtered = [...history];
 
@@ -211,7 +211,7 @@ export default function StockHistoryPage() {
     applyFilters();
   }, [applyFilters]);
 
-  // ✅ Enhanced helper functions
+  // âœ… Enhanced helper functions
   const getActionIcon = (action) => {
     switch (action) {
       case 'CREATED':
@@ -283,7 +283,7 @@ export default function StockHistoryPage() {
     return 'System';
   };
 
-  // ✅ Enhanced statistics calculation
+  // âœ… Enhanced statistics calculation
   const getStats = () => {
     const stats = filteredHistory.reduce((acc, item) => {
       const totalChange = item.change_total || 0;
@@ -318,7 +318,7 @@ export default function StockHistoryPage() {
 
   const stats = getStats();
 
-  // ✅ Enhanced export function
+  // âœ… Enhanced export function
   const exportHistory = () => {
     if (filteredHistory.length === 0) {
       alert('No history records to export');
@@ -385,7 +385,7 @@ export default function StockHistoryPage() {
 
   return (
     <div className='dashboardhistorypagecontainer' style={styles.pageContainer}>
-      {/* ✅ Enhanced Header */}
+      {/* âœ… Enhanced Header */}
       <div className='dashboardHistoryheader' style={styles.header}>
         <div>
           <h1 className='dashboardhistorytitle' style={styles.pageTitle}>
@@ -414,7 +414,7 @@ export default function StockHistoryPage() {
         </div>
       </div>
 
-      {/* ✅ Enhanced Statistics Cards */}
+      {/* âœ… Enhanced Statistics Cards */}
       {filteredHistory.length > 0 && (
         <div className='dashboardhistorycontainer' style={styles.statsContainer}>
           <div style={styles.statCard}>
@@ -456,7 +456,7 @@ export default function StockHistoryPage() {
         </div>
       )}
 
-      {/* ✅ Enhanced Filters Section */}
+      {/* âœ… Enhanced Filters Section */}
       <div style={styles.filtersContainer}>
         <div style={styles.filtersHeader}>
           <h3 style={styles.filtersTitle}>
@@ -471,7 +471,7 @@ export default function StockHistoryPage() {
                   onClick={() => setFilters({ ...filters, action: 'all' })}
                   style={styles.filterRemove}
                 >
-                  ×
+                  Ã—
                 </button>
               </span>
             )}
@@ -482,7 +482,7 @@ export default function StockHistoryPage() {
                   onClick={() => setFilters({ ...filters, product: '' })}
                   style={styles.filterRemove}
                 >
-                  ×
+                  Ã—
                 </button>
               </span>
             )}
@@ -493,7 +493,7 @@ export default function StockHistoryPage() {
                   onClick={() => setFilters({ ...filters, dateRange: '30' })}
                   style={styles.filterRemove}
                 >
-                  ×
+                  Ã—
                 </button>
               </span>
             )}
@@ -550,7 +550,7 @@ export default function StockHistoryPage() {
                   onClick={() => setFilters({ ...filters, product: '' })}
                   style={styles.searchClear}
                 >
-                  ×
+                  Ã—
                 </button>
               )}
             </div>
@@ -558,7 +558,7 @@ export default function StockHistoryPage() {
         </div>
       </div>
 
-      {/* ✅ Enhanced History Table */}
+      {/* âœ… Enhanced History Table */}
       <div style={styles.tableContainer}>
         {/* ===== Header ===== */}
         <div style={styles.tableHeader}>
@@ -567,7 +567,7 @@ export default function StockHistoryPage() {
           </h3>
         </div>
 
-        {/* ===== Desktop Table (visible ≥768px) ===== */}
+        {/* ===== Desktop Table (visible â‰¥768px) ===== */}
         {!isMobile && (
           <div style={styles.desktopTable}>
             {filteredHistory.length > 0 ? (
@@ -646,7 +646,7 @@ export default function StockHistoryPage() {
                         </span>
                       </div>
                       <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
-                        {new Date(record.timestamp).toLocaleDateString('en-IN')} •{' '}
+                        {new Date(record.timestamp).toLocaleDateString('en-IN')} â€¢{' '}
                         {new Date(record.timestamp).toLocaleTimeString('en-IN', {
                           hour: '2-digit',
                           minute: '2-digit',
@@ -723,7 +723,7 @@ export default function StockHistoryPage() {
       </div>
 
 
-      {/* ✅ CSS Animations */}
+      {/* âœ… CSS Animations */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -769,7 +769,7 @@ export default function StockHistoryPage() {
   );
 }
 
-// ✅ Enhanced and properly aligned styles
+// âœ… Enhanced and properly aligned styles
 const styles = {
   pageContainer: {
     padding: '24px',
@@ -1074,9 +1074,9 @@ const styles = {
   tableWrapper: {
     backgroundColor: '#FDFFF0',
     width: "100%",
-    overflowX: "auto",  // ✅ Enables horizontal scroll
-    overflowY: "auto",  // ✅ Enables vertical scroll
-    maxHeight: "63vh",  // ✅ Limits height and adds vertical scroll if needed
+    overflowX: "auto",  // âœ… Enables horizontal scroll
+    overflowY: "auto",  // âœ… Enables vertical scroll
+    maxHeight: "63vh",  // âœ… Limits height and adds vertical scroll if needed
     borderRadius: "12px",
     border: '1px solid #175E54',
   },
@@ -1097,7 +1097,7 @@ const styles = {
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    minWidth: "800px", // ✅ Ensures scroll when screen is smaller
+    minWidth: "800px", // âœ… Ensures scroll when screen is smaller
   },
   th: {
     position: "sticky",
@@ -1128,7 +1128,7 @@ const styles = {
     fontSize: '14px',
     verticalAlign: "middle",
     borderTop: '1px solid #175E54',
-    whiteSpace: "nowrap", // ✅ Prevents long text wrapping (makes scroll work better)
+    whiteSpace: "nowrap", // âœ… Prevents long text wrapping (makes scroll work better)
   },
 
   // Table cell styles
@@ -1256,9 +1256,10 @@ const styles = {
     borderRadius: 6,
     padding: 4,
   },
-  // Hide/show logic using JS since inline styles can’t use media queries:
+  // Hide/show logic using JS since inline styles canâ€™t use media queries:
   desktopTable: { display: 'block' },
   mobileList: { display: 'block' },
 };
+
 
 

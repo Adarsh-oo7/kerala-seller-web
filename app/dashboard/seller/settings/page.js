@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -13,7 +13,7 @@ import { Upload, Check, AlertCircle, Star, Building, Save, Image as ImageIcon, T
 
 // const API_BASE_URL = 'https://api.keralasellers.in';
 // const API_URL = `${API_BASE_URL}/user/store/profile/`;
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 const API_URL = `${API_BASE_URL}/user/store/profile/`;
 console.log('Store Profile:', API_BASE_URL);
 
@@ -156,10 +156,10 @@ export default function SettingsPage() {
         setCurrentBannerUrls([result.url]);
         setSelectedPredefinedBanners([]);
       }
-      setSuccessMessage(`✅ ${fileType === 'logo' ? 'Logo' : 'Banner'} uploaded! Click Save.`);
+      setSuccessMessage(`âœ… ${fileType === 'logo' ? 'Logo' : 'Banner'} uploaded! Click Save.`);
       setTimeout(() => setSuccessMessage(''), 5000);
     } else {
-      setErrorMessage(`❌ Upload failed: ${result.error}`);
+      setErrorMessage(`âŒ Upload failed: ${result.error}`);
       setTimeout(() => setErrorMessage(''), 3000);
     }
     setIsUploading(false);
@@ -176,11 +176,11 @@ export default function SettingsPage() {
       setCurrentLogoUrl('');
       setLogoPreview('');
       setNewLogo(null);
-      setSuccessMessage('✅ Logo deleted!');
+      setSuccessMessage('âœ… Logo deleted!');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Error deleting logo:', error);
-      setErrorMessage('❌ Failed to delete logo');
+      setErrorMessage('âŒ Failed to delete logo');
       setTimeout(() => setErrorMessage(''), 3000);
     } finally {
       setIsDeleting(prev => ({ ...prev, logo: false }));
@@ -198,11 +198,11 @@ export default function SettingsPage() {
       setCurrentBannerUrl('');
       setBannerPreview('');
       setNewBanner(null);
-      setSuccessMessage('✅ Banner deleted!');
+      setSuccessMessage('âœ… Banner deleted!');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Error deleting banner:', error);
-      setErrorMessage('❌ Failed to delete banner');
+      setErrorMessage('âŒ Failed to delete banner');
       setTimeout(() => setErrorMessage(''), 3000);
     } finally {
       setIsDeleting(prev => ({ ...prev, banner: false }));
@@ -212,7 +212,7 @@ export default function SettingsPage() {
   const handleRemovePredefinedBanner = (bannerId, bannerUrl) => {
     setSelectedPredefinedBanners(prev => prev.filter(id => id !== bannerId));
     setCurrentBannerUrls(prev => prev.filter(url => url !== bannerUrl));
-    setSuccessMessage('✅ Banner removed! Click Save.');
+    setSuccessMessage('âœ… Banner removed! Click Save.');
     setTimeout(() => setSuccessMessage(''), 3000);
   };
 
@@ -224,7 +224,7 @@ export default function SettingsPage() {
       setSelectedPredefinedBanners(prev => [...prev, bannerId]);
       setCurrentBannerUrls(prev => [...prev, bannerUrl]);
     } else {
-      setErrorMessage('⚠️ Max 3 banners');
+      setErrorMessage('âš ï¸ Max 3 banners');
       setTimeout(() => setErrorMessage(''), 3000);
     }
   };
@@ -274,14 +274,14 @@ export default function SettingsPage() {
         if (response.data.store_profile.banner_1_url) setCurrentBannerUrl(response.data.store_profile.banner_1_url);
       }
 
-      setSuccessMessage('✅ Settings updated! Redirecting...');
+      setSuccessMessage('âœ… Settings updated! Redirecting...');
 
       setTimeout(() => {
         router.push('/dashboard/seller/payments');
       }, 1500);
 
     } catch (error) {
-      console.error('❌ Update error:', error);
+      console.error('âŒ Update error:', error);
       setErrorMessage(error.response?.data?.error || 'Update failed');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
@@ -338,7 +338,7 @@ export default function SettingsPage() {
                 Logo
                 {(logoPreview || currentLogoUrl) && (
                   <span style={{ color: '#144f27ff', fontSize: '11px', marginLeft: '6px' }}>
-                    ✓
+                    âœ“
                   </span>
                 )}
               </label>
@@ -387,7 +387,7 @@ export default function SettingsPage() {
                     disabled={isUploading}
                   />
                   <label htmlFor="logo-up" style={s.ub}>
-                    {isUploading ? 'Uploading...' : currentLogoUrl || logoPreview ? '📷 Change' : '📤 Upload'}
+                    {isUploading ? 'Uploading...' : currentLogoUrl || logoPreview ? 'ðŸ“· Change' : 'ðŸ“¤ Upload'}
                   </label>
                 </div>
               </div>
@@ -400,7 +400,7 @@ export default function SettingsPage() {
                     fontWeight: 600,
                   }}
                 >
-                  ⚠️ Click Save to apply
+                  âš ï¸ Click Save to apply
                 </p>
               )}
             </div>
@@ -409,7 +409,7 @@ export default function SettingsPage() {
               <label style={s.l1}>
                 Custom Banner
                 {(bannerPreview || currentBannerUrl) && (
-                  <span style={{ color: '#144f27ff', fontSize: '11px', marginLeft: '6px' }}>✓</span>
+                  <span style={{ color: '#144f27ff', fontSize: '11px', marginLeft: '6px' }}>âœ“</span>
                 )}
               </label>
               <div className='dashboardsettingsbannercontainersize' style={s.iu}>
@@ -454,7 +454,7 @@ export default function SettingsPage() {
                     disabled={isUploading}
                   />
                   <label htmlFor="ban-up" style={s.ub}>
-                    {isUploading ? 'Uploading...' : currentBannerUrl || bannerPreview ? '📷 Change' : '📤 Upload'}
+                    {isUploading ? 'Uploading...' : currentBannerUrl || bannerPreview ? 'ðŸ“· Change' : 'ðŸ“¤ Upload'}
                   </label>
                 </div>
               </div>
@@ -467,7 +467,7 @@ export default function SettingsPage() {
                     fontWeight: 600,
                   }}
                 >
-                  ⚠️ Click Save to apply
+                  âš ï¸ Click Save to apply
                 </p>
               )}
               <div style={{ marginTop: '10px' }}>
@@ -780,14 +780,14 @@ const s = {
     fontWeight: 600,
     color: 'white',
     display: 'flex',
-    marginBottom: '6px' // ← FIX
+    marginBottom: '6px' // â† FIX
   },
   l: {
     fontSize: '13px',
     fontWeight: 600,
     color: 'black',
     display: 'flex',
-    marginBottom: '6px' // ← FIX
+    marginBottom: '6px' // â† FIX
   },
   in: { padding: '10px 14px', border: '1px solid #cececeff', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#FDFFF0' },
   ta: { padding: '10px 14px', border: '1px solid #cececeff', borderRadius: '6px', fontSize: '13px', outline: 'none', resize: 'vertical', fontFamily: 'inherit', backgroundColor: '#FDFFF0' },
@@ -823,9 +823,9 @@ const s = {
     width: '160px',
     height: '160px',
 
-    minWidth: '160px',   // ← FIX 1
-    maxWidth: '160px',   // ← FIX 2
-    justifySelf: 'start', // ← FIX 3 (prevents grid centering/stretch)
+    minWidth: '160px',   // â† FIX 1
+    maxWidth: '160px',   // â† FIX 2
+    justifySelf: 'start', // â† FIX 3 (prevents grid centering/stretch)
 
     overflow: 'hidden',
     border: '2px dashed #d1d5db',
@@ -833,7 +833,7 @@ const s = {
   },
   iu: {
     position: 'relative',
-    height: '160px',   // ← MATCH LOGO HEIGHT
+    height: '160px',   // â† MATCH LOGO HEIGHT
     borderRadius: '10px',
     overflow: 'hidden',
     border: '2px dashed #d1d5db',
@@ -861,5 +861,6 @@ const s = {
   ss: { display: 'flex', justifyContent: 'flex-end', paddingTop: '16px' },
   sb2: { display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 28px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '15px', fontWeight: 600 },
 };
+
 
 

@@ -39,7 +39,7 @@ import {
 // const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;
 // const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
 
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/send-otp/`;
 const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;

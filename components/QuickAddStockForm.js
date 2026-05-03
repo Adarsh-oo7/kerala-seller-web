@@ -19,7 +19,7 @@ import axios from 'axios';
   
 //   // Updated fallback with your hosted backend URL
 //   return process.env.NODE_ENV === 'development' 
-//     ? 'http://localhost:8000' 
+//     ? 'https://api.keralasellers.in' 
 //     : 'https://keralaseller-backend.onrender.com';  // ✅ Your hosted backend
 // };
 
@@ -31,7 +31,7 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
   (process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:8000' 
+    ? 'https://api.keralasellers.in' 
     : 'https://api.keralasellers.in');
 
 const API_URL = `${API_BASE_URL}/user/store/products/`;

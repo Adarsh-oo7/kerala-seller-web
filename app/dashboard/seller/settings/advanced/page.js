@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -16,7 +16,7 @@ import {
 //     : 'https://api.keralasellers.in';
 // };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const API_URL = `${API_BASE_URL}/user/store/profile/`;
 
@@ -601,5 +601,6 @@ const styles = {
     fontWeight: 600,
   },
 };
+
 
 

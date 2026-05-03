@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
@@ -25,7 +25,7 @@ import {
   Users
 } from 'lucide-react';
 
-// ✅ Enhanced environment variable handling
+// âœ… Enhanced environment variable handling
 // const getApiBaseUrl = () => {
 //   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 
@@ -47,15 +47,15 @@ import {
 
 // console.log('Shop API URL configured:', API_URL);
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const API_URL = `${API_BASE_URL}/user/store/shops/`;
 
-console.log('🏪 Shop API:', API_BASE_URL);
+console.log('ðŸª Shop API:', API_BASE_URL);
 
 
 
-// ✅ SEO-friendly URL generator
+// âœ… SEO-friendly URL generator
 const generateShopSlug = (shop) => {
   const shopName = (shop.name || '').toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
@@ -128,9 +128,9 @@ export default function ShopPage() {
         shopData = [];
       }
 
-      // ✅ DEBUG: Log shop data structure
-      console.log('🔍 Shop data structure:', shopData.length > 0 ? shopData[0] : 'No data');
-      console.log('🔍 Available fields:', shopData.length > 0 ? Object.keys(shopData[0]) : 'No data');
+      // âœ… DEBUG: Log shop data structure
+      console.log('ðŸ” Shop data structure:', shopData.length > 0 ? shopData[0] : 'No data');
+      console.log('ðŸ” Available fields:', shopData.length > 0 ? Object.keys(shopData[0]) : 'No data');
 
       setShops(shopData);
       setFilteredShops(shopData);
@@ -327,23 +327,23 @@ export default function ShopPage() {
           )}
         </div>
 
-        {/* ✅ ENHANCED: Shop Cards with Better Mobile Experience */}
+        {/* âœ… ENHANCED: Shop Cards with Better Mobile Experience */}
         {filteredShops.length > 0 ? (
           <div className={`shopsContainer ${viewMode === 'list' ? 'listView' : 'gridView'}`}>
             {filteredShops.map((shop, index) => {
-              // ✅ Enhanced seller phone detection with multiple fallbacks
+              // âœ… Enhanced seller phone detection with multiple fallbacks
               const sellerPhone = shop.seller_phone ||
                 shop.seller?.phone ||
                 shop.phone ||
                 shop.contact_phone ||
                 shop.whatsapp_number;
 
-              // ✅ Generate SEO-friendly slug
+              // âœ… Generate SEO-friendly slug
               const shopSlug = generateShopSlug(shop);
 
               return (
                 <div key={shop.id || index} className={`shopCard ${viewMode === 'list' ? 'listCard' : 'gridCard'}`}>
-                  {/* ✅ Enhanced Header with Better Mobile Layout */}
+                  {/* âœ… Enhanced Header with Better Mobile Layout */}
                   <div className="shopHeader">
                     <div className="ShoplogoContainer">
                       <img
@@ -360,7 +360,7 @@ export default function ShopPage() {
                         }}
                         loading="lazy"
                       />
-                      {/* ✅ Shop Status Indicator */}
+                      {/* âœ… Shop Status Indicator */}
                       <div className="shopStatusIndicator online" title="Shop is active"></div>
                     </div>
                     
@@ -375,7 +375,7 @@ export default function ShopPage() {
                     </div>
                   </div>
 
-                  {/* ✅ Enhanced Description */}
+                  {/* âœ… Enhanced Description */}
                   {shop.description && (
                     <p className="shopDescription">
                       {shop.description.length > 80
@@ -384,7 +384,7 @@ export default function ShopPage() {
                     </p>
                   )}
 
-                  {/* ✅ Enhanced Info Container with Better Icons */}
+                  {/* âœ… Enhanced Info Container with Better Icons */}
                   <div className="shopInfoContainer">
                     {(shop.seller_address || shop.seller?.address || shop.address) && (
                       <div className="shopInfoItem">
@@ -421,7 +421,7 @@ export default function ShopPage() {
                       </div>
                     )}
 
-                    {/* ✅ Additional Info */}
+                    {/* âœ… Additional Info */}
                     {shop.created_at && (
                       <div className="shopInfoItem">
                         <Clock size={14} />
@@ -430,7 +430,7 @@ export default function ShopPage() {
                     )}
                   </div>
 
-                  {/* ✅ Enhanced Visit Store Button */}
+                  {/* âœ… Enhanced Visit Store Button */}
                   <div className="shopActions">
                     {sellerPhone ? (
                       <Link
@@ -456,7 +456,7 @@ export default function ShopPage() {
                     )}
                   </div>
 
-                  {/* ✅ Quick Shop Preview (Optional) */}
+                  {/* âœ… Quick Shop Preview (Optional) */}
                   {shop.featured_products && shop.featured_products.length > 0 && (
                     <div className="shopPreview">
                       <h4>Featured Products</h4>
@@ -469,7 +469,7 @@ export default function ShopPage() {
                               className="previewImage"
                             />
                             <span className="previewName">{product.name}</span>
-                            <span className="previewPrice">₹{product.price}</span>
+                            <span className="previewPrice">â‚¹{product.price}</span>
                           </div>
                         ))}
                       </div>
@@ -501,7 +501,7 @@ export default function ShopPage() {
           </div>
         )}
 
-        {/* ✅ Load More Button (if pagination needed) */}
+        {/* âœ… Load More Button (if pagination needed) */}
         {filteredShops.length > 0 && filteredShops.length >= 20 && (
           <div className="loadMoreContainer">
             <button className="loadMoreButton" onClick={fetchShops}>
@@ -516,4 +516,5 @@ export default function ShopPage() {
     </div>
   );
 }
+
 

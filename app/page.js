@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import axios from 'axios';
@@ -25,23 +25,23 @@ const bannerImages = [
   { src: "/assets/images/Banner/3.png", alt: "Trusted Kerala Sellers" },
 ];
 
-// ✅ Enhanced API base URL handling with environment variables
-// ✅ BULLETPROOF - Works everywhere
+// âœ… Enhanced API base URL handling with environment variables
+// âœ… BULLETPROOF - Works everywhere
 
-// ✅ Second check fallback env var
-// ✅ HARDCODED - NO FUNCTIONS, NO ERRORS
+// âœ… Second check fallback env var
+// âœ… HARDCODED - NO FUNCTIONS, NO ERRORS
 // const API_BASE_URL = 'https://api.keralasellers.in';
 
-// ✅ Works local + production automatically
+// âœ… Works local + production automatically
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 
-console.log('✅ API URLs configured:', {
+console.log('âœ… API URLs configured:', {
   API_BASE_URL,
   PRODUCTS_API_URL,
   CATEGORIES_API_URL,
@@ -49,17 +49,17 @@ console.log('✅ API URLs configured:', {
   WISHLIST_CHECK_API
 });
 
-// ✅ Enhanced token handling function
+// âœ… Enhanced token handling function
 const getAuthHeaders = () => {
   const token = localStorage.getItem('access_token') ||
     localStorage.getItem('buyerAccessToken');
 
   if (!token) {
-    console.error('❌ No authentication token found');
+    console.error('âŒ No authentication token found');
     return null;
   }
 
-  console.log('🔍 Using token:', token.substring(0, 30) + '...');
+  console.log('ðŸ” Using token:', token.substring(0, 30) + '...');
   return { 'Authorization': `Bearer ${token}` };
 };
 
@@ -96,7 +96,7 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-// ✅ NEW: Infinite scroll hook
+// âœ… NEW: Infinite scroll hook
 function useInfiniteScroll(callback, hasMore, isLoading) {
   useEffect(() => {
     const handleScroll = () => {
@@ -107,7 +107,7 @@ function useInfiniteScroll(callback, hasMore, isLoading) {
       const nearBottom = scrollHeight - scrollTop - clientHeight < 200;
 
       if (nearBottom && hasMore && !isLoading) {
-        console.log('📜 Near bottom - loading more products...');
+        console.log('ðŸ“œ Near bottom - loading more products...');
         callback();
       }
     };
@@ -177,7 +177,7 @@ export default function Home() {
   }, []);
 
   // ==========================================
-  // 🔽 OLD PRODUCT FETCHING CODE - COMMENTED OUT
+  // ðŸ”½ OLD PRODUCT FETCHING CODE - COMMENTED OUT
   // ==========================================
   
   const fetchProducts = useCallback(async (page = 1, appliedFilters = filters) => {
@@ -206,7 +206,7 @@ export default function Home() {
 
       let productList = [];
 
-      // ✅ Enhanced response structure handling
+      // âœ… Enhanced response structure handling
       if (Array.isArray(data.results)) {
         productList = data.results;
       } else if (Array.isArray(data.data)) {
@@ -316,7 +316,7 @@ export default function Home() {
   };
 
   const handleToggleWishlist = async (productId) => {
-    console.log('🔍 Toggle wishlist for product:', productId);
+    console.log('ðŸ” Toggle wishlist for product:', productId);
 
     const headers = getAuthHeaders();
     if (!headers) {
@@ -325,14 +325,14 @@ export default function Home() {
     }
 
     if (wishlistLoading.has(productId)) {
-      console.log('⏳ Wishlist request already in progress for product:', productId);
+      console.log('â³ Wishlist request already in progress for product:', productId);
       return;
     }
 
     setWishlistLoading(prev => new Set([...prev, productId]));
 
     try {
-      console.log('🔄 Sending wishlist toggle request...');
+      console.log('ðŸ”„ Sending wishlist toggle request...');
       const response = await axios.post(WISHLIST_TOGGLE_API, {
         product_id: productId
       }, {
@@ -340,7 +340,7 @@ export default function Home() {
         timeout: 10000
       });
 
-      console.log('✅ Wishlist toggle response:', response.data);
+      console.log('âœ… Wishlist toggle response:', response.data);
 
       const updateProducts = (prevProducts) =>
         prevProducts.map(product =>
@@ -354,12 +354,12 @@ export default function Home() {
 
       const action = response.data.is_wishlisted ? 'added to' : 'removed from';
       const productName = response.data.product_name || 'Product';
-      console.log(`✅ ${productName} ${action} wishlist`);
+      console.log(`âœ… ${productName} ${action} wishlist`);
 
       showWishlistFeedback(productId, response.data.is_wishlisted, productName);
 
     } catch (error) {
-      console.error('❌ Wishlist toggle error:', error);
+      console.error('âŒ Wishlist toggle error:', error);
 
       if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
@@ -399,7 +399,7 @@ export default function Home() {
       autoClose: 1500,
       theme: "colored",
     });
-    console.log(`💖 ${productName} ${action} wishlist!`);
+    console.log(`ðŸ’– ${productName} ${action} wishlist!`);
   };
 
   const checkWishlistStatus = async (productIds) => {
@@ -407,7 +407,7 @@ export default function Home() {
     if (!headers || productIds.length === 0) return;
 
     try {
-      console.log('🔍 Checking wishlist status for products:', productIds.length);
+      console.log('ðŸ” Checking wishlist status for products:', productIds.length);
 
       const promises = productIds.slice(0, 10).map(id =>
         axios.get(`${WISHLIST_CHECK_API}?product_id=${id}`, { headers, timeout: 5000 })
@@ -419,7 +419,7 @@ export default function Home() {
       );
 
       const results = await Promise.all(promises);
-      console.log('✅ Wishlist status results:', results);
+      console.log('âœ… Wishlist status results:', results);
 
       const updateProductsWithWishlist = (prevProducts) =>
         prevProducts.map(product => {
@@ -437,7 +437,7 @@ export default function Home() {
     }
   };
 
-  // ✅ Improved responsive grid
+  // âœ… Improved responsive grid
   const gridColumns = useMemo(() => {
     if (isMobile) return 'repeat(2, 1fr)';
     if (isTablet) return 'repeat(3, 1fr)';
@@ -471,8 +471,8 @@ export default function Home() {
 
   useEffect(() => {
     fetchCategories();
-    // fetchProducts(1); // ❌ COMMENTED OUT - Not fetching products anymore
-    setIsLoading(false); // ✅ Set loading to false immediately
+    // fetchProducts(1); // âŒ COMMENTED OUT - Not fetching products anymore
+    setIsLoading(false); // âœ… Set loading to false immediately
   }, [fetchCategories]);
 
   const loadMoreProducts = useCallback(() => {
@@ -576,7 +576,7 @@ export default function Home() {
   }, [showFilters]);
 
   // ==========================================
-  // 🔼 END OF COMMENTED OLD CODE
+  // ðŸ”¼ END OF COMMENTED OLD CODE
   // ==========================================
 
   // Dynamic styles based on media queries
@@ -598,7 +598,7 @@ export default function Home() {
       {/* Top Category Section */}
       <div style={dynamicStyles.topCategorySection}>
         <TopCategory 
-          // onCategoryClick={handleCategoryClick} // ❌ COMMENTED OUT
+          // onCategoryClick={handleCategoryClick} // âŒ COMMENTED OUT
         />
       </div>
 
@@ -611,7 +611,7 @@ export default function Home() {
       <div style={dynamicStyles.container} data-products-section>
         
         {/* ==========================================
-            🔽 OLD SEARCH AND FILTERS - COMMENTED OUT
+            ðŸ”½ OLD SEARCH AND FILTERS - COMMENTED OUT
             ========================================== */}
         
         <div style={dynamicStyles.searchSection}>
@@ -656,7 +656,7 @@ export default function Home() {
               style={dynamicStyles.filterToggle}
             >
               <Filter size={16} className='keralasellershomepagefiltericon' />
-              Filters {showFilters ? '▲' : '▼'}
+              Filters {showFilters ? 'â–²' : 'â–¼'}
             </button>
           </div>
         </div> 
@@ -685,7 +685,7 @@ export default function Home() {
             >
               <div className="filter-header">
                 <h3>Filters</h3>
-                <button onClick={() => setShowFilters(false)} className="close-btn">✕</button>
+                <button onClick={() => setShowFilters(false)} className="close-btn">âœ•</button>
               </div>
 
               <ProductFilters
@@ -702,7 +702,7 @@ export default function Home() {
         )}
 
         {/* ==========================================
-            🔽 OLD PRODUCTS GRID - COMMENTED OUT
+            ðŸ”½ OLD PRODUCTS GRID - COMMENTED OUT
             ========================================== */}
 
 
@@ -807,7 +807,7 @@ export default function Home() {
           </>
         )}
         {/* ==========================================
-            ✅ NEW COMING SOON SECTION
+            âœ… NEW COMING SOON SECTION
             ========================================== */}
 
 
@@ -828,19 +828,19 @@ export default function Home() {
 
             <div style={dynamicStyles.featuresGrid}>
               <div style={dynamicStyles.featureCard}>
-                <div style={dynamicStyles.featureIcon}>🏪</div>
+                <div style={dynamicStyles.featureIcon}>ðŸª</div>
                 <h3 style={dynamicStyles.featureTitle}>Zero Commission</h3>
                 <p style={dynamicStyles.featureText}>Sell without any commission fees</p>
               </div>
               
               <div style={dynamicStyles.featureCard}>
-                <div style={dynamicStyles.featureIcon}>🚀</div>
+                <div style={dynamicStyles.featureIcon}>ðŸš€</div>
                 <h3 style={dynamicStyles.featureTitle}>Easy Setup</h3>
                 <p style={dynamicStyles.featureText}>Start selling in just minutes</p>
               </div>
               
               <div style={dynamicStyles.featureCard}>
-                <div style={dynamicStyles.featureIcon}>💰</div>
+                <div style={dynamicStyles.featureIcon}>ðŸ’°</div>
                 <h3 style={dynamicStyles.featureTitle}>Direct Payments</h3>
                 <p style={dynamicStyles.featureText}>Get paid directly to your account</p>
               </div>
@@ -849,7 +849,7 @@ export default function Home() {
             <div style={dynamicStyles.ctaContainer}>
               <Link href="/register/seller" style={{ textDecoration: 'none' }}>
                 <button style={dynamicStyles.primaryButton}>
-                  <span style={dynamicStyles.buttonIcon}>🛍️</span>
+                  <span style={dynamicStyles.buttonIcon}>ðŸ›ï¸</span>
                   Start Your Own Shop
                 </button>
               </Link>
@@ -872,7 +872,7 @@ export default function Home() {
               </div>
               <div style={dynamicStyles.statDivider}></div>
               <div style={dynamicStyles.statItem}>
-                <div style={dynamicStyles.statNumber}>₹0</div>
+                <div style={dynamicStyles.statNumber}>â‚¹0</div>
                 <div style={dynamicStyles.statLabel}>Commission Fee</div>
               </div>
             </div>
@@ -1156,7 +1156,7 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite'
   },
-  // ✅ NEW: Coming Soon Styles
+  // âœ… NEW: Coming Soon Styles
   comingSoonContainer: {
     minHeight: '70vh',
     display: 'flex',
@@ -1328,3 +1328,4 @@ const styles = {
     whiteSpace: 'nowrap',
   },
 };
+

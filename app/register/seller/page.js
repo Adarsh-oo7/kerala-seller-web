@@ -1,4 +1,4 @@
-// 'use client' directive is important for Next.js to treat this as a client-side component
+﻿// 'use client' directive is important for Next.js to treat this as a client-side component
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -46,17 +46,17 @@ import {
 
 // const API_BASE_URL = 'https://api.keralasellers.in';
 // const REGISTER_API = `${API_BASE_URL}/user/register/`;
-// const CHECK_EXISTS_API = `${API_BASE_URL}/user/check-exists/`; // ✅ NEW
+// const CHECK_EXISTS_API = `${API_BASE_URL}/user/check-exists/`; // âœ… NEW
 
-// console.log('🌐 Registration API URLs:', { API_BASE_URL, REGISTER_API, CHECK_EXISTS_API });
+// console.log('ðŸŒ Registration API URLs:', { API_BASE_URL, REGISTER_API, CHECK_EXISTS_API });
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const REGISTER_API = `${API_BASE_URL}/user/register/`;
 const CHECK_EXISTS_API = `${API_BASE_URL}/user/check-exists/`;
 
-console.log('🌐 Seller Register:', { 
+console.log('ðŸŒ Seller Register:', { 
   API_BASE_URL, 
   LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL,
   REGISTER_API 
@@ -199,10 +199,10 @@ export default function RegisterSellerPage() {
         if (error) setError('');
     };
 
-    // ✅ NEW: Check if seller exists before sending OTP
+    // âœ… NEW: Check if seller exists before sending OTP
     const checkSellerExists = async () => {
         try {
-            console.log('🔍 Checking if seller exists...');
+            console.log('ðŸ” Checking if seller exists...');
             
             const response = await axios.post(CHECK_EXISTS_API, {
                 phone: formData.phone.trim(),
@@ -214,16 +214,16 @@ export default function RegisterSellerPage() {
                 }
             });
 
-            console.log('✅ Check result:', response.data);
+            console.log('âœ… Check result:', response.data);
             return response.data;
 
         } catch (err) {
-            console.error('❌ Check seller exists failed:', err);
+            console.error('âŒ Check seller exists failed:', err);
             throw new Error('Failed to verify availability. Please try again.');
         }
     };
 
-    // 🔥 UPDATED: Check first, then send OTP
+    // ðŸ”¥ UPDATED: Check first, then send OTP
     const handleSendOtp = async (e) => {
         e.preventDefault();
         setError('');
@@ -241,14 +241,14 @@ export default function RegisterSellerPage() {
         setIsLoading(true);
 
         try {
-            // ✅ STEP 1: Check if phone/email already exists
-            console.log('🔍 Step 1: Checking if seller already exists...');
+            // âœ… STEP 1: Check if phone/email already exists
+            console.log('ðŸ” Step 1: Checking if seller already exists...');
             
             const checkResult = await checkSellerExists();
             
             if (checkResult.exists) {
-                // ❌ Phone or email already exists
-                console.log('❌ Seller already exists:', checkResult.field);
+                // âŒ Phone or email already exists
+                console.log('âŒ Seller already exists:', checkResult.field);
                 
                 if (checkResult.field === 'phone') {
                     setValidationErrors(prev => ({
@@ -268,19 +268,19 @@ export default function RegisterSellerPage() {
                 return;
             }
 
-            // ✅ STEP 2: Phone and email are available - Send Firebase OTP
-            console.log('✅ Phone and email available. Sending Firebase OTP...');
+            // âœ… STEP 2: Phone and email are available - Send Firebase OTP
+            console.log('âœ… Phone and email available. Sending Firebase OTP...');
             
             const phoneNumber = `+91${formData.phone.trim()}`;
-            console.log('🔍 Sending OTP via Firebase for phone:', phoneNumber);
+            console.log('ðŸ” Sending OTP via Firebase for phone:', phoneNumber);
 
             const result = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
             setConfirmationResult(result);
-            console.log('✅ OTP sent successfully via Firebase');
+            console.log('âœ… OTP sent successfully via Firebase');
             setStep(2);
 
         } catch (err) {
-            console.error('❌ Error:', err);
+            console.error('âŒ Error:', err);
             let errorMessage = 'Failed to send OTP. Please try again.';
 
             if (err.code === 'auth/invalid-phone-number') {
@@ -324,8 +324,8 @@ export default function RegisterSellerPage() {
             const user = userCredential.user;
 
             const firebaseIdToken = await user.getIdToken();
-            console.log('✅ Firebase OTP verified successfully. User UID:', user.uid);
-            console.log('✅ Firebase ID Token obtained.');
+            console.log('âœ… Firebase OTP verified successfully. User UID:', user.uid);
+            console.log('âœ… Firebase ID Token obtained.');
 
             const registrationData = {
                 phone: formData.phone.trim(),
@@ -337,7 +337,7 @@ export default function RegisterSellerPage() {
                 firebase_id_token: firebaseIdToken,
             };
 
-            console.log('🔍 Sending registration data to Django:', {
+            console.log('ðŸ” Sending registration data to Django:', {
                 ...registrationData,
                 password: '***hidden***',
                 firebase_id_token: '***hidden***'
@@ -350,7 +350,7 @@ export default function RegisterSellerPage() {
                 }
             });
 
-            console.log('✅ Registration successful (Django response):', response.data);
+            console.log('âœ… Registration successful (Django response):', response.data);
 
             setError('');
             setTimeout(() => {
@@ -358,7 +358,7 @@ export default function RegisterSellerPage() {
             }, 1500);
 
         } catch (err) {
-            console.error('❌ Firebase OTP or Django registration error:', err);
+            console.error('âŒ Firebase OTP or Django registration error:', err);
             let errorMessage = 'Registration failed. Please try again.';
 
             if (err.code === 'auth/invalid-verification-code') {
@@ -400,10 +400,10 @@ export default function RegisterSellerPage() {
             const phoneNumber = `+91${formData.phone.trim()}`;
             const result = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
             setConfirmationResult(result);
-            console.log('✅ New OTP sent successfully via Firebase');
+            console.log('âœ… New OTP sent successfully via Firebase');
             setError('OTP has been resent to your phone');
         } catch (err) {
-            console.error('❌ Firebase Resend OTP error:', err);
+            console.error('âŒ Firebase Resend OTP error:', err);
             let errorMessage = 'Failed to resend OTP. Please try again.';
             if (err.code === 'auth/too-many-requests') {
                 errorMessage = 'Too many OTP resend attempts. Please wait before trying again.';
@@ -1083,5 +1083,6 @@ const styles = {
         fontWeight: '500'
     }
 };
+
 
 

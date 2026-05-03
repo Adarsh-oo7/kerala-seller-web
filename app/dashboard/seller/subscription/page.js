@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import "../../../../styles/DashboardSubscription.css"
-import { toast } from 'react-toastify'; // ✅ ADD: Import toast
+import { toast } from 'react-toastify'; // âœ… ADD: Import toast
 import {
     CheckCircle,
     Star,
@@ -20,52 +20,52 @@ import {
     Clock
 } from 'lucide-react';
 
-// ✅ Enhanced API URLs with subscription lifecycle support
+// âœ… Enhanced API URLs with subscription lifecycle support
 // const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.4:8000';
 // const PLANS_API_URL = `${API_BASE_URL}/api/subscriptions/plans/`;
 // const CURRENT_SUB_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
 // const CREATE_ORDER_API = `${API_BASE_URL}/api/subscriptions/create-order/`;
 // const VERIFY_PAYMENT_API = `${API_BASE_URL}/api/subscriptions/verify-payment/`;
 
-// // ✅ NEW: Subscription lifecycle APIs
+// // âœ… NEW: Subscription lifecycle APIs
 // const STORE_STATUS_API = `${API_BASE_URL}/api/subscriptions/stores`;
 // const SUBSCRIPTION_STATUS_API = `${API_BASE_URL}/api/subscriptions/status/`;
 
 // const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RClyCqWG0I7Frn';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const PLANS_API_URL = `${API_BASE_URL}/api/subscriptions/plans/`;
 const CURRENT_SUB_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
 const CREATE_ORDER_API = `${API_BASE_URL}/api/subscriptions/create-order/`;
 const VERIFY_PAYMENT_API = `${API_BASE_URL}/api/subscriptions/verify-payment/`;
 
-// ✅ NEW: Subscription lifecycle APIs
+// âœ… NEW: Subscription lifecycle APIs
 const STORE_STATUS_API = `${API_BASE_URL}/api/subscriptions/stores`;
 const SUBSCRIPTION_STATUS_API = `${API_BASE_URL}/api/subscriptions/status/`;
 
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RClyCqWG0I7Frn';
 
-console.log('💳 Subscription APIs:', API_BASE_URL);
+console.log('ðŸ’³ Subscription APIs:', API_BASE_URL);
 
 
-// ✅ NEW: Helper function for status icons
+// âœ… NEW: Helper function for status icons
 function getStatusIcon(status) {
     const icons = {
-        'ACTIVE': '🟢',
-        'GRACE_PERIOD': '🟡',
-        'OFFLINE': '🔴',
-        'ARCHIVED': '⚫'
+        'ACTIVE': 'ðŸŸ¢',
+        'GRACE_PERIOD': 'ðŸŸ¡',
+        'OFFLINE': 'ðŸ”´',
+        'ARCHIVED': 'âš«'
     };
-    return icons[status] || '❓';
+    return icons[status] || 'â“';
 }
 
-// ✅ ENHANCED: Current Plan Card with Store Status
+// âœ… ENHANCED: Current Plan Card with Store Status
 function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId }) {
     const [storeStatus, setStoreStatus] = useState(null);
     const [statusLoading, setStatusLoading] = useState(false);
 
-    // ✅ NEW: Load store operational status
+    // âœ… NEW: Load store operational status
     const loadStoreStatus = useCallback(async () => {
         if (!storeId) return;
 
@@ -73,9 +73,9 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
         try {
             const response = await axios.get(`${STORE_STATUS_API}/${storeId}/status/`);
             setStoreStatus(response.data);
-            console.log('✅ Store status loaded:', response.data);
+            console.log('âœ… Store status loaded:', response.data);
         } catch (err) {
-            console.error('❌ Failed to load store status:', err);
+            console.error('âŒ Failed to load store status:', err);
         } finally {
             setStatusLoading(false);
         }
@@ -122,7 +122,7 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
                 <h2 className='dashboardsubscribenoactiveplan'>No Active Plan</h2>
                 <p className='dashboardsubscribenoactiveplansub'>Choose a plan below to unlock the full potential of your online store.</p>
 
-                {/* ✅ NEW: Show store status even without subscription */}
+                {/* âœ… NEW: Show store status even without subscription */}
                 {storeStatus && (
                     <div style={styles.storeStatusInfo}>
                         <div style={styles.statusDivider}></div>
@@ -132,7 +132,7 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
                             ...(storeStatus.subscription.can_sell ? styles.storeOnline : styles.storeOffline)
                         }}>
                             <span style={styles.statusIcon}>
-                                {storeStatus.subscription.can_sell ? '🟢' : '🔴'}
+                                {storeStatus.subscription.can_sell ? 'ðŸŸ¢' : 'ðŸ”´'}
                             </span>
                             <span style={styles.statusMessage}>
                                 {storeStatus.subscription.message}
@@ -144,7 +144,7 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
         );
     }
 
-    // ✅ ENHANCED: Current plan with store status
+    // âœ… ENHANCED: Current plan with store status
     const remainingDays = subscription.days_remaining || 0;
     const isExpiringSoon = remainingDays <= 7;
 
@@ -204,7 +204,7 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
                 </div>
             </div>
 
-            {/* ✅ NEW: Enhanced Store Status Section */}
+            {/* âœ… NEW: Enhanced Store Status Section */}
             {storeStatus && (
                 <div style={styles.storeStatusSection}>
                     <div style={styles.statusDivider}></div>
@@ -223,8 +223,8 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
                             </span>
                             <span style={styles.orderStatus}>
                                 {storeStatus.subscription.can_sell
-                                    ? '✅ Accepting Orders'
-                                    : '❌ Orders Disabled'
+                                    ? 'âœ… Accepting Orders'
+                                    : 'âŒ Orders Disabled'
                                 }
                             </span>
                         </div>
@@ -264,7 +264,7 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
     );
 }
 
-// ✅ FIXED: Move validateStoreForOrder INSIDE the component (no export)
+// âœ… FIXED: Move validateStoreForOrder INSIDE the component (no export)
 export default function SubscriptionPage() {
     const [plans, setPlans] = useState([]);
     const [currentSubscription, setCurrentSubscription] = useState(null);
@@ -278,30 +278,30 @@ export default function SubscriptionPage() {
     const [razorpayLoaded, setRazorpayLoaded] = useState(false);
     const router = useRouter();
 
-    // ✅ MOVED INSIDE COMPONENT: Order validation function (no export)
+    // âœ… MOVED INSIDE COMPONENT: Order validation function (no export)
     const validateStoreForOrder = async (storeId) => {
         try {
             const response = await axios.get(`${STORE_STATUS_API}/${storeId}/validate-order/`);
             return response.data;
         } catch (error) {
-            console.error('❌ Order validation failed:', error);
+            console.error('âŒ Order validation failed:', error);
             return { valid: false, message: 'Unable to validate store status' };
         }
     };
 
-    // ✅ Load Razorpay script
+    // âœ… Load Razorpay script
     useEffect(() => {
         const script = document.createElement('script');
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
         script.onload = () => {
-            console.log('✅ Razorpay script loaded');
+            console.log('âœ… Razorpay script loaded');
             setRazorpayLoaded(true);
         };
         script.onerror = () => {
-            console.error('❌ Failed to load Razorpay script');
+            console.error('âŒ Failed to load Razorpay script');
             setError('Payment system failed to load. Please refresh the page.');
             
-            // ✅ REPLACED: alert with toast
+            // âœ… REPLACED: alert with toast
             toast.error('Payment system failed to load. Please refresh the page.', {
                 position: "top-right",
                 autoClose: 5000,
@@ -317,19 +317,19 @@ export default function SubscriptionPage() {
         };
     }, []);
 
-    // ✅ Updated authentication headers
+    // âœ… Updated authentication headers
     const getAuthHeaders = useCallback(() => {
         const token = localStorage.getItem('accessToken');
         if (!token) {
-            console.error('❌ No access token found');
+            console.error('âŒ No access token found');
             router.push('/login/seller');
             return null;
         }
-        console.log('✅ Using Bearer token for authentication');
+        console.log('âœ… Using Bearer token for authentication');
         return { Authorization: `Bearer ${token}` };
     }, [router]);
 
-    // ✅ NEW: Load seller's store ID
+    // âœ… NEW: Load seller's store ID
     const loadStoreId = useCallback(async () => {
         const headers = getAuthHeaders();
         if (!headers) return;
@@ -337,13 +337,13 @@ export default function SubscriptionPage() {
         try {
             const response = await axios.get(`${API_BASE_URL}/api/store/profile/`, { headers });
             setStoreId(response.data.id);
-            console.log('✅ Store ID loaded:', response.data.id);
+            console.log('âœ… Store ID loaded:', response.data.id);
         } catch (err) {
-            console.error('❌ Failed to load store ID:', err);
+            console.error('âŒ Failed to load store ID:', err);
         }
     }, [getAuthHeaders]);
 
-    // ✅ Updated subscription data loading to match your API
+    // âœ… Updated subscription data loading to match your API
     const loadSubscriptionData = useCallback(async () => {
         setSubscriptionLoading(true);
         setSubscriptionError(null);
@@ -352,18 +352,18 @@ export default function SubscriptionPage() {
         if (!headers) return;
 
         try {
-            console.log('🔍 Fetching current subscription...');
+            console.log('ðŸ” Fetching current subscription...');
             const subResponse = await axios.get(CURRENT_SUB_API_URL, { headers });
-            console.log('✅ Current subscription:', subResponse.data);
+            console.log('âœ… Current subscription:', subResponse.data);
             setCurrentSubscription(subResponse.data);
         } catch (subErr) {
-            console.log('⚠️ No active subscription found:', subErr.response?.status);
+            console.log('âš ï¸ No active subscription found:', subErr.response?.status);
             setCurrentSubscription(null);
 
             if (subErr.response?.status === 401) {
                 setSubscriptionError('Session expired. Please log in again.');
                 
-                // ✅ REPLACED: alert with toast
+                // âœ… REPLACED: alert with toast
                 toast.error('Session expired. Please log in again.', {
                     position: "top-right",
                     autoClose: 3000,
@@ -372,7 +372,7 @@ export default function SubscriptionPage() {
                 
                 setTimeout(() => router.push('/login/seller'), 2000);
             } else if (subErr.response?.status === 404) {
-                console.log('ℹ️ No subscription found (normal for new users)');
+                console.log('â„¹ï¸ No subscription found (normal for new users)');
             } else {
                 setSubscriptionError('Failed to load subscription data');
             }
@@ -381,14 +381,14 @@ export default function SubscriptionPage() {
         }
     }, [getAuthHeaders, router]);
 
-    // ✅ Updated plans loading to match your API structure
+    // âœ… Updated plans loading to match your API structure
     const loadPlansData = useCallback(async () => {
         try {
-            console.log('🔍 Fetching plans from:', PLANS_API_URL);
+            console.log('ðŸ” Fetching plans from:', PLANS_API_URL);
             const plansResponse = await axios.get(PLANS_API_URL);
 
             const plansData = plansResponse.data.results || plansResponse.data || [];
-            console.log('✅ Plans loaded:', plansData);
+            console.log('âœ… Plans loaded:', plansData);
 
             const sortedPlans = plansData.sort((a, b) => {
                 const priceA = parseFloat(a.price) || 0;
@@ -398,10 +398,10 @@ export default function SubscriptionPage() {
 
             setPlans(sortedPlans);
         } catch (err) {
-            console.error('❌ Failed to load plans:', err);
+            console.error('âŒ Failed to load plans:', err);
             setError('Failed to load subscription plans. Please refresh the page.');
             
-            // ✅ REPLACED: alert with toast
+            // âœ… REPLACED: alert with toast
             toast.error('Failed to load subscription plans. Please refresh the page.', {
                 position: "top-right",
                 autoClose: 5000,
@@ -432,10 +432,10 @@ export default function SubscriptionPage() {
         loadData();
     }, [loadPlansData, loadSubscriptionData]);
 
-    // ✅ Updated payment handling with TOAST notifications
+    // âœ… Updated payment handling with TOAST notifications
     const handleChoosePlan = async (planId, planName) => {
         if (!razorpayLoaded || !window.Razorpay) {
-            // ✅ REPLACED: alert with toast
+            // âœ… REPLACED: alert with toast
             toast.warning('Payment system is loading. Please wait a moment and try again.', {
                 position: "top-right",
                 autoClose: 3000,
@@ -446,7 +446,7 @@ export default function SubscriptionPage() {
 
         const plan = plans.find(p => p.id === planId);
         if (!plan) {
-            // ✅ REPLACED: alert with toast
+            // âœ… REPLACED: alert with toast
             toast.error('Plan not found. Please refresh the page and try again.', {
                 position: "top-right",
                 autoClose: 3000,
@@ -459,10 +459,10 @@ export default function SubscriptionPage() {
         const yearlyPrice = parseFloat(plan.yearly_price || '') || (basePrice * 12 * 0.90);
         const displayPrice = billingCycle === 'yearly' ? yearlyPrice : basePrice;
 
-        // ✅ REPLACED: confirm with custom toast confirmation
+        // âœ… REPLACED: confirm with custom toast confirmation
         const confirmed = confirm(
             `Subscribe to ${planName}?\n\n` +
-            `Price: ₹${Math.round(displayPrice).toLocaleString('en-IN')}/${billingCycle === 'yearly' ? 'year' : 'month'}\n\n` +
+            `Price: â‚¹${Math.round(displayPrice).toLocaleString('en-IN')}/${billingCycle === 'yearly' ? 'year' : 'month'}\n\n` +
             `Click OK to proceed to secure payment.`
         );
 
@@ -476,14 +476,14 @@ export default function SubscriptionPage() {
         }
 
         try {
-            console.log('🔄 Creating order for plan:', planId, 'billing cycle:', billingCycle);
+            console.log('ðŸ”„ Creating order for plan:', planId, 'billing cycle:', billingCycle);
 
             const orderResponse = await axios.post(CREATE_ORDER_API, {
                 plan_id: planId,
                 billing_cycle: billingCycle
             }, { headers });
 
-            console.log('✅ Order created:', orderResponse.data);
+            console.log('âœ… Order created:', orderResponse.data);
             const { order_id, amount, currency } = orderResponse.data;
 
             const options = {
@@ -502,7 +502,7 @@ export default function SubscriptionPage() {
                     email: currentSubscription?.seller?.email || 'seller@keralasellers.com'
                 },
                 handler: async function (response) {
-                    console.log('✅ Payment successful:', response);
+                    console.log('âœ… Payment successful:', response);
 
                     const verificationData = {
                         razorpay_payment_id: response.razorpay_payment_id,
@@ -514,12 +514,12 @@ export default function SubscriptionPage() {
 
                     try {
                         const verifyResponse = await axios.post(VERIFY_PAYMENT_API, verificationData, { headers });
-                        console.log('✅ Payment verified:', verifyResponse.data);
+                        console.log('âœ… Payment verified:', verifyResponse.data);
 
                         setError('');
                         
-                        // ✅ REPLACED: alert with toast
-                        toast.success('🎉 Payment Successful! Your subscription is now active!', {
+                        // âœ… REPLACED: alert with toast
+                        toast.success('ðŸŽ‰ Payment Successful! Your subscription is now active!', {
                             position: "top-center",
                             autoClose: 5000,
                             theme: "colored",
@@ -528,10 +528,10 @@ export default function SubscriptionPage() {
                         await loadSubscriptionData();
 
                     } catch (verifyError) {
-                        console.error('❌ Payment verification failed:', verifyError);
+                        console.error('âŒ Payment verification failed:', verifyError);
 
                         if (verifyError.response?.status === 401) {
-                            // ✅ REPLACED: alert with toast
+                            // âœ… REPLACED: alert with toast
                             toast.error('Session expired. Please log in again.', {
                                 position: "top-right",
                                 autoClose: 3000,
@@ -543,7 +543,7 @@ export default function SubscriptionPage() {
                                 verifyError.response?.data?.message ||
                                 'Payment verification failed. Please contact support if money was deducted.';
                             
-                            // ✅ REPLACED: alert with toast
+                            // âœ… REPLACED: alert with toast
                             toast.error(errorMessage, {
                                 position: "top-right",
                                 autoClose: 7000,
@@ -559,7 +559,7 @@ export default function SubscriptionPage() {
                         console.log('Payment modal dismissed');
                         setIsProcessing(null);
                         
-                        // ✅ ADDED: Toast notification on modal dismiss
+                        // âœ… ADDED: Toast notification on modal dismiss
                         toast.info('Payment cancelled', {
                             position: "top-right",
                             autoClose: 2000,
@@ -572,9 +572,9 @@ export default function SubscriptionPage() {
             const rzp = new window.Razorpay(options);
 
             rzp.on('payment.failed', function (response) {
-                console.error('❌ Payment failed:', response.error);
+                console.error('âŒ Payment failed:', response.error);
                 
-                // ✅ REPLACED: alert with toast
+                // âœ… REPLACED: alert with toast
                 toast.error(`Payment failed: ${response.error.description}`, {
                     position: "top-right",
                     autoClose: 5000,
@@ -587,10 +587,10 @@ export default function SubscriptionPage() {
             rzp.open();
 
         } catch (error) {
-            console.error('❌ Subscription error:', error);
+            console.error('âŒ Subscription error:', error);
 
             if (error.response?.status === 401) {
-                // ✅ REPLACED: alert with toast
+                // âœ… REPLACED: alert with toast
                 toast.error('Session expired. Please log in again.', {
                     position: "top-right",
                     autoClose: 3000,
@@ -602,7 +602,7 @@ export default function SubscriptionPage() {
                     error.response?.data?.message ||
                     'Failed to process subscription. Please try again.';
                 
-                // ✅ REPLACED: alert with toast
+                // âœ… REPLACED: alert with toast
                 toast.error(errorMessage, {
                     position: "top-right",
                     autoClose: 5000,
@@ -638,7 +638,7 @@ export default function SubscriptionPage() {
                     <AlertCircle size={16} />
                     <span>{error}</span>
                     <button onClick={() => setError('')} style={styles.closeAlert}>
-                        ×
+                        Ã—
                     </button>
                 </div>
             )}
@@ -668,7 +668,7 @@ export default function SubscriptionPage() {
                 </button>
             </div>
 
-            {/* ✅ ADD: Coming Soon Notice for Yearly */}
+            {/* âœ… ADD: Coming Soon Notice for Yearly */}
             {billingCycle === 'yearly' && (
                 <div style={styles.comingSoonNotice}>
                     <Clock size={18} />
@@ -679,7 +679,7 @@ export default function SubscriptionPage() {
                 </div>
             )}
 
-            {/* ✅ ENHANCED: Current Plan Card with Store Status */}
+            {/* âœ… ENHANCED: Current Plan Card with Store Status */}
             <CurrentPlanCard
                 subscription={currentSubscription}
                 isLoading={subscriptionLoading}
@@ -732,7 +732,7 @@ export default function SubscriptionPage() {
                                     <h2 style={styles.planName}>{plan.name}</h2>
                                     <div className='dashboardsubscribeplanheaderpricecontainer' style={styles.priceContainer}>
                                         <span className='dashboardsubscribeplanheaderprice' style={styles.price}>
-                                            ₹{Math.round(displayPrice).toLocaleString('en-IN')}
+                                            â‚¹{Math.round(displayPrice).toLocaleString('en-IN')}
                                         </span>
                                         <span style={styles.duration}>
                                             /{billingCycle === 'yearly' ? 'year' : 'month'}
@@ -741,9 +741,9 @@ export default function SubscriptionPage() {
 
                                     {billingCycle === 'yearly' && (
                                         <div style={styles.savings}>
-                                            <p>Billed as ₹{Math.round(yearlyPrice).toLocaleString('en-IN')} annually</p>
+                                            <p>Billed as â‚¹{Math.round(yearlyPrice).toLocaleString('en-IN')} annually</p>
                                             <p style={styles.savingsAmount}>
-                                                Save ₹{Math.round((basePrice * 12) - yearlyPrice).toLocaleString('en-IN')} per year
+                                                Save â‚¹{Math.round((basePrice * 12) - yearlyPrice).toLocaleString('en-IN')} per year
                                             </p>
                                         </div>
                                     )}
@@ -1449,3 +1449,4 @@ const styles = {
         justifyItems: 'center'
     }
 };
+
