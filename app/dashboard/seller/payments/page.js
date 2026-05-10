@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -12,7 +12,7 @@ import {
 // const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 
 export default function PaymentsDashboard() {
@@ -46,7 +46,7 @@ export default function PaymentsDashboard() {
     return { Authorization: `Bearer ${token}` };
   }, [router]);
 
-  // ✅ Fetch live transactions
+  // âœ… Fetch live transactions
   const fetchLiveTransactions = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -59,7 +59,7 @@ export default function PaymentsDashboard() {
       );
 
       setLiveTransactions(response.data.transactions || []);
-      setSuccessMsg('✅ Live transactions fetched from Razorpay!');
+      setSuccessMsg('âœ… Live transactions fetched from Razorpay!');
     } catch (error) {
       console.error('Failed to fetch live transactions:', error);
       setErrorMsg(error.response?.data?.error || 'Failed to fetch live transactions');
@@ -81,7 +81,7 @@ export default function PaymentsDashboard() {
       );
 
       setLiveSettlements(response.data.settlements || []);
-      setSuccessMsg('✅ Live settlements fetched from Razorpay!');
+      setSuccessMsg('âœ… Live settlements fetched from Razorpay!');
     } catch (error) {
       console.error('Failed to fetch live settlements:', error);
       setErrorMsg(error.response?.data?.error || 'Failed to fetch live settlements');
@@ -135,7 +135,7 @@ export default function PaymentsDashboard() {
     fetchPaymentData();
   }, [fetchPaymentData]);
 
-  // ✅ NEW: Auto-fetch live data when switching to live mode
+  // âœ… NEW: Auto-fetch live data when switching to live mode
   useEffect(() => {
     if (viewMode === 'live' && gatewayStatus.razorpay?.connected) {
       if (activeTab === 'settlements' && liveSettlements.length === 0) {
@@ -171,12 +171,12 @@ export default function PaymentsDashboard() {
   }, []);
 
   const handleRazorpaySuccess = useCallback(() => {
-    setSuccessMsg(editMode ? '✅ Razorpay keys updated!' : '✅ Connected to Razorpay!');
+    setSuccessMsg(editMode ? 'âœ… Razorpay keys updated!' : 'âœ… Connected to Razorpay!');
     setEditMode(false);
     fetchPaymentData();
   }, [editMode, fetchPaymentData]);
 
-  // ✅ Display data based on mode and tab
+  // âœ… Display data based on mode and tab
   const displayData = viewMode === 'live' 
     ? (activeTab === 'settlements' ? liveSettlements : liveTransactions)
     : payoutHistory;
@@ -203,11 +203,11 @@ export default function PaymentsDashboard() {
 
   return {
     successCount: captured.length,
-    successAmount: captured.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0), // ✅ FIXED
+    successAmount: captured.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0), // âœ… FIXED
     pendingCount: authorized.length,
-    pendingAmount: authorized.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0), // ✅ FIXED
+    pendingAmount: authorized.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0), // âœ… FIXED
     settledCount: captured.length,
-    settledAmount: captured.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0), // ✅ FIXED
+    settledAmount: captured.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0), // âœ… FIXED
     pendingSettlementCount: 0,
     pendingSettlementAmount: 0,
   };
@@ -262,7 +262,7 @@ export default function PaymentsDashboard() {
           </h1>
           <p className='dashboardpaymentsubtitle' style={s.st}>
             Manage your payment methods & receive instant payouts
-            {viewMode === 'live' && <span style={{ color: '#10b981', marginLeft: '8px', fontWeight: 600 }}>• Live from Razorpay</span>}
+            {viewMode === 'live' && <span style={{ color: '#10b981', marginLeft: '8px', fontWeight: 600 }}>â€¢ Live from Razorpay</span>}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -272,7 +272,7 @@ export default function PaymentsDashboard() {
               onClick={() => {
                 if (viewMode === 'stored') {
                   setViewMode('live');
-                  // ✅ Fetch data immediately when switching to live
+                  // âœ… Fetch data immediately when switching to live
                   if (activeTab === 'settlements') {
                     fetchLiveSettlements();
                   } else {
@@ -378,7 +378,7 @@ export default function PaymentsDashboard() {
                 )}
                 {!gatewayStatus.razorpay?.connected ? (
                   <button className='dashboardpaymentconnectbtn' onClick={handleRazorpayClick} style={s.connectBtn}>
-                    🔗 Connect Razorpay
+                    ðŸ”— Connect Razorpay
                   </button>
                 ) : (
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -431,7 +431,7 @@ export default function PaymentsDashboard() {
                   <p className='dashboardpaymentstatusvalue' style={{ ...s.value, color: '#b4b6baff' }}>COMING SOON</p>
                 </div>
                 <button className='dashboardpaymentconnectbtn' disabled style={{ ...s.connectBtn, opacity: 0.6, cursor: 'not-allowed', backgroundColor: '#b4b6baff' }}>
-                  ⏳ Coming Soon
+                  â³ Coming Soon
                 </button>
               </div>
             </div>
@@ -487,33 +487,33 @@ export default function PaymentsDashboard() {
       {displayData.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', padding: '0 24px 24px' }}>
           <div style={{ ...s.card, padding: '16px' }}>
-            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>✅ SUCCESSFUL</p>
+            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>âœ… SUCCESSFUL</p>
             <p style={{ fontSize: '20px', fontWeight: 700, color: '#10b981', margin: 0 }}>
-              ₹{payoutSummary.successAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              â‚¹{payoutSummary.successAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </p>
             <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>
               {payoutSummary.successCount} {viewMode === 'live' ? (activeTab === 'transactions' ? 'payments' : 'settlements') : 'payouts'}
             </p>
           </div>
           <div style={{ ...s.card, padding: '16px' }}>
-            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>⏳ PENDING</p>
+            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>â³ PENDING</p>
             <p style={{ fontSize: '20px', fontWeight: 700, color: '#f59e0b', margin: 0 }}>
-              ₹{payoutSummary.pendingAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              â‚¹{payoutSummary.pendingAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </p>
             <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>{payoutSummary.pendingCount} pending</p>
           </div>
           <div style={{ ...s.card, padding: '16px' }}>
-            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>🏦 SETTLED</p>
+            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>ðŸ¦ SETTLED</p>
             <p style={{ fontSize: '20px', fontWeight: 700, color: '#3b82f6', margin: 0 }}>
-              ₹{payoutSummary.settledAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              â‚¹{payoutSummary.settledAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </p>
             <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>{payoutSummary.settledCount} settled</p>
           </div>
           {viewMode === 'stored' && (
             <div style={{ ...s.card, padding: '16px' }}>
-              <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>⏰ AWAITING</p>
+              <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>â° AWAITING</p>
               <p style={{ fontSize: '20px', fontWeight: 700, color: '#8b5cf6', margin: 0 }}>
-                ₹{payoutSummary.pendingSettlementAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                â‚¹{payoutSummary.pendingSettlementAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
               </p>
               <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>{payoutSummary.pendingSettlementCount} pending</p>
             </div>
@@ -521,7 +521,7 @@ export default function PaymentsDashboard() {
         </div>
       )}
 
-      {/* ✅ TABS - Only show in live mode */}
+      {/* âœ… TABS - Only show in live mode */}
       {viewMode === 'live' && (
         <div style={{ padding: '0 24px 16px', display: 'flex', gap: '8px' }}>
           <button
@@ -555,7 +555,7 @@ export default function PaymentsDashboard() {
         </div>
       )}
 
-      {/* ✅ TABLE */}
+      {/* âœ… TABLE */}
       <div style={{ ...s.card, margin: '0 5px 24px' }}>
         <h2 style={s.cardT}>
           {activeTab === 'transactions' && viewMode === 'live' ? <CreditCard size={18} style={{ marginRight: 6 }} /> : <ReceiptText size={18} style={{ marginRight: 6 }} />}
@@ -598,7 +598,7 @@ export default function PaymentsDashboard() {
 </div>
 
                       <div style={{ flex: 2, fontWeight: 700, color: '#10b981', fontSize: '14px' }}>
-                        ₹{(parseFloat(txn.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        â‚¹{(parseFloat(txn.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </div>
                       <div style={{ flex: 2, fontSize: '13px', textTransform: 'capitalize' }}>
                         {txn.method || 'N/A'}
@@ -609,7 +609,7 @@ export default function PaymentsDashboard() {
                           backgroundColor: txn.status === 'captured' ? '#d1fae5' : txn.status === 'failed' ? '#fee2e2' : '#fef3c7',
                           color: txn.status === 'captured' ? '#065f46' : txn.status === 'failed' ? '#991b1b' : '#92400e'
                         }}>
-                          {txn.status === 'captured' ? '✅ Captured' : txn.status === 'failed' ? '❌ Failed' : '⏳ ' + txn.status}
+                          {txn.status === 'captured' ? 'âœ… Captured' : txn.status === 'failed' ? 'âŒ Failed' : 'â³ ' + txn.status}
                         </span>
                       </div>
                       <div style={{ flex: 3, fontSize: '12px' }}>
@@ -664,10 +664,10 @@ export default function PaymentsDashboard() {
 
 
                         <div style={{ flex: 2, fontWeight: 700, color: '#10b981', fontSize: '14px' }}>
-                          ₹{(parseFloat(settlement.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          â‚¹{(parseFloat(settlement.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </div>
                         <div style={{ flex: 2, fontSize: '13px', color: '#ef4444' }}>
-  -₹{parseFloat(settlement.fees || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+  -â‚¹{parseFloat(settlement.fees || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
 </div>
 
                         <div style={{ flex: 2 }}>
@@ -676,7 +676,7 @@ export default function PaymentsDashboard() {
                             backgroundColor: settlement.status === 'processed' ? '#d1fae5' : '#fef3c7',
                             color: settlement.status === 'processed' ? '#065f46' : '#92400e'
                           }}>
-                            {settlement.status === 'processed' ? '✅ Settled' : '⏳ Pending'}
+                            {settlement.status === 'processed' ? 'âœ… Settled' : 'â³ Pending'}
                           </span>
                         </div>
                         <div style={{ flex: 3, fontSize: '12px' }}>
@@ -698,7 +698,7 @@ export default function PaymentsDashboard() {
                           {new Date(payout.created_at).toLocaleDateString()}
                         </div>
                         <div style={{ flex: 2, fontWeight: 700, color: '#10b981', fontSize: '14px' }}>
-                          ₹{parseFloat(payout.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          â‚¹{parseFloat(payout.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </div>
                         <div style={{ flex: 2, fontSize: '13px' }}>
                           {payout.gateway_display || payout.gateway_used}
@@ -714,7 +714,7 @@ export default function PaymentsDashboard() {
                         </div>
                         <div style={{ flex: 3, fontSize: '12px' }}>
                           <div style={{ fontWeight: 600, marginBottom: '4px' }}>
-                            {payout.settlement_status_display || '⏳ Pending'}
+                            {payout.settlement_status_display || 'â³ Pending'}
                           </div>
                           {payout.expected_settlement_date_display && !payout.settlement_date && (
                             <div style={{ fontSize: '10px', color: '#6b7280' }}>
@@ -886,3 +886,4 @@ const s = {
     transition: 'all 0.2s',
   },
 };
+

@@ -35,7 +35,7 @@ import axios from "axios";
 
 //   // Updated fallback with your LIVE VPS backend
 //   return process.env.NODE_ENV === 'development'
-//     ? 'http://localhost:8000'
+//     ? 'https://api.keralasellers.in'
 //     : 'https://api.keralasellers.in';  // ✅ LIVE PRODUCTION API
 // };
 
@@ -51,7 +51,7 @@ import axios from "axios";
 //   ENVIRONMENT: process.env.NODE_ENV
 // });
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
 
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
@@ -25,7 +25,7 @@ import {
   Star
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
+// âœ… Using environment variables for API URLs
 // const getApiBaseUrl = () => {
 //     // 1. Check explicit env vars first
 //     const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
@@ -52,12 +52,12 @@ import {
 // const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 
-console.log('🛒 Orders/Products:', {
+console.log('ðŸ›’ Orders/Products:', {
   API_BASE_URL,
   LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL || 'using fallback'
 });
@@ -85,13 +85,13 @@ export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState('30'); // Default to last 30 days
   const [refreshing, setRefreshing] = useState(false);
 
-  // ✅ Authentication headers
+  // âœ… Authentication headers
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken');
     return token ? { Authorization: `Bearer ${token}` } : null;
   }, []);
 
-  // ✅ Fetch analytics data
+  // âœ… Fetch analytics data
   const fetchAnalytics = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) {
@@ -113,7 +113,7 @@ export default function AnalyticsPage() {
       const orders = ordersResponse.data.results || ordersResponse.data || [];
       const products = productsResponse.data.results || productsResponse.data || [];
 
-      console.log(`📊 Analytics data: ${orders.length} orders, ${products.length} products`);
+      console.log(`ðŸ“Š Analytics data: ${orders.length} orders, ${products.length} products`);
 
       // Process analytics data
       const processedAnalytics = processAnalyticsData(orders, products, parseInt(dateRange));
@@ -134,7 +134,7 @@ export default function AnalyticsPage() {
     }
   }, [getAuthHeaders, dateRange]);
 
-  // ✅ Process raw data into analytics
+  // âœ… Process raw data into analytics
   const processAnalyticsData = (orders, products, days) => {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
@@ -203,7 +203,7 @@ export default function AnalyticsPage() {
       .map(order => ({
         type: 'order',
         title: `Order #${order.id}`,
-        description: `₹${parseFloat(order.total_amount).toFixed(2)} - ${order.customer_name}`,
+        description: `â‚¹${parseFloat(order.total_amount).toFixed(2)} - ${order.customer_name}`,
         time: order.created_at,
         status: order.status
       }));
@@ -225,7 +225,7 @@ export default function AnalyticsPage() {
     };
   };
 
-  // ✅ Generate sales trend data
+  // âœ… Generate sales trend data
   const generateSalesTrend = (orders, days) => {
     const trend = [];
     const now = new Date();
@@ -283,21 +283,21 @@ export default function AnalyticsPage() {
     return trend;
   };
 
-  // ✅ Refresh data
+  // âœ… Refresh data
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchAnalytics();
     setRefreshing(false);
   };
 
-  // ✅ Export analytics
+  // âœ… Export analytics
   const exportAnalytics = () => {
     const csvContent = [
       ['Metric', 'Value'],
-      ['Total Revenue', `₹${analytics.overview.totalRevenue.toFixed(2)}`],
+      ['Total Revenue', `â‚¹${analytics.overview.totalRevenue.toFixed(2)}`],
       ['Total Orders', analytics.overview.totalOrders],
       ['Total Products', analytics.overview.totalProducts],
-      ['Average Order Value', `₹${analytics.overview.avgOrderValue.toFixed(2)}`],
+      ['Average Order Value', `â‚¹${analytics.overview.avgOrderValue.toFixed(2)}`],
       ['Revenue Change', `${analytics.overview.revenueChange.toFixed(1)}%`],
       ['Orders Change', `${analytics.overview.ordersChange.toFixed(1)}%`],
       [],
@@ -305,7 +305,7 @@ export default function AnalyticsPage() {
       ['Product Name', 'Revenue', 'Quantity Sold', 'Orders'],
       ...analytics.topProducts.map(product => [
         product.name,
-        `₹${product.revenue.toFixed(2)}`,
+        `â‚¹${product.revenue.toFixed(2)}`,
         product.quantity,
         product.orders
       ])
@@ -395,7 +395,7 @@ export default function AnalyticsPage() {
             <div className='dashboardanalyticsoverviewcardtitle' style={styles.cardTitle}>Total Revenue</div>
             <DollarSign size={20} color="#059669" />
           </div>
-          <div className='dashboardanalyticsoverviewcardvalue' style={styles.cardValue}>₹{analytics.overview.totalRevenue.toLocaleString('en-IN')}</div>
+          <div className='dashboardanalyticsoverviewcardvalue' style={styles.cardValue}>â‚¹{analytics.overview.totalRevenue.toLocaleString('en-IN')}</div>
           <div className='dashboardanalyticsoverviewcardchange' style={styles.cardChange}>
             {analytics.overview.revenueChange >= 0 ? (
               <ArrowUpRight size={16} color="#059669" />
@@ -435,7 +435,7 @@ export default function AnalyticsPage() {
             <div className='dashboardanalyticsoverviewcardtitle' style={styles.cardTitle}>Average Order Value</div>
             <Target size={20} color="#8b5cf6" />
           </div>
-          <div className='dashboardanalyticsoverviewcardvalue' style={styles.cardValue}>₹{analytics.overview.avgOrderValue.toFixed(0)}</div>
+          <div className='dashboardanalyticsoverviewcardvalue' style={styles.cardValue}>â‚¹{analytics.overview.avgOrderValue.toFixed(0)}</div>
           <div className='dashboardanalyticsoverviewcardchange' style={styles.cardChange}>
             <Clock size={16} color="#6b7280" />
             <span style={{ color: '#6b7280' }}>
@@ -483,7 +483,7 @@ export default function AnalyticsPage() {
                           ...styles.trendBarFill,
                           height: `${height}%`
                         }}
-                        title={`₹${point.revenue.toFixed(0)} (${point.orders} orders)`}
+                        title={`â‚¹${point.revenue.toFixed(0)} (${point.orders} orders)`}
                       />
                       <div style={styles.trendBarLabel}>{point.date}</div>
                     </div>
@@ -516,11 +516,11 @@ export default function AnalyticsPage() {
                     <div style={styles.productInfo}>
                       <div style={styles.productName}>{product.name}</div>
                       <div style={styles.productStats}>
-                        {product.quantity} units • ₹{product.revenue.toFixed(0)}
+                        {product.quantity} units â€¢ â‚¹{product.revenue.toFixed(0)}
                       </div>
                     </div>
                     <div style={styles.productRevenue}>
-                      ₹{product.revenue.toLocaleString('en-IN')}
+                      â‚¹{product.revenue.toLocaleString('en-IN')}
                     </div>
                   </div>
                 ))}
@@ -990,4 +990,5 @@ const styles = {
     color: '#6b7280'
   }
 };
+
 

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import axios from 'axios';
@@ -22,7 +22,7 @@ import {
   Shield
 } from 'lucide-react';
 
-// ✅ Enhanced API base URL handling
+// âœ… Enhanced API base URL handling
 // const getApiBaseUrl = () => {
 //   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 //   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
@@ -38,22 +38,22 @@ import {
 // const SEND_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/send-otp/`;
 // const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/verify/`;
 
-// console.log('🌐 Forgot Password API URLs configured:', {
+// console.log('ðŸŒ Forgot Password API URLs configured:', {
 //   API_BASE_URL,
 //   SEND_RESET_OTP_API,
 //   VERIFY_RESET_OTP_API
 // });
 
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const SEND_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/send-otp/`;
 const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/verify/`;
 
-console.log('🔑 Password Reset APIs:', API_BASE_URL);
+console.log('ðŸ”‘ Password Reset APIs:', API_BASE_URL);
 
 
-// ✅ Loading fallback component
+// âœ… Loading fallback component
 function LoadingFallback() {
   return (
     <div style={{
@@ -94,7 +94,7 @@ function LoadingFallback() {
   );
 }
 
-// ✅ Main component that uses useSearchParams
+// âœ… Main component that uses useSearchParams
 function ForgotPasswordContent() {
   const [step, setStep] = useState(1); // 1: Enter email, 2: Enter OTP & new password
   const [email, setEmail] = useState('');
@@ -114,7 +114,7 @@ function ForgotPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ✅ Get current store info and redirect URL from URL parameters
+  // âœ… Get current store info and redirect URL from URL parameters
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
@@ -132,7 +132,7 @@ function ForgotPasswordContent() {
     }
   }, [searchParams]);
 
-  // ✅ Resend cooldown timer
+  // âœ… Resend cooldown timer
   useEffect(() => {
     let timer;
     if (resendCooldown > 0) {
@@ -176,7 +176,7 @@ function ForgotPasswordContent() {
     }, 6000);
   };
 
-  // ✅ Enhanced email submission with better error handling
+  // âœ… Enhanced email submission with better error handling
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setErrors({});
@@ -194,7 +194,7 @@ function ForgotPasswordContent() {
     setIsLoading(true);
 
     try {
-      console.log('📧 Sending OTP to:', email.trim());
+      console.log('ðŸ“§ Sending OTP to:', email.trim());
 
       const response = await axios.post(SEND_RESET_OTP_API, {
         email: email.trim().toLowerCase()
@@ -202,7 +202,7 @@ function ForgotPasswordContent() {
         timeout: 15000
       });
 
-      console.log('✅ OTP sent successfully:', response.data);
+      console.log('âœ… OTP sent successfully:', response.data);
 
       setOtpSentTime(new Date());
       setResendCooldown(60); // 60 second cooldown
@@ -210,7 +210,7 @@ function ForgotPasswordContent() {
       setStep(2);
 
     } catch (err) {
-      console.error('❌ OTP send error:', err);
+      console.error('âŒ OTP send error:', err);
 
       let errorMessage = 'Could not send OTP. Please try again.';
 
@@ -233,7 +233,7 @@ function ForgotPasswordContent() {
     }
   };
 
-  // ✅ Enhanced password reset with comprehensive validation
+  // âœ… Enhanced password reset with comprehensive validation
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setErrors({});
@@ -266,7 +266,7 @@ function ForgotPasswordContent() {
     setIsLoading(true);
 
     try {
-      console.log('🔐 Resetting password for:', email.trim());
+      console.log('ðŸ” Resetting password for:', email.trim());
 
       const response = await axios.post(VERIFY_RESET_OTP_API, {
         email: email.trim().toLowerCase(),
@@ -276,11 +276,11 @@ function ForgotPasswordContent() {
         timeout: 15000
       });
 
-      console.log('✅ Password reset successful:', response.data);
+      console.log('âœ… Password reset successful:', response.data);
 
       showMessage('Password has been reset successfully! Redirecting to login...', 'success');
 
-      // ✅ Store-aware redirect
+      // âœ… Store-aware redirect
       setTimeout(() => {
         const redirectUrl = searchParams.get('redirect');
         if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
@@ -291,7 +291,7 @@ function ForgotPasswordContent() {
       }, 2500);
 
     } catch (err) {
-      console.error('❌ Password reset error:', err);
+      console.error('âŒ Password reset error:', err);
 
       let errorMessage = 'Failed to reset password. Please try again.';
 
@@ -314,14 +314,14 @@ function ForgotPasswordContent() {
     }
   };
 
-  // ✅ Enhanced resend OTP with cooldown
+  // âœ… Enhanced resend OTP with cooldown
   const handleResendOtp = async () => {
     if (resendCooldown > 0) return;
 
     setIsLoading(true);
 
     try {
-      console.log('🔄 Resending OTP to:', email.trim());
+      console.log('ðŸ”„ Resending OTP to:', email.trim());
 
       await axios.post(SEND_RESET_OTP_API, {
         email: email.trim().toLowerCase()
@@ -334,14 +334,14 @@ function ForgotPasswordContent() {
       showMessage('OTP has been resent to your email. Please check your inbox.', 'success');
 
     } catch (err) {
-      console.error('❌ OTP resend error:', err);
+      console.error('âŒ OTP resend error:', err);
       showMessage('Failed to resend OTP. Please try again later.', 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ✅ Store-aware back link
+  // âœ… Store-aware back link
   const getBackLink = () => {
     const redirectUrl = searchParams.get('redirect');
     if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
@@ -358,7 +358,7 @@ function ForgotPasswordContent() {
 
       <div style={styles.container}>
         <div style={styles.card}>
-          {/* ✅ Store context indicator */}
+          {/* âœ… Store context indicator */}
           {currentStoreInfo.isInStore && (
             <div style={styles.storeIndicator}>
               <Globe size={16} />
@@ -564,7 +564,7 @@ function ForgotPasswordContent() {
                   <span style={styles.errorText}>{errors.password}</span>
                 )}
 
-                {/* ✅ Password strength indicator */}
+                {/* âœ… Password strength indicator */}
                 {password && (
                   <div style={styles.passwordStrength}>
                     <div style={styles.strengthBar}>
@@ -623,7 +623,7 @@ function ForgotPasswordContent() {
                   <span style={styles.errorText}>{errors.confirmPassword}</span>
                 )}
 
-                {/* ✅ Password match indicator */}
+                {/* âœ… Password match indicator */}
                 {confirmPassword && password && (
                   <div style={styles.passwordMatch}>
                     {password === confirmPassword ? (
@@ -713,7 +713,7 @@ function ForgotPasswordContent() {
   );
 }
 
-// ✅ Main export wrapped in Suspense
+// âœ… Main export wrapped in Suspense
 export default function ForgotPasswordPage() {
   return (
     <Suspense fallback={<LoadingFallback />}>
@@ -758,7 +758,7 @@ const styles = {
     transition: 'all 0.3s ease',
   },
 
-  // ✅ Store context indicator
+  // âœ… Store context indicator
   storeIndicator: {
     display: 'flex',
     alignItems: 'center',
@@ -853,7 +853,7 @@ const styles = {
     color: '#991b1b'
   },
 
-  // ✅ Email display in step 2
+  // âœ… Email display in step 2
   emailDisplay: {
     display: 'flex',
     alignItems: 'center',
@@ -958,7 +958,7 @@ const styles = {
     marginTop: '6px'
   },
 
-  // ✅ Resend container with cooldown
+  // âœ… Resend container with cooldown
   resendContainer: {
     display: 'flex',
     justifyContent: 'flex-end',
@@ -982,7 +982,7 @@ const styles = {
     padding: '4px 0',
   },
 
-  // ✅ Password strength indicator
+  // âœ… Password strength indicator
   passwordStrength: {
     marginTop: '8px'
   },
@@ -1007,7 +1007,7 @@ const styles = {
     color: '#6b7280'
   },
 
-  // ✅ Password match indicator
+  // âœ… Password match indicator
   passwordMatch: {
     marginTop: '6px'
   },
@@ -1093,5 +1093,6 @@ const styles = {
     textDecoration: 'underline'
   }
 };
+
 
 

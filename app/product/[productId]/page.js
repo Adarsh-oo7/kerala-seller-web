@@ -27,7 +27,7 @@ import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw, ChevronLef
 // const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
 
 const API_URL = `${API_BASE_URL}/api/products/`;
 const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;

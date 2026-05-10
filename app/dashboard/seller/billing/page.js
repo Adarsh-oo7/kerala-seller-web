@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import '../../../../styles/DashboardBilling.css'
@@ -23,24 +23,22 @@ import {
   CoinsIcon
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
+// âœ… Using environment variables for API URLs
 // const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
 // const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
-// const CREATE_BILL_URL = `${API_BASE_URL}/user/orders/create-local-bill/`; // ✅ CHANGED
-// const GENERATE_BILL_URL = `${API_BASE_URL}/user/orders/generate-local-bill/`; // ✅ NEW
+// const CREATE_BILL_URL = `${API_BASE_URL}/user/orders/create-local-bill/`; // âœ… CHANGED
+// const GENERATE_BILL_URL = `${API_BASE_URL}/user/orders/generate-local-bill/`; // âœ… NEW
 
-// ✅ Works in local + production
+// âœ… Works in local + production
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  (typeof window !== 'undefined'
-    ? 'https://api.keralasellers.in'
-    : 'http://localhost:8000/api');
+  'https://api.keralasellers.in';
 
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
-const CREATE_BILL_URL = `${API_BASE_URL}/user/orders/create-local-bill/`;      // ✅ CHANGED
-const GENERATE_BILL_URL = `${API_BASE_URL}/user/orders/generate-local-bill/`;  // ✅ NEW
+const CREATE_BILL_URL = `${API_BASE_URL}/user/orders/create-local-bill/`;      // âœ… CHANGED
+const GENERATE_BILL_URL = `${API_BASE_URL}/user/orders/generate-local-bill/`;  // âœ… NEW
 
-console.log('🧾 Local bill APIs:', {
+console.log('ðŸ§¾ Local bill APIs:', {
   API_BASE_URL,
   PRODUCTS_API_URL,
   CREATE_BILL_URL,
@@ -68,7 +66,7 @@ export default function LocalBillingPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // ✅ Better token handling
+  // âœ… Better token handling
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('accessToken') ||
       localStorage.getItem('access_token') ||
@@ -84,7 +82,7 @@ export default function LocalBillingPage() {
     return { 'Authorization': `Bearer ${token}` };
   }, []);
 
-  // ✅ AUTO-DETECT SELLER PHONE from /api/store/profile/
+  // âœ… AUTO-DETECT SELLER PHONE from /api/store/profile/
   const autoDetectSellerPhone = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -92,7 +90,7 @@ export default function LocalBillingPage() {
     setIsAutoDetecting(true);
 
     try {
-      console.log('🔍 Auto-detecting seller phone...');
+      console.log('ðŸ” Auto-detecting seller phone...');
 
       // Try store profile API (this worked in your logs)
       try {
@@ -106,7 +104,7 @@ export default function LocalBillingPage() {
         if (phone) {
           setSellerPhone(phone);
           localStorage.setItem('sellerPhone', phone);
-          console.log('✅ Phone detected from store profile:', phone);
+          console.log('âœ… Phone detected from store profile:', phone);
           setIsAutoDetecting(false);
           return;
         }
@@ -121,12 +119,12 @@ export default function LocalBillingPage() {
 
       if (storedPhone) {
         setSellerPhone(storedPhone);
-        console.log('✅ Phone found in localStorage:', storedPhone);
+        console.log('âœ… Phone found in localStorage:', storedPhone);
         setIsAutoDetecting(false);
         return;
       }
 
-      console.log('⚠️ Could not auto-detect seller phone. Manual input required.');
+      console.log('âš ï¸ Could not auto-detect seller phone. Manual input required.');
 
     } catch (error) {
       console.error('Auto-detection failed:', error);
@@ -135,7 +133,7 @@ export default function LocalBillingPage() {
     }
   }, [getAuthHeaders]);
 
-  // ✅ Fetch products with local stock only
+  // âœ… Fetch products with local stock only
   const fetchProducts = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -183,7 +181,7 @@ export default function LocalBillingPage() {
     }
   }, [searchTerm, products]);
 
-  // ✅ Auto-detect seller phone and fetch products on mount
+  // âœ… Auto-detect seller phone and fetch products on mount
   useEffect(() => {
     autoDetectSellerPhone();
     fetchProducts();
@@ -258,7 +256,7 @@ export default function LocalBillingPage() {
     return true;
   };
 
-  // ✅ NEW: Direct local billing (no order creation)
+  // âœ… NEW: Direct local billing (no order creation)
   const handleGenerateBill = async () => {
     if (billItems.length === 0) {
       setError("Please add items to the bill.");
@@ -280,7 +278,7 @@ export default function LocalBillingPage() {
     }
 
     try {
-      // ✅ Step 1: Create local bill and reduce stock
+      // âœ… Step 1: Create local bill and reduce stock
       const billData = {
         customer_name: customer.name || 'Walk-in Customer',
         customer_phone: customer.phone || '',
@@ -292,7 +290,7 @@ export default function LocalBillingPage() {
         }))
       };
 
-      console.log('🔍 Creating local bill:', billData);
+      console.log('ðŸ” Creating local bill:', billData);
 
       const requestConfig = {
         headers: {
@@ -302,9 +300,9 @@ export default function LocalBillingPage() {
       };
 
       const billResponse = await axios.post(CREATE_BILL_URL, billData, requestConfig);
-      console.log('✅ Local bill created:', billResponse.data);
+      console.log('âœ… Local bill created:', billResponse.data);
 
-      // ✅ Step 2: Generate and display bill HTML
+      // âœ… Step 2: Generate and display bill HTML
       const billId = billResponse.data.bill_id;
       const billHtmlData = {
         bill_id: billId,
@@ -321,7 +319,7 @@ export default function LocalBillingPage() {
         }))
       };
 
-      console.log('🔍 Generating bill HTML...');
+      console.log('ðŸ” Generating bill HTML...');
       const htmlResponse = await axios.post(GENERATE_BILL_URL, billHtmlData, {
         headers: requestConfig.headers,
         responseType: 'blob'
@@ -336,13 +334,13 @@ export default function LocalBillingPage() {
       // Reset form
       setBillItems([]);
       setCustomer({ name: '', phone: '' });
-      setSuccess(`✅ Bill ${billId} generated! Stock updated automatically.`);
+      setSuccess(`âœ… Bill ${billId} generated! Stock updated automatically.`);
       setTimeout(() => setSuccess(''), 5000);
       // Refresh products to show updated stock
       fetchProducts();
     } catch (error) {
-      console.error('❌ Billing error:', error);
-      console.error('❌ Error response:', error.response?.data);
+      console.error('âŒ Billing error:', error);
+      console.error('âŒ Error response:', error.response?.data);
 
       if (error.response?.status === 401) {
         setError('Session expired. Please log in again.');
@@ -389,11 +387,11 @@ export default function LocalBillingPage() {
           Direct Local Billing
         </h1>
         <p className='dashboardbillingsubtitle' style={styles.pageSubtitle}>
-          Instant cash billing for walk-in customers • No order tracking
+          Instant cash billing for walk-in customers â€¢ No order tracking
         </p>
       </div>
 
-      {/* ✅ SELLER PHONE INPUT SECTION */}
+      {/* âœ… SELLER PHONE INPUT SECTION */}
       <div style={styles.sellerSection}>
         <div style={styles.sellerInputGroup}>
           <Settings size={16} style={styles.inputIcon} />
@@ -428,7 +426,7 @@ export default function LocalBillingPage() {
           <small style={styles.validationError}>Please enter a valid 10-digit phone number</small>
         )}
         {isAutoDetecting && (
-          <small style={styles.autoDetectStatus}>🔍 Trying to detect your phone number automatically...</small>
+          <small style={styles.autoDetectStatus}>ðŸ” Trying to detect your phone number automatically...</small>
         )}
       </div>
 
@@ -442,7 +440,7 @@ export default function LocalBillingPage() {
         </div>
         <div style={styles.directBillingBadge}>
           <Receipt size={18} color="#e82a2aff" style={{ marginRight: 6 }} />
-          Direct Billing – No Order Creation
+          Direct Billing â€“ No Order Creation
         </div>
       </div>
 
@@ -512,10 +510,10 @@ export default function LocalBillingPage() {
                         <span style={styles.productModel}>({product.model_name})</span>
                       )}
                     </div>
-                    <div style={styles.productPrice}>₹{parseFloat(product.price).toFixed(2)}</div>
+                    <div style={styles.productPrice}>â‚¹{parseFloat(product.price).toFixed(2)}</div>
                     <div style={styles.productStock}>
                       <span style={styles.localStockBadge}>
-                        📦 {product.total_stock} in store
+                        ðŸ“¦ {product.total_stock} in store
                       </span>
                     </div>
                   </div>
@@ -580,7 +578,7 @@ export default function LocalBillingPage() {
             {billItems.length > 0 ? (
               <div className='billingscroll' style={styles.billTableWrapper}>
                 {isMobile ? (
-                  // ✅ Mobile Card Layout
+                  // âœ… Mobile Card Layout
                   <div style={styles.mobileCardList}>
                     {billItems.map(item => (
                       <div key={item.id} style={styles.mobileCard}>
@@ -588,7 +586,7 @@ export default function LocalBillingPage() {
                           <div style={styles.mobileCardTitle}>
                             <div style={styles.itemName}>{item.name}</div>
                             {item.model_name && <div style={styles.itemModel}>{item.model_name}</div>}
-                            <div style={styles.itemStock}>✓ Stock: {item.total_stock} available</div>
+                            <div style={styles.itemStock}>âœ“ Stock: {item.total_stock} available</div>
                           </div>
                           <button onClick={() => removeFromBill(item.id)} style={styles.removeButton}>
                             <X size={16} />
@@ -625,11 +623,11 @@ export default function LocalBillingPage() {
                           <div style={styles.priceSection}>
                             <div style={styles.priceLine}>
                               <span>Price</span>
-                              <strong>₹{parseFloat(item.price).toFixed(2)}</strong>
+                              <strong>â‚¹{parseFloat(item.price).toFixed(2)}</strong>
                             </div>
                             <div style={styles.priceLine}>
                               <span>Total</span>
-                              <strong>₹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
+                              <strong>â‚¹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
                             </div>
                           </div>
                         </div>
@@ -685,9 +683,9 @@ export default function LocalBillingPage() {
                               </button>
                             </div>
                           </td>
-                          <td style={styles.billTableCell}>₹{parseFloat(item.price).toFixed(2)}</td>
+                          <td style={styles.billTableCell}>â‚¹{parseFloat(item.price).toFixed(2)}</td>
                           <td style={styles.billTableCell}>
-                            <strong>₹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
+                            <strong>â‚¹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
                           </td>
                           <td style={styles.billTableCell}>
                             <button
@@ -718,14 +716,14 @@ export default function LocalBillingPage() {
               <div style={styles.billSummary}>
                 <div className='dashboardbillingtotalcash' style={styles.billTotal}>
                   <span>Total Cash Amount: </span>
-                  <strong>₹{calculateTotal().toFixed(2)}</strong>
+                  <strong>â‚¹{calculateTotal().toFixed(2)}</strong>
                 </div>
                 <div style={styles.billItems}>
                   {billItems.length} item{billItems.length !== 1 ? 's' : ''}
                 </div>
                 <div style={styles.billType}>
                   <Banknote size={12} style={{ marginRight: '4px' }} />
-                  <small>Direct Cash Payment • No Order Tracking</small>
+                  <small>Direct Cash Payment â€¢ No Order Tracking</small>
                 </div>
               </div>
 
@@ -799,7 +797,7 @@ export default function LocalBillingPage() {
   );
 }
 
-// ✅ Enhanced styles for direct billing
+// âœ… Enhanced styles for direct billing
 const styles = {
   pageContainer: {
     padding: '24px',

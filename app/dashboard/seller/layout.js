@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -21,7 +21,7 @@ import {
   LogOut
 } from 'lucide-react';
 
-// ✅ FIXED: Use hostname detection (same as your login page)
+// âœ… FIXED: Use hostname detection (same as your login page)
 // const getApiBaseUrl = () => {
 //   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 //   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
@@ -32,7 +32,7 @@ import {
 //     const hostname = window.location.hostname;
 //     if (hostname === 'localhost' || hostname === '127.0.0.1') {
 //       console.log(' Local dev: Using localhost:8000');
-//     return 'http://localhost:8000';
+//     return 'https://api.keralasellers.in';
 //     }
 //     return 'https://api.keralasellers.in';
 //   }
@@ -44,13 +44,13 @@ import {
 // const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
 // const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/count/`;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
 const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
 const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/count/`;
 
-console.log('🏪 Dashboard APIs:', API_BASE_URL);
+console.log('ðŸª Dashboard APIs:', API_BASE_URL);
 
 
 
@@ -61,7 +61,7 @@ export default function DashboardLayout({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const hasInitialized = useRef(false);
-  const isLoggingOut = useRef(false); // ✅ CRITICAL: Prevent logout loops
+  const isLoggingOut = useRef(false); // âœ… CRITICAL: Prevent logout loops
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
 
@@ -70,7 +70,7 @@ export default function DashboardLayout({ children }) {
     notifications: 0
   });
 
-  // ✅ FIXED: Better auth headers with validation
+  // âœ… FIXED: Better auth headers with validation
   const getAuthHeaders = useCallback(() => {
     if (isLoggingOut.current) return null; // Don't try to get headers if logging out
 
@@ -87,7 +87,7 @@ export default function DashboardLayout({ children }) {
     }
   }, []);
 
-  // ✅ FIXED: Fetch notification counts with better error handling
+  // âœ… FIXED: Fetch notification counts with better error handling
   const fetchNotificationCounts = useCallback(async () => {
     if (isLoggingOut.current) return; // Don't fetch if logging out
 
@@ -113,7 +113,7 @@ export default function DashboardLayout({ children }) {
     }
   }, [getAuthHeaders]);
 
-  // ✅ FIXED: Dashboard data fetching with proper cleanup
+  // âœ… FIXED: Dashboard data fetching with proper cleanup
   const fetchDashboardData = useCallback(async () => {
     if (hasInitialized.current || isLoggingOut.current) return;
 
@@ -207,14 +207,14 @@ export default function DashboardLayout({ children }) {
     }
   }, [getAuthHeaders, pathname, router, fetchNotificationCounts]);
 
-  // ✅ CRITICAL FIX: Proper logout handling to prevent infinite loops
+  // âœ… CRITICAL FIX: Proper logout handling to prevent infinite loops
   const handleLogout = useCallback(() => {
     if (isLoggingOut.current) {
       console.log('Logout already in progress, ignoring');
       return;
     }
 
-    console.log('🔐 Starting logout process...');
+    console.log('ðŸ” Starting logout process...');
     isLoggingOut.current = true;
     hasInitialized.current = false;
 
@@ -230,7 +230,7 @@ export default function DashboardLayout({ children }) {
       setError('');
       setIsLoading(false);
 
-      console.log('✅ Cleared all data, performing hard redirect...');
+      console.log('âœ… Cleared all data, performing hard redirect...');
 
       // Use window.location for hard redirect to break any React routing loops
       setTimeout(() => {
@@ -244,7 +244,7 @@ export default function DashboardLayout({ children }) {
     }
   }, []);
 
-  // ✅ FIXED: Notification updates with cleanup
+  // âœ… FIXED: Notification updates with cleanup
   useEffect(() => {
     if (isLoggingOut.current) return;
 
@@ -259,7 +259,7 @@ export default function DashboardLayout({ children }) {
     };
   }, [fetchNotificationCounts]);
 
-  // ✅ FIXED: Initialize data with proper cleanup
+  // âœ… FIXED: Initialize data with proper cleanup
   useEffect(() => {
     if (!isLoggingOut.current) {
       hasInitialized.current = false;
@@ -274,7 +274,7 @@ export default function DashboardLayout({ children }) {
     };
   }, [pathname, fetchDashboardData]);
 
-  // ✅ NEW: Reset logout flag on component mount
+  // âœ… NEW: Reset logout flag on component mount
   useEffect(() => {
     isLoggingOut.current = false;
 
@@ -363,7 +363,7 @@ export default function DashboardLayout({ children }) {
         name: 'Payments', 
         href: '/dashboard/seller/payments', 
         icon: <CreditCard size={18} />,
-        description: '💰 View earnings & bank details'
+        description: 'ðŸ’° View earnings & bank details'
       },
     ]
   }
@@ -392,14 +392,14 @@ export default function DashboardLayout({ children }) {
           <div className='dashboardlayoutlogocontainer' style={styles.logoContainer}>
             <Store size={24} color="#ffd67dff" />
             <h2 className='dashboardlayoutlogotext' style={styles.logoText}>Seller Panel</h2>
-            {/* ✅ Close Icon (only visible on mobile) */}
+            {/* âœ… Close Icon (only visible on mobile) */}
             {window.innerWidth <= 767 && (
               <button
                 onClick={() => setIsSidebarOpen(false)}
                 style={styles.closeButton}
                 aria-label="Close Sidebar"
               >
-                ✕
+                âœ•
               </button>
             )}
           </div>
@@ -456,7 +456,7 @@ export default function DashboardLayout({ children }) {
           <button
             onClick={handleLogout}
             style={styles.logoutButton}
-            disabled={isLoggingOut.current} // ✅ Prevent multiple clicks
+            disabled={isLoggingOut.current} // âœ… Prevent multiple clicks
           >
             <LogOut size={18} />
             <span>{isLoggingOut.current ? 'Logging out...' : 'Logout'}</span>
@@ -602,7 +602,7 @@ const styles = {
     padding: '20px'
   },
 
-  // ✅ NEW: Error actions container
+  // âœ… NEW: Error actions container
   errorActions: {
     display: 'flex',
     gap: '12px',
@@ -621,7 +621,7 @@ const styles = {
     fontWeight: '500'
   },
 
-  // ✅ NEW: Logout button for error state
+  // âœ… NEW: Logout button for error state
   logoutButtonError: {
     padding: '12px 24px',
     backgroundColor: '#ef4444',
@@ -784,4 +784,5 @@ const styles = {
     marginLeft: 'auto'
   },
 };
+
 

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import axios from 'axios';
@@ -20,20 +20,20 @@ import {
     AlertCircle
 } from 'lucide-react';
 
-// ✅ FIXED: Hardcoded API URL (no environment variable confusion)
+// âœ… FIXED: Hardcoded API URL (no environment variable confusion)
 // const API_BASE_URL = 'https://api.keralasellers.in';
 // const SEND_OTP_API = `${API_BASE_URL}/user/buyer/register/send-otp/`;
-// const REGISTER_API = `${API_BASE_URL}/user/buyer/register/verify-otp/`;  // ✅ CHANGED FROM /register/ TO /verify-otp/
+// const REGISTER_API = `${API_BASE_URL}/user/buyer/register/verify-otp/`;  // âœ… CHANGED FROM /register/ TO /verify-otp/
 
 
-// ✅ Local + Prod
+// âœ… Local + Prod
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/register/send-otp/`;
 const REGISTER_API = `${API_BASE_URL}/user/buyer/register/verify-otp/`;
 
-console.log('📱 Register APIs:', API_BASE_URL);
+console.log('ðŸ“± Register APIs:', API_BASE_URL);
 
 
 export default function BuyerRegisterPage() {
@@ -107,7 +107,7 @@ export default function BuyerRegisterPage() {
         if (error) setError('');
     };
 
-    // ✅ FIXED: Only send email (backend doesn't need full_name here)
+    // âœ… FIXED: Only send email (backend doesn't need full_name here)
     const handleSendOtp = async (e) => {
         e.preventDefault();
         setError('');
@@ -121,7 +121,7 @@ export default function BuyerRegisterPage() {
 
         try {
             await axios.post(SEND_OTP_API, {
-                email: formData.email.trim().toLowerCase()  // ✅ ONLY EMAIL
+                email: formData.email.trim().toLowerCase()  // âœ… ONLY EMAIL
             });
             setStep(2);
         } catch (err) {
@@ -136,7 +136,7 @@ export default function BuyerRegisterPage() {
         }
     };
 
-    // ✅ FIXED: Send all fields to new verify-otp endpoint
+    // âœ… FIXED: Send all fields to new verify-otp endpoint
     const handleRegister = async (e) => {
         e.preventDefault();
         setError('');
@@ -157,7 +157,7 @@ export default function BuyerRegisterPage() {
         try {
             const response = await axios.post(REGISTER_API, finalData);
 
-            // ✅ FIXED: Handle new token format
+            // âœ… FIXED: Handle new token format
             if (response.data.access_token) {
                 localStorage.setItem('buyerAccessToken', response.data.access_token);
             }
@@ -182,14 +182,14 @@ export default function BuyerRegisterPage() {
         }
     };
 
-    // ✅ FIXED: Only send email for resend
+    // âœ… FIXED: Only send email for resend
     const handleResendOtp = async () => {
         setError('');
         setIsLoading(true);
 
         try {
             await axios.post(SEND_OTP_API, {
-                email: formData.email.trim().toLowerCase()  // ✅ ONLY EMAIL
+                email: formData.email.trim().toLowerCase()  // âœ… ONLY EMAIL
             });
             setError('OTP has been resent to your email');
         } catch (err) {
@@ -523,3 +523,4 @@ const styles = {
     footerLinks: { marginTop: '24px', textAlign: 'center', fontSize: '14px' },
     link: { color: '#3b82f6', textDecoration: 'none', fontWeight: '500' }
 };
+

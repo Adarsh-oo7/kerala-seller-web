@@ -13,7 +13,7 @@ import { Package2, Edit, Cloud, Box, Globe, Folder, File, ArrowLeft, CheckCircle
 //   }
 
 //   return process.env.NODE_ENV === 'development'
-//     ? 'http://localhost:8000'
+//     ? 'https://api.keralasellers.in'
 //     : 'https://keralaseller-backend.onrender.com';
 // };
 
@@ -21,7 +21,7 @@ import { Package2, Edit, Cloud, Box, Globe, Folder, File, ArrowLeft, CheckCircle
 // const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 // const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
 
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import Header from '../../components/common/Header';
@@ -21,7 +21,7 @@ import {
   Briefcase
 } from 'lucide-react';
 
-// ✅ Enhanced API configuration
+// âœ… Enhanced API configuration
 // const getApiBaseUrl = () => {
 //   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 //   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
@@ -34,9 +34,9 @@ import {
 // };
 // const API_BASE_URL = 'https://api.keralasellers.in';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
             
-console.log('✅ ALL APIs:', API_BASE_URL);
+console.log('âœ… ALL APIs:', API_BASE_URL);
 
 
 
@@ -54,7 +54,7 @@ export default function ContactPage() {
   const [error, setError] = useState('');
   const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
 
-  // ✅ Get current store info from URL
+  // âœ… Get current store info from URL
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
@@ -77,7 +77,7 @@ export default function ContactPage() {
     if (error) setError('');
   };
 
-  // ✅ Enhanced form validation
+  // âœ… Enhanced form validation
   const validateForm = () => {
     if (!formData.name.trim()) {
       setError('Please enter your name');
@@ -102,7 +102,7 @@ export default function ContactPage() {
     return true;
   };
 
-  // ✅ Enhanced form submission with API integration
+  // âœ… Enhanced form submission with API integration
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -112,7 +112,7 @@ export default function ContactPage() {
     setError('');
 
     try {
-      // ✅ You can integrate with your backend API here
+      // âœ… You can integrate with your backend API here
       const contactData = {
         ...formData,
         timestamp: new Date().toISOString(),
@@ -121,7 +121,7 @@ export default function ContactPage() {
         page_url: window.location.href
       };
 
-      console.log('📧 Contact form submission:', contactData);
+      console.log('ðŸ“§ Contact form submission:', contactData);
 
       // Simulate API call - replace with actual API endpoint
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -157,14 +157,14 @@ export default function ContactPage() {
       }, 4000);
 
     } catch (error) {
-      console.error('❌ Contact form error:', error);
+      console.error('âŒ Contact form error:', error);
       setError('Failed to send message. Please try again or contact us directly.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ✅ Enhanced contact items with more options
+  // âœ… Enhanced contact items with more options
   const contactItems = [
     {
       icon: Phone,
@@ -192,7 +192,7 @@ export default function ContactPage() {
     }
   ];
 
-  // ✅ Enhanced subject options
+  // âœ… Enhanced subject options
   const subjectOptions = [
     { value: '', label: 'Select a subject' },
     { value: 'seller_registration', label: 'Seller Registration Help' },
@@ -221,12 +221,12 @@ export default function ContactPage() {
           <h1 className="heroTitle">Contact Us</h1>
           <p className="heroSubtitle">
             {currentStoreInfo.isInStore
-              ? `Get support for your store experience • Store ID: ${currentStoreInfo.storeId}`
+              ? `Get support for your store experience â€¢ Store ID: ${currentStoreInfo.storeId}`
               : 'Get in touch with Kerala Sellers - Your Digital Business Partner'
             }
           </p>
 
-          {/* ✅ Store context indicator */}
+          {/* âœ… Store context indicator */}
           {currentStoreInfo.isInStore && (
             <div className="storeIndicator">
               <Globe size={16} />
@@ -278,7 +278,7 @@ export default function ContactPage() {
               services through Digital Product Solutions.
             </p>
             <div className='cols'>
-              {/* ✅ Service highlights */}
+              {/* âœ… Service highlights */}
               <div className="serviceHighlights">
                 <div className="serviceItem">
                   <Users size={18} color="#059669" />
@@ -324,7 +324,7 @@ export default function ContactPage() {
                 </p>
               </div> */}
 
-              {/* ✅ Error display */}
+              {/* âœ… Error display */}
               {error && (
                 <div className="errorMessage">
                   <AlertCircle size={16} />
@@ -478,10 +478,10 @@ export default function ContactPage() {
             />
           </div>
 
-          {/* ✅ Map info */}
+          {/* âœ… Map info */}
           <div className="mapInfo">
             <p className="mapInfoText">
-              📍 Our office is easily accessible from Attingal town center.
+              ðŸ“ Our office is easily accessible from Attingal town center.
               Public transport and parking available nearby.
             </p>
           </div>
@@ -494,6 +494,7 @@ export default function ContactPage() {
     </div>
   );
 }
+
 
 
 

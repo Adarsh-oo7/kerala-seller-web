@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
@@ -32,7 +32,7 @@ import {
     AlertOctagon
 } from 'lucide-react';
 
-// ✅ Enhanced API base URL handling with environment variables
+// âœ… Enhanced API base URL handling with environment variables
 // const getApiBaseUrl = () => {
 //     const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 //     if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
@@ -49,15 +49,15 @@ import {
 // const INVOICE_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/invoice/`;
 // const CANCEL_ORDER_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/cancel/`;
 
-// ✅ Local + Production
+// âœ… Local + Production
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/history/`;
 const INVOICE_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/invoice/`;
 const CANCEL_ORDER_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/cancel/`;
 
-console.log('📦 Orders APIs:', API_BASE_URL);
+console.log('ðŸ“¦ Orders APIs:', API_BASE_URL);
 
 
 export default function BuyerOrdersPage() {
@@ -74,7 +74,7 @@ export default function BuyerOrdersPage() {
     const [showOrderDetails, setShowOrderDetails] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
 
-    // ✅ Cancellation Modal States
+    // âœ… Cancellation Modal States
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [orderToCancel, setOrderToCancel] = useState(null);
     const [cancelReason, setCancelReason] = useState('');
@@ -89,23 +89,23 @@ export default function BuyerOrdersPage() {
         setSelectedOrder(null);
     };
 
-    // ✅ Enhanced token handling - supports both Google login and regular login
+    // âœ… Enhanced token handling - supports both Google login and regular login
     const getAuthHeaders = useCallback(() => {
         const token = localStorage.getItem('access_token') ||
             localStorage.getItem('buyerAccessToken') ||
             localStorage.getItem('accessToken');
 
         if (!token) {
-            console.error('❌ No authentication token found');
+            console.error('âŒ No authentication token found');
             router.push('/login/buyer');
             return null;
         }
 
-        console.log('🔍 Using token:', token.substring(0, 30) + '...');
+        console.log('ðŸ” Using token:', token.substring(0, 30) + '...');
         return { 'Authorization': `Bearer ${token}` };
     }, [router]);
 
-    // ✅ Enhanced: Get current store info from URL - supports both shop and store structures
+    // âœ… Enhanced: Get current store info from URL - supports both shop and store structures
     const getCurrentStoreInfo = useCallback(() => {
         if (typeof window === 'undefined') return { storeId: null, isInStore: false };
 
@@ -117,7 +117,7 @@ export default function BuyerOrdersPage() {
         };
     }, []);
 
-    // ✅ Store-aware fetch orders
+    // âœ… Store-aware fetch orders
     const fetchOrders = useCallback(async () => {
         const headers = getAuthHeaders();
         if (!headers) return;
@@ -163,7 +163,7 @@ export default function BuyerOrdersPage() {
         }
     }, [getAuthHeaders, router, getCurrentStoreInfo]);
 
-    // ✅ Download Invoice Handler
+    // âœ… Download Invoice Handler
     const handleDownloadInvoice = async (orderId) => {
         const headers = getAuthHeaders();
         if (!headers) return;
@@ -190,21 +190,21 @@ export default function BuyerOrdersPage() {
         }
     };
 
-    // ✅ Open Cancel Modal
+    // âœ… Open Cancel Modal
     const openCancelModal = (order) => {
         setOrderToCancel(order);
         setCancelReason('');
         setShowCancelModal(true);
     };
 
-    // ✅ Close Cancel Modal
+    // âœ… Close Cancel Modal
     const closeCancelModal = () => {
         setShowCancelModal(false);
         setOrderToCancel(null);
         setCancelReason('');
     };
 
-    // ✅ Handle Cancel Order with Reason
+    // âœ… Handle Cancel Order with Reason
     const handleCancelOrder = async () => {
         if (!cancelReason.trim()) {
             alert('Please provide a reason for cancellation');
@@ -299,7 +299,7 @@ export default function BuyerOrdersPage() {
         return counts;
     };
 
-    const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
+    const formatPrice = (price) => `â‚¹${parseFloat(price).toFixed(2)}`;
 
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
@@ -478,7 +478,7 @@ export default function BuyerOrdersPage() {
                                         <div style={styles.footerLeft}>
                                             <span className='keralasellersprofileordertotalprice' style={styles.totalLabel}>Total:</span>
                                             <strong className='keralasellersprofileordertotalprice' style={styles.totalFooter}>
-                                                ₹{parseFloat(order.total_amount).toFixed(2)}
+                                                â‚¹{parseFloat(order.total_amount).toFixed(2)}
                                             </strong>
                                         </div>
 
@@ -522,7 +522,7 @@ export default function BuyerOrdersPage() {
                     </div>
                 )}
 
-                {/* ✅ Order Details Modal */}
+                {/* âœ… Order Details Modal */}
                 {showOrderDetails && selectedOrder && (
                     <div style={styles.modalOverlay} onClick={closeOrderDetails}>
                         <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -637,7 +637,7 @@ export default function BuyerOrdersPage() {
                                                             {item.product?.name || item.name || 'Product'}
                                                         </div>
                                                         <div style={styles.modalItemPrice}>
-                                                            {formatPrice(item.price)} × {item.quantity}
+                                                            {formatPrice(item.price)} Ã— {item.quantity}
                                                         </div>
                                                         {item.product?.description && (
                                                             <div style={styles.modalItemDesc}>
@@ -716,7 +716,7 @@ export default function BuyerOrdersPage() {
                     </div>
                 )}
 
-                {/* ✅ CANCELLATION REASON MODAL */}
+                {/* âœ… CANCELLATION REASON MODAL */}
                 {showCancelModal && orderToCancel && (
                     <div style={styles.modalOverlay} onClick={closeCancelModal}>
                         <div style={styles.cancelModalContent} onClick={(e) => e.stopPropagation()}>
@@ -766,7 +766,7 @@ export default function BuyerOrdersPage() {
                                         {cancelReason.length}/500 characters
                                         {cancelReason.trim().length >= 10 && (
                                             <span style={{ color: '#10b981', marginLeft: '12px', fontWeight: '600' }}>
-                                                ✓ Ready to submit
+                                                âœ“ Ready to submit
                                             </span>
                                         )}
                                     </div>
@@ -985,7 +985,7 @@ const styles = {
         color: '#6b7280'
     },
 
-    // ✅ NEW: Cancel Modal Styles
+    // âœ… NEW: Cancel Modal Styles
     cancelWarning: {
         display: 'flex',
         alignItems: 'flex-start',
@@ -1580,5 +1580,6 @@ const styles = {
         gap: '8px',
     },
 };
+
 
 

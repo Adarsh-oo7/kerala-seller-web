@@ -59,7 +59,7 @@ import {
 // const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-  (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+  'https://api.keralasellers.in/api';
 
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;

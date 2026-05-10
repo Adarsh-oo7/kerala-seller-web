@@ -42,7 +42,7 @@ import {
 // const ORDER_DETAIL_API_URL = `${API_BASE_URL}/user/orders/`;
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in/api';
 
 const ORDER_DETAIL_API_URL = `${API_BASE_URL}/user/orders/`;
 

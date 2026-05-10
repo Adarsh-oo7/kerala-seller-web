@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
@@ -22,7 +22,7 @@ import {
   X
 } from 'lucide-react';
 
-// ✅ API URLs
+// âœ… API URLs
 // const getApiBaseUrl = () => {
 //   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 //   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
@@ -39,7 +39,7 @@ import {
 // const SEND_OTP_API = `${API_BASE_URL}/user/buyer/send-otp/`;
 // const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;
 
-// console.log('🌐 Verification API URLs configured:', {
+// console.log('ðŸŒ Verification API URLs configured:', {
 //   API_BASE_URL,
 //   PROFILE_API,
 //   SEND_OTP_API,
@@ -48,13 +48,13 @@ import {
 // });
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/send-otp/`;
 const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;
 
-console.log('🌐 Verification APIs:', {
+console.log('ðŸŒ Verification APIs:', {
   API_BASE_URL,
   LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL,
   ENVIRONMENT: process.env.NODE_ENV
@@ -74,24 +74,24 @@ export default function VerificationPage() {
   const [otpAttempts, setOtpAttempts] = useState(0);
   const [isPhoneEditable, setIsPhoneEditable] = useState(true);
   
-  // ✅ Firebase state
+  // âœ… Firebase state
   const [confirmationResult, setConfirmationResult] = useState(null);
   
   const router = useRouter();
 
-  // ✅ Enhanced token handling
+  // âœ… Enhanced token handling
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
     if (!token) {
-      console.error('❌ No authentication token found');
+      console.error('âŒ No authentication token found');
       router.push('/login/buyer');
       return null;
     }
-    console.log('🔍 Using token:', token.substring(0, 30) + '...');
+    console.log('ðŸ” Using token:', token.substring(0, 30) + '...');
     return { 'Authorization': `Bearer ${token}` };
   }, [router]);
 
-  // ✅ Setup reCAPTCHA with setTimeout to ensure DOM is ready
+  // âœ… Setup reCAPTCHA with setTimeout to ensure DOM is ready
   useEffect(() => {
     const setupRecaptcha = () => {
       if (typeof window === 'undefined') return;
@@ -102,7 +102,7 @@ export default function VerificationPage() {
           // Check if container exists
           const container = document.getElementById('recaptcha-container');
           if (!container) {
-            console.error('❌ reCAPTCHA container not found');
+            console.error('âŒ reCAPTCHA container not found');
             return;
           }
 
@@ -122,17 +122,17 @@ export default function VerificationPage() {
             {
               size: 'invisible',
               callback: (response) => {
-                console.log('✅ reCAPTCHA solved:', response);
+                console.log('âœ… reCAPTCHA solved:', response);
               },
               'expired-callback': () => {
-                console.log('⚠️ reCAPTCHA expired');
+                console.log('âš ï¸ reCAPTCHA expired');
               }
             }
           );
 
-          console.log('✅ reCAPTCHA initialized successfully');
+          console.log('âœ… reCAPTCHA initialized successfully');
         } catch (error) {
-          console.error('❌ reCAPTCHA initialization error:', error);
+          console.error('âŒ reCAPTCHA initialization error:', error);
           console.error('Error code:', error.code);
           console.error('Error message:', error.message);
         }
@@ -171,20 +171,20 @@ export default function VerificationPage() {
     setError('');
 
     try {
-      console.log('🔄 Fetching profile from:', PROFILE_API);
+      console.log('ðŸ”„ Fetching profile from:', PROFILE_API);
       const response = await axios.get(PROFILE_API, {
         headers,
         timeout: 15000
       });
 
-      console.log('✅ Profile data received:', response.data);
+      console.log('âœ… Profile data received:', response.data);
       setBuyer(response.data);
       const profilePhone = response.data.phone_number || '';
       setPhoneNumber(profilePhone);
       setIsPhoneEditable(!profilePhone);
 
     } catch (error) {
-      console.error("❌ Failed to fetch profile:", error);
+      console.error("âŒ Failed to fetch profile:", error);
       if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('buyerAccessToken');
@@ -209,7 +209,7 @@ export default function VerificationPage() {
     return phoneRegex.test(phone.replace(/\s+/g, ''));
   };
 
-  // ✅ Enhanced 6-digit OTP validation
+  // âœ… Enhanced 6-digit OTP validation
   const validateOTP = (otpValue) => {
     const isValid = otpValue.length === 6 && /^\d{6}$/.test(otpValue);
     if (!isValid) {
@@ -219,7 +219,7 @@ export default function VerificationPage() {
     return true;
   };
 
-  // ✅ FIREBASE: Send OTP via Firebase Phone Auth
+  // âœ… FIREBASE: Send OTP via Firebase Phone Auth
   const handleSendOtp = async () => {
     if (!phoneNumber || !validatePhoneNumber(phoneNumber)) {
       setError('Please enter a valid 10-digit mobile number starting with 6-9');
@@ -239,22 +239,22 @@ export default function VerificationPage() {
 
     try {
       // Step 1: Prepare backend
-      console.log('🔄 Step 1: Preparing backend for phone:', phoneNumber);
+      console.log('ðŸ”„ Step 1: Preparing backend for phone:', phoneNumber);
       await axios.post(SEND_OTP_API, { phone: phoneNumber }, {
         headers,
         timeout: 15000
       });
 
-      console.log('✅ Backend prepared');
+      console.log('âœ… Backend prepared');
 
       // Step 2: Send OTP via Firebase
-      console.log('🔄 Step 2: Sending Firebase SMS OTP...');
+      console.log('ðŸ”„ Step 2: Sending Firebase SMS OTP...');
       const formattedPhone = `+91${phoneNumber}`;
       
       const appVerifier = window.recaptchaVerifier;
       const result = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
 
-      console.log('✅ Firebase OTP sent successfully!');
+      console.log('âœ… Firebase OTP sent successfully!');
       setConfirmationResult(result);
       setOtpSent(true);
       setResendTimer(60);
@@ -264,7 +264,7 @@ export default function VerificationPage() {
       setTimeout(() => setSuccessMessage(''), 3000);
 
     } catch (error) {
-      console.error('❌ OTP sending failed:', error);
+      console.error('âŒ OTP sending failed:', error);
 
       let errorMessage = 'Failed to send OTP. Please try again.';
       
@@ -292,7 +292,7 @@ export default function VerificationPage() {
     }
   };
 
-  // ✅ FIREBASE: Verify OTP with Firebase
+  // âœ… FIREBASE: Verify OTP with Firebase
   const handleVerifyOtp = async () => {
     if (!validateOTP(otp)) {
       return;
@@ -310,14 +310,14 @@ export default function VerificationPage() {
     setError('');
 
     try {
-      console.log('🔄 Step 1: Verifying Firebase OTP...');
+      console.log('ðŸ”„ Step 1: Verifying Firebase OTP...');
       
       // Confirm OTP with Firebase
       const result = await confirmationResult.confirm(otp);
       const idToken = await result.user.getIdToken();
 
-      console.log('✅ Firebase OTP verified! ID Token received.');
-      console.log('🔄 Step 2: Verifying with backend...');
+      console.log('âœ… Firebase OTP verified! ID Token received.');
+      console.log('ðŸ”„ Step 2: Verifying with backend...');
 
       // Send Firebase ID token to backend
       await axios.post(
@@ -326,8 +326,8 @@ export default function VerificationPage() {
         { headers, timeout: 15000 }
       );
 
-      console.log('✅ Backend verification successful!');
-      setSuccessMessage('Phone verified successfully! 🎉');
+      console.log('âœ… Backend verification successful!');
+      setSuccessMessage('Phone verified successfully! ðŸŽ‰');
 
       // Refresh profile
       await fetchProfile();
@@ -338,7 +338,7 @@ export default function VerificationPage() {
       }, 2000);
 
     } catch (error) {
-      console.error('❌ OTP verification failed:', error);
+      console.error('âŒ OTP verification failed:', error);
       setOtpAttempts(prev => prev + 1);
 
       let errorMessage = 'Invalid OTP. Please try again.';
@@ -413,7 +413,7 @@ export default function VerificationPage() {
     <div style={styles.pageContainer}>
       <Header />
       
-      {/* ✅ IMPORTANT: reCAPTCHA container (invisible) */}
+      {/* âœ… IMPORTANT: reCAPTCHA container (invisible) */}
       <div id="recaptcha-container"></div>
 
       <div style={styles.container}>
@@ -1050,5 +1050,6 @@ const styles = {
     fontWeight: '500'
   }
 };
+
 
 

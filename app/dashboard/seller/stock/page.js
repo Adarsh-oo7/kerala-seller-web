@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
@@ -20,11 +20,11 @@ import {
   X, ChevronDown, ChevronUp,
 } from 'lucide-react';
 
-// ✅ Using environment variables for API URLs
+// âœ… Using environment variables for API URLs
 // const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
 // const API_URL = `${API_BASE_URL}/api/products/`;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 const API_URL = `${API_BASE_URL}/api/products/`;
 
 
@@ -157,7 +157,7 @@ export default function StockManagementPage() {
     }
   }, []);
 
-  // ✅ FIXED: Apply search and filter
+  // âœ… FIXED: Apply search and filter
   useEffect(() => {
     let filtered = [...products];
 
@@ -170,7 +170,7 @@ export default function StockManagementPage() {
       );
     }
 
-    // ✅ FIXED: Apply stock filter
+    // âœ… FIXED: Apply stock filter
     switch (stockFilter) {
       case 'in_stock':
         filtered = filtered.filter(product =>
@@ -272,7 +272,7 @@ export default function StockManagementPage() {
     }
   };
 
-  // ✅ FIXED: Get filter counts
+  // âœ… FIXED: Get filter counts
   const getFilterCounts = () => {
     return {
       all: products.length,
@@ -358,7 +358,7 @@ export default function StockManagementPage() {
           />
         </div>
 
-        {/* ✅ FIXED: Filter Tabs */}
+        {/* âœ… FIXED: Filter Tabs */}
         <div className="dashboardstockfilter-tabs" style={styles.filterTabs}>
           <button
             onClick={() => setStockFilter('all')}
@@ -529,7 +529,7 @@ export default function StockManagementPage() {
           </div>
 
         ) : (
-          // 💻 DESKTOP TABLE VIEW
+          // ðŸ’» DESKTOP TABLE VIEW
           <div style={styles.tableContainer}>
             <div className='custom-scroll' style={styles.tableWrapper}>
               <table style={styles.table}>
@@ -896,9 +896,9 @@ const styles = {
   tableWrapper: {
     backgroundColor: '#FDFFF0',
     width: "100%",
-    overflowX: "auto",  // ✅ Enables horizontal scroll
-    overflowY: "auto",  // ✅ Enables vertical scroll
-    maxHeight: "67vh",  // ✅ Limits height and adds vertical scroll if needed
+    overflowX: "auto",  // âœ… Enables horizontal scroll
+    overflowY: "auto",  // âœ… Enables vertical scroll
+    maxHeight: "67vh",  // âœ… Limits height and adds vertical scroll if needed
   },
 
   table: {
@@ -1234,4 +1234,5 @@ const styles = {
     fontWeight: 500,
   }),
 };
+
 

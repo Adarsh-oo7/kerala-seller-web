@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-  (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://api.keralasellers.in');
+  ('https://api.keralasellers.in');
 
 export default function DeliverySettingsPage() {
   // State management
@@ -38,7 +38,7 @@ export default function DeliverySettingsPage() {
       const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
       
       if (!token) {
-        setError('⚠️ Not logged in. Please login to manage delivery settings.');
+        setError('âš ï¸ Not logged in. Please login to manage delivery settings.');
         setLoading(false);
         return;
       }
@@ -59,17 +59,17 @@ export default function DeliverySettingsPage() {
     } catch (err) {
       console.error('Failed to fetch delivery data:', err);
       
-      // ✅ Better error messages
+      // âœ… Better error messages
       if (err.response?.status === 401) {
-        setError('🔒 Session expired. Please login again.');
+        setError('ðŸ”’ Session expired. Please login again.');
       } else if (err.response?.status === 403) {
-        setError('⛔ You don\'t have permission to access delivery settings.');
+        setError('â›” You don\'t have permission to access delivery settings.');
       } else if (err.response?.status === 404) {
-        setError('❌ Delivery settings endpoint not found. Contact support.');
+        setError('âŒ Delivery settings endpoint not found. Contact support.');
       } else if (!err.response) {
-        setError('🌐 Network error. Check your internet connection.');
+        setError('ðŸŒ Network error. Check your internet connection.');
       } else {
-        setError(`⚠️ Failed to load settings: ${err.response?.data?.error || err.message}`);
+        setError(`âš ï¸ Failed to load settings: ${err.response?.data?.error || err.message}`);
       }
       setLoading(false);
     }
@@ -117,7 +117,7 @@ export default function DeliverySettingsPage() {
       return;
     }
 
-    // ✅ Delete from server
+    // âœ… Delete from server
     try {
       const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
       await axios.delete(`${API_BASE_URL}/user/store/delivery-slabs/${slab.id}/delete_slab/`, {
@@ -125,10 +125,10 @@ export default function DeliverySettingsPage() {
       });
       
       setSlabs(slabs.filter((_, i) => i !== index));
-      setSuccess('✅ Slab deleted successfully');
+      setSuccess('âœ… Slab deleted successfully');
       setTimeout(() => setSuccess(''), 2000);
     } catch (err) {
-      setError(`❌ Failed to delete slab: ${err.response?.data?.error || err.message}`);
+      setError(`âŒ Failed to delete slab: ${err.response?.data?.error || err.message}`);
     }
   };
 
@@ -141,14 +141,14 @@ export default function DeliverySettingsPage() {
       const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
 
       if (!token) {
-        setError('🔒 Not logged in. Please login to save settings.');
+        setError('ðŸ”’ Not logged in. Please login to save settings.');
         setSaving(false);
         return;
       }
 
-      // ✅ Validation
+      // âœ… Validation
       if (mode === 'slab' && slabs.length === 0) {
-        setError('⚠️ Add at least one weight slab or switch to Legacy mode.');
+        setError('âš ï¸ Add at least one weight slab or switch to Legacy mode.');
         setSaving(false);
         return;
       }
@@ -157,22 +157,22 @@ export default function DeliverySettingsPage() {
       for (let i = 0; i < slabs.length; i++) {
         const slab = slabs[i];
         if (slab.min_weight_kg < 0) {
-          setError(`⚠️ Slab ${i + 1}: Minimum weight cannot be negative.`);
+          setError(`âš ï¸ Slab ${i + 1}: Minimum weight cannot be negative.`);
           setSaving(false);
           return;
         }
         if (slab.max_weight_kg !== null && slab.max_weight_kg <= slab.min_weight_kg) {
-          setError(`⚠️ Slab ${i + 1}: Maximum weight must be greater than minimum.`);
+          setError(`âš ï¸ Slab ${i + 1}: Maximum weight must be greater than minimum.`);
           setSaving(false);
           return;
         }
         if (slab.pricing_type === 'FIXED' && slab.fixed_price <= 0) {
-          setError(`⚠️ Slab ${i + 1}: Fixed price must be greater than 0.`);
+          setError(`âš ï¸ Slab ${i + 1}: Fixed price must be greater than 0.`);
           setSaving(false);
           return;
         }
         if (slab.pricing_type === 'PER_KG' && slab.price_per_kg <= 0) {
-          setError(`⚠️ Slab ${i + 1}: Price per kg must be greater than 0.`);
+          setError(`âš ï¸ Slab ${i + 1}: Price per kg must be greater than 0.`);
           setSaving(false);
           return;
         }
@@ -218,24 +218,24 @@ export default function DeliverySettingsPage() {
         }
       }
 
-      setSuccess(`✅ Settings saved! ${createdCount > 0 ? `Created ${createdCount} slab(s). ` : ''}${updatedCount > 0 ? `Updated ${updatedCount} slab(s).` : ''}`);
+      setSuccess(`âœ… Settings saved! ${createdCount > 0 ? `Created ${createdCount} slab(s). ` : ''}${updatedCount > 0 ? `Updated ${updatedCount} slab(s).` : ''}`);
       setTimeout(() => setSuccess(''), 5000);
       fetchAllData();
       
     } catch (err) {
       console.error('Save error:', err);
       
-      // ✅ Better error messages
+      // âœ… Better error messages
       if (err.response?.status === 401) {
-        setError('🔒 Session expired. Please login again.');
+        setError('ðŸ”’ Session expired. Please login again.');
       } else if (err.response?.status === 403) {
-        setError('⛔ You don\'t have permission to save delivery settings.');
+        setError('â›” You don\'t have permission to save delivery settings.');
       } else if (err.response?.status === 400) {
-        setError(`⚠️ Validation error: ${err.response?.data?.error || 'Check your input values.'}`);
+        setError(`âš ï¸ Validation error: ${err.response?.data?.error || 'Check your input values.'}`);
       } else if (!err.response) {
-        setError('🌐 Network error. Check your internet connection.');
+        setError('ðŸŒ Network error. Check your internet connection.');
       } else {
-        setError(`❌ Failed to save: ${err.response?.data?.error || err.message}`);
+        setError(`âŒ Failed to save: ${err.response?.data?.error || err.message}`);
       }
     } finally {
       setSaving(false);
@@ -248,20 +248,20 @@ export default function DeliverySettingsPage() {
       const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
       
       if (!token) {
-        setError('🔒 Please login to preview delivery charges.');
+        setError('ðŸ”’ Please login to preview delivery charges.');
         return;
       }
 
       if (mode === 'slab' && slabs.length === 0) {
-        setError('⚠️ No slabs configured. Add slabs or switch to Legacy mode.');
+        setError('âš ï¸ No slabs configured. Add slabs or switch to Legacy mode.');
         return;
       }
 
       const scenarios = [
-        { cart_total: 300, total_weight_kg: 0.5, is_cod: false, label: 'Small (₹300, 0.5kg)' },
+        { cart_total: 300, total_weight_kg: 0.5, is_cod: false, label: 'Small (â‚¹300, 0.5kg)' },
         { cart_total: 300, total_weight_kg: 0.5, is_cod: true, label: 'Small + COD' },
-        { cart_total: 1000, total_weight_kg: 2, is_cod: false, label: 'Medium (₹1000, 2kg)' },
-        { cart_total: 1500, total_weight_kg: 6, is_cod: true, label: 'Heavy (₹1500, 6kg) + COD' }
+        { cart_total: 1000, total_weight_kg: 2, is_cod: false, label: 'Medium (â‚¹1000, 2kg)' },
+        { cart_total: 1500, total_weight_kg: 6, is_cod: true, label: 'Heavy (â‚¹1500, 6kg) + COD' }
       ];
 
       const results = await Promise.all(scenarios.map(async scenario => {
@@ -285,7 +285,7 @@ export default function DeliverySettingsPage() {
       
     } catch (err) {
       console.error('Preview error:', err);
-      setError(`❌ Preview failed: ${err.message}. Make sure your settings are saved first.`);
+      setError(`âŒ Preview failed: ${err.message}. Make sure your settings are saved first.`);
     }
   };
 
@@ -356,7 +356,7 @@ export default function DeliverySettingsPage() {
                   <span style={styles.labelHint}>(0 to disable)</span>
                 </label>
                 <div style={styles.inputWrapper}>
-                  <span style={styles.inputPrefix}>₹</span>
+                  <span style={styles.inputPrefix}>â‚¹</span>
                   <input
                     type="number"
                     name="free_delivery_above"
@@ -376,7 +376,7 @@ export default function DeliverySettingsPage() {
                   <span style={styles.labelHint}>(Added to all COD orders)</span>
                 </label>
                 <div style={styles.inputWrapper}>
-                  <span style={styles.inputPrefix}>₹</span>
+                  <span style={styles.inputPrefix}>â‚¹</span>
                   <input
                     type="number"
                     name="cod_extra_charge"
@@ -396,7 +396,7 @@ export default function DeliverySettingsPage() {
                   <span style={styles.labelHint}>(When no slab matches)</span>
                 </label>
                 <div style={styles.inputWrapper}>
-                  <span style={styles.inputPrefix}>₹</span>
+                  <span style={styles.inputPrefix}>â‚¹</span>
                   <input
                     type="number"
                     name="fallback_flat_charge"
@@ -409,7 +409,7 @@ export default function DeliverySettingsPage() {
                   />
                 </div>
                 <small style={styles.helpText}>
-                  ℹ️ Recommended: Set a fallback to handle edge cases
+                  â„¹ï¸ Recommended: Set a fallback to handle edge cases
                 </small>
               </div>
 
@@ -452,7 +452,7 @@ export default function DeliverySettingsPage() {
                             value={slab.max_weight_kg || ''}
                             onChange={(e) => updateSlab(idx, 'max_weight_kg', e.target.value)}
                             style={styles.slabInput}
-                            placeholder="Max (∞)"
+                            placeholder="Max (âˆž)"
                             min={slab.min_weight_kg}
                             step="0.1"
                           />
@@ -463,8 +463,8 @@ export default function DeliverySettingsPage() {
                           onChange={(e) => updateSlab(idx, 'pricing_type', e.target.value)}
                           style={styles.select}
                         >
-                          <option value="FIXED">Fixed ₹</option>
-                          <option value="PER_KG">₹/kg</option>
+                          <option value="FIXED">Fixed â‚¹</option>
+                          <option value="PER_KG">â‚¹/kg</option>
                         </select>
 
                         {slab.pricing_type === 'FIXED' ? (
@@ -484,7 +484,7 @@ export default function DeliverySettingsPage() {
                               value={slab.price_per_kg}
                               onChange={(e) => updateSlab(idx, 'price_per_kg', e.target.value)}
                               style={styles.priceInput}
-                              placeholder="₹/kg"
+                              placeholder="â‚¹/kg"
                               min="0"
                               step="0.01"
                             />
@@ -588,7 +588,7 @@ export default function DeliverySettingsPage() {
           <div style={styles.tipsCard}>
             <h3 style={styles.tipsCardTitle}><Package size={18} /> Tips</h3>
             <ul style={styles.tipsList}>
-              <li>Use open-ended slabs (leave max empty for ∞)</li>
+              <li>Use open-ended slabs (leave max empty for âˆž)</li>
               <li>Per-kg pricing for heavy items saves costs</li>
               <li>Always set a fallback for edge cases</li>
               <li>Test with preview before saving changes</li>
@@ -613,7 +613,7 @@ export default function DeliverySettingsPage() {
           <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h3 style={styles.modalTitle}>Delivery Charge Preview</h3>
-              <button onClick={() => setShowPreview(false)} style={styles.modalClose}>×</button>
+              <button onClick={() => setShowPreview(false)} style={styles.modalClose}>Ã—</button>
             </div>
             <div style={styles.previewTable}>
               <table style={styles.table}>
@@ -631,27 +631,27 @@ export default function DeliverySettingsPage() {
                   {preview.map((item, idx) => (
                     <tr key={idx} style={styles.tr}>
                       <td style={styles.td}>{item.label}</td>
-                      <td style={styles.td}>₹{item.cart_total}</td>
+                      <td style={styles.td}>â‚¹{item.cart_total}</td>
                       <td style={styles.td}>{item.total_weight_kg}kg</td>
-                      <td style={styles.td}>{item.is_cod ? '✓' : '-'}</td>
+                      <td style={styles.td}>{item.is_cod ? 'âœ“' : '-'}</td>
                       <td style={{
                         ...styles.td, 
                         fontWeight: '600', 
                         color: item.error ? '#dc2626' : '#059669'
                       }}>
                         {item.error ? (
-                          <span title={item.error}>❌ Error</span>
+                          <span title={item.error}>âŒ Error</span>
                         ) : (
-                          `₹${item.delivery_charge}`
+                          `â‚¹${item.delivery_charge}`
                         )}
                       </td>
                       <td style={styles.td}>
-                        {item.method === 'slab' && '📦 Slab'}
-                        {item.method === 'slab-free' && '🎁 Free'}
-                        {item.method === 'slab-fallback' && '⚠️ Fallback'}
-                        {item.method === 'legacy' && '🔄 Legacy'}
-                        {item.method === 'none' && '💸 None'}
-                        {item.method === 'error' && '❌ Error'}
+                        {item.method === 'slab' && 'ðŸ“¦ Slab'}
+                        {item.method === 'slab-free' && 'ðŸŽ Free'}
+                        {item.method === 'slab-fallback' && 'âš ï¸ Fallback'}
+                        {item.method === 'legacy' && 'ðŸ”„ Legacy'}
+                        {item.method === 'none' && 'ðŸ’¸ None'}
+                        {item.method === 'error' && 'âŒ Error'}
                       </td>
                     </tr>
                   ))}
@@ -735,3 +735,4 @@ const styles = {
   td: { padding: '12px', fontSize: '13px', color: '#6b7280' },
   previewNote: { display: 'flex', alignItems: 'flex-start', gap: '8px', marginTop: '16px', padding: '12px', backgroundColor: '#f0f9ff', borderRadius: '8px', fontSize: '12px', color: '#0369a1' },
 };
+

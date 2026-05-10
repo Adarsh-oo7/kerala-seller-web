@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 
-// ✅ Enhanced API base URL handling with environment variables
+// âœ… Enhanced API base URL handling with environment variables
 // const getApiBaseUrl = () => {
 //   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 //   if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
@@ -40,7 +40,7 @@ import {
 // const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 
@@ -65,22 +65,22 @@ export default function EditProfilePage() {
   const [currentStoreInfo, setCurrentStoreInfo] = useState({ storeId: null, isInStore: false });
   const router = useRouter();
 
-  // ✅ Enhanced token handling - supports both Google login and regular login
+  // âœ… Enhanced token handling - supports both Google login and regular login
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('access_token') ||
       localStorage.getItem('buyerAccessToken');
 
     if (!token) {
-      console.error('❌ No authentication token found');
+      console.error('âŒ No authentication token found');
       router.push('/login/buyer');
       return null;
     }
 
-    console.log('🔍 Using token:', token.substring(0, 30) + '...');
+    console.log('ðŸ” Using token:', token.substring(0, 30) + '...');
     return { 'Authorization': `Bearer ${token}` };
   }, [router]);
 
-  // ✅ Get current store info from URL
+  // âœ… Get current store info from URL
   const getCurrentStoreInfo = useCallback(() => {
     if (typeof window === 'undefined') return { storeId: null, isInStore: false };
 
@@ -116,7 +116,7 @@ export default function EditProfilePage() {
       setOriginalData(profileData);
       setHasChanges(false);
 
-      // ✅ Update current store info
+      // âœ… Update current store info
       setCurrentStoreInfo(getCurrentStoreInfo());
 
     } catch (error) {
@@ -264,7 +264,7 @@ export default function EditProfilePage() {
     }
   };
 
-  // ✅ Store-aware back navigation
+  // âœ… Store-aware back navigation
   const handleCancel = () => {
     if (hasChanges) {
       setShowUnsavedWarning(true);
@@ -366,11 +366,11 @@ export default function EditProfilePage() {
 
       <div style={styles.container}>
         <div style={styles.formWrapper}>
-          {/* ✅ Show store context indicator */}
+          {/* âœ… Show store context indicator */}
           {currentStoreInfo.isInStore && (
             <div style={styles.storeIndicator}>
               <Globe size={16} />
-              <span>Editing profile from store context • Store ID: {currentStoreInfo.storeId}</span>
+              <span>Editing profile from store context â€¢ Store ID: {currentStoreInfo.storeId}</span>
             </div>
           )}
 
@@ -596,7 +596,7 @@ export default function EditProfilePage() {
 }
 
 const styles = {
-  // ✅ NEW: Store context indicator
+  // âœ… NEW: Store context indicator
   storeIndicator: {
     display: 'flex',
     alignItems: 'center',
@@ -974,5 +974,6 @@ const styles = {
     opacity: 0.7
   }
 };
+
 
 

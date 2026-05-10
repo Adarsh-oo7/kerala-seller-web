@@ -18,7 +18,7 @@ import {
 // ✅ Helper function to get API base URL
 // ✅ SINGLE API BASE URL - Works for both dev and production
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-  (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000');
+  'https://api.keralasellers.in';
 
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;

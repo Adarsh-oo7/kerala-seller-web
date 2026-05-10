@@ -144,7 +144,7 @@
 import axios from 'axios';
 
 // ✅ ONE LINE - Environment-aware base URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 // ✅ Pre-configured axios with interceptors
 const api = axios.create({

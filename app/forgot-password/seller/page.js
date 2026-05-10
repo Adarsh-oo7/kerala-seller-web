@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import axios from 'axios';
@@ -28,12 +28,12 @@ import {
 // const SEND_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/send-otp/`;
 // const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/verify/`;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const SEND_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/send-otp/`;
 const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/verify/`;
 
-console.log('🔑 Seller Password Reset:', API_BASE_URL);
+console.log('ðŸ”‘ Seller Password Reset:', API_BASE_URL);
 
 
 function LoadingFallback() {
@@ -113,11 +113,11 @@ function SellerForgotPasswordContent() {
         try {
           window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
             size: 'invisible',
-            callback: () => console.log('✅ reCAPTCHA solved'),
-            'expired-callback': () => console.log('⚠️ reCAPTCHA expired')
+            callback: () => console.log('âœ… reCAPTCHA solved'),
+            'expired-callback': () => console.log('âš ï¸ reCAPTCHA expired')
           });
         } catch (error) {
-          console.error('❌ reCAPTCHA error:', error);
+          console.error('âŒ reCAPTCHA error:', error);
         }
       }
     }
@@ -177,7 +177,7 @@ function SellerForgotPasswordContent() {
     }, 6000);
   };
 
-  // 🔥 Firebase-based OTP sending
+  // ðŸ”¥ Firebase-based OTP sending
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setErrors({});
@@ -218,7 +218,7 @@ function SellerForgotPasswordContent() {
       setStep(2);
 
     } catch (err) {
-      console.error('❌ OTP send error:', err);
+      console.error('âŒ OTP send error:', err);
       
       let errorMessage = 'Could not send OTP. Please try again.';
       
@@ -238,7 +238,7 @@ function SellerForgotPasswordContent() {
     }
   };
 
-  // 🔥 Firebase-based password reset
+  // ðŸ”¥ Firebase-based password reset
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setErrors({});
@@ -295,7 +295,7 @@ function SellerForgotPasswordContent() {
       }, 2500);
 
     } catch (err) {
-      console.error('❌ Password reset error:', err);
+      console.error('âŒ Password reset error:', err);
       
       let errorMessage = 'Failed to reset password. Please try again.';
       
@@ -331,7 +331,7 @@ function SellerForgotPasswordContent() {
       showMessage('OTP has been resent to your phone.', 'success');
 
     } catch (err) {
-      console.error('❌ OTP resend error:', err);
+      console.error('âŒ OTP resend error:', err);
       showMessage('Failed to resend OTP. Please try again later.', 'error');
     } finally {
       setIsLoading(false);
@@ -1165,5 +1165,6 @@ const styles = {
     transition: 'all 0.2s'
   }
 };
+
 
 

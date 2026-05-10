@@ -12,7 +12,7 @@ import { useCart } from '../../context/CartContext';
 import { ArrowLeft, CreditCard, User, AlertTriangle, Package, CheckCircle, Truck, Weight } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in/api';
 
 // ✅ Razorpay script loader
 const loadRazorpayScript = () => {

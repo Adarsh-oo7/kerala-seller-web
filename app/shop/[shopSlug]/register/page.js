@@ -45,7 +45,7 @@ import SHeader from '../../../../components/common/SHeader';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
 
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/register/send-otp/`;
 const REGISTER_API = `${API_BASE_URL}/user/buyer/register/`;

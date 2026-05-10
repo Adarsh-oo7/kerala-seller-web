@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
@@ -26,12 +26,12 @@ import {
   ShoppingCart,
   IndianRupee,
   Layers,
-  Truck, // ✅ NEW: For delivery settings
-  Settings // ✅ NEW: For settings icon
+  Truck, // âœ… NEW: For delivery settings
+  Settings // âœ… NEW: For settings icon
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     (typeof window !== 'undefined' ? 'https://api.keralasellers.in' : 'http://localhost:8000/api');
+                     'https://api.keralasellers.in';
 
 const API_URL = `${API_BASE_URL}/api/products/`;
 const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
@@ -51,14 +51,14 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   
-  // ✅ NEW: Delivery settings state
+  // âœ… NEW: Delivery settings state
   const [deliveryConfig, setDeliveryConfig] = useState(null);
   const [loadingDelivery, setLoadingDelivery] = useState(false);
   const [showDeliveryToggle, setShowDeliveryToggle] = useState(false);
   
   const router = useRouter();
 
-  // ✅ NEW: Fetch delivery configuration
+  // âœ… NEW: Fetch delivery configuration
   const fetchDeliveryConfig = useCallback(async () => {
     const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
     if (!token) return;
@@ -69,16 +69,16 @@ export default function ProductsPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setDeliveryConfig(response.data);
-      console.log('✅ Delivery config loaded:', response.data);
+      console.log('âœ… Delivery config loaded:', response.data);
     } catch (err) {
-      console.log('⚠️ No delivery config found');
+      console.log('âš ï¸ No delivery config found');
       setDeliveryConfig(null);
     } finally {
       setLoadingDelivery(false);
     }
   }, []);
 
-  // ✅ NEW: Toggle delivery system
+  // âœ… NEW: Toggle delivery system
   const toggleDeliverySystem = async () => {
     const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
     if (!token || !deliveryConfig) return;
@@ -95,16 +95,16 @@ export default function ProductsPage() {
       });
 
       setDeliveryConfig({ ...deliveryConfig, enabled: newEnabledState });
-      alert(`✅ Delivery system ${newEnabledState ? 'enabled' : 'disabled'} successfully!`);
+      alert(`âœ… Delivery system ${newEnabledState ? 'enabled' : 'disabled'} successfully!`);
     } catch (err) {
-      console.error('❌ Failed to toggle delivery system:', err);
+      console.error('âŒ Failed to toggle delivery system:', err);
       alert('Failed to update delivery settings. Please try again.');
     } finally {
       setLoadingDelivery(false);
     }
   };
 
-  // ✅ Fetch subscription data
+  // âœ… Fetch subscription data
   const fetchSubscription = useCallback(async () => {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
@@ -114,9 +114,9 @@ export default function ProductsPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setSubscription(response.data);
-      console.log('✅ Subscription loaded:', response.data);
+      console.log('âœ… Subscription loaded:', response.data);
     } catch (err) {
-      console.log('⚠️ No active subscription found');
+      console.log('âš ï¸ No active subscription found');
       setSubscription(null);
     }
   }, []);
@@ -134,7 +134,7 @@ export default function ProductsPage() {
     setError(null);
 
     try {
-      console.log('🔄 Fetching products from:', API_URL);
+      console.log('ðŸ”„ Fetching products from:', API_URL);
 
       const response = await axios.get(API_URL, {
         headers: {
@@ -143,7 +143,7 @@ export default function ProductsPage() {
         }
       });
 
-      console.log('✅ API Response:', response.data);
+      console.log('âœ… API Response:', response.data);
 
       let productsData = [];
       if (Array.isArray(response.data)) {
@@ -159,10 +159,10 @@ export default function ProductsPage() {
 
       setProducts(productsData);
       setFilteredProducts(productsData);
-      console.log(`📦 Found ${productsData.length} products for your store`);
+      console.log(`ðŸ“¦ Found ${productsData.length} products for your store`);
 
     } catch (error) {
-      console.error('❌ Failed to fetch products:', error);
+      console.error('âŒ Failed to fetch products:', error);
 
       if (error.response) {
         setError(`Server error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`);
@@ -179,10 +179,10 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchSubscription();
     fetchProducts();
-    fetchDeliveryConfig(); // ✅ NEW: Fetch delivery config on load
+    fetchDeliveryConfig(); // âœ… NEW: Fetch delivery config on load
   }, [fetchSubscription, fetchProducts, fetchDeliveryConfig]);
 
-  // ✅ Enhanced filtering and sorting
+  // âœ… Enhanced filtering and sorting
   useEffect(() => {
     let filtered = [...products];
 
@@ -279,10 +279,10 @@ export default function ProductsPage() {
         },
       });
 
-      console.log(`✅ Product ${productId} deleted successfully`);
+      console.log(`âœ… Product ${productId} deleted successfully`);
       fetchProducts();
     } catch (error) {
-      console.error('❌ Failed to delete product:', error);
+      console.error('âŒ Failed to delete product:', error);
       const errorMessage = error.response?.data?.message ||
         error.response?.data?.error ||
         error.message;
@@ -309,7 +309,7 @@ export default function ProductsPage() {
     const currentProductCount = products.length;
     const productLimit = subscription.product_limit || 0;
 
-    console.log('📊 Product Limit Check:', {
+    console.log('ðŸ“Š Product Limit Check:', {
       currentCount: currentProductCount,
       limit: productLimit,
       remaining: productLimit - currentProductCount
@@ -459,9 +459,9 @@ export default function ProductsPage() {
               )}
 
               <div style={styles.cardPriceContainer}>
-                <span className='dashboardproductcardimgprice' style={styles.cardPrice}>₹{parseFloat(product.price || 0).toLocaleString('en-IN')}</span>
+                <span className='dashboardproductcardimgprice' style={styles.cardPrice}>â‚¹{parseFloat(product.price || 0).toLocaleString('en-IN')}</span>
                 {product.mrp && parseFloat(product.mrp) > parseFloat(product.price) && (
-                  <span style={styles.cardMrp}>₹{parseFloat(product.mrp).toLocaleString('en-IN')}</span>
+                  <span style={styles.cardMrp}>â‚¹{parseFloat(product.mrp).toLocaleString('en-IN')}</span>
                 )}
               </div>
 
@@ -501,7 +501,7 @@ export default function ProductsPage() {
 
   return (
     <div className='dashboardproductpagecontainer' style={styles.container}>
-      {/* ✅ NEW: Delivery Settings Banner */}
+      {/* âœ… NEW: Delivery Settings Banner */}
       {/* {deliveryConfig && (
         <div style={styles.deliveryBanner}>
           <div style={styles.deliveryBannerLeft}>
@@ -512,8 +512,8 @@ export default function ProductsPage() {
               </h3>
               <p style={styles.deliveryBannerSubtitle}>
                 {deliveryConfig.enabled 
-                  ? '✅ Active - Automatic weight-based calculation' 
-                  : '⚠️ Inactive - Using product-level delivery charges'}
+                  ? 'âœ… Active - Automatic weight-based calculation' 
+                  : 'âš ï¸ Inactive - Using product-level delivery charges'}
               </p>
             </div>
           </div>
@@ -548,7 +548,7 @@ export default function ProductsPage() {
         </div>
       )} */}
 
-      {/* ✅ Enhanced Header with Product Limit Display */}
+      {/* âœ… Enhanced Header with Product Limit Display */}
       <div className='dashboardproductheader' style={styles.header}>
         <div>
           <h1 className='dashboardproducttitle' style={styles.h1}>
@@ -559,7 +559,7 @@ export default function ProductsPage() {
             Manage your product inventory and listings
             {subscription?.is_active && (
               <span style={styles.limitBadge}>
-                {' • '}
+                {' â€¢ '}
                 {products.length}/{subscription.product_limit || 0} products used
                 {remainingSlots > 0 && ` (${remainingSlots} slots remaining)`}
                 {remainingSlots === 0 && ' - Limit reached!'}
@@ -585,7 +585,7 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* ✅ Analytics Cards */}
+      {/* âœ… Analytics Cards */}
       <div className='dashboardproductanalyticscontainer' style={styles.analyticsContainer}>
         <div style={styles.analyticsCard}>
           <div className='dashboardproductanalyticsiconcontainer' style={styles.analyticsIcon}>
@@ -603,7 +603,7 @@ export default function ProductsPage() {
           </div>
           <div>
             <p className='dashboardproductanalyticslabel' style={styles.analyticsLabel}>Inventory Value</p>
-            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>₹{analytics.totalValue.toLocaleString('en-IN')}</p>
+            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>â‚¹{analytics.totalValue.toLocaleString('en-IN')}</p>
           </div>
         </div>
 
@@ -613,7 +613,7 @@ export default function ProductsPage() {
           </div>
           <div>
             <p className='dashboardproductanalyticslabel' style={styles.analyticsLabel}>Average Price</p>
-            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>₹{Math.round(analytics.averagePrice).toLocaleString('en-IN')}</p>
+            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>â‚¹{Math.round(analytics.averagePrice).toLocaleString('en-IN')}</p>
           </div>
         </div>
 
@@ -631,7 +631,7 @@ export default function ProductsPage() {
       {/* Rest of the component remains the same... */}
       {/* Search, Filters, Table/Grid view code continues here */}
       
-      {/* ✅ Enhanced Search and Filters */}
+      {/* âœ… Enhanced Search and Filters */}
       <div style={styles.filtersContainer}>
         <div className="dashboard-search-sort" style={styles.searchAndSort}>
           <div className='dashboardproductsearchcontainer' style={styles.searchContainer}>
@@ -764,13 +764,13 @@ export default function ProductsPage() {
                   <thead>
                     <tr>
                       <th style={styles.th} onClick={() => handleSort('name')}>
-                        Product {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        Product {sortBy === 'name' && (sortOrder === 'asc' ? 'â†‘' : 'â†“')}
                       </th>
                       <th style={styles.th} onClick={() => handleSort('price')}>
-                        Price {sortBy === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        Price {sortBy === 'price' && (sortOrder === 'asc' ? 'â†‘' : 'â†“')}
                       </th>
                       <th style={styles.th} onClick={() => handleSort('stock')}>
-                        Stock (Online/Total) {sortBy === 'stock' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        Stock (Online/Total) {sortBy === 'stock' && (sortOrder === 'asc' ? 'â†‘' : 'â†“')}
                       </th>
                       <th style={styles.th}>Status</th>
                       <th style={styles.th}>Sale Type</th>
@@ -810,9 +810,9 @@ export default function ProductsPage() {
                           </td>
                           <td style={styles.td}>
                             <div style={styles.priceInfo}>
-                              <strong style={styles.price}>₹{parseFloat(product.price || 0).toLocaleString('en-IN')}</strong>
+                              <strong style={styles.price}>â‚¹{parseFloat(product.price || 0).toLocaleString('en-IN')}</strong>
                               {product.mrp && parseFloat(product.mrp) > parseFloat(product.price) && (
-                                <small style={styles.mrp}>₹{parseFloat(product.mrp).toLocaleString('en-IN')}</small>
+                                <small style={styles.mrp}>â‚¹{parseFloat(product.mrp).toLocaleString('en-IN')}</small>
                               )}
                             </div>
                           </td>
@@ -940,7 +940,7 @@ export default function ProductsPage() {
   );
 }
 
-// ✅ Enhanced styles with delivery banner
+// âœ… Enhanced styles with delivery banner
 const styles = {
   container: {
     padding: '0px 0px 0px 24px',
@@ -949,7 +949,7 @@ const styles = {
     animation: 'fadeIn 0.6s ease-out'
   },
   
-  // ✅ NEW: Delivery Banner Styles
+  // âœ… NEW: Delivery Banner Styles
   deliveryBanner: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -1105,7 +1105,7 @@ const styles = {
     alignItems: 'center'
   },
 
-  // ✅ Analytics Cards
+  // âœ… Analytics Cards
   analyticsContainer: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
@@ -1243,7 +1243,7 @@ const styles = {
     color: 'white'
   },
 
-  // ✅ Grid View Styles
+  // âœ… Grid View Styles
   gridContainer: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
@@ -1558,3 +1558,4 @@ const styles = {
     color: '#6b7280'
   }
 };
+
