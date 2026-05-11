@@ -264,7 +264,7 @@ function OrderCard({ order, getStatusStyle, getPaymentStatusStyle }) {
               color: 'rgb(23, 94, 84)',
             }}
           >
-            â‚¹ {parseFloat(order.total_amount).toFixed(2)}
+            {parseFloat(order.total_amount).toFixed(2)}
           </span>
         </div>
 
@@ -704,7 +704,7 @@ export default function OrdersListPage() {
             onClick={() => setShowAdvancedFilters(false)}
             style={styles.closeBtn}
           >
-            âœ•
+          
           </button>
         </div>
         <div className="mobile-filter-wrapper">

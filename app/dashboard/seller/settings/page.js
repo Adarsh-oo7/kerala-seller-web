@@ -156,10 +156,10 @@ export default function SettingsPage() {
         setCurrentBannerUrls([result.url]);
         setSelectedPredefinedBanners([]);
       }
-      setSuccessMessage(`âœ… ${fileType === 'logo' ? 'Logo' : 'Banner'} uploaded! Click Save.`);
+      setSuccessMessage(`${fileType === 'logo' ? 'Logo' : 'Banner'} uploaded! Click Save.`);
       setTimeout(() => setSuccessMessage(''), 5000);
     } else {
-      setErrorMessage(`âŒ Upload failed: ${result.error}`);
+      setErrorMessage(`Upload failed: ${result.error}`);
       setTimeout(() => setErrorMessage(''), 3000);
     }
     setIsUploading(false);
@@ -176,11 +176,11 @@ export default function SettingsPage() {
       setCurrentLogoUrl('');
       setLogoPreview('');
       setNewLogo(null);
-      setSuccessMessage('âœ… Logo deleted!');
+      setSuccessMessage('Logo deleted!');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Error deleting logo:', error);
-      setErrorMessage('âŒ Failed to delete logo');
+      setErrorMessage('Failed to delete logo');
       setTimeout(() => setErrorMessage(''), 3000);
     } finally {
       setIsDeleting(prev => ({ ...prev, logo: false }));
@@ -198,11 +198,11 @@ export default function SettingsPage() {
       setCurrentBannerUrl('');
       setBannerPreview('');
       setNewBanner(null);
-      setSuccessMessage('âœ… Banner deleted!');
+      setSuccessMessage('Banner deleted!');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Error deleting banner:', error);
-      setErrorMessage('âŒ Failed to delete banner');
+      setErrorMessage('Failed to delete banner');
       setTimeout(() => setErrorMessage(''), 3000);
     } finally {
       setIsDeleting(prev => ({ ...prev, banner: false }));
@@ -212,7 +212,7 @@ export default function SettingsPage() {
   const handleRemovePredefinedBanner = (bannerId, bannerUrl) => {
     setSelectedPredefinedBanners(prev => prev.filter(id => id !== bannerId));
     setCurrentBannerUrls(prev => prev.filter(url => url !== bannerUrl));
-    setSuccessMessage('âœ… Banner removed! Click Save.');
+    setSuccessMessage('Banner removed! Click Save.');
     setTimeout(() => setSuccessMessage(''), 3000);
   };
 
@@ -224,7 +224,7 @@ export default function SettingsPage() {
       setSelectedPredefinedBanners(prev => [...prev, bannerId]);
       setCurrentBannerUrls(prev => [...prev, bannerUrl]);
     } else {
-      setErrorMessage('âš ï¸ Max 3 banners');
+      setErrorMessage('Max 3 banners');
       setTimeout(() => setErrorMessage(''), 3000);
     }
   };
@@ -274,7 +274,7 @@ export default function SettingsPage() {
         if (response.data.store_profile.banner_1_url) setCurrentBannerUrl(response.data.store_profile.banner_1_url);
       }
 
-      setSuccessMessage('âœ… Settings updated! Redirecting...');
+      setSuccessMessage('Settings updated! Redirecting...');
 
       setTimeout(() => {
         router.push('/dashboard/seller/payments');
@@ -338,7 +338,7 @@ export default function SettingsPage() {
                 Logo
                 {(logoPreview || currentLogoUrl) && (
                   <span style={{ color: '#144f27ff', fontSize: '11px', marginLeft: '6px' }}>
-                    âœ“
+                  
                   </span>
                 )}
               </label>
@@ -400,7 +400,7 @@ export default function SettingsPage() {
                     fontWeight: 600,
                   }}
                 >
-                  âš ï¸ Click Save to apply
+                  Click Save to apply
                 </p>
               )}
             </div>
@@ -409,7 +409,7 @@ export default function SettingsPage() {
               <label style={s.l1}>
                 Custom Banner
                 {(bannerPreview || currentBannerUrl) && (
-                  <span style={{ color: '#144f27ff', fontSize: '11px', marginLeft: '6px' }}>âœ“</span>
+                  <span style={{ color: '#144f27ff', fontSize: '11px', marginLeft: '6px' }}></span>
                 )}
               </label>
               <div className='dashboardsettingsbannercontainersize' style={s.iu}>
@@ -454,7 +454,7 @@ export default function SettingsPage() {
                     disabled={isUploading}
                   />
                   <label htmlFor="ban-up" style={s.ub}>
-                    {isUploading ? 'Uploading...' : currentBannerUrl || bannerPreview ? 'ðŸ“· Change' : 'ðŸ“¤ Upload'}
+                    {isUploading ? 'Uploading...' : currentBannerUrl || bannerPreview ? 'Change' : 'Upload'}
                   </label>
                 </div>
               </div>
@@ -467,7 +467,7 @@ export default function SettingsPage() {
                     fontWeight: 600,
                   }}
                 >
-                  âš ï¸ Click Save to apply
+                  Click Save to apply
                 </p>
               )}
               <div style={{ marginTop: '10px' }}>

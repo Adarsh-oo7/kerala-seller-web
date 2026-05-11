@@ -219,7 +219,7 @@ const handleNotificationClick = async (notification) => {
 
     if (lowercaseMessage.includes('order')) {
       return <ShoppingCart className='dashboardnotificationcarticon' size={20} color="#3b82f6" />;
-    } else if (lowercaseMessage.includes('payment') || lowercaseMessage.includes('payout') || lowercaseMessage.includes('â‚¹')) {
+    } else if (lowercaseMessage.includes('payment') || lowercaseMessage.includes('payout') || lowercaseMessage.includes('')) {
       return <IndianRupee className='dashboardnotificationcarticon' size={20} color="#059669" />;
     } else if (lowercaseMessage.includes('product') || lowercaseMessage.includes('stock')) {
       return <Package className='dashboardnotificationcarticon' size={20} color="#8b5cf6" />;

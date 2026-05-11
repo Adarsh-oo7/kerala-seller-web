@@ -95,7 +95,7 @@ export default function ProductsPage() {
       });
 
       setDeliveryConfig({ ...deliveryConfig, enabled: newEnabledState });
-      alert(`âœ… Delivery system ${newEnabledState ? 'enabled' : 'disabled'} successfully!`);
+      alert(`Delivery system ${newEnabledState ? 'enabled' : 'disabled'} successfully!`);
     } catch (err) {
       console.error('âŒ Failed to toggle delivery system:', err);
       alert('Failed to update delivery settings. Please try again.');
@@ -461,7 +461,7 @@ export default function ProductsPage() {
               <div style={styles.cardPriceContainer}>
                 <span className='dashboardproductcardimgprice' style={styles.cardPrice}>â‚¹{parseFloat(product.price || 0).toLocaleString('en-IN')}</span>
                 {product.mrp && parseFloat(product.mrp) > parseFloat(product.price) && (
-                  <span style={styles.cardMrp}>â‚¹{parseFloat(product.mrp).toLocaleString('en-IN')}</span>
+                  <span style={styles.cardMrp}>{parseFloat(product.mrp).toLocaleString('en-IN')}</span>
                 )}
               </div>
 
@@ -559,7 +559,7 @@ export default function ProductsPage() {
             Manage your product inventory and listings
             {subscription?.is_active && (
               <span style={styles.limitBadge}>
-                {' â€¢ '}
+                {'  '}
                 {products.length}/{subscription.product_limit || 0} products used
                 {remainingSlots > 0 && ` (${remainingSlots} slots remaining)`}
                 {remainingSlots === 0 && ' - Limit reached!'}
@@ -603,7 +603,7 @@ export default function ProductsPage() {
           </div>
           <div>
             <p className='dashboardproductanalyticslabel' style={styles.analyticsLabel}>Inventory Value</p>
-            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>â‚¹{analytics.totalValue.toLocaleString('en-IN')}</p>
+            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>{analytics.totalValue.toLocaleString('en-IN')}</p>
           </div>
         </div>
 
@@ -613,7 +613,7 @@ export default function ProductsPage() {
           </div>
           <div>
             <p className='dashboardproductanalyticslabel' style={styles.analyticsLabel}>Average Price</p>
-            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>â‚¹{Math.round(analytics.averagePrice).toLocaleString('en-IN')}</p>
+            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>{Math.round(analytics.averagePrice).toLocaleString('en-IN')}</p>
           </div>
         </div>
 
@@ -810,9 +810,9 @@ export default function ProductsPage() {
                           </td>
                           <td style={styles.td}>
                             <div style={styles.priceInfo}>
-                              <strong style={styles.price}>â‚¹{parseFloat(product.price || 0).toLocaleString('en-IN')}</strong>
+                              <strong style={styles.price}>{parseFloat(product.price || 0).toLocaleString('en-IN')}</strong>
                               {product.mrp && parseFloat(product.mrp) > parseFloat(product.price) && (
-                                <small style={styles.mrp}>â‚¹{parseFloat(product.mrp).toLocaleString('en-IN')}</small>
+                                <small style={styles.mrp}>{parseFloat(product.mrp).toLocaleString('en-IN')}</small>
                               )}
                             </div>
                           </td>

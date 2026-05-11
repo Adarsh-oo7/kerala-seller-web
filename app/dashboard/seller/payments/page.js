@@ -59,7 +59,7 @@ export default function PaymentsDashboard() {
       );
 
       setLiveTransactions(response.data.transactions || []);
-      setSuccessMsg('âœ… Live transactions fetched from Razorpay!');
+      setSuccessMsg('Live transactions fetched from Razorpay!');
     } catch (error) {
       console.error('Failed to fetch live transactions:', error);
       setErrorMsg(error.response?.data?.error || 'Failed to fetch live transactions');
@@ -81,7 +81,7 @@ export default function PaymentsDashboard() {
       );
 
       setLiveSettlements(response.data.settlements || []);
-      setSuccessMsg('âœ… Live settlements fetched from Razorpay!');
+      setSuccessMsg('Live settlements fetched from Razorpay!');
     } catch (error) {
       console.error('Failed to fetch live settlements:', error);
       setErrorMsg(error.response?.data?.error || 'Failed to fetch live settlements');
@@ -171,7 +171,7 @@ export default function PaymentsDashboard() {
   }, []);
 
   const handleRazorpaySuccess = useCallback(() => {
-    setSuccessMsg(editMode ? 'âœ… Razorpay keys updated!' : 'âœ… Connected to Razorpay!');
+    setSuccessMsg(editMode ? 'Razorpay keys updated!' : 'Connected to Razorpay!');
     setEditMode(false);
     fetchPaymentData();
   }, [editMode, fetchPaymentData]);
@@ -262,7 +262,7 @@ export default function PaymentsDashboard() {
           </h1>
           <p className='dashboardpaymentsubtitle' style={s.st}>
             Manage your payment methods & receive instant payouts
-            {viewMode === 'live' && <span style={{ color: '#10b981', marginLeft: '8px', fontWeight: 600 }}>â€¢ Live from Razorpay</span>}
+            {viewMode === 'live' && <span style={{ color: '#10b981', marginLeft: '8px', fontWeight: 600 }}>Live from Razorpay</span>}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -431,7 +431,7 @@ export default function PaymentsDashboard() {
                   <p className='dashboardpaymentstatusvalue' style={{ ...s.value, color: '#b4b6baff' }}>COMING SOON</p>
                 </div>
                 <button className='dashboardpaymentconnectbtn' disabled style={{ ...s.connectBtn, opacity: 0.6, cursor: 'not-allowed', backgroundColor: '#b4b6baff' }}>
-                  â³ Coming Soon
+                  Coming Soon
                 </button>
               </div>
             </div>
@@ -489,7 +489,7 @@ export default function PaymentsDashboard() {
           <div style={{ ...s.card, padding: '16px' }}>
             <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>âœ… SUCCESSFUL</p>
             <p style={{ fontSize: '20px', fontWeight: 700, color: '#10b981', margin: 0 }}>
-              â‚¹{payoutSummary.successAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              {payoutSummary.successAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </p>
             <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>
               {payoutSummary.successCount} {viewMode === 'live' ? (activeTab === 'transactions' ? 'payments' : 'settlements') : 'payouts'}
@@ -498,14 +498,14 @@ export default function PaymentsDashboard() {
           <div style={{ ...s.card, padding: '16px' }}>
             <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>â³ PENDING</p>
             <p style={{ fontSize: '20px', fontWeight: 700, color: '#f59e0b', margin: 0 }}>
-              â‚¹{payoutSummary.pendingAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              {payoutSummary.pendingAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </p>
             <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>{payoutSummary.pendingCount} pending</p>
           </div>
           <div style={{ ...s.card, padding: '16px' }}>
             <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>ðŸ¦ SETTLED</p>
             <p style={{ fontSize: '20px', fontWeight: 700, color: '#3b82f6', margin: 0 }}>
-              â‚¹{payoutSummary.settledAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              {payoutSummary.settledAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </p>
             <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>{payoutSummary.settledCount} settled</p>
           </div>
@@ -513,7 +513,7 @@ export default function PaymentsDashboard() {
             <div style={{ ...s.card, padding: '16px' }}>
               <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>â° AWAITING</p>
               <p style={{ fontSize: '20px', fontWeight: 700, color: '#8b5cf6', margin: 0 }}>
-                â‚¹{payoutSummary.pendingSettlementAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                {payoutSummary.pendingSettlementAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
               </p>
               <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>{payoutSummary.pendingSettlementCount} pending</p>
             </div>
@@ -598,7 +598,7 @@ export default function PaymentsDashboard() {
 </div>
 
                       <div style={{ flex: 2, fontWeight: 700, color: '#10b981', fontSize: '14px' }}>
-                        â‚¹{(parseFloat(txn.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        {(parseFloat(txn.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </div>
                       <div style={{ flex: 2, fontSize: '13px', textTransform: 'capitalize' }}>
                         {txn.method || 'N/A'}
@@ -609,7 +609,7 @@ export default function PaymentsDashboard() {
                           backgroundColor: txn.status === 'captured' ? '#d1fae5' : txn.status === 'failed' ? '#fee2e2' : '#fef3c7',
                           color: txn.status === 'captured' ? '#065f46' : txn.status === 'failed' ? '#991b1b' : '#92400e'
                         }}>
-                          {txn.status === 'captured' ? 'âœ… Captured' : txn.status === 'failed' ? 'âŒ Failed' : 'â³ ' + txn.status}
+                          {txn.status === 'captured' ? 'Captured' : txn.status === 'failed' ? 'Failed' : ' ' + txn.status}
                         </span>
                       </div>
                       <div style={{ flex: 3, fontSize: '12px' }}>
@@ -664,10 +664,10 @@ export default function PaymentsDashboard() {
 
 
                         <div style={{ flex: 2, fontWeight: 700, color: '#10b981', fontSize: '14px' }}>
-                          â‚¹{(parseFloat(settlement.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          {(parseFloat(settlement.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </div>
                         <div style={{ flex: 2, fontSize: '13px', color: '#ef4444' }}>
-  -â‚¹{parseFloat(settlement.fees || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+  -{parseFloat(settlement.fees || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
 </div>
 
                         <div style={{ flex: 2 }}>
@@ -676,7 +676,7 @@ export default function PaymentsDashboard() {
                             backgroundColor: settlement.status === 'processed' ? '#d1fae5' : '#fef3c7',
                             color: settlement.status === 'processed' ? '#065f46' : '#92400e'
                           }}>
-                            {settlement.status === 'processed' ? 'âœ… Settled' : 'â³ Pending'}
+                            {settlement.status === 'processed' ? 'Settled' : 'Pending'}
                           </span>
                         </div>
                         <div style={{ flex: 3, fontSize: '12px' }}>
@@ -698,7 +698,7 @@ export default function PaymentsDashboard() {
                           {new Date(payout.created_at).toLocaleDateString()}
                         </div>
                         <div style={{ flex: 2, fontWeight: 700, color: '#10b981', fontSize: '14px' }}>
-                          â‚¹{parseFloat(payout.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          {parseFloat(payout.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </div>
                         <div style={{ flex: 2, fontSize: '13px' }}>
                           {payout.gateway_display || payout.gateway_used}
@@ -714,7 +714,7 @@ export default function PaymentsDashboard() {
                         </div>
                         <div style={{ flex: 3, fontSize: '12px' }}>
                           <div style={{ fontWeight: 600, marginBottom: '4px' }}>
-                            {payout.settlement_status_display || 'â³ Pending'}
+                            {payout.settlement_status_display || 'Pending'}
                           </div>
                           {payout.expected_settlement_date_display && !payout.settlement_date && (
                             <div style={{ fontSize: '10px', color: '#6b7280' }}>

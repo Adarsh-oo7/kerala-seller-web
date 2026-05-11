@@ -439,7 +439,7 @@ export default function SellerDashboardOverview() {
                     <div className='dashboardoverviewstatcontainer' style={styles.statsContainer}>
                         <StatCard
                             title="Total Revenue"
-                            value={`â‚¹${(dashboardData.analytics?.total_revenue || 0).toLocaleString('en-IN')}`}
+                            value={`${(dashboardData.analytics?.total_revenue || 0).toLocaleString('en-IN')}`}
                             icon={<IndianRupee className='dashboardoverviewstaticon' />}
                             color="#3e7572ff"
                             bgColor="rgba(255, 238, 175, 1)"

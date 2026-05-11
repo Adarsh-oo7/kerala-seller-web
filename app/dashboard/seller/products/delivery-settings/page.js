@@ -38,7 +38,7 @@ export default function DeliverySettingsPage() {
       const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
       
       if (!token) {
-        setError('âš ï¸ Not logged in. Please login to manage delivery settings.');
+        setError('Not logged in. Please login to manage delivery settings.');
         setLoading(false);
         return;
       }
@@ -63,13 +63,13 @@ export default function DeliverySettingsPage() {
       if (err.response?.status === 401) {
         setError('ðŸ”’ Session expired. Please login again.');
       } else if (err.response?.status === 403) {
-        setError('â›” You don\'t have permission to access delivery settings.');
+        setError('You don\'t have permission to access delivery settings.');
       } else if (err.response?.status === 404) {
-        setError('âŒ Delivery settings endpoint not found. Contact support.');
+        setError('Delivery settings endpoint not found. Contact support.');
       } else if (!err.response) {
-        setError('ðŸŒ Network error. Check your internet connection.');
+        setError('Network error. Check your internet connection.');
       } else {
-        setError(`âš ï¸ Failed to load settings: ${err.response?.data?.error || err.message}`);
+        setError(`Failed to load settings: ${err.response?.data?.error || err.message}`);
       }
       setLoading(false);
     }
@@ -125,10 +125,10 @@ export default function DeliverySettingsPage() {
       });
       
       setSlabs(slabs.filter((_, i) => i !== index));
-      setSuccess('âœ… Slab deleted successfully');
+      setSuccess('Slab deleted successfully');
       setTimeout(() => setSuccess(''), 2000);
     } catch (err) {
-      setError(`âŒ Failed to delete slab: ${err.response?.data?.error || err.message}`);
+      setError(`Failed to delete slab: ${err.response?.data?.error || err.message}`);
     }
   };
 
@@ -148,7 +148,7 @@ export default function DeliverySettingsPage() {
 
       // âœ… Validation
       if (mode === 'slab' && slabs.length === 0) {
-        setError('âš ï¸ Add at least one weight slab or switch to Legacy mode.');
+        setError('Add at least one weight slab or switch to Legacy mode.');
         setSaving(false);
         return;
       }
@@ -157,22 +157,22 @@ export default function DeliverySettingsPage() {
       for (let i = 0; i < slabs.length; i++) {
         const slab = slabs[i];
         if (slab.min_weight_kg < 0) {
-          setError(`âš ï¸ Slab ${i + 1}: Minimum weight cannot be negative.`);
+          setError(`${i + 1}: Minimum weight cannot be negative.`);
           setSaving(false);
           return;
         }
         if (slab.max_weight_kg !== null && slab.max_weight_kg <= slab.min_weight_kg) {
-          setError(`âš ï¸ Slab ${i + 1}: Maximum weight must be greater than minimum.`);
+          setError(`${i + 1}: Maximum weight must be greater than minimum.`);
           setSaving(false);
           return;
         }
         if (slab.pricing_type === 'FIXED' && slab.fixed_price <= 0) {
-          setError(`âš ï¸ Slab ${i + 1}: Fixed price must be greater than 0.`);
+          setError(`${i + 1}: Fixed price must be greater than 0.`);
           setSaving(false);
           return;
         }
         if (slab.pricing_type === 'PER_KG' && slab.price_per_kg <= 0) {
-          setError(`âš ï¸ Slab ${i + 1}: Price per kg must be greater than 0.`);
+          setError(`${i + 1}: Price per kg must be greater than 0.`);
           setSaving(false);
           return;
         }
@@ -218,7 +218,7 @@ export default function DeliverySettingsPage() {
         }
       }
 
-      setSuccess(`âœ… Settings saved! ${createdCount > 0 ? `Created ${createdCount} slab(s). ` : ''}${updatedCount > 0 ? `Updated ${updatedCount} slab(s).` : ''}`);
+      setSuccess(`Settings saved! ${createdCount > 0 ? `Created ${createdCount} slab(s). ` : ''}${updatedCount > 0 ? `Updated ${updatedCount} slab(s).` : ''}`);
       setTimeout(() => setSuccess(''), 5000);
       fetchAllData();
       
@@ -227,15 +227,15 @@ export default function DeliverySettingsPage() {
       
       // âœ… Better error messages
       if (err.response?.status === 401) {
-        setError('ðŸ”’ Session expired. Please login again.');
+        setError('Session expired. Please login again.');
       } else if (err.response?.status === 403) {
-        setError('â›” You don\'t have permission to save delivery settings.');
+        setError(' You don\'t have permission to save delivery settings.');
       } else if (err.response?.status === 400) {
-        setError(`âš ï¸ Validation error: ${err.response?.data?.error || 'Check your input values.'}`);
+        setError(`Validation error: ${err.response?.data?.error || 'Check your input values.'}`);
       } else if (!err.response) {
-        setError('ðŸŒ Network error. Check your internet connection.');
+        setError('Network error. Check your internet connection.');
       } else {
-        setError(`âŒ Failed to save: ${err.response?.data?.error || err.message}`);
+        setError(`Failed to save: ${err.response?.data?.error || err.message}`);
       }
     } finally {
       setSaving(false);
@@ -248,12 +248,12 @@ export default function DeliverySettingsPage() {
       const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
       
       if (!token) {
-        setError('ðŸ”’ Please login to preview delivery charges.');
+        setError('Please login to preview delivery charges.');
         return;
       }
 
       if (mode === 'slab' && slabs.length === 0) {
-        setError('âš ï¸ No slabs configured. Add slabs or switch to Legacy mode.');
+        setError('No slabs configured. Add slabs or switch to Legacy mode.');
         return;
       }
 
@@ -285,7 +285,7 @@ export default function DeliverySettingsPage() {
       
     } catch (err) {
       console.error('Preview error:', err);
-      setError(`âŒ Preview failed: ${err.message}. Make sure your settings are saved first.`);
+      setError(`Preview failed: ${err.message}. Make sure your settings are saved first.`);
     }
   };
 
@@ -356,7 +356,7 @@ export default function DeliverySettingsPage() {
                   <span style={styles.labelHint}>(0 to disable)</span>
                 </label>
                 <div style={styles.inputWrapper}>
-                  <span style={styles.inputPrefix}>â‚¹</span>
+                  <span style={styles.inputPrefix}></span>
                   <input
                     type="number"
                     name="free_delivery_above"
@@ -376,7 +376,7 @@ export default function DeliverySettingsPage() {
                   <span style={styles.labelHint}>(Added to all COD orders)</span>
                 </label>
                 <div style={styles.inputWrapper}>
-                  <span style={styles.inputPrefix}>â‚¹</span>
+                  <span style={styles.inputPrefix}></span>
                   <input
                     type="number"
                     name="cod_extra_charge"
@@ -396,7 +396,7 @@ export default function DeliverySettingsPage() {
                   <span style={styles.labelHint}>(When no slab matches)</span>
                 </label>
                 <div style={styles.inputWrapper}>
-                  <span style={styles.inputPrefix}>â‚¹</span>
+                  <span style={styles.inputPrefix}></span>
                   <input
                     type="number"
                     name="fallback_flat_charge"
@@ -409,7 +409,7 @@ export default function DeliverySettingsPage() {
                   />
                 </div>
                 <small style={styles.helpText}>
-                  â„¹ï¸ Recommended: Set a fallback to handle edge cases
+                  Recommended: Set a fallback to handle edge cases
                 </small>
               </div>
 
@@ -463,8 +463,8 @@ export default function DeliverySettingsPage() {
                           onChange={(e) => updateSlab(idx, 'pricing_type', e.target.value)}
                           style={styles.select}
                         >
-                          <option value="FIXED">Fixed â‚¹</option>
-                          <option value="PER_KG">â‚¹/kg</option>
+                          <option value="FIXED">Fixed</option>
+                          <option value="PER_KG">/kg</option>
                         </select>
 
                         {slab.pricing_type === 'FIXED' ? (
@@ -484,7 +484,7 @@ export default function DeliverySettingsPage() {
                               value={slab.price_per_kg}
                               onChange={(e) => updateSlab(idx, 'price_per_kg', e.target.value)}
                               style={styles.priceInput}
-                              placeholder="â‚¹/kg"
+                              placeholder="/kg"
                               min="0"
                               step="0.01"
                             />
@@ -633,16 +633,16 @@ export default function DeliverySettingsPage() {
                       <td style={styles.td}>{item.label}</td>
                       <td style={styles.td}>â‚¹{item.cart_total}</td>
                       <td style={styles.td}>{item.total_weight_kg}kg</td>
-                      <td style={styles.td}>{item.is_cod ? 'âœ“' : '-'}</td>
+                      <td style={styles.td}>{item.is_cod ? '' : '-'}</td>
                       <td style={{
                         ...styles.td, 
                         fontWeight: '600', 
                         color: item.error ? '#dc2626' : '#059669'
                       }}>
                         {item.error ? (
-                          <span title={item.error}>âŒ Error</span>
+                          <span title={item.error}>Error</span>
                         ) : (
-                          `â‚¹${item.delivery_charge}`
+                          `${item.delivery_charge}`
                         )}
                       </td>
                       <td style={styles.td}>

@@ -399,7 +399,7 @@ export default function DashboardLayout({ children }) {
                 style={styles.closeButton}
                 aria-label="Close Sidebar"
               >
-                âœ•
+              
               </button>
             )}
           </div>

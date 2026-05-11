@@ -90,7 +90,7 @@ export default function LocalBillingPage() {
     setIsAutoDetecting(true);
 
     try {
-      console.log('ðŸ” Auto-detecting seller phone...');
+      console.log('Auto-detecting seller phone...');
 
       // Try store profile API (this worked in your logs)
       try {
@@ -104,7 +104,7 @@ export default function LocalBillingPage() {
         if (phone) {
           setSellerPhone(phone);
           localStorage.setItem('sellerPhone', phone);
-          console.log('âœ… Phone detected from store profile:', phone);
+          console.log('Phone detected from store profile:', phone);
           setIsAutoDetecting(false);
           return;
         }
@@ -124,7 +124,7 @@ export default function LocalBillingPage() {
         return;
       }
 
-      console.log('âš ï¸ Could not auto-detect seller phone. Manual input required.');
+      console.log('Could not auto-detect seller phone. Manual input required.');
 
     } catch (error) {
       console.error('Auto-detection failed:', error);
@@ -133,7 +133,7 @@ export default function LocalBillingPage() {
     }
   }, [getAuthHeaders]);
 
-  // âœ… Fetch products with local stock only
+  // Fetch products with local stock only
   const fetchProducts = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -181,7 +181,7 @@ export default function LocalBillingPage() {
     }
   }, [searchTerm, products]);
 
-  // âœ… Auto-detect seller phone and fetch products on mount
+  // Auto-detect seller phone and fetch products on mount
   useEffect(() => {
     autoDetectSellerPhone();
     fetchProducts();
@@ -256,7 +256,7 @@ export default function LocalBillingPage() {
     return true;
   };
 
-  // âœ… NEW: Direct local billing (no order creation)
+  // NEW: Direct local billing (no order creation)
   const handleGenerateBill = async () => {
     if (billItems.length === 0) {
       setError("Please add items to the bill.");
@@ -300,7 +300,7 @@ export default function LocalBillingPage() {
       };
 
       const billResponse = await axios.post(CREATE_BILL_URL, billData, requestConfig);
-      console.log('âœ… Local bill created:', billResponse.data);
+      console.log('Local bill created:', billResponse.data);
 
       // âœ… Step 2: Generate and display bill HTML
       const billId = billResponse.data.bill_id;
@@ -334,7 +334,7 @@ export default function LocalBillingPage() {
       // Reset form
       setBillItems([]);
       setCustomer({ name: '', phone: '' });
-      setSuccess(`âœ… Bill ${billId} generated! Stock updated automatically.`);
+      setSuccess(`Bill ${billId} generated! Stock updated automatically.`);
       setTimeout(() => setSuccess(''), 5000);
       // Refresh products to show updated stock
       fetchProducts();
@@ -387,7 +387,7 @@ export default function LocalBillingPage() {
           Direct Local Billing
         </h1>
         <p className='dashboardbillingsubtitle' style={styles.pageSubtitle}>
-          Instant cash billing for walk-in customers â€¢ No order tracking
+          Instant cash billing for walk-in customers . No order tracking
         </p>
       </div>
 
@@ -440,7 +440,7 @@ export default function LocalBillingPage() {
         </div>
         <div style={styles.directBillingBadge}>
           <Receipt size={18} color="#e82a2aff" style={{ marginRight: 6 }} />
-          Direct Billing â€“ No Order Creation
+          Direct Billing No Order Creation
         </div>
       </div>
 
@@ -510,10 +510,10 @@ export default function LocalBillingPage() {
                         <span style={styles.productModel}>({product.model_name})</span>
                       )}
                     </div>
-                    <div style={styles.productPrice}>â‚¹{parseFloat(product.price).toFixed(2)}</div>
+                    <div style={styles.productPrice}>{parseFloat(product.price).toFixed(2)}</div>
                     <div style={styles.productStock}>
                       <span style={styles.localStockBadge}>
-                        ðŸ“¦ {product.total_stock} in store
+                        {product.total_stock} in store
                       </span>
                     </div>
                   </div>
@@ -586,7 +586,7 @@ export default function LocalBillingPage() {
                           <div style={styles.mobileCardTitle}>
                             <div style={styles.itemName}>{item.name}</div>
                             {item.model_name && <div style={styles.itemModel}>{item.model_name}</div>}
-                            <div style={styles.itemStock}>âœ“ Stock: {item.total_stock} available</div>
+                            <div style={styles.itemStock}> Stock: {item.total_stock} available</div>
                           </div>
                           <button onClick={() => removeFromBill(item.id)} style={styles.removeButton}>
                             <X size={16} />
@@ -623,11 +623,11 @@ export default function LocalBillingPage() {
                           <div style={styles.priceSection}>
                             <div style={styles.priceLine}>
                               <span>Price</span>
-                              <strong>â‚¹{parseFloat(item.price).toFixed(2)}</strong>
+                              <strong>{parseFloat(item.price).toFixed(2)}</strong>
                             </div>
                             <div style={styles.priceLine}>
                               <span>Total</span>
-                              <strong>â‚¹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
+                              <strong>{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
                             </div>
                           </div>
                         </div>
@@ -683,9 +683,9 @@ export default function LocalBillingPage() {
                               </button>
                             </div>
                           </td>
-                          <td style={styles.billTableCell}>â‚¹{parseFloat(item.price).toFixed(2)}</td>
+                          <td style={styles.billTableCell}>{parseFloat(item.price).toFixed(2)}</td>
                           <td style={styles.billTableCell}>
-                            <strong>â‚¹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
+                            <strong>{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
                           </td>
                           <td style={styles.billTableCell}>
                             <button
@@ -716,14 +716,14 @@ export default function LocalBillingPage() {
               <div style={styles.billSummary}>
                 <div className='dashboardbillingtotalcash' style={styles.billTotal}>
                   <span>Total Cash Amount: </span>
-                  <strong>â‚¹{calculateTotal().toFixed(2)}</strong>
+                  <strong>{calculateTotal().toFixed(2)}</strong>
                 </div>
                 <div style={styles.billItems}>
                   {billItems.length} item{billItems.length !== 1 ? 's' : ''}
                 </div>
                 <div style={styles.billType}>
                   <Banknote size={12} style={{ marginRight: '4px' }} />
-                  <small>Direct Cash Payment â€¢ No Order Tracking</small>
+                  <small>Direct Cash Payment No Order Tracking</small>
                 </div>
               </div>
 

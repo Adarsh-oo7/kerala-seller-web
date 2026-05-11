@@ -145,7 +145,7 @@ export default function StockHistoryPage() {
       const response = await axios.get(HISTORY_API_URL, { headers });
 
       const historyData = response.data.results || response.data || [];
-      console.log(`âœ… Received ${historyData.length} stock history records`);
+      console.log(`Received ${historyData.length} stock history records`);
 
       // Use real data if available, otherwise use mock data
       const dataToUse = historyData.length > 0 ? historyData : mockData;
@@ -646,7 +646,7 @@ export default function StockHistoryPage() {
                         </span>
                       </div>
                       <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
-                        {new Date(record.timestamp).toLocaleDateString('en-IN')} â€¢{' '}
+                        {new Date(record.timestamp).toLocaleDateString('en-IN')} {' '}
                         {new Date(record.timestamp).toLocaleTimeString('en-IN', {
                           hour: '2-digit',
                           minute: '2-digit',

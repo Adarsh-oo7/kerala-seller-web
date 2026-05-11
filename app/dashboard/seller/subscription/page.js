@@ -223,8 +223,8 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
                             </span>
                             <span style={styles.orderStatus}>
                                 {storeStatus.subscription.can_sell
-                                    ? 'âœ… Accepting Orders'
-                                    : 'âŒ Orders Disabled'
+                                    ? 'Accepting Orders'
+                                    : 'Orders Disabled'
                                 }
                             </span>
                         </div>
@@ -462,7 +462,7 @@ export default function SubscriptionPage() {
         // âœ… REPLACED: confirm with custom toast confirmation
         const confirmed = confirm(
             `Subscribe to ${planName}?\n\n` +
-            `Price: â‚¹${Math.round(displayPrice).toLocaleString('en-IN')}/${billingCycle === 'yearly' ? 'year' : 'month'}\n\n` +
+            `Price: ${Math.round(displayPrice).toLocaleString('en-IN')}/${billingCycle === 'yearly' ? 'year' : 'month'}\n\n` +
             `Click OK to proceed to secure payment.`
         );
 
@@ -732,7 +732,7 @@ export default function SubscriptionPage() {
                                     <h2 style={styles.planName}>{plan.name}</h2>
                                     <div className='dashboardsubscribeplanheaderpricecontainer' style={styles.priceContainer}>
                                         <span className='dashboardsubscribeplanheaderprice' style={styles.price}>
-                                            â‚¹{Math.round(displayPrice).toLocaleString('en-IN')}
+                                            {Math.round(displayPrice).toLocaleString('en-IN')}
                                         </span>
                                         <span style={styles.duration}>
                                             /{billingCycle === 'yearly' ? 'year' : 'month'}
@@ -741,9 +741,9 @@ export default function SubscriptionPage() {
 
                                     {billingCycle === 'yearly' && (
                                         <div style={styles.savings}>
-                                            <p>Billed as â‚¹{Math.round(yearlyPrice).toLocaleString('en-IN')} annually</p>
+                                            <p>Billed as {Math.round(yearlyPrice).toLocaleString('en-IN')} annually</p>
                                             <p style={styles.savingsAmount}>
-                                                Save â‚¹{Math.round((basePrice * 12) - yearlyPrice).toLocaleString('en-IN')} per year
+                                                Save {Math.round((basePrice * 12) - yearlyPrice).toLocaleString('en-IN')} per year
                                             </p>
                                         </div>
                                     )}
