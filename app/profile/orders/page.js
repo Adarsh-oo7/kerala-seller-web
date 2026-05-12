@@ -57,7 +57,7 @@ const ORDERS_API_URL = `${API_BASE_URL}/user/orders/history/`;
 const INVOICE_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/invoice/`;
 const CANCEL_ORDER_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/cancel/`;
 
-console.log('ðŸ“¦ Orders APIs:', API_BASE_URL);
+console.log(' Orders APIs:', API_BASE_URL);
 
 
 export default function BuyerOrdersPage() {
@@ -96,12 +96,12 @@ export default function BuyerOrdersPage() {
             localStorage.getItem('accessToken');
 
         if (!token) {
-            console.error('âŒ No authentication token found');
+            console.error(' No authentication token found');
             router.push('/login/buyer');
             return null;
         }
 
-        console.log('ðŸ” Using token:', token.substring(0, 30) + '...');
+        console.log(' Using token:', token.substring(0, 30) + '...');
         return { 'Authorization': `Bearer ${token}` };
     }, [router]);
 
@@ -299,7 +299,7 @@ export default function BuyerOrdersPage() {
         return counts;
     };
 
-    const formatPrice = (price) => `â‚¹${parseFloat(price).toFixed(2)}`;
+    const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
 
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
@@ -478,7 +478,7 @@ export default function BuyerOrdersPage() {
                                         <div style={styles.footerLeft}>
                                             <span className='keralasellersprofileordertotalprice' style={styles.totalLabel}>Total:</span>
                                             <strong className='keralasellersprofileordertotalprice' style={styles.totalFooter}>
-                                                â‚¹{parseFloat(order.total_amount).toFixed(2)}
+                                                ₹{parseFloat(order.total_amount).toFixed(2)}
                                             </strong>
                                         </div>
 

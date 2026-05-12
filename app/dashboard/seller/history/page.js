@@ -49,7 +49,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ||
 
 const HISTORY_API_URL = `${API_BASE_URL}/user/store/stock-history/`;
 
-console.log('ðŸ“Š Stock History:', API_BASE_URL);
+console.log(' Stock History:', API_BASE_URL);
 
 
 
@@ -141,26 +141,26 @@ export default function StockHistoryPage() {
     setError('');
 
     try {
-      console.log('ðŸ” Fetching stock history from:', HISTORY_API_URL);
+      console.log(' Fetching stock history from:', HISTORY_API_URL);
       const response = await axios.get(HISTORY_API_URL, { headers });
 
       const historyData = response.data.results || response.data || [];
-      console.log(`âœ… Received ${historyData.length} stock history records`);
+      console.log(` Received ${historyData.length} stock history records`);
 
       // Use real data if available, otherwise use mock data
       const dataToUse = historyData.length > 0 ? historyData : mockData;
       setHistory(dataToUse);
       setFilteredHistory(dataToUse);
     } catch (error) {
-      console.error('âŒ Failed to fetch stock history:', error);
+      console.error(' Failed to fetch stock history:', error);
       if (error.response?.status === 401) {
         router.push('/login/seller?message=Session expired');
       } else if (error.response?.status === 404) {
-        console.log('ðŸ“ Stock history endpoint not found, using mock data');
+        console.log(' Stock history endpoint not found, using mock data');
         setHistory(mockData);
         setFilteredHistory(mockData);
       } else {
-        console.log('ðŸ“ Using mock data due to API error');
+        console.log(' Using mock data due to API error');
         setHistory(mockData);
         setFilteredHistory(mockData);
       }

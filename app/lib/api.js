@@ -15,10 +15,10 @@
 //   if (typeof window !== 'undefined') {
 //     const hostname = window.location.hostname;
 //     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '127.0.0.1') {
-//       console.log('🌐 Local dev: Using localhost:8000');
+//       console.log(' Local dev: Using localhost:8000');
 //       return 'https://api.keralasellers.in';
 //     }
-//     console.log('📦 Production: Using api.keralasellers.in');
+//     console.log(' Production: Using api.keralasellers.in');
 //     return 'https://api.keralasellers.in';
 //   }
   
@@ -50,7 +50,7 @@
 //     }
     
 //     if (process.env.NODE_ENV === 'development') {
-//       console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+//       console.log(` API Request: ${config.method?.toUpperCase()} ${config.url}`, {
 //         baseURL: config.baseURL,
 //         timestamp: new Date().toISOString()
 //       });
@@ -65,12 +65,12 @@
 // api.interceptors.response.use(
 //   (response) => {
 //     if (process.env.NODE_ENV === 'development') {
-//       console.log(`✅ API Response: ${response.status} ${response.config.url}`);
+//       console.log(` API Response: ${response.status} ${response.config.url}`);
 //     }
 //     return response;
 //   },
 //   (error) => {
-//     console.error('❌ API Error:', {
+//     console.error(' API Error:', {
 //       url: error.config?.url,
 //       status: error.response?.status,
 //       message: error.response?.data?.error || error.message
@@ -138,7 +138,7 @@
 
 // // ✅ Log config
 // if (process.env.NODE_ENV === 'development') {
-//   console.log('🌐 API Config:', { baseURL: 'https://api.keralasellers.in' });
+//   console.log(' API Config:', { baseURL: 'https://api.keralasellers.in' });
 // }
 
 import axios from 'axios';
@@ -149,7 +149,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.kerala
 // ✅ Pre-configured axios with interceptors
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -170,7 +170,7 @@ api.interceptors.request.use(
     }
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+      console.log(` API Request: ${config.method?.toUpperCase()} ${config.url}`, {
         baseURL: config.baseURL,
         timestamp: new Date().toISOString()
       });
@@ -185,12 +185,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log(`✅ API Response: ${response.status} ${response.config.url}`);
+      console.log(` API Response: ${response.status} ${response.config.url}`);
     }
     return response;
   },
   (error) => {
-    console.error('❌ API Error:', {
+    console.error(' API Error:', {
       url: error.config?.url,
       status: error.response?.status,
       message: error.response?.data?.error || error.message
@@ -257,4 +257,4 @@ export const apiUtils = {
 };
 
 // ✅ Log config
-console.log('🌐 API Config:', { baseURL: API_BASE_URL });
+console.log(' API Config:', { baseURL: API_BASE_URL });

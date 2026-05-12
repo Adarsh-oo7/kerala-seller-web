@@ -45,9 +45,9 @@ import {
 // const API_BASE_URL = 'https://api.keralasellers.in';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     'https://api.keralasellers.in/api';
+                     'https://api.keralasellers.in';
 
-console.log('🔧 API_BASE_URL:', API_BASE_URL);
+console.log(' API_BASE_URL:', API_BASE_URL);
 
 export default function SellerSpecificCartPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -67,7 +67,7 @@ export default function SellerSpecificCartPage() {
   try {
     cartData = useCart();
   } catch (err) {
-    console.error('❌ Cart hook error:', err);
+    console.error(' Cart hook error:', err);
     cartError = err;
   }
 
@@ -78,14 +78,14 @@ export default function SellerSpecificCartPage() {
     carts = fallbackCarts,
     getCartBySeller,
     removeFromCart = (phone, id) => {
-      console.warn('⚠️ Using fallback removeFromCart');
+      console.warn(' Using fallback removeFromCart');
       setFallbackCarts(prev => ({
         ...prev,
         [phone]: (prev[phone] || []).filter(item => item.id !== id)
       }));
     },
     updateQuantity = (phone, id, quantity) => {
-      console.warn('⚠️ Using fallback updateQuantity');
+      console.warn(' Using fallback updateQuantity');
       setFallbackCarts(prev => ({
         ...prev,
         [phone]: (prev[phone] || []).map(item => 
@@ -96,7 +96,7 @@ export default function SellerSpecificCartPage() {
     },
     validateCartStock = () => ({ valid: true, errors: [], warnings: [] }),
     clearCartForSeller = (phone) => {
-      console.warn('⚠️ Using fallback clearCartForSeller');
+      console.warn(' Using fallback clearCartForSeller');
       setFallbackCarts(prev => ({ ...prev, [phone]: [] }));
     }
   } = cartData || {};
@@ -143,18 +143,18 @@ export default function SellerSpecificCartPage() {
   useEffect(() => {
     const loadSellerCartData = async () => {
       try {
-        console.log(`📱 Loading seller-specific cart for: ${sellerPhone}`);
+        console.log(` Loading seller-specific cart for: ${sellerPhone}`);
         
         // Load from localStorage if cart context is not available
         if (cartError || !cartData) {
-          console.log('📱 Loading cart from localStorage (context failed)...');
+          console.log(' Loading cart from localStorage (context failed)...');
           const savedCart = localStorage.getItem('cart');
           const savedMultiCarts = localStorage.getItem('multiCarts');
           
           if (savedMultiCarts) {
             const parsed = JSON.parse(savedMultiCarts);
             setFallbackCarts(parsed);
-            console.log('✅ Loaded multiCarts from localStorage for seller:', sellerPhone);
+            console.log(' Loaded multiCarts from localStorage for seller:', sellerPhone);
           } else if (savedCart) {
             const parsed = JSON.parse(savedCart);
             if (Array.isArray(parsed) && parsed.length > 0) {
@@ -176,7 +176,7 @@ export default function SellerSpecificCartPage() {
         await loadStoreData();
         
       } catch (error) {
-        console.error('❌ Error loading seller cart:', error);
+        console.error(' Error loading seller cart:', error);
         setError('Failed to load cart data for this seller');
       } finally {
         setIsLoading(false);
@@ -190,7 +190,7 @@ export default function SellerSpecificCartPage() {
   // ✅ Load store data for this specific seller
   const loadStoreData = async () => {
     try {
-      console.log(`🏪 Loading store data for seller: ${sellerPhone}`);
+      console.log(` Loading store data for seller: ${sellerPhone}`);
       
       const response = await fetch(`${API_BASE_URL}/shop/${sellerPhone}/`, {
         timeout: 8000
@@ -199,13 +199,13 @@ export default function SellerSpecificCartPage() {
       if (response.ok) {
         const data = await response.json();
         setStoreData(data.store || data);
-        console.log('✅ Store data loaded:', data.store?.name || 'Unknown Store');
+        console.log(' Store data loaded:', data.store?.name || 'Unknown Store');
       } else {
-        console.warn(`⚠️ Store not found for seller: ${sellerPhone}`);
+        console.warn(` Store not found for seller: ${sellerPhone}`);
         setStoreData({ name: `Store ${sellerPhone}`, phone: sellerPhone });
       }
     } catch (error) {
-      console.warn(`⚠️ Failed to load store data for ${sellerPhone}:`, error);
+      console.warn(` Failed to load store data for ${sellerPhone}:`, error);
       setStoreData({ name: `Store ${sellerPhone}`, phone: sellerPhone });
     }
   };
@@ -213,7 +213,7 @@ export default function SellerSpecificCartPage() {
   // ✅ Get cart items for this specific seller only
   const cartItems = getCartBySeller ? getCartBySeller(sellerPhone) : (carts[sellerPhone] || fallbackCarts[sellerPhone] || []);
 
-  console.log('🛒 Seller Cart Debug:', {
+  console.log(' Seller Cart Debug:', {
     sellerPhone,
     cartData: !!cartData,
     cartError: !!cartError,
@@ -228,7 +228,7 @@ export default function SellerSpecificCartPage() {
       try {
         const validation = validateCartStock(sellerPhone);
         setStockValidation(validation);
-        console.log('📊 Seller cart validation:', validation);
+        console.log(' Seller cart validation:', validation);
       } catch (error) {
         console.warn(`Validation failed for ${sellerPhone}:`, error);
         setStockValidation({ valid: true, errors: [], warnings: [] });
@@ -336,7 +336,7 @@ export default function SellerSpecificCartPage() {
   // ✅ Checkout navigation for this specific seller
   const handleCheckout = () => {
     try {
-      console.log(`🔍 Navigating to checkout for seller: ${sellerPhone}`);
+      console.log(` Navigating to checkout for seller: ${sellerPhone}`);
       
       if (!cartItems || cartItems.length === 0) {
         alert('Your cart is empty!');
@@ -359,17 +359,17 @@ export default function SellerSpecificCartPage() {
           }
         }
         
-        console.log('🔐 No auth token, redirecting to:', loginUrl);
+        console.log(' No auth token, redirecting to:', loginUrl);
         router.push(loginUrl);
         return;
       }
 
       const checkoutUrl = `/checkout/${sellerPhone}`;
-      console.log('✅ Navigating to checkout:', checkoutUrl);
+      console.log(' Navigating to checkout:', checkoutUrl);
       router.push(checkoutUrl);
       
     } catch (error) {
-      console.error('❌ Checkout navigation error:', error);
+      console.error(' Checkout navigation error:', error);
       alert('Failed to proceed to checkout. Please try again.');
     }
   };

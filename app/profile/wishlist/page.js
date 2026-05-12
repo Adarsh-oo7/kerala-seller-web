@@ -41,7 +41,7 @@ import {
 // const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 // const CART_API = `${API_BASE_URL}/api/cart/add/`;
 
-// console.log('ðŸ” Wishlist API URLs:', { API_BASE_URL, WISHLIST_API, CART_API });
+// console.log(' Wishlist API URLs:', { API_BASE_URL, WISHLIST_API, CART_API });
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
                      'https://api.keralasellers.in';
@@ -49,7 +49,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ||
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const CART_API = `${API_BASE_URL}/api/cart/add/`;
 
-console.log('ðŸ›’ Wishlist/Cart APIs:', { 
+console.log(' Wishlist/Cart APIs:', { 
   API_BASE_URL, 
   LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL,
   WISHLIST_API, 
@@ -75,7 +75,7 @@ export default function WishlistPage() {
       localStorage.getItem('buyerToken') ||
       localStorage.getItem('accessToken');
 
-    console.log('ðŸ” Auth token found:', !!token);
+    console.log(' Auth token found:', !!token);
 
     if (!token) {
       return null;
@@ -97,7 +97,7 @@ export default function WishlistPage() {
     // If it's a relative URL starting with /media/ or /static/
     if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
       const fullUrl = `${API_BASE_URL}${imageUrl}`;
-      console.log('ðŸ–¼ï¸ Constructed image URL:', fullUrl);
+      console.log(' Constructed image URL:', fullUrl);
       return fullUrl;
     }
 
@@ -113,17 +113,17 @@ export default function WishlistPage() {
   const loadWishlistFromAPI = useCallback(async () => {
     const headers = getAuthHeaders();
     if (!headers) {
-      console.log('âŒ No auth headers, loading from localStorage');
+      console.log(' No auth headers, loading from localStorage');
       loadWishlistFromLocalStorage();
       return;
     }
 
     try {
-      console.log('ðŸ” Loading wishlist from API:', WISHLIST_API);
+      console.log(' Loading wishlist from API:', WISHLIST_API);
       const response = await axios.get(WISHLIST_API, { headers });
 
       const wishlistData = response.data;
-      console.log('âœ… Wishlist API response:', wishlistData);
+      console.log(' Wishlist API response:', wishlistData);
 
       let items = [];
 
@@ -155,16 +155,16 @@ export default function WishlistPage() {
         });
       }
 
-      console.log('âœ… Processed wishlist items:', items.length, items);
+      console.log(' Processed wishlist items:', items.length, items);
       setWishlistItems(items);
 
       // Sync with localStorage
       localStorage.setItem('wishlist', JSON.stringify(items));
 
     } catch (error) {
-      console.error('âŒ API wishlist failed:', error);
+      console.error(' API wishlist failed:', error);
       if (error.response?.status === 401) {
-        console.log('ðŸ” Authentication failed, clearing tokens');
+        console.log(' Authentication failed, clearing tokens');
         ['access_token', 'buyerAccessToken', 'buyerToken', 'accessToken'].forEach(key => {
           localStorage.removeItem(key);
         });
@@ -175,7 +175,7 @@ export default function WishlistPage() {
 
   const loadWishlistFromLocalStorage = () => {
     try {
-      console.log('ðŸ” Loading wishlist from localStorage');
+      console.log(' Loading wishlist from localStorage');
       const savedWishlist = localStorage.getItem('wishlist');
       if (savedWishlist) {
         const parsedWishlist = JSON.parse(savedWishlist);
@@ -189,12 +189,12 @@ export default function WishlistPage() {
         }));
 
         setWishlistItems(itemsWithImages);
-        console.log('âœ… Loaded from localStorage:', itemsWithImages.length, 'items');
+        console.log(' Loaded from localStorage:', itemsWithImages.length, 'items');
       } else {
         setWishlistItems([]);
       }
     } catch (error) {
-      console.error('âŒ Error loading wishlist from localStorage:', error);
+      console.error(' Error loading wishlist from localStorage:', error);
       setWishlistItems([]);
     }
   };
@@ -206,7 +206,7 @@ export default function WishlistPage() {
     try {
       await loadWishlistFromAPI();
     } catch (error) {
-      console.error('âŒ Error loading wishlist:', error);
+      console.error(' Error loading wishlist:', error);
       setError('Failed to load wishlist. Please try again.');
     } finally {
       setIsLoading(false);
@@ -227,24 +227,24 @@ export default function WishlistPage() {
 
       if (headers) {
         try {
-          console.log('ðŸ—‘ï¸ Removing from API wishlist:', productId);
+          console.log(' Removing from API wishlist:', productId);
 
           // Try different API endpoints for removal
           try {
             await axios.post(`${API_BASE_URL}/api/wishlist/toggle_product/`, {
               product_id: productId
             }, { headers });
-            console.log('âœ… Removed via toggle API');
+            console.log(' Removed via toggle API');
           } catch (toggleError) {
             // Fallback to direct removal
             await axios.delete(`${WISHLIST_API}remove_product/`, {
               headers,
               data: { product_id: productId }
             });
-            console.log('âœ… Removed via remove_product API');
+            console.log(' Removed via remove_product API');
           }
         } catch (apiError) {
-          console.warn('âš ï¸ API removal failed, continuing with local removal:', apiError);
+          console.warn(' API removal failed, continuing with local removal:', apiError);
         }
       }
 
@@ -252,11 +252,11 @@ export default function WishlistPage() {
       const updatedWishlist = wishlistItems.filter(item => item.id !== productId);
       setWishlistItems(updatedWishlist);
       localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
-      console.log('âœ… Item removed from wishlist');
+      console.log(' Item removed from wishlist');
       toast.error("Removed from wishlist");
 
     } catch (error) {
-      console.error('âŒ Error removing from wishlist:', error);
+      console.error(' Error removing from wishlist:', error);
       setError('Failed to remove item. Please try again.');
     } finally {
       setIsUpdating(prev => ({ ...prev, [productId]: null }));
@@ -454,7 +454,7 @@ export default function WishlistPage() {
                         style={styles.productImageLink}
                         onError={(e) => handleImageError(e, product.name)}
                         onLoad={() =>
-                          console.log('âœ… Image loaded successfully for:', product.name)
+                          console.log(' Image loaded successfully for:', product.name)
                         }
                       />
 

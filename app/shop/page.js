@@ -51,7 +51,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.kerala
 
 const API_URL = `${API_BASE_URL}/user/store/shops/`;
 
-console.log('ðŸª Shop API:', API_BASE_URL);
+console.log(' Shop API:', API_BASE_URL);
 
 
 
@@ -129,8 +129,8 @@ export default function ShopPage() {
       }
 
       // âœ… DEBUG: Log shop data structure
-      console.log('ðŸ” Shop data structure:', shopData.length > 0 ? shopData[0] : 'No data');
-      console.log('ðŸ” Available fields:', shopData.length > 0 ? Object.keys(shopData[0]) : 'No data');
+      console.log(' Shop data structure:', shopData.length > 0 ? shopData[0] : 'No data');
+      console.log(' Available fields:', shopData.length > 0 ? Object.keys(shopData[0]) : 'No data');
 
       setShops(shopData);
       setFilteredShops(shopData);
@@ -469,7 +469,7 @@ export default function ShopPage() {
                               className="previewImage"
                             />
                             <span className="previewName">{product.name}</span>
-                            <span className="previewPrice">â‚¹{product.price}</span>
+                            <span className="previewPrice">₹{product.price}</span>
                           </div>
                         ))}
                       </div>

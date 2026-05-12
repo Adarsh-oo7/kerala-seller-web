@@ -44,16 +44,16 @@ import {
 // const API_BASE_URL = 'https://api.keralasellers.in';
 // const ORDER_DETAIL_API_URL = `${API_BASE_URL}/user/orders/`;
 
-// console.log('🌐 Order Confirmation API URLs configured:', { 
+// console.log(' Order Confirmation API URLs configured:', { 
 //   API_BASE_URL, 
 //   ORDER_DETAIL_API_URL 
 // });
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const ORDER_DETAIL_API_URL = `${API_BASE_URL}/user/orders/`;
 
-console.log('📦 Order Confirmation:', API_BASE_URL);
+console.log(' Order Confirmation:', API_BASE_URL);
 
 
 export default function OrderConfirmationPage() {
@@ -102,13 +102,13 @@ export default function OrderConfirmationPage() {
         setError('');
 
         try {
-            console.log('🔍 Fetching order details for ID:', orderId);
+            console.log(' Fetching order details for ID:', orderId);
             const response = await axios.get(`${ORDER_DETAIL_API_URL}${orderId}/`, { 
                 headers,
                 timeout: 15000
             });
             
-            console.log('✅ Order details received:', response.data);
+            console.log(' Order details received:', response.data);
             setOrder(response.data);
             
             // ✅ Calculate estimated delivery
@@ -120,7 +120,7 @@ export default function OrderConfirmationPage() {
             }
             
         } catch (err) {
-            console.error("❌ Failed to fetch order details", err);
+            console.error(" Failed to fetch order details", err);
             
             let errorMessage = 'Failed to load order details. Please try again.';
             

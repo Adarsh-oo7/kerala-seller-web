@@ -50,7 +50,7 @@ const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
 const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
 const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/count/`;
 
-console.log('ðŸª Dashboard APIs:', API_BASE_URL);
+console.log(' Dashboard APIs:', API_BASE_URL);
 
 
 
@@ -214,7 +214,7 @@ export default function DashboardLayout({ children }) {
       return;
     }
 
-    console.log('ðŸ” Starting logout process...');
+    console.log(' Starting logout process...');
     isLoggingOut.current = true;
     hasInitialized.current = false;
 
@@ -230,7 +230,7 @@ export default function DashboardLayout({ children }) {
       setError('');
       setIsLoading(false);
 
-      console.log('âœ… Cleared all data, performing hard redirect...');
+      console.log(' Cleared all data, performing hard redirect...');
 
       // Use window.location for hard redirect to break any React routing loops
       setTimeout(() => {

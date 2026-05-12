@@ -52,7 +52,7 @@ function Whatsapp({ sellerPhone, shopSlug }) {
   const [message, setMessage] = useState("");
   
   useEffect(() => {
-    console.log("📍 WhatsApp Component Debug:", { sellerPhone, shopSlug, storeData });
+    console.log(" WhatsApp Component Debug:", { sellerPhone, shopSlug, storeData });
   }, [storeData]);
 
   // -------------------------------------------------------------------
@@ -84,7 +84,7 @@ function Whatsapp({ sellerPhone, shopSlug }) {
         }
       }
     } catch (err) {
-      console.error("❌ Failed to fetch store data:", err);
+      console.error(" Failed to fetch store data:", err);
       setError(err.response?.status === 404 ? "Store not found." : "Failed to load store info.");
       setStoreData(null);
     } finally {

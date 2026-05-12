@@ -69,9 +69,9 @@ export default function ProductsPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setDeliveryConfig(response.data);
-      console.log('âœ… Delivery config loaded:', response.data);
+      console.log(' Delivery config loaded:', response.data);
     } catch (err) {
-      console.log('âš ï¸ No delivery config found');
+      console.log(' No delivery config found');
       setDeliveryConfig(null);
     } finally {
       setLoadingDelivery(false);
@@ -97,7 +97,7 @@ export default function ProductsPage() {
       setDeliveryConfig({ ...deliveryConfig, enabled: newEnabledState });
       alert(`âœ… Delivery system ${newEnabledState ? 'enabled' : 'disabled'} successfully!`);
     } catch (err) {
-      console.error('âŒ Failed to toggle delivery system:', err);
+      console.error(' Failed to toggle delivery system:', err);
       alert('Failed to update delivery settings. Please try again.');
     } finally {
       setLoadingDelivery(false);
@@ -114,9 +114,9 @@ export default function ProductsPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setSubscription(response.data);
-      console.log('âœ… Subscription loaded:', response.data);
+      console.log(' Subscription loaded:', response.data);
     } catch (err) {
-      console.log('âš ï¸ No active subscription found');
+      console.log(' No active subscription found');
       setSubscription(null);
     }
   }, []);
@@ -134,7 +134,7 @@ export default function ProductsPage() {
     setError(null);
 
     try {
-      console.log('ðŸ”„ Fetching products from:', API_URL);
+      console.log(' Fetching products from:', API_URL);
 
       const response = await axios.get(API_URL, {
         headers: {
@@ -143,7 +143,7 @@ export default function ProductsPage() {
         }
       });
 
-      console.log('âœ… API Response:', response.data);
+      console.log(' API Response:', response.data);
 
       let productsData = [];
       if (Array.isArray(response.data)) {
@@ -159,10 +159,10 @@ export default function ProductsPage() {
 
       setProducts(productsData);
       setFilteredProducts(productsData);
-      console.log(`ðŸ“¦ Found ${productsData.length} products for your store`);
+      console.log(` Found ${productsData.length} products for your store`);
 
     } catch (error) {
-      console.error('âŒ Failed to fetch products:', error);
+      console.error(' Failed to fetch products:', error);
 
       if (error.response) {
         setError(`Server error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`);
@@ -279,10 +279,10 @@ export default function ProductsPage() {
         },
       });
 
-      console.log(`âœ… Product ${productId} deleted successfully`);
+      console.log(` Product ${productId} deleted successfully`);
       fetchProducts();
     } catch (error) {
-      console.error('âŒ Failed to delete product:', error);
+      console.error(' Failed to delete product:', error);
       const errorMessage = error.response?.data?.message ||
         error.response?.data?.error ||
         error.message;
@@ -309,7 +309,7 @@ export default function ProductsPage() {
     const currentProductCount = products.length;
     const productLimit = subscription.product_limit || 0;
 
-    console.log('ðŸ“Š Product Limit Check:', {
+    console.log(' Product Limit Check:', {
       currentCount: currentProductCount,
       limit: productLimit,
       remaining: productLimit - currentProductCount
@@ -459,9 +459,9 @@ export default function ProductsPage() {
               )}
 
               <div style={styles.cardPriceContainer}>
-                <span className='dashboardproductcardimgprice' style={styles.cardPrice}>â‚¹{parseFloat(product.price || 0).toLocaleString('en-IN')}</span>
+                <span className='dashboardproductcardimgprice' style={styles.cardPrice}>₹{parseFloat(product.price || 0).toLocaleString('en-IN')}</span>
                 {product.mrp && parseFloat(product.mrp) > parseFloat(product.price) && (
-                  <span style={styles.cardMrp}>â‚¹{parseFloat(product.mrp).toLocaleString('en-IN')}</span>
+                  <span style={styles.cardMrp}>₹{parseFloat(product.mrp).toLocaleString('en-IN')}</span>
                 )}
               </div>
 
@@ -603,7 +603,7 @@ export default function ProductsPage() {
           </div>
           <div>
             <p className='dashboardproductanalyticslabel' style={styles.analyticsLabel}>Inventory Value</p>
-            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>â‚¹{analytics.totalValue.toLocaleString('en-IN')}</p>
+            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>₹{analytics.totalValue.toLocaleString('en-IN')}</p>
           </div>
         </div>
 
@@ -613,7 +613,7 @@ export default function ProductsPage() {
           </div>
           <div>
             <p className='dashboardproductanalyticslabel' style={styles.analyticsLabel}>Average Price</p>
-            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>â‚¹{Math.round(analytics.averagePrice).toLocaleString('en-IN')}</p>
+            <p className='dashboardproductanalyticsvalue' style={styles.analyticsValue}>₹{Math.round(analytics.averagePrice).toLocaleString('en-IN')}</p>
           </div>
         </div>
 
@@ -810,9 +810,9 @@ export default function ProductsPage() {
                           </td>
                           <td style={styles.td}>
                             <div style={styles.priceInfo}>
-                              <strong style={styles.price}>â‚¹{parseFloat(product.price || 0).toLocaleString('en-IN')}</strong>
+                              <strong style={styles.price}>₹{parseFloat(product.price || 0).toLocaleString('en-IN')}</strong>
                               {product.mrp && parseFloat(product.mrp) > parseFloat(product.price) && (
-                                <small style={styles.mrp}>â‚¹{parseFloat(product.mrp).toLocaleString('en-IN')}</small>
+                                <small style={styles.mrp}>₹{parseFloat(product.mrp).toLocaleString('en-IN')}</small>
                               )}
                             </div>
                           </td>

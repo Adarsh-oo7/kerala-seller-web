@@ -90,5 +90,5 @@ export const paymentAPI = {
   }
 };
 
-console.log('ðŸ’° Payment APIs:', API_BASE_URL);
+console.log(' Payment APIs:', API_BASE_URL);
 

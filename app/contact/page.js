@@ -36,7 +36,7 @@ import {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
                      'https://api.keralasellers.in';
             
-console.log('âœ… ALL APIs:', API_BASE_URL);
+console.log(' ALL APIs:', API_BASE_URL);
 
 
 
@@ -121,7 +121,7 @@ export default function ContactPage() {
         page_url: window.location.href
       };
 
-      console.log('ðŸ“§ Contact form submission:', contactData);
+      console.log(' Contact form submission:', contactData);
 
       // Simulate API call - replace with actual API endpoint
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -157,7 +157,7 @@ export default function ContactPage() {
       }, 4000);
 
     } catch (error) {
-      console.error('âŒ Contact form error:', error);
+      console.error(' Contact form error:', error);
       setError('Failed to send message. Please try again or contact us directly.');
     } finally {
       setIsSubmitting(false);

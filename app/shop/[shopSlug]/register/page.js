@@ -41,17 +41,17 @@ import SHeader from '../../../../components/common/SHeader';
 // const REGISTER_API = `${API_BASE_URL}/user/buyer/register/`;
 // const GOOGLE_REGISTER_API = `${API_BASE_URL}/user/buyer/register/google/`;
 
-// console.log('🌐 Shop Register API URLs:', { API_BASE_URL });
+// console.log(' Shop Register API URLs:', { API_BASE_URL });
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/register/send-otp/`;
 const REGISTER_API = `${API_BASE_URL}/user/buyer/register/`;
-const GOOGLE_REGISTER_API = `${API_BASE_URL}/user/buyer/register/google/`;
+const GOOGLE_REGISTER_API = `${API_BASE_URL}/user/buyer/login/google/`;
 
-console.log('📝 Shop Register:', API_BASE_URL);
+console.log(' Shop Register:', API_BASE_URL);
 
 
 // ✅ OTP Registration Form (2-step with progress bar)
@@ -137,7 +137,7 @@ function ShopRegisterForm({ onRegisterSuccess, storeInfo }) {
         setIsLoading(true);
 
         try {
-            console.log('📧 Sending OTP for shop registration');
+            console.log(' Sending OTP for shop registration');
             await axios.post(SEND_OTP_API, {
                 email: formData.email.trim(),
                 full_name: formData.full_name.trim(),

@@ -33,7 +33,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.kerala
 const SEND_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/send-otp/`;
 const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/seller/password-reset/verify/`;
 
-console.log('ðŸ”‘ Seller Password Reset:', API_BASE_URL);
+console.log(' Seller Password Reset:', API_BASE_URL);
 
 
 function LoadingFallback() {
@@ -113,11 +113,11 @@ function SellerForgotPasswordContent() {
         try {
           window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
             size: 'invisible',
-            callback: () => console.log('âœ… reCAPTCHA solved'),
-            'expired-callback': () => console.log('âš ï¸ reCAPTCHA expired')
+            callback: () => console.log(' reCAPTCHA solved'),
+            'expired-callback': () => console.log(' reCAPTCHA expired')
           });
         } catch (error) {
-          console.error('âŒ reCAPTCHA error:', error);
+          console.error(' reCAPTCHA error:', error);
         }
       }
     }
@@ -218,7 +218,7 @@ function SellerForgotPasswordContent() {
       setStep(2);
 
     } catch (err) {
-      console.error('âŒ OTP send error:', err);
+      console.error(' OTP send error:', err);
       
       let errorMessage = 'Could not send OTP. Please try again.';
       
@@ -295,7 +295,7 @@ function SellerForgotPasswordContent() {
       }, 2500);
 
     } catch (err) {
-      console.error('âŒ Password reset error:', err);
+      console.error(' Password reset error:', err);
       
       let errorMessage = 'Failed to reset password. Please try again.';
       
@@ -331,7 +331,7 @@ function SellerForgotPasswordContent() {
       showMessage('OTP has been resent to your phone.', 'success');
 
     } catch (err) {
-      console.error('âŒ OTP resend error:', err);
+      console.error(' OTP resend error:', err);
       showMessage('Failed to resend OTP. Please try again later.', 'error');
     } finally {
       setIsLoading(false);

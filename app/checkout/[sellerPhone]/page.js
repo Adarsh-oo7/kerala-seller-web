@@ -12,7 +12,7 @@ import { useCart } from '../../context/CartContext';
 import { ArrowLeft, CreditCard, User, AlertTriangle, Package, CheckCircle, Truck, Weight } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     'https://api.keralasellers.in/api';
+                     'https://api.keralasellers.in';
 
 // ✅ Razorpay script loader
 const loadRazorpayScript = () => {
@@ -49,7 +49,7 @@ export default function CheckoutPage() {
 
   const { clearCartForSeller, clearAllCarts } = useCart();
 
-  console.log('🔍 Checkout Debug:');
+  console.log(' Checkout Debug:');
   console.log('- sellerPhone:', sellerPhone);
 
   // ✅ Load Razorpay script
@@ -58,7 +58,7 @@ export default function CheckoutPage() {
       const loaded = await loadRazorpayScript();
       setRazorpayLoaded(loaded);
       if (!loaded) {
-        console.warn('⚠️ Razorpay script failed to load');
+        console.warn(' Razorpay script failed to load');
       }
     };
     loadScript();
@@ -71,10 +71,10 @@ export default function CheckoutPage() {
       
       if (codEnabled) {
         setPaymentMethod('COD');
-        console.log('✅ Auto-selected COD');
+        console.log(' Auto-selected COD');
       } else if (razorpayLoaded) {
         setPaymentMethod('ONLINE');
-        console.log('✅ Auto-selected ONLINE payment');
+        console.log(' Auto-selected ONLINE payment');
       }
     }
   }, [storeData, razorpayLoaded, paymentMethod]);
@@ -96,7 +96,7 @@ export default function CheckoutPage() {
       }
 
       if (!sellerPhone || sellerPhone === 'undefined') {
-        console.error('❌ Invalid seller phone');
+        console.error(' Invalid seller phone');
         router.push('/');
         return;
       }
@@ -121,7 +121,7 @@ export default function CheckoutPage() {
   const calculateDeliveryCharge = async () => {
     try {
       setCalculatingDelivery(true);
-      console.log('📦 Calculating delivery charge...');
+      console.log(' Calculating delivery charge...');
 
       const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
 
@@ -134,7 +134,7 @@ export default function CheckoutPage() {
               const productRes = await axios.get(`${API_BASE_URL}/api/products/${item.id}/`);
               item.weight_kg = productRes.data.weight_kg || 0;
             } catch (err) {
-              console.warn(`⚠️ Could not fetch weight for product ${item.id}`);
+              console.warn(` Could not fetch weight for product ${item.id}`);
               item.weight_kg = 0;
             }
           }
@@ -172,10 +172,10 @@ export default function CheckoutPage() {
       if (response.data.success) {
         setDeliveryCharge(response.data.delivery_charge);
         setDeliveryInfo(response.data.delivery_info);
-        console.log('✅ Delivery calculated:', response.data);
+        console.log(' Delivery calculated:', response.data);
       }
     } catch (error) {
-      console.error('❌ Failed to calculate delivery:', error);
+      console.error(' Failed to calculate delivery:', error);
       // Fallback to free delivery
       setDeliveryCharge(0);
       setDeliveryInfo({ is_free: true, reason: 'Free delivery' });
@@ -187,7 +187,7 @@ export default function CheckoutPage() {
   // ✅ Fetch single product for Buy Now
   const fetchSingleProduct = async (productId, quantity, token) => {
     try {
-      console.log('🛒 Fetching product for Buy Now:', productId);
+      console.log(' Fetching product for Buy Now:', productId);
       
       const productResponse = await axios.get(`${API_BASE_URL}/api/products/${productId}/`);
       const product = productResponse.data;
@@ -205,7 +205,7 @@ export default function CheckoutPage() {
       await loadStoreAndProfile(token);
       setLoading(false);
     } catch (error) {
-      console.error('❌ Failed to fetch product:', error);
+      console.error(' Failed to fetch product:', error);
       toast.error('Failed to load product details');
       router.push('/');
     }
@@ -259,7 +259,7 @@ export default function CheckoutPage() {
         });
       }
     } catch (error) {
-      console.error('❌ Failed to load data:', error);
+      console.error(' Failed to load data:', error);
     }
   };
 
@@ -349,7 +349,7 @@ export default function CheckoutPage() {
               throw new Error(verifyData.error || 'Payment verification failed');
             }
           } catch (verifyError) {
-            console.error('❌ Payment verification failed:', verifyError);
+            console.error(' Payment verification failed:', verifyError);
             alert(`Payment completed but order creation failed: ${verifyError.message}`);
           }
 
@@ -380,7 +380,7 @@ export default function CheckoutPage() {
       rzp.open();
       return true;
     } catch (error) {
-      console.error('❌ Online payment error:', error);
+      console.error(' Online payment error:', error);
       alert(`Failed to initialize payment: ${error.message}`);
       return false;
     }
@@ -452,7 +452,7 @@ export default function CheckoutPage() {
         setSubmitting(false);
       }
     } catch (error) {
-      console.error('❌ ORDER ERROR:', error);
+      console.error(' ORDER ERROR:', error);
       alert('Order failed: ' + (error.message || 'Network error'));
       setSubmitting(false);
     }

@@ -12,4 +12,4 @@ export const getApiUrl = (path) => {
   return `${API_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
 };
 
-console.log('🔧 API Utils:', API_BASE_URL);
+console.log(' API Utils:', API_BASE_URL);

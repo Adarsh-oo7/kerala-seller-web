@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 import axios from 'axios';
 import { useCart } from '../../../../app/context/CartContext';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 // ✅ Razorpay script loader
 const loadRazorpayScript = () => {
@@ -22,11 +22,11 @@ const loadRazorpayScript = () => {
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.onload = () => {
-      console.log('✅ Razorpay script loaded successfully');
+      console.log(' Razorpay script loaded successfully');
       resolve(true);
     };
     script.onerror = () => {
-      console.error('❌ Failed to load Razorpay script');
+      console.error(' Failed to load Razorpay script');
       resolve(false);
     };
     document.body.appendChild(script);
@@ -114,13 +114,13 @@ export default function ShopCheckoutPage() {
         }
         attempts++;
         if (attempts < maxAttempts) {
-          console.log(`⚠️ Razorpay load attempt ${attempts} failed, retrying...`);
+          console.log(` Razorpay load attempt ${attempts} failed, retrying...`);
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
 
       if (!razorpayLoaded && attempts >= maxAttempts) {
-        console.warn('⚠️ Failed to load Razorpay after multiple attempts');
+        console.warn(' Failed to load Razorpay after multiple attempts');
       }
     };
 
@@ -129,7 +129,7 @@ export default function ShopCheckoutPage() {
 
   // ✅ Validate and enrich cart items with weight_kg
   const validateCartItems = async (items) => {
-    console.log('🔍 Validating cart items for weight data...');
+    console.log(' Validating cart items for weight data...');
     
     const enrichedItems = await Promise.all(
       items.map(async (item) => {
@@ -140,7 +140,7 @@ export default function ShopCheckoutPage() {
 
         // Fetch product data to get weight
         try {
-          console.log(`📦 Fetching weight for product ${item.id}...`);
+          console.log(` Fetching weight for product ${item.id}...`);
           const response = await axios.get(`${API_BASE_URL}/api/products/${item.id}/`);
           const product = response.data;
           
@@ -149,7 +149,7 @@ export default function ShopCheckoutPage() {
             weight_kg: product.weight_kg || 0
           };
         } catch (error) {
-          console.warn(`⚠️ Failed to fetch weight for product ${item.id}`, error);
+          console.warn(` Failed to fetch weight for product ${item.id}`, error);
           return {
             ...item,
             weight_kg: 0
@@ -158,7 +158,7 @@ export default function ShopCheckoutPage() {
       })
     );
 
-    console.log('✅ Cart items enriched with weight data');
+    console.log(' Cart items enriched with weight data');
     return enrichedItems;
   };
 
@@ -169,10 +169,10 @@ export default function ShopCheckoutPage() {
       
       if (codEnabled) {
         setPaymentMethod('COD');
-        console.log('✅ Auto-selected COD');
+        console.log(' Auto-selected COD');
       } else if (razorpayLoaded) {
         setPaymentMethod('ONLINE');
-        console.log('✅ Auto-selected ONLINE payment');
+        console.log(' Auto-selected ONLINE payment');
       }
     }
   }, [storeData, razorpayLoaded, paymentMethod]);
@@ -193,14 +193,14 @@ export default function ShopCheckoutPage() {
       try {
         setCalculating(true);
         
-        console.log('📊 Calculating delivery charge via backend API...');
+        console.log(' Calculating delivery charge via backend API...');
 
         // Get token
         const token = localStorage.getItem('buyerAccessToken') || 
                      localStorage.getItem('access_token');
 
         if (!token) {
-          console.warn('⚠️ No token, using fallback calculation');
+          console.warn(' No token, using fallback calculation');
           const fallbackSubtotal = cartItems.reduce((sum, item) => 
             sum + (parseFloat(item.price) * item.quantity), 0
           );
@@ -246,7 +246,7 @@ export default function ShopCheckoutPage() {
           setIsFreeDelivery(data.is_free_delivery || false);
           setDeliveryReason(data.reason || '');
           
-          console.log('✅ Delivery charge calculated:', {
+          console.log(' Delivery charge calculated:', {
             delivery: deliveryAmount,
             subtotal: subtotalAmount,
             total: totalAmount,
@@ -258,7 +258,7 @@ export default function ShopCheckoutPage() {
         }
 
       } catch (error) {
-        console.error('❌ Delivery calculation error:', error);
+        console.error(' Delivery calculation error:', error);
         
         // Fallback calculation
         const fallbackSubtotal = cartItems.reduce((sum, item) => 
@@ -292,7 +292,7 @@ export default function ShopCheckoutPage() {
   // ✅ Generate shop URLs
   const getShopUrl = (path = '') => {
     if (!actualStoreId) {
-      console.error('❌ Cannot generate URL - no store ID available');
+      console.error(' Cannot generate URL - no store ID available');
       return '/';
     }
 
@@ -311,7 +311,7 @@ export default function ShopCheckoutPage() {
       const loginUrl = getShopUrl('/login');
       const currentUrl = getShopUrl('/checkout');
       const redirectUrl = `${loginUrl}?redirect=${encodeURIComponent(currentUrl)}`;
-      console.log('🔐 No token, redirecting to login:', redirectUrl);
+      console.log(' No token, redirecting to login:', redirectUrl);
       router.push(redirectUrl);
       return null;
     }
@@ -321,7 +321,7 @@ export default function ShopCheckoutPage() {
   // ✅ REDIRECT: If invalid URL
   useEffect(() => {
     if (urlError || !actualStoreId) {
-      console.log('🔍 Invalid checkout URL, redirecting to cart...');
+      console.log(' Invalid checkout URL, redirecting to cart...');
 
       try {
         const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
@@ -346,12 +346,12 @@ export default function ShopCheckoutPage() {
   // ✅ Fetch single product for Buy Now
   const fetchSingleProduct = async (productId, quantity, sellerPhone, token) => {
     try {
-      console.log('🛒 Fetching product for Buy Now:', productId);
+      console.log(' Fetching product for Buy Now:', productId);
       
       const productResponse = await axios.get(`${API_BASE_URL}/api/products/${productId}/`);
       const product = productResponse.data;
 
-      console.log('✅ Product fetched:', product.name);
+      console.log(' Product fetched:', product.name);
 
       setCartItems([{
         id: product.id,
@@ -363,9 +363,9 @@ export default function ShopCheckoutPage() {
         store: product.store
       }]);
 
-      console.log('✅ Buy Now cart item set');
+      console.log(' Buy Now cart item set');
     } catch (error) {
-      console.error('❌ Failed to fetch product:', error);
+      console.error(' Failed to fetch product:', error);
       toast.error('Failed to load product details', {
         position: "top-right",
         autoClose: 3000,
@@ -387,13 +387,13 @@ export default function ShopCheckoutPage() {
         const store = storeResData.store || storeResData;
         setStoreData(store);
         
-        console.log('✅ Store data loaded:', {
+        console.log(' Store data loaded:', {
           name: store.name,
           accepts_cod: store.accepts_cod,
           payment_method: store.payment_method
         });
       } else {
-        console.warn('⚠️ Store API failed, using fallback');
+        console.warn(' Store API failed, using fallback');
         setStoreData({
           name: `Store ${sellerPhone}`,
           seller_phone: sellerPhone,
@@ -411,10 +411,10 @@ export default function ShopCheckoutPage() {
           city: profileData.city || '',
           pincode: profileData.pincode || ''
         });
-        console.log('✅ Profile data loaded');
+        console.log(' Profile data loaded');
       }
     } catch (error) {
-      console.error('❌ Failed to load store/profile data:', error);
+      console.error(' Failed to load store/profile data:', error);
     }
   };
 
@@ -424,16 +424,16 @@ export default function ShopCheckoutPage() {
       const headers = checkAuth();
       if (!headers || !actualStoreId) return;
 
-      console.log('📦 Initializing checkout for store:', actualStoreId);
+      console.log(' Initializing checkout for store:', actualStoreId);
 
       const buyNow = searchParams.get('buyNow') === '1';
       const productId = searchParams.get('productId');
       const quantity = parseInt(searchParams.get('quantity') || '1');
 
-      console.log('🔍 Checkout params:', { buyNow, productId, quantity });
+      console.log(' Checkout params:', { buyNow, productId, quantity });
 
       if (buyNow && productId) {
-        console.log('🛒 Buy Now mode detected');
+        console.log(' Buy Now mode detected');
         setIsBuyNow(true);
         
         await fetchSingleProduct(productId, quantity, actualStoreId, headers['Authorization'].split(' ')[1]);
@@ -446,17 +446,17 @@ export default function ShopCheckoutPage() {
       const multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
       const storeCart = multiCarts[actualStoreId] || [];
 
-      console.log('📦 Raw cart items:', storeCart);
+      console.log(' Raw cart items:', storeCart);
 
       if (storeCart.length === 0) {
-        console.warn('⚠️ No items in cart, redirecting to cart page');
+        console.warn(' No items in cart, redirecting to cart page');
         router.push(getShopUrl('/cart'));
         return;
       }
 
       // ✅ VALIDATE AND ENRICH CART ITEMS
       const enrichedCart = await validateCartItems(storeCart);
-      console.log('📦 Enriched cart items:', enrichedCart);
+      console.log(' Enriched cart items:', enrichedCart);
 
       setCartItems(enrichedCart);
       await loadStoreAndProfile(actualStoreId, headers);
@@ -471,12 +471,12 @@ export default function ShopCheckoutPage() {
   // ✅ Check if COD is enabled for this store
   const isCODEnabled = () => {
     if (!storeData) {
-      console.log('⚠️ No store data - COD disabled');
+      console.log(' No store data - COD disabled');
       return false;
     }
     
     const enabled = storeData.accepts_cod === true;
-    console.log('🔍 COD Check:', { accepts_cod: storeData.accepts_cod, enabled });
+    console.log(' COD Check:', { accepts_cod: storeData.accepts_cod, enabled });
     return enabled;
   };
 
@@ -507,7 +507,7 @@ export default function ShopCheckoutPage() {
     }
 
     try {
-      console.log('💳 Starting online payment flow...');
+      console.log(' Starting online payment flow...');
 
       const headers = checkAuth();
       if (!headers) return false;
@@ -531,7 +531,7 @@ export default function ShopCheckoutPage() {
 
       const { razorpay_order_id, amount, key_id } = await createOrderResponse.json();
 
-      console.log('✅ Razorpay order created:', razorpay_order_id);
+      console.log(' Razorpay order created:', razorpay_order_id);
 
       if (!key_id) {
         throw new Error('Payment key not received from server');
@@ -545,7 +545,7 @@ export default function ShopCheckoutPage() {
         description: `Order from ${storeData?.name || 'Store'}`,
         order_id: razorpay_order_id,
         handler: async function (response) {
-          console.log('💳 Payment completed, verifying...');
+          console.log(' Payment completed, verifying...');
 
           try {
             const verifyResponse = await fetch(`${API_BASE_URL}/user/orders/verify-payment-and-create-order/`, {
@@ -579,7 +579,7 @@ export default function ShopCheckoutPage() {
                 }
               }
 
-              console.log('✅ Payment verified and order created');
+              console.log(' Payment verified and order created');
               toast.success(`Payment successful! Order #${verifyData.order_id} placed successfully! 🎉`, {
                 position: 'top-center',
                 autoClose: 3000,
@@ -591,7 +591,7 @@ export default function ShopCheckoutPage() {
               throw new Error(verifyData.error || 'Payment verification failed');
             }
           } catch (verifyError) {
-            console.error('❌ Payment verification failed:', verifyError);
+            console.error(' Payment verification failed:', verifyError);
             alert(`Payment completed but order creation failed: ${verifyError.message}. Please contact support with payment ID: ${response.razorpay_payment_id}`);
           }
 
@@ -599,7 +599,7 @@ export default function ShopCheckoutPage() {
         },
         modal: {
           ondismiss: function () {
-            console.log('💳 Payment modal closed');
+            console.log(' Payment modal closed');
             setSubmitting(false);
           }
         },
@@ -616,7 +616,7 @@ export default function ShopCheckoutPage() {
       const rzp = new window.Razorpay(options);
 
       rzp.on('payment.failed', function (response) {
-        console.error('💳 Payment failed:', response.error);
+        console.error(' Payment failed:', response.error);
         alert(`Payment failed: ${response.error.description}`);
         setSubmitting(false);
       });
@@ -624,7 +624,7 @@ export default function ShopCheckoutPage() {
       rzp.open();
       return true;
     } catch (error) {
-      console.error('❌ Online payment error:', error);
+      console.error(' Online payment error:', error);
       alert(`Failed to initialize payment: ${error.message}`);
       return false;
     }
@@ -632,7 +632,7 @@ export default function ShopCheckoutPage() {
 
   // ✅ Handle order placement
   const handlePlaceOrder = async () => {
-    console.log('🔄 Placing order...');
+    console.log(' Placing order...');
 
     if (!validateForm()) {
       toast.warning('Please fill in all required fields correctly', {
@@ -684,7 +684,7 @@ export default function ShopCheckoutPage() {
         seller_phone: actualStoreId
       };
 
-      console.log('📤 Sending order data:', orderData);
+      console.log(' Sending order data:', orderData);
 
       if (paymentMethod === 'ONLINE') {
         const paymentSuccess = await handleOnlinePayment(orderData);
@@ -724,7 +724,7 @@ export default function ShopCheckoutPage() {
             }
           }
 
-          console.log('✅ COD Order placed successfully:', responseData);
+          console.log(' COD Order placed successfully:', responseData);
           toast.success(`Order placed successfully! Order #${responseData.order_id} 🎉`, {
             position: 'top-center',
             autoClose: 3000,
@@ -734,14 +734,14 @@ export default function ShopCheckoutPage() {
           router.push(profileUrl);
         } else {
           const errorMessage = responseData.error || responseData.detail || 'Please try again';
-          console.error('❌ COD Order failed:', responseData);
+          console.error(' COD Order failed:', responseData);
           alert('Order failed: ' + errorMessage);
         }
 
         setSubmitting(false);
       }
     } catch (error) {
-      console.error('❌ Order network error:', error);
+      console.error(' Order network error:', error);
       alert('Network error occurred. Please check your connection and try again.');
       setSubmitting(false);
     }
@@ -749,7 +749,7 @@ export default function ShopCheckoutPage() {
 
   const handleBackClick = () => {
     const cartUrl = getShopUrl('/cart');
-    console.log('🔙 Back to cart:', cartUrl);
+    console.log(' Back to cart:', cartUrl);
     router.push(cartUrl);
   };
 

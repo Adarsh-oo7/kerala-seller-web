@@ -21,12 +21,12 @@ import { Package2, Edit, Cloud, Box, Globe, Folder, File, ArrowLeft, CheckCircle
 // const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 // const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 
-console.log('📦 Products/Categories:', API_BASE_URL);
+console.log(' Products/Categories:', API_BASE_URL);
 
 
 // ✅ WORKING CLOUDINARY CONFIGURATION WITH FALLBACK PRESETS
@@ -81,7 +81,7 @@ const validatePositiveInteger = (value, fieldName = 'Value') => {
 
 // ✅ Enhanced Cloudinary Upload Function
 const uploadToCloudinary = async (file, options = {}) => {
-  console.log('🔄 Starting Cloudinary upload for:', file.name);
+  console.log(' Starting Cloudinary upload for:', file.name);
 
   const presetsToTry = [
     CLOUDINARY_CONFIG.upload_preset,
@@ -92,7 +92,7 @@ const uploadToCloudinary = async (file, options = {}) => {
 
   for (let i = 0; i < presetsToTry.length; i++) {
     const preset = presetsToTry[i];
-    console.log(`🔧 Trying preset ${i + 1}/${presetsToTry.length}: ${preset}`);
+    console.log(` Trying preset ${i + 1}/${presetsToTry.length}: ${preset}`);
 
     try {
       const formData = new FormData();
@@ -126,7 +126,7 @@ const uploadToCloudinary = async (file, options = {}) => {
         },
       });
 
-      console.log('✅ Upload successful with preset:', preset);
+      console.log(' Upload successful with preset:', preset);
 
       return {
         success: true,
@@ -142,17 +142,17 @@ const uploadToCloudinary = async (file, options = {}) => {
       };
 
     } catch (error) {
-      console.error(`❌ Upload failed with preset ${preset}:`, error);
+      console.error(` Upload failed with preset ${preset}:`, error);
       lastError = error;
 
       if (i < presetsToTry.length - 1) {
-        console.log(`🔄 Trying next preset...`);
+        console.log(` Trying next preset...`);
         continue;
       }
     }
   }
 
-  console.error('❌ All upload presets failed. Last error:', lastError);
+  console.error(' All upload presets failed. Last error:', lastError);
 
   let errorMessage = 'Upload failed';
   if (lastError?.response?.data?.error?.message) {
@@ -354,7 +354,7 @@ const CloudinaryImageUpload = ({
       }
 
     } catch (error) {
-      console.error('❌ Upload error:', error);
+      console.error(' Upload error:', error);
       setError('Upload failed. Please try again.');
       setPreviews(prev => prev.filter(preview => preview.isUploaded));
     } finally {
@@ -1139,7 +1139,7 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
       setCurrentCategories(rootCategories);
 
     } catch (err) {
-      console.error('❌ Error fetching categories:', err);
+      console.error(' Error fetching categories:', err);
       setError(`Failed to load categories: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoading(false);
@@ -1501,7 +1501,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
 
   useEffect(() => {
     if (product) {
-      console.log('📦 Loading product for editing:', product);
+      console.log(' Loading product for editing:', product);
       
       setFormData({
         name: product.name || '',
@@ -1535,7 +1535,7 @@ const subImages = product.sub_images
 
       
       setSubImageUrls(subImages);
-      console.log('✅ Product loaded:', product.name);
+      console.log(' Product loaded:', product.name);
     }
   }, [product]);
 
@@ -1838,7 +1838,7 @@ const handleMainImageUpload = (uploadedImages) => {
     weight_kg: formData.weight_kg && formData.weight_kg !== '' ? parseFloat(formData.weight_kg) : null, // ✅ NEW: Include weight
   };
 
-  console.log('🚀 Submitting product data:', submissionData);
+  console.log(' Submitting product data:', submissionData);
 
   const url = product
     ? `${PRODUCTS_API_URL}${product.id}/`
@@ -1858,7 +1858,7 @@ const handleMainImageUpload = (uploadedImages) => {
       timeout: 30000
     });
 
-    console.log('✅ Product saved successfully:', response.data);
+    console.log(' Product saved successfully:', response.data);
     onSuccess();
   } catch (err) {
     let errorMessage = 'Something went wrong. Please check your details and try again.';
@@ -1893,7 +1893,7 @@ const handleMainImageUpload = (uploadedImages) => {
       errorMessage = 'Request is taking too long. Please check your internet connection and try again.';
     }
 
-    console.error('❌ Product save error:', err);
+    console.error(' Product save error:', err);
     setError(errorMessage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } finally {

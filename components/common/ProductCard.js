@@ -82,7 +82,7 @@ export default function ProductCard({
     const stockCheck = canBePurchasedOnline !== undefined ? canBePurchasedOnline : (onlineStock > 0)
 
     if (!stockCheck) {
-      console.warn('⚠️ Attempted to add out-of-stock item to cart')
+      console.warn(' Attempted to add out-of-stock item to cart')
       return
     }
 
@@ -111,11 +111,11 @@ export default function ProductCard({
           cloudinary_url: cloudinaryUrl // ✅ Include for future use
         }
 
-        console.log('🛒 Adding to cart with Cloudinary URL:', productData)
+        console.log(' Adding to cart with Cloudinary URL:', productData)
         await onAddToCart(e, productData)
       }
     } catch (error) {
-      console.error('❌ Add to cart error:', error)
+      console.error(' Add to cart error:', error)
     }
   }
 

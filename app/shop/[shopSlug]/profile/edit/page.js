@@ -10,7 +10,7 @@ import { toast } from "react-toastify";
 
 // const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 
 export default function ShopEditProfilePage() {
@@ -40,7 +40,7 @@ export default function ShopEditProfilePage() {
   }, []);
 
   const getActualStoreId = () => {
-    console.log('🔍 Getting store ID for edit profile...');
+    console.log(' Getting store ID for edit profile...');
     console.log('- shopSlug from params:', shopSlug);
     console.log('- id from search params:', searchParams.get('id'));
 
@@ -63,11 +63,11 @@ export default function ShopEditProfilePage() {
   };
 
   const actualStoreId = getActualStoreId();
-  console.log('✏️ Edit profile store ID:', actualStoreId);
+  console.log(' Edit profile store ID:', actualStoreId);
 
   const getShopUrl = (path = '') => {
     if (!actualStoreId) {
-      console.error('❌ Cannot generate URL - no store ID available');
+      console.error(' Cannot generate URL - no store ID available');
       return '/';
     }
 
@@ -87,7 +87,7 @@ export default function ShopEditProfilePage() {
       const loginUrl = getShopUrl('/login');
       const currentUrl = getShopUrl('/profile/edit');
       const redirectUrl = `${loginUrl}?redirect=${encodeURIComponent(currentUrl)}`;
-      console.log('🔐 No token, redirecting to login:', redirectUrl);
+      console.log(' No token, redirecting to login:', redirectUrl);
       router.push(redirectUrl);
       return null;
     }
@@ -96,7 +96,7 @@ export default function ShopEditProfilePage() {
 
   useEffect(() => {
     if (urlError || !actualStoreId) {
-      console.log('🔍 Invalid edit profile URL, redirecting to home...');
+      console.log(' Invalid edit profile URL, redirecting to home...');
       router.replace('/');
       return;
     }
@@ -108,13 +108,13 @@ export default function ShopEditProfilePage() {
       if (!headers) return;
 
       if (!actualStoreId) {
-        console.error('❌ No valid store ID found');
+        console.error(' No valid store ID found');
         setLoading(false);
         return;
       }
 
       try {
-        console.log('📡 Fetching profile data for store ID:', actualStoreId);
+        console.log(' Fetching profile data for store ID:', actualStoreId);
 
         const [profileRes, storeRes] = await Promise.allSettled([
           fetch(`${API_BASE_URL}/api/buyer/profile/`, { headers }),
@@ -124,9 +124,9 @@ export default function ShopEditProfilePage() {
         if (profileRes.status === 'fulfilled' && profileRes.value.ok) {
           const data = await profileRes.value.json();
           setProfileData(data);
-          console.log('✅ Profile data loaded for editing:', data);
+          console.log(' Profile data loaded for editing:', data);
         } else {
-          console.warn('⚠️ Profile API failed');
+          console.warn(' Profile API failed');
           if (profileRes.status === 'fulfilled') {
             const errorText = await profileRes.value.text();
             console.error('Profile API error:', profileRes.value.status, errorText);
@@ -136,9 +136,9 @@ export default function ShopEditProfilePage() {
         if (storeRes.status === 'fulfilled' && storeRes.value.ok) {
           const storeResData = await storeRes.value.json();
           setStoreData(storeResData.store || storeResData);
-          console.log('✅ Store data loaded');
+          console.log(' Store data loaded');
         } else {
-          console.warn('⚠️ Store data not found, using fallback');
+          console.warn(' Store data not found, using fallback');
           setStoreData({
             name: `Store ${actualStoreId}`,
             seller_phone: actualStoreId,
@@ -146,7 +146,7 @@ export default function ShopEditProfilePage() {
           });
         }
       } catch (error) {
-        console.error('❌ Failed to fetch profile:', error);
+        console.error(' Failed to fetch profile:', error);
       } finally {
         setLoading(false);
       }
@@ -177,7 +177,7 @@ export default function ShopEditProfilePage() {
 
     setSaving(true);
     try {
-      console.log('💾 Saving profile data...');
+      console.log(' Saving profile data...');
 
       // ✅ FIX: Only send editable fields (exclude id, email, phone_verified)
       const cleanData = {
@@ -196,7 +196,7 @@ export default function ShopEditProfilePage() {
         }
       });
 
-      console.log('📤 Clean profile data to save:', cleanData);
+      console.log(' Clean profile data to save:', cleanData);
 
       const response = await fetch(`${API_BASE_URL}/api/buyer/profile/`, {
         method: 'PATCH',
@@ -207,11 +207,11 @@ export default function ShopEditProfilePage() {
         body: JSON.stringify(cleanData)
       });
 
-      console.log('📥 Save response status:', response.status);
+      console.log(' Save response status:', response.status);
 
       if (response.ok) {
         const responseData = await response.json();
-        console.log('✅ Profile updated successfully:', responseData);
+        console.log(' Profile updated successfully:', responseData);
 
         // Update local state with server response
         setProfileData(prev => ({
@@ -230,13 +230,13 @@ export default function ShopEditProfilePage() {
         const profileUrl = getShopUrl('/profile');
         router.push(profileUrl);
       } else {
-        console.error('❌ Profile update failed:', response.status);
+        console.error(' Profile update failed:', response.status);
 
         let errorMessage = 'Failed to update profile. Please try again.';
 
         try {
           const errorData = await response.json();
-          console.error('❌ Error details:', errorData);
+          console.error(' Error details:', errorData);
 
           if (errorData.details) {
             // Show field-specific errors
@@ -249,7 +249,7 @@ export default function ShopEditProfilePage() {
           }
         } catch (jsonError) {
           const textError = await response.text().catch(() => 'Unable to read error');
-          console.error('❌ Error details (text):', textError);
+          console.error(' Error details (text):', textError);
         }
 
         if (response.status === 400) {
@@ -263,7 +263,7 @@ export default function ShopEditProfilePage() {
         }
       }
     } catch (error) {
-      console.error('❌ Profile update error:', error);
+      console.error(' Profile update error:', error);
       alert('Network error occurred. Please check your connection.');
     } finally {
       setSaving(false);
@@ -272,7 +272,7 @@ export default function ShopEditProfilePage() {
 
   const handleBack = () => {
     const profileUrl = getShopUrl('/profile');
-    console.log('🔙 Back to profile:', profileUrl);
+    console.log(' Back to profile:', profileUrl);
     router.push(profileUrl);
   };
 

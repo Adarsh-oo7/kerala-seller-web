@@ -48,7 +48,7 @@ import {
 // const API_BASE_URL = 'https://api.keralasellers.in';
 // const LOGIN_API_URL = `${API_BASE_URL}/user/login/`;
 
-// console.log('ðŸŒ Seller Login API URLs configured:', {
+// console.log(' Seller Login API URLs configured:', {
 //   API_BASE_URL,
 //   LOGIN_API_URL
 // });
@@ -59,7 +59,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ||
 
 const LOGIN_API_URL = `${API_BASE_URL}/user/login/`;
 
-console.log('ðŸŒ Seller Login:', {
+console.log(' Seller Login:', {
   API_BASE_URL,
   LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL || 'none',
   LOGIN_API_URL
@@ -192,7 +192,7 @@ function LoginForm() {
           return;
         }
 
-        console.log('ðŸ” Checking existing seller token...');
+        console.log(' Checking existing seller token...');
 
         const response = await axios.get(`${API_BASE_URL}/user/dashboard/`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -200,13 +200,13 @@ function LoginForm() {
         });
 
         if (response.status === 200) {
-          console.log('âœ… Valid seller token found, redirecting...');
+          console.log(' Valid seller token found, redirecting...');
           const redirectUrl = redirect || '/dashboard/seller';
           router.replace(redirectUrl);
           return;
         }
       } catch (error) {
-        console.log('âŒ Token invalid or expired, clearing auth data');
+        console.log(' Token invalid or expired, clearing auth data');
         localStorage.removeItem('accessToken');
         localStorage.removeItem('access_token');
         localStorage.removeItem('sellerInfo');
@@ -273,7 +273,7 @@ function LoginForm() {
     setFieldErrors({});
 
     try {
-      console.log('ðŸ” Attempting seller login with phone:', phone);
+      console.log(' Attempting seller login with phone:', phone);
 
       const response = await axios.post(LOGIN_API_URL, {
         phone: phone.trim(),
@@ -284,7 +284,7 @@ function LoginForm() {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      console.log('âœ… Login response received:', response.data);
+      console.log(' Login response received:', response.data);
 
       const token = response.data.access_token || response.data.token || response.data.access;
 
@@ -293,7 +293,7 @@ function LoginForm() {
       }
 
       const { seller, debug_info } = response.data;
-      console.log('âœ… Login successful for:', debug_info?.admin_user_email || seller?.email || phone);
+      console.log(' Login successful for:', debug_info?.admin_user_email || seller?.email || phone);
 
       // Clear old tokens
       localStorage.removeItem('accessToken');
@@ -316,7 +316,7 @@ function LoginForm() {
 
       // âœ… SIMPLIFIED: Check onboarding status (NO COUPON CHECK)
       try {
-        console.log('ðŸ” Checking seller onboarding status...');
+        console.log(' Checking seller onboarding status...');
         
         const statusResponse = await axios.get(
           `${API_BASE_URL}/users/seller/onboarding/status/`,
@@ -328,26 +328,26 @@ function LoginForm() {
           razorpay_connected 
         } = statusResponse.data;
 
-        console.log('âœ… Onboarding status:', statusResponse.data);
+        console.log(' Onboarding status:', statusResponse.data);
 
         // âœ… Simplified redirect logic (Login â†’ Settings â†’ Payments)
         let redirectUrl;
 
         if (!store_setup_completed) {
           redirectUrl = '/dashboard/seller/settings';
-          console.log('ðŸ“ Redirecting to: Setup Store (Settings)');
+          console.log(' Redirecting to: Setup Store (Settings)');
         } else if (!razorpay_connected) {
           redirectUrl = '/dashboard/seller/payments';
-          console.log('ðŸ“ Redirecting to: Connect Razorpay (Payments)');
+          console.log(' Redirecting to: Connect Razorpay (Payments)');
         } else if (redirect) {
           redirectUrl = decodeURIComponent(redirect);
-          console.log('ðŸ“ Redirecting to: Custom redirect');
+          console.log(' Redirecting to: Custom redirect');
         } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
           redirectUrl = `/store/${currentStoreInfo.storeId}/dashboard`;
-          console.log('ðŸ“ Redirecting to: Store Dashboard');
+          console.log(' Redirecting to: Store Dashboard');
         } else {
           redirectUrl = '/dashboard/seller';
-          console.log('ðŸ“ Redirecting to: Main Dashboard');
+          console.log(' Redirecting to: Main Dashboard');
         }
 
         setTimeout(() => {
@@ -355,7 +355,7 @@ function LoginForm() {
         }, 500);
 
       } catch (statusError) {
-        console.error('âš ï¸ Failed to check onboarding status:', statusError);
+        console.error(' Failed to check onboarding status:', statusError);
         
         // Fallback - go to settings if onboarding status check fails
         const fallbackUrl = '/dashboard/seller/settings';
@@ -366,8 +366,8 @@ function LoginForm() {
       }
 
     } catch (err) {
-      console.error('âŒ Login error:', err);
-      console.error('âŒ Error response:', err.response?.data);
+      console.error(' Login error:', err);
+      console.error(' Error response:', err.response?.data);
 
       let errorMessage = 'Login failed. Please check your credentials.';
 

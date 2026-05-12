@@ -139,7 +139,7 @@ export default function Header() {
       localStorage.getItem('buyerAccessToken');
     setIsLoggedIn(!!token);
 
-    console.log('🔍 Auth check - Token found:', !!token);
+    console.log(' Auth check - Token found:', !!token);
 
     // Listen for storage changes (login/logout from other tabs)
     const handleStorageChange = () => {

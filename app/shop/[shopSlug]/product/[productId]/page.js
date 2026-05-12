@@ -59,14 +59,14 @@ import {
 // const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-  'https://api.keralasellers.in/api';
+  'https://api.keralasellers.in';
 
 const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;
 
-console.log('❤️ Wishlist APIs:', API_BASE_URL);
+console.log(' Wishlist APIs:', API_BASE_URL);
 
 
 
@@ -603,16 +603,16 @@ useEffect(() => {
       if (!headers || !product?.id) return;
 
       try {
-        console.log(`🔍 Checking wishlist status for product ${product.id}`);
+        console.log(` Checking wishlist status for product ${product.id}`);
         const response = await axios.get(`${WISHLIST_CHECK_API}?product_id=${product.id}`, {
           headers,
           timeout: 5000
         });
         const isInWishlist = response.data.is_wishlisted || false;
-        console.log(`✅ Product ${product.id} wishlist status:`, isInWishlist);
+        console.log(` Product ${product.id} wishlist status:`, isInWishlist);
         setIsWishlisted(isInWishlist);
       } catch (error) {
-        console.warn('❌ Failed to check wishlist status:', error);
+        console.warn(' Failed to check wishlist status:', error);
       }
     };
 
@@ -633,7 +633,7 @@ useEffect(() => {
     }
 
     if (isWishlistLoading) {
-      console.log('⏳ Wishlist request already in progress for product:', product.id);
+      console.log(' Wishlist request already in progress for product:', product.id);
       return;
     }
 
@@ -644,7 +644,7 @@ useEffect(() => {
     setIsWishlisted(!isWishlisted);
 
     try {
-      console.log('🔄 Toggling wishlist for product:', product.id);
+      console.log(' Toggling wishlist for product:', product.id);
 
       const response = await axios.post(WISHLIST_TOGGLE_API, {
         product_id: product.id
@@ -653,17 +653,17 @@ useEffect(() => {
         timeout: 10000
       });
 
-      console.log('✅ Wishlist toggle response:', response.data);
+      console.log(' Wishlist toggle response:', response.data);
 
       const newWishlistState = response.data.is_wishlisted ?? response.data.wishlisted;
       setIsWishlisted(newWishlistState);
 
       // Show user feedback
       const action = newWishlistState ? 'added to' : 'removed from';
-      console.log(`✅ ${product.name} ${action} wishlist`);
+      console.log(` ${product.name} ${action} wishlist`);
 
     } catch (error) {
-      console.error('❌ Wishlist toggle error:', error);
+      console.error(' Wishlist toggle error:', error);
 
       // Revert optimistic update
       setIsWishlisted(previousState);
@@ -701,7 +701,7 @@ useEffect(() => {
         return;
       }
 
-      console.log('🔄 Redirecting to seller login:', `/shop/${shopSlug}/login?redirect=${returnUrl}&id=${phone}`);
+      console.log(' Redirecting to seller login:', `/shop/${shopSlug}/login?redirect=${returnUrl}&id=${phone}`);
       router.push(`/shop/${shopSlug}/login?redirect=${returnUrl}&id=${phone}`);
       return;
     }
@@ -715,7 +715,7 @@ useEffect(() => {
     }
 
     // ✅ Navigate to individual shop's checkout with Buy Now parameters
-    console.log('🛒 Buy Now: Redirecting to shop checkout', {
+    console.log(' Buy Now: Redirecting to shop checkout', {
       shopSlug,
       sellerPhone,
       productId: product.id,
@@ -737,7 +737,7 @@ useEffect(() => {
     try {
       if (navigator.share && navigator.canShare(shareData)) {
         await navigator.share(shareData);
-        console.log('✅ Shared successfully via native sharing');
+        console.log(' Shared successfully via native sharing');
       } else {
         // Fallback: copy to clipboard
         await navigator.clipboard.writeText(window.location.href);
@@ -749,7 +749,7 @@ useEffect(() => {
             theme: "colored",
           }
         );
-        console.log('✅ Link copied to clipboard');
+        console.log(' Link copied to clipboard');
       }
     } catch (error) {
       console.error('Error sharing:', error);
@@ -1036,7 +1036,7 @@ function RelatedProductCard({ product, shopSlug, sellerPhone }) {
         });
         setIsWishlisted(response.data.is_wishlisted || false);
       } catch (error) {
-        console.warn('❌ Failed to check wishlist status for related product:', error);
+        console.warn(' Failed to check wishlist status for related product:', error);
       }
     };
 
@@ -1066,7 +1066,7 @@ function RelatedProductCard({ product, shopSlug, sellerPhone }) {
 
       setIsWishlisted(response.data.is_wishlisted ?? response.data.wishlisted);
     } catch (error) {
-      console.error('❌ Wishlist toggle error:', error);
+      console.error(' Wishlist toggle error:', error);
       setIsWishlisted(previousState);
     } finally {
       setIsWishlistLoading(false);
@@ -1258,7 +1258,7 @@ function ShopProductPageContent() {
       setIsLoading(true);
       setError(null);
 
-      console.log('🔍 Fetching product data:', { sellerPhone, productId });
+      console.log(' Fetching product data:', { sellerPhone, productId });
 
       // Fetch both product and store data
       const [productRes, storeRes] = await Promise.all([
@@ -1266,8 +1266,8 @@ function ShopProductPageContent() {
         axios.get(`${API_BASE_URL}/shop/${sellerPhone}/`, { timeout: 15000 })
       ]);
 
-      console.log('✅ Product data received:', productRes.data);
-      console.log('✅ Store data received:', storeRes.data);
+      console.log(' Product data received:', productRes.data);
+      console.log(' Store data received:', storeRes.data);
 
       setProduct(productRes.data);
       setStore(storeRes.data.store || storeRes.data);
@@ -1285,7 +1285,7 @@ function ShopProductPageContent() {
       await checkReviewPermission();
 
     } catch (error) {
-      console.error('❌ Failed to fetch product data:', error);
+      console.error(' Failed to fetch product data:', error);
 
       if (error.response?.status === 404) {
         setError('Product not found or not available in this store.');
@@ -1339,7 +1339,7 @@ if (!isLoggedIn) {
   }
 
   // ✅ Redirect to shop-specific login page
-  console.log('🔄 Redirecting to seller login:', `/shop/${shopSlugForLogin}/login?redirect=${returnUrl}&id=${phone}`);
+  console.log(' Redirecting to seller login:', `/shop/${shopSlugForLogin}/login?redirect=${returnUrl}&id=${phone}`);
   router.push(`/shop/${shopSlugForLogin}/login?redirect=${returnUrl}&id=${phone}`);
   return;
 }
@@ -1357,7 +1357,7 @@ if (!isLoggedIn) {
         await Promise.resolve(addToCart(sellerPhone, product));
       }
 
-      console.log('✅ Successfully added to cart:', product.name);
+      console.log(' Successfully added to cart:', product.name);
       toast.success(
         `${product.name} added to cart`,
         {
@@ -1367,7 +1367,7 @@ if (!isLoggedIn) {
         }
       );
     } catch (error) {
-      console.error('❌ Add to cart failed:', error);
+      console.error(' Add to cart failed:', error);
       alert('Failed to add to cart. Please try again.');
     } finally {
       setAddToCartLoading(false);

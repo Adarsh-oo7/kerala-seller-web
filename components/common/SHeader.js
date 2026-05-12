@@ -85,7 +85,7 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
       finalUrl = `${targetPath}${separator}id=${actualStoreId}`;
     }
 
-    console.log('🔄 Bottom nav navigating to:', finalUrl);
+    console.log(' Bottom nav navigating to:', finalUrl);
     router.push(finalUrl);
   };
 
@@ -201,7 +201,7 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
   // ✅ ENHANCED: Better store identification
   const effectiveStoreId = actualStoreId || (finalShopSlug !== 'new' ? finalShopSlug : null);
 
-  console.log('🔍 SHeader Debug:');
+  console.log(' SHeader Debug:');
   console.log('- shopSlug prop:', shopSlug);
   console.log('- params?.shopSlug:', params?.shopSlug);
   console.log('- searchParams id:', actualStoreId);
@@ -302,14 +302,14 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
   const handleProfileClick = (e) => {
     e.preventDefault();
     const profileUrl = generateShopUrl('/profile');
-    console.log('🔄 Profile click navigating to:', profileUrl);
+    console.log(' Profile click navigating to:', profileUrl);
     router.push(profileUrl);
   };
 
   const handleCartClick = (e) => {
     e.preventDefault();
     const cartUrl = generateShopUrl('/cart');
-    console.log('🔄 Cart click navigating to:', cartUrl);
+    console.log(' Cart click navigating to:', cartUrl);
     router.push(cartUrl);
   };
 
@@ -319,7 +319,7 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
   };
 
   if (!effectiveStoreId) {
-    console.warn('⚠️ SHeader: No effective store ID found');
+    console.warn(' SHeader: No effective store ID found');
     // Still render but with limited functionality
     return (
       <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#fef2f2', color: '#dc2626' }}>

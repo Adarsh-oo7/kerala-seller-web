@@ -489,7 +489,7 @@ export default function PaymentsDashboard() {
           <div style={{ ...s.card, padding: '16px' }}>
             <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>âœ… SUCCESSFUL</p>
             <p style={{ fontSize: '20px', fontWeight: 700, color: '#10b981', margin: 0 }}>
-              â‚¹{payoutSummary.successAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              ₹{payoutSummary.successAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </p>
             <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>
               {payoutSummary.successCount} {viewMode === 'live' ? (activeTab === 'transactions' ? 'payments' : 'settlements') : 'payouts'}
@@ -498,14 +498,14 @@ export default function PaymentsDashboard() {
           <div style={{ ...s.card, padding: '16px' }}>
             <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>â³ PENDING</p>
             <p style={{ fontSize: '20px', fontWeight: 700, color: '#f59e0b', margin: 0 }}>
-              â‚¹{payoutSummary.pendingAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              ₹{payoutSummary.pendingAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </p>
             <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>{payoutSummary.pendingCount} pending</p>
           </div>
           <div style={{ ...s.card, padding: '16px' }}>
             <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>ðŸ¦ SETTLED</p>
             <p style={{ fontSize: '20px', fontWeight: 700, color: '#3b82f6', margin: 0 }}>
-              â‚¹{payoutSummary.settledAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              ₹{payoutSummary.settledAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </p>
             <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>{payoutSummary.settledCount} settled</p>
           </div>
@@ -513,7 +513,7 @@ export default function PaymentsDashboard() {
             <div style={{ ...s.card, padding: '16px' }}>
               <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0' }}>â° AWAITING</p>
               <p style={{ fontSize: '20px', fontWeight: 700, color: '#8b5cf6', margin: 0 }}>
-                â‚¹{payoutSummary.pendingSettlementAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                ₹{payoutSummary.pendingSettlementAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
               </p>
               <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>{payoutSummary.pendingSettlementCount} pending</p>
             </div>
@@ -598,7 +598,7 @@ export default function PaymentsDashboard() {
 </div>
 
                       <div style={{ flex: 2, fontWeight: 700, color: '#10b981', fontSize: '14px' }}>
-                        â‚¹{(parseFloat(txn.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        ₹{(parseFloat(txn.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </div>
                       <div style={{ flex: 2, fontSize: '13px', textTransform: 'capitalize' }}>
                         {txn.method || 'N/A'}
@@ -664,10 +664,10 @@ export default function PaymentsDashboard() {
 
 
                         <div style={{ flex: 2, fontWeight: 700, color: '#10b981', fontSize: '14px' }}>
-                          â‚¹{(parseFloat(settlement.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          ₹{(parseFloat(settlement.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </div>
                         <div style={{ flex: 2, fontSize: '13px', color: '#ef4444' }}>
-  -â‚¹{parseFloat(settlement.fees || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+  -₹{parseFloat(settlement.fees || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
 </div>
 
                         <div style={{ flex: 2 }}>
@@ -698,7 +698,7 @@ export default function PaymentsDashboard() {
                           {new Date(payout.created_at).toLocaleDateString()}
                         </div>
                         <div style={{ flex: 2, fontWeight: 700, color: '#10b981', fontSize: '14px' }}>
-                          â‚¹{parseFloat(payout.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          ₹{parseFloat(payout.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </div>
                         <div style={{ flex: 2, fontSize: '13px' }}>
                           {payout.gateway_display || payout.gateway_used}

@@ -20,7 +20,7 @@ import SHeader from '../../../../components/common/SHeader';
 import { toast } from "react-toastify";
 import { useCart } from '../../../../app/context/CartContext';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 export default function ShopCartPage() {
   const { shopSlug } = useParams();
@@ -91,7 +91,7 @@ export default function ShopCartPage() {
 
   const getShopUrl = (path = '') => {
     if (!actualStoreId) {
-      console.error('❌ Cannot generate URL - no store ID available');
+      console.error(' Cannot generate URL - no store ID available');
       return '/';
     }
 
@@ -196,13 +196,13 @@ export default function ShopCartPage() {
       try {
         setCalculating(true);
         
-        console.log('📊 Calculating cart delivery charge via backend API...');
+        console.log(' Calculating cart delivery charge via backend API...');
 
         const token = localStorage.getItem('buyerAccessToken') || 
                      localStorage.getItem('access_token');
 
         if (!token) {
-          console.warn('⚠️ No token, using fallback calculation');
+          console.warn(' No token, using fallback calculation');
           const fallbackSubtotal = cartItems.reduce((sum, item) => 
             sum + (parseFloat(item.price) * item.quantity), 0
           );
@@ -247,7 +247,7 @@ export default function ShopCartPage() {
           setIsFreeDelivery(data.is_free_delivery || false);
           setDeliveryReason(data.reason || '');
           
-          console.log('✅ Cart delivery calculated:', {
+          console.log(' Cart delivery calculated:', {
             delivery: deliveryAmount,
             subtotal: subtotalAmount,
             total: totalAmount,
@@ -259,7 +259,7 @@ export default function ShopCartPage() {
         }
 
       } catch (error) {
-        console.error('❌ Cart delivery calculation error:', error);
+        console.error(' Cart delivery calculation error:', error);
         
         const fallbackSubtotal = cartItems.reduce((sum, item) => 
           sum + (parseFloat(item.price) * item.quantity), 0
@@ -300,7 +300,7 @@ export default function ShopCartPage() {
           );
 
           if (!response.ok && response.status === 404) {
-            console.log(`⚠️ Shop product endpoint not found for ${item.id}, trying main API`);
+            console.log(` Shop product endpoint not found for ${item.id}, trying main API`);
             response = await fetch(`${API_BASE_URL}/api/products/${item.id}/`);
           }
 
@@ -316,17 +316,17 @@ export default function ShopCartPage() {
                   : `Only ${availableStock} available`;
             }
           } else {
-            console.warn(`⚠️ Could not validate stock for product ${item.id}`);
+            console.warn(` Could not validate stock for product ${item.id}`);
           }
         } catch (error) {
-          console.warn(`⚠️ Stock check failed for product ${item.id}:`, error);
+          console.warn(` Stock check failed for product ${item.id}:`, error);
         }
       }
 
       setStockLimits(limits);
       setStockWarnings(warnings);
     } catch (error) {
-      console.warn('⚠️ Stock validation failed:', error);
+      console.warn(' Stock validation failed:', error);
     } finally {
       setValidatingStock(false);
     }
@@ -354,7 +354,7 @@ export default function ShopCartPage() {
         );
 
         if (!response.ok && response.status === 404) {
-          console.log(`⚠️ Shop product endpoint not found, trying main API`);
+          console.log(` Shop product endpoint not found, trying main API`);
           response = await fetch(`${API_BASE_URL}/api/products/${productId}/`);
         }
 
@@ -382,11 +382,11 @@ export default function ShopCartPage() {
 
           setStockLimits(prev => ({ ...prev, [productId]: availableStock }));
         } else {
-          console.warn(`⚠️ Could not validate stock for product ${productId}, allowing update`);
+          console.warn(` Could not validate stock for product ${productId}, allowing update`);
         }
       } catch (error) {
-        console.error('❌ Stock check failed:', error);
-        console.warn('⚠️ Stock validation failed, allowing quantity update');
+        console.error(' Stock check failed:', error);
+        console.warn(' Stock validation failed, allowing quantity update');
       }
     }
 
@@ -479,7 +479,7 @@ const handleCheckout = () => {
     localStorage.getItem('accessToken');
   
   if (!token) {
-    console.log('❌ User not logged in, redirecting to login');
+    console.log(' User not logged in, redirecting to login');
     
     // Save current cart URL as redirect target
     const currentUrl = getShopUrl('/cart');
@@ -543,7 +543,7 @@ const handleCheckout = () => {
   }
 
   // ✅ STEP 6: Proceed to checkout
-  console.log('✅ User authenticated, proceeding to checkout');
+  console.log(' User authenticated, proceeding to checkout');
   router.push(getShopUrl('/checkout'));
 };
 

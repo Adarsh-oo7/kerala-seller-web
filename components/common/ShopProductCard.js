@@ -62,7 +62,7 @@ export default function ShopProductCard({
 
   // ✅ Sync with parent wishlist state + debug logging
   useEffect(() => {
-    console.log(`🔍 Product ${product?.id}: isWishlisted prop changed to:`, isWishlisted);
+    console.log(` Product ${product?.id}: isWishlisted prop changed to:`, isWishlisted);
     setLocalWishlistState(isWishlisted);
   }, [isWishlisted, product?.id]);
 
@@ -73,16 +73,16 @@ export default function ShopProductCard({
       if (!headers || !product?.id) return;
 
       try {
-        console.log(`🔍 Checking wishlist status for product ${product.id}`);
+        console.log(` Checking wishlist status for product ${product.id}`);
         const response = await axios.get(`${WISHLIST_CHECK_API}?product_id=${product.id}`, {
           headers,
           timeout: 5000
         });
         const isInWishlist = response.data.is_wishlisted || false;
-        console.log(`✅ Product ${product.id} wishlist status:`, isInWishlist);
+        console.log(` Product ${product.id} wishlist status:`, isInWishlist);
         setLocalWishlistState(isInWishlist);
       } catch (error) {
-        console.warn('❌ Failed to check wishlist status:', error);
+        console.warn(' Failed to check wishlist status:', error);
       }
     };
 
@@ -148,7 +148,7 @@ export default function ShopProductCard({
     e.preventDefault();
     e.stopPropagation();
 
-    console.log('🔍 Wishlist button clicked for product:', product.id);
+    console.log(' Wishlist button clicked for product:', product.id);
 
     const headers = getAuthHeaders();
     if (!headers) {
@@ -156,14 +156,14 @@ export default function ShopProductCard({
       if (shouldLogin) {
         // ✅ FIX: Use helper function with full path
         const loginUrl = getLoginRedirectUrl();
-        console.log('🔄 Redirecting to login:', loginUrl);
+        console.log(' Redirecting to login:', loginUrl);
         window.location.href = loginUrl;
       }
       return;
     }
 
     if (isWishlistLoading) {
-      console.log('⏳ Wishlist request already in progress for product:', product.id);
+      console.log(' Wishlist request already in progress for product:', product.id);
       return;
     }
 
@@ -174,7 +174,7 @@ export default function ShopProductCard({
     setLocalWishlistState(!localWishlistState);
 
     try {
-      console.log('🔄 Toggling wishlist for product:', product.id);
+      console.log(' Toggling wishlist for product:', product.id);
 
       const response = await axios.post(WISHLIST_TOGGLE_API, {
         product_id: product.id
@@ -183,7 +183,7 @@ export default function ShopProductCard({
         timeout: 10000
       });
 
-      console.log('✅ Wishlist toggle response:', response.data);
+      console.log(' Wishlist toggle response:', response.data);
 
       const newWishlistState = response.data.is_wishlisted ?? response.data.wishlisted;
       setLocalWishlistState(newWishlistState);
@@ -195,13 +195,13 @@ export default function ShopProductCard({
 
       // Show user feedback
       const action = newWishlistState ? 'added to' : 'removed from';
-      console.log(`✅ ${product.name} ${action} wishlist`);
+      console.log(` ${product.name} ${action} wishlist`);
 
       // Visual feedback
       showWishlistFeedback(newWishlistState);
 
     } catch (error) {
-      console.error('❌ Wishlist toggle error:', error);
+      console.error(' Wishlist toggle error:', error);
 
       // Revert optimistic update
       setLocalWishlistState(previousState);
@@ -287,7 +287,7 @@ export default function ShopProductCard({
       if (shouldLogin) {
         // ✅ FIX: Use helper function with full path
         const loginUrl = getLoginRedirectUrl();
-        console.log('🔄 Redirecting to login:', loginUrl);
+        console.log(' Redirecting to login:', loginUrl);
         window.location.href = loginUrl;
       }
       return;

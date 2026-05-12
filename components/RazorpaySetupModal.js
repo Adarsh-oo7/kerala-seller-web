@@ -5,7 +5,7 @@ import axios from 'axios';
 import '../styles/DashboardPayments.css'
 
 // const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 
 export default function RazorpaySetupModal({ isOpen, onClose, onSuccess, editMode }) {

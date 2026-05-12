@@ -36,7 +36,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ||
 
 const API_URL = `${API_BASE_URL}/user/store/products/`;
 
-console.log('🌐 Quick Add API configured:', { 
+console.log(' Quick Add API configured:', { 
   API_BASE_URL, 
   API_URL,
   ENVIRONMENT: process.env.NODE_ENV,
@@ -131,7 +131,7 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
 
     if (imageFile) {
       submissionData.append('main_image', imageFile); // ✅ Fixed field name to match your backend
-      console.log('📸 Image file being sent:', imageFile.name);
+      console.log(' Image file being sent:', imageFile.name);
     }
     
     const token = localStorage.getItem('accessToken');
@@ -152,7 +152,7 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
         timeout: 30000  // ✅ Increased timeout for hosted backend
       });
       
-      console.log('✅ Product added successfully:', response.data);
+      console.log(' Product added successfully:', response.data);
       setSuccess('Product added successfully!');
       
       // ✅ ENHANCED: Auto-close after 1.5 seconds on success
@@ -161,7 +161,7 @@ export default function QuickAddStockForm({ onClose, onSuccess }) {
       }, 1500);
       
     } catch (err) {
-      console.error('❌ Submission error:', err.response?.data || err.message);
+      console.error(' Submission error:', err.response?.data || err.message);
       
       let errorMessage = 'Failed to add product. Please check your input.';
       

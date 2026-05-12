@@ -54,7 +54,7 @@
 // const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 // const ORDERS_COUNT_API = `${API_BASE_URL}/api/buyer/orders/count/`;
 
-// console.log('ðŸ‘¤ Profile APIs:', {
+// console.log(' Profile APIs:', {
 //     API_BASE_URL,
 //     LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL,
 //     PROFILE_API,
@@ -81,7 +81,7 @@
 //       localStorage.getItem('buyerAccessToken');
 
 //     if (!token) {
-//       console.error('âŒ No authentication token found');
+//       console.error(' No authentication token found');
 //       return null;
 //     }
 
@@ -95,7 +95,7 @@
 //     const currentPath = window.location.pathname;
 //     const searchParams = new URLSearchParams(window.location.search);
 
-//     console.log('ðŸ” Analyzing shop context:', {
+//     console.log(' Analyzing shop context:', {
 //       path: currentPath,
 //       search: window.location.search,
 //       fullUrl: window.location.href
@@ -113,7 +113,7 @@
 //       shopUrl = `/shop/${shopId}`;
 //       isInShop = true;
 //       detectionMethod = 'query';
-//       console.log('âœ… Shop context from query parameter:', { shopId, shopUrl, method: detectionMethod });
+//       console.log(' Shop context from query parameter:', { shopId, shopUrl, method: detectionMethod });
 //     }
 
 //     // Priority 2: Check /shop/{id} pattern in URL path (only if query didn't work)
@@ -127,9 +127,9 @@
 //           shopUrl = `/shop/${shopId}`;
 //           isInShop = true;
 //           detectionMethod = 'path';
-//           console.log('âœ… Shop context from path (numeric):', { shopId, shopUrl, method: detectionMethod });
+//           console.log(' Shop context from path (numeric):', { shopId, shopUrl, method: detectionMethod });
 //         } else {
-//           console.log('âš ï¸ Ignoring non-numeric path segment:', pathShopId);
+//           console.log(' Ignoring non-numeric path segment:', pathShopId);
 //         }
 //       }
 //     }
@@ -146,7 +146,7 @@
 //             shopUrl = `/shop/${shopId}`;
 //             isInShop = true;
 //             detectionMethod = 'referrer';
-//             console.log('âœ… Shop context from referrer:', { shopId, shopUrl, method: detectionMethod });
+//             console.log(' Shop context from referrer:', { shopId, shopUrl, method: detectionMethod });
 //           }
 //         }
 //       }
@@ -166,15 +166,15 @@
 //               shopUrl = `/shop/${shopId}`;
 //               isInShop = true;
 //               detectionMethod = 'session';
-//               console.log('âœ… Shop context from session:', { shopId, shopUrl, method: detectionMethod, age });
+//               console.log(' Shop context from session:', { shopId, shopUrl, method: detectionMethod, age });
 //             } else {
-//               console.log('âš ï¸ Session shop context too old, ignoring');
+//               console.log(' Session shop context too old, ignoring');
 //               sessionStorage.removeItem('currentShopContext');
 //             }
 //           }
 //         }
 //       } catch (e) {
-//         console.warn('âš ï¸ Failed to parse shop context from session');
+//         console.warn(' Failed to parse shop context from session');
 //       }
 //     }
 
@@ -188,17 +188,17 @@
 //           timestamp: Date.now()
 //         }));
 //       } catch (e) {
-//         console.warn('âš ï¸ Failed to save shop context to session');
+//         console.warn(' Failed to save shop context to session');
 //       }
 //     }
 
-//     console.log('ðŸª Final shop context:', { shopId, shopUrl, isInShop, detectionMethod });
+//     console.log(' Final shop context:', { shopId, shopUrl, isInShop, detectionMethod });
 
 //     return { shopId, shopUrl, isInShop, detectionMethod };
 //   };
 
 //   const clearAuthAndLogout = () => {
-//     console.log('ðŸ”„ Clearing all authentication data...');
+//     console.log(' Clearing all authentication data...');
 
 //     const keysToRemove = [
 //       'access_token', 'buyerAccessToken', 'refresh_token',
@@ -214,10 +214,10 @@
 //     const shopContext = getShopContext();
 
 //     if (shopContext.isInShop && shopContext.shopId) {
-//       console.log('ðŸª Redirecting to shop login:', `${shopContext.shopUrl}/login`);
+//       console.log(' Redirecting to shop login:', `${shopContext.shopUrl}/login`);
 //       router.push(`${shopContext.shopUrl}/login`);
 //     } else {
-//       console.log('ðŸ  No shop context, redirecting to main login');
+//       console.log(' No shop context, redirecting to main login');
 //       router.push('/login/buyer');
 //     }
 //   };
@@ -235,7 +235,7 @@
 //   const fetchStoreData = async (storeId, headers) => {
 //     // âœ… FIXED: Validate store ID before making API calls
 //     if (!storeId || !storeId.trim() || !/^\d+$/.test(storeId.trim())) {
-//       console.warn('âš ï¸ Invalid store ID for API call:', storeId);
+//       console.warn(' Invalid store ID for API call:', storeId);
 //       setStoreData(null);
 //       return null;
 //     }
@@ -243,7 +243,7 @@
 //     const validStoreId = storeId.trim();
 
 //     try {
-//       console.log('ðŸª Fetching store data for valid ID:', validStoreId);
+//       console.log(' Fetching store data for valid ID:', validStoreId);
 
 //       let storeResponse;
 
@@ -253,9 +253,9 @@
 //           headers,
 //           timeout: 10000
 //         });
-//         console.log('âœ… Store found by phone');
+//         console.log(' Store found by phone');
 //       } catch (phoneError) {
-//         console.warn('âš ï¸ Phone lookup failed, trying ID lookup');
+//         console.warn(' Phone lookup failed, trying ID lookup');
 //       }
 
 //       // Fallback to ID lookup
@@ -265,9 +265,9 @@
 //             headers,
 //             timeout: 10000
 //           });
-//           console.log('âœ… Store found by ID');
+//           console.log(' Store found by ID');
 //         } catch (idError) {
-//           console.warn('âš ï¸ ID lookup failed');
+//           console.warn(' ID lookup failed');
 //         }
 //       }
 
@@ -280,7 +280,7 @@
 //       }
 
 //     } catch (error) {
-//       console.error('âŒ Error fetching store data:', error);
+//       console.error(' Error fetching store data:', error);
 //       setStoreData(null);
 //       return null;
 //     }
@@ -291,8 +291,8 @@
 //     try {
 //       const storeInfo = getCurrentStoreInfo();
 
-//       console.log('ðŸ” Fetching wishlist count...');
-//       console.log('ðŸ” Store info:', storeInfo);
+//       console.log(' Fetching wishlist count...');
+//       console.log(' Store info:', storeInfo);
 
 //       // âœ… FIXED: Try multiple wishlist endpoints
 //       const wishlistEndpoints = [
@@ -314,7 +314,7 @@
 //       // Try each endpoint until one works
 //       for (const endpoint of wishlistEndpoints) {
 //         try {
-//           console.log(`ðŸ” Trying wishlist endpoint: ${endpoint}`);
+//           console.log(` Trying wishlist endpoint: ${endpoint}`);
 
 //           const wishlistResponse = await axios.get(endpoint, {
 //             headers,
@@ -324,12 +324,12 @@
 //           if (wishlistResponse.data) {
 //             wishlistData = wishlistResponse.data;
 //             successfulEndpoint = endpoint;
-//             console.log('âœ… Wishlist data received from:', endpoint);
-//             console.log('âœ… Wishlist response:', wishlistData);
+//             console.log(' Wishlist data received from:', endpoint);
+//             console.log(' Wishlist response:', wishlistData);
 //             break;
 //           }
 //         } catch (endpointError) {
-//           console.warn(`âš ï¸ Wishlist endpoint failed: ${endpoint}`, endpointError.response?.status);
+//           console.warn(` Wishlist endpoint failed: ${endpoint}`, endpointError.response?.status);
 //           continue;
 //         }
 //       }
@@ -340,46 +340,46 @@
 //         if (Array.isArray(wishlistData)) {
 //           // Direct array response
 //           count = wishlistData.length;
-//           console.log('âœ… Wishlist count from array:', count);
+//           console.log(' Wishlist count from array:', count);
 //         } else if (wishlistData.items && Array.isArray(wishlistData.items)) {
 //           // Response with items array
 //           count = wishlistData.items.length;
-//           console.log('âœ… Wishlist count from items array:', count);
+//           console.log(' Wishlist count from items array:', count);
 //         } else if (wishlistData.results && Array.isArray(wishlistData.results)) {
 //           // Paginated response
 //           count = wishlistData.results.length;
-//           console.log('âœ… Wishlist count from results array:', count);
+//           console.log(' Wishlist count from results array:', count);
 //         } else if (typeof wishlistData.count === 'number') {
 //           // Count field
 //           count = wishlistData.count;
-//           console.log('âœ… Wishlist count from count field:', count);
+//           console.log(' Wishlist count from count field:', count);
 //         } else if (typeof wishlistData.items_count === 'number') {
 //           // Alternative count field
 //           count = wishlistData.items_count;
-//           console.log('âœ… Wishlist count from items_count field:', count);
+//           console.log(' Wishlist count from items_count field:', count);
 //         } else if (typeof wishlistData.total === 'number') {
 //           // Total field
 //           count = wishlistData.total;
-//           console.log('âœ… Wishlist count from total field:', count);
+//           console.log(' Wishlist count from total field:', count);
 //         } else {
 //           // Try to find any array in the response
 //           const arrayKeys = Object.keys(wishlistData).filter(key => Array.isArray(wishlistData[key]));
 //           if (arrayKeys.length > 0) {
 //             count = wishlistData[arrayKeys[0]].length;
-//             console.log(`âœ… Wishlist count from ${arrayKeys[0]} array:`, count);
+//             console.log(` Wishlist count from ${arrayKeys[0]} array:`, count);
 //           } else {
-//             console.log('âš ï¸ Could not determine wishlist count from response structure:', wishlistData);
+//             console.log(' Could not determine wishlist count from response structure:', wishlistData);
 //           }
 //         }
 //       } else {
-//         console.warn('âš ï¸ No wishlist data received from any endpoint');
+//         console.warn(' No wishlist data received from any endpoint');
 //       }
 
-//       console.log('âœ… Final wishlist count set:', count);
+//       console.log(' Final wishlist count set:', count);
 //       setWishlistCount(count);
 
 //     } catch (wishlistError) {
-//       console.warn("âš ï¸ All wishlist API attempts failed:", wishlistError);
+//       console.warn(" All wishlist API attempts failed:", wishlistError);
 //       setWishlistCount(0);
 //     }
 //   };
@@ -392,9 +392,9 @@
 //       let ordersUrl = ORDERS_COUNT_API;
 //       if (storeInfo.isInStore && storeInfo.storeId && /^\d+$/.test(storeInfo.storeId)) {
 //         ordersUrl = `${ORDERS_COUNT_API}?store_id=${storeInfo.storeId}`;
-//         console.log('ðŸ” Fetching orders with store filter:', ordersUrl);
+//         console.log(' Fetching orders with store filter:', ordersUrl);
 //       } else {
-//         console.log('ðŸ” Fetching orders without store filter:', ordersUrl);
+//         console.log(' Fetching orders without store filter:', ordersUrl);
 //       }
 
 //       const ordersResponse = await axios.get(ordersUrl, {
@@ -403,11 +403,11 @@
 //       });
 
 //       const count = ordersResponse.data.count || ordersResponse.data.total || 0;
-//       console.log('âœ… Orders count set:', count);
+//       console.log(' Orders count set:', count);
 //       setOrdersCount(count);
 
 //     } catch (ordersError) {
-//       console.warn("âš ï¸ Orders count API error:", ordersError);
+//       console.warn(" Orders count API error:", ordersError);
 //       setOrdersCount(0);
 //     }
 //   };
@@ -439,12 +439,12 @@
 //       try {
 //         localStorage.setItem('userInfo', JSON.stringify(response.data));
 //       } catch (storageError) {
-//         console.warn('âš ï¸ Failed to store user info:', storageError);
+//         console.warn(' Failed to store user info:', storageError);
 //       }
 
 //       const storeInfo = getCurrentStoreInfo();
 //       setCurrentStoreInfo(storeInfo);
-//       console.log('ðŸª Store info set:', storeInfo);
+//       console.log(' Store info set:', storeInfo);
 
 //       if (!hasFetchedRef.current || showRefreshing) {
 //         const dataPromises = [
@@ -462,7 +462,7 @@
 //       }
 
 //     } catch (error) {
-//       console.error("âŒ Failed to fetch profile:", error);
+//       console.error(" Failed to fetch profile:", error);
 
 //       if (error.response?.status === 401) {
 //         clearAuthAndLogout();
@@ -486,7 +486,7 @@
     
 //     // âœ… NEW: Immediately redirect if not authenticated
 //     if (!headers) {
-//       console.log('âŒ No authentication found, redirecting to login...');
+//       console.log(' No authentication found, redirecting to login...');
 //       setIsLoading(false);
       
 //       const shopContext = getShopContext();
@@ -498,10 +498,10 @@
       
 //       // Redirect to appropriate login page
 //       if (shopContext.isInShop && shopContext.shopId) {
-//         console.log('ðŸª Redirecting to shop login:', `${shopContext.shopUrl}/login`);
+//         console.log(' Redirecting to shop login:', `${shopContext.shopUrl}/login`);
 //         router.push(`${shopContext.shopUrl}/login`);
 //       } else {
-//         console.log('ðŸ  Redirecting to main buyer login');
+//         console.log(' Redirecting to main buyer login');
 //         router.push('/login/buyer');
 //       }
 //       return;
@@ -527,7 +527,7 @@
 //   const handleBackClick = () => {
 //     const shopContext = getShopContext();
 
-//     console.log('ðŸ”„ Back button clicked with shop context:', shopContext);
+//     console.log(' Back button clicked with shop context:', shopContext);
 
 //     if (shopContext.isInShop && shopContext.shopId) {
 //       // âœ… FIXED: Use the original URL format for back navigation
@@ -538,12 +538,12 @@
 //         backUrl = `/shop/new?id=${shopContext.shopId}`;
 //       }
 
-//       console.log('â†©ï¸ Staying in shop context, going to:', backUrl);
+//       console.log(' Staying in shop context, going to:', backUrl);
 //       router.push(backUrl);
 //       return;
 //     }
 
-//     console.log('â†©ï¸ No shop context found, using regular navigation');
+//     console.log(' No shop context found, using regular navigation');
 
 //     try {
 //       if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -1230,7 +1230,7 @@ const PROFILE_API = `/api/buyer/profile/`;       // ✅ relative — api instanc
 const WISHLIST_API = `/api/wishlist/`;            // ✅ relative
 const ORDERS_COUNT_API = `/api/buyer/orders/count/`; // ✅ relative
 
-console.log('👤 Profile APIs:', {
+console.log(' Profile APIs:', {
     API_BASE_URL,
     LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL,
     PROFILE_API,
@@ -1261,7 +1261,7 @@ export default function ProfilePage() {
     const currentPath = window.location.pathname;
     const searchParams = new URLSearchParams(window.location.search);
 
-    console.log('🔍 Analyzing shop context:', {
+    console.log(' Analyzing shop context:', {
       path: currentPath,
       search: window.location.search,
       fullUrl: window.location.href
@@ -1279,7 +1279,7 @@ export default function ProfilePage() {
       shopUrl = `/shop/${shopId}`;
       isInShop = true;
       detectionMethod = 'query';
-      console.log('✅ Shop context from query parameter:', { shopId, shopUrl, method: detectionMethod });
+      console.log(' Shop context from query parameter:', { shopId, shopUrl, method: detectionMethod });
     }
 
     // Priority 2: Check /shop/{id} pattern in URL path (only if query didn't work)
@@ -1293,9 +1293,9 @@ export default function ProfilePage() {
           shopUrl = `/shop/${shopId}`;
           isInShop = true;
           detectionMethod = 'path';
-          console.log('✅ Shop context from path (numeric):', { shopId, shopUrl, method: detectionMethod });
+          console.log(' Shop context from path (numeric):', { shopId, shopUrl, method: detectionMethod });
         } else {
-          console.log('⚠️ Ignoring non-numeric path segment:', pathShopId);
+          console.log(' Ignoring non-numeric path segment:', pathShopId);
         }
       }
     }
@@ -1312,7 +1312,7 @@ export default function ProfilePage() {
             shopUrl = `/shop/${shopId}`;
             isInShop = true;
             detectionMethod = 'referrer';
-            console.log('✅ Shop context from referrer:', { shopId, shopUrl, method: detectionMethod });
+            console.log(' Shop context from referrer:', { shopId, shopUrl, method: detectionMethod });
           }
         }
       }
@@ -1332,15 +1332,15 @@ export default function ProfilePage() {
               shopUrl = `/shop/${shopId}`;
               isInShop = true;
               detectionMethod = 'session';
-              console.log('✅ Shop context from session:', { shopId, shopUrl, method: detectionMethod, age });
+              console.log(' Shop context from session:', { shopId, shopUrl, method: detectionMethod, age });
             } else {
-              console.log('⚠️ Session shop context too old, ignoring');
+              console.log(' Session shop context too old, ignoring');
               sessionStorage.removeItem('currentShopContext');
             }
           }
         }
       } catch (e) {
-        console.warn('⚠️ Failed to parse shop context from session');
+        console.warn(' Failed to parse shop context from session');
       }
     }
 
@@ -1354,17 +1354,17 @@ export default function ProfilePage() {
           timestamp: Date.now()
         }));
       } catch (e) {
-        console.warn('⚠️ Failed to save shop context to session');
+        console.warn(' Failed to save shop context to session');
       }
     }
 
-    console.log('🏪 Final shop context:', { shopId, shopUrl, isInShop, detectionMethod });
+    console.log(' Final shop context:', { shopId, shopUrl, isInShop, detectionMethod });
 
     return { shopId, shopUrl, isInShop, detectionMethod };
   };
 
   const clearAuthAndLogout = () => {
-    console.log('🔄 Clearing all authentication data...');
+    console.log(' Clearing all authentication data...');
 
     const keysToRemove = [
       'access_token', 'buyerAccessToken', 'refresh_token',
@@ -1380,10 +1380,10 @@ export default function ProfilePage() {
     const shopContext = getShopContext();
 
     if (shopContext.isInShop && shopContext.shopId) {
-      console.log('🏪 Redirecting to shop login:', `${shopContext.shopUrl}/login`);
+      console.log(' Redirecting to shop login:', `${shopContext.shopUrl}/login`);
       router.push(`${shopContext.shopUrl}/login`);
     } else {
-      console.log('🏠 No shop context, redirecting to main login');
+      console.log(' No shop context, redirecting to main login');
       router.push('/login/buyer');
     }
   };
@@ -1401,7 +1401,7 @@ export default function ProfilePage() {
   // ✅ FIXED: removed `headers` param — api interceptor handles it
   const fetchStoreData = async (storeId) => {
     if (!storeId || !storeId.trim() || !/^\d+$/.test(storeId.trim())) {
-      console.warn('⚠️ Invalid store ID for API call:', storeId);
+      console.warn(' Invalid store ID for API call:', storeId);
       setStoreData(null);
       return null;
     }
@@ -1409,7 +1409,7 @@ export default function ProfilePage() {
     const validStoreId = storeId.trim();
 
     try {
-      console.log('🏪 Fetching store data for valid ID:', validStoreId);
+      console.log(' Fetching store data for valid ID:', validStoreId);
 
       let storeResponse;
 
@@ -1418,9 +1418,9 @@ export default function ProfilePage() {
         storeResponse = await api.get(`/api/stores/by-phone/${validStoreId}/`, { // ✅ api.get
           timeout: 10000
         });
-        console.log('✅ Store found by phone');
+        console.log(' Store found by phone');
       } catch (phoneError) {
-        console.warn('⚠️ Phone lookup failed, trying ID lookup');
+        console.warn(' Phone lookup failed, trying ID lookup');
       }
 
       // Fallback to ID lookup
@@ -1429,9 +1429,9 @@ export default function ProfilePage() {
           storeResponse = await api.get(`/api/stores/${validStoreId}/`, { // ✅ api.get
             timeout: 10000
           });
-          console.log('✅ Store found by ID');
+          console.log(' Store found by ID');
         } catch (idError) {
-          console.warn('⚠️ ID lookup failed');
+          console.warn(' ID lookup failed');
         }
       }
 
@@ -1444,7 +1444,7 @@ export default function ProfilePage() {
       }
 
     } catch (error) {
-      console.error('❌ Error fetching store data:', error);
+      console.error(' Error fetching store data:', error);
       setStoreData(null);
       return null;
     }
@@ -1455,8 +1455,8 @@ export default function ProfilePage() {
     try {
       const storeInfo = getCurrentStoreInfo();
 
-      console.log('🔍 Fetching wishlist count...');
-      console.log('🔍 Store info:', storeInfo);
+      console.log(' Fetching wishlist count...');
+      console.log(' Store info:', storeInfo);
 
       const wishlistEndpoints = [
         storeInfo.isInStore && storeInfo.storeId && /^\d+$/.test(storeInfo.storeId)
@@ -1472,17 +1472,17 @@ export default function ProfilePage() {
 
       for (const endpoint of wishlistEndpoints) {
         try {
-          console.log(`🔍 Trying wishlist endpoint: ${endpoint}`);
+          console.log(` Trying wishlist endpoint: ${endpoint}`);
 
           const wishlistResponse = await api.get(endpoint, { timeout: 10000 }); // ✅ api.get
 
           if (wishlistResponse.data) {
             wishlistData = wishlistResponse.data;
-            console.log('✅ Wishlist data received from:', endpoint);
+            console.log(' Wishlist data received from:', endpoint);
             break;
           }
         } catch (endpointError) {
-          console.warn(`⚠️ Wishlist endpoint failed: ${endpoint}`, endpointError.response?.status);
+          console.warn(` Wishlist endpoint failed: ${endpoint}`, endpointError.response?.status);
           continue;
         }
       }
@@ -1508,14 +1508,14 @@ export default function ProfilePage() {
           }
         }
       } else {
-        console.warn('⚠️ No wishlist data received from any endpoint');
+        console.warn(' No wishlist data received from any endpoint');
       }
 
-      console.log('✅ Final wishlist count set:', count);
+      console.log(' Final wishlist count set:', count);
       setWishlistCount(count);
 
     } catch (wishlistError) {
-      console.warn("⚠️ All wishlist API attempts failed:", wishlistError);
+      console.warn(" All wishlist API attempts failed:", wishlistError);
       setWishlistCount(0);
     }
   };
@@ -1528,19 +1528,19 @@ export default function ProfilePage() {
       let ordersUrl = ORDERS_COUNT_API;
       if (storeInfo.isInStore && storeInfo.storeId && /^\d+$/.test(storeInfo.storeId)) {
         ordersUrl = `${ORDERS_COUNT_API}?store_id=${storeInfo.storeId}`;
-        console.log('🔍 Fetching orders with store filter:', ordersUrl);
+        console.log(' Fetching orders with store filter:', ordersUrl);
       } else {
-        console.log('🔍 Fetching orders without store filter:', ordersUrl);
+        console.log(' Fetching orders without store filter:', ordersUrl);
       }
 
       const ordersResponse = await api.get(ordersUrl, { timeout: 10000 }); // ✅ api.get
 
       const count = ordersResponse.data.count || ordersResponse.data.total || 0;
-      console.log('✅ Orders count set:', count);
+      console.log(' Orders count set:', count);
       setOrdersCount(count);
 
     } catch (ordersError) {
-      console.warn("⚠️ Orders count API error:", ordersError);
+      console.warn(" Orders count API error:", ordersError);
       setOrdersCount(0);
     }
   };
@@ -1567,12 +1567,12 @@ export default function ProfilePage() {
       try {
         localStorage.setItem('userInfo', JSON.stringify(response.data));
       } catch (storageError) {
-        console.warn('⚠️ Failed to store user info:', storageError);
+        console.warn(' Failed to store user info:', storageError);
       }
 
       const storeInfo = getCurrentStoreInfo();
       setCurrentStoreInfo(storeInfo);
-      console.log('🏪 Store info set:', storeInfo);
+      console.log(' Store info set:', storeInfo);
 
       if (!hasFetchedRef.current || showRefreshing) {
         const dataPromises = [
@@ -1589,7 +1589,7 @@ export default function ProfilePage() {
       }
 
     } catch (error) {
-      console.error("❌ Failed to fetch profile:", error);
+      console.error(" Failed to fetch profile:", error);
 
       if (error.response?.status === 401) {
         clearAuthAndLogout();
@@ -1614,7 +1614,7 @@ export default function ProfilePage() {
         : null;
 
       if (!token) {
-        console.log('❌ No authentication found, redirecting to login...');
+        console.log(' No authentication found, redirecting to login...');
         setIsLoading(false);
 
         const shopContext = getShopContext();
@@ -1624,10 +1624,10 @@ export default function ProfilePage() {
         }
 
         if (shopContext.isInShop && shopContext.shopId) {
-          console.log('🏪 Redirecting to shop login:', `${shopContext.shopUrl}/login`);
+          console.log(' Redirecting to shop login:', `${shopContext.shopUrl}/login`);
           router.push(`${shopContext.shopUrl}/login`);
         } else {
-          console.log('🏠 Redirecting to main buyer login');
+          console.log(' Redirecting to main buyer login');
           router.push('/login/buyer');
         }
         return;
@@ -1653,7 +1653,7 @@ export default function ProfilePage() {
   const handleBackClick = () => {
     const shopContext = getShopContext();
 
-    console.log('🔄 Back button clicked with shop context:', shopContext);
+    console.log(' Back button clicked with shop context:', shopContext);
 
     if (shopContext.isInShop && shopContext.shopId) {
       let backUrl = shopContext.shopUrl || `/shop/${shopContext.shopId}`;
@@ -1662,12 +1662,12 @@ export default function ProfilePage() {
         backUrl = `/shop/new?id=${shopContext.shopId}`;
       }
 
-      console.log('↩️ Staying in shop context, going to:', backUrl);
+      console.log(' Staying in shop context, going to:', backUrl);
       router.push(backUrl);
       return;
     }
 
-    console.log('↩️ No shop context found, using regular navigation');
+    console.log(' No shop context found, using regular navigation');
 
     try {
       if (typeof window !== 'undefined' && window.history.length > 1) {

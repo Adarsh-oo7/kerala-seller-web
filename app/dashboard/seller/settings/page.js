@@ -281,7 +281,7 @@ export default function SettingsPage() {
       }, 1500);
 
     } catch (error) {
-      console.error('âŒ Update error:', error);
+      console.error(' Update error:', error);
       setErrorMessage(error.response?.data?.error || 'Update failed');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {

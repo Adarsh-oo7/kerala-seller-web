@@ -59,7 +59,7 @@ const VERIFY_PAYMENT_API = `${API_BASE_URL}/user/orders/verify-payment/`;
 
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RClyCqWG0I7Frn';
 
-console.log('ðŸ’³ Checkout APIs:', API_BASE_URL);
+console.log(' Checkout APIs:', API_BASE_URL);
 
 export default function CheckoutPage() {
   const [buyerProfile, setBuyerProfile] = useState(null);
@@ -91,7 +91,7 @@ export default function CheckoutPage() {
   try {
     cartData = useCart();
   } catch (err) {
-    console.error('âŒ Cart hook error:', err);
+    console.error(' Cart hook error:', err);
     cartError = err;
   }
 
@@ -105,7 +105,7 @@ export default function CheckoutPage() {
 
   // âœ… ENHANCED: Debug cart contents function
   const debugCartContents = useCallback(async () => {
-    console.log('ðŸ” DETAILED CART DEBUG for seller:', sellerPhone);
+    console.log(' DETAILED CART DEBUG for seller:', sellerPhone);
     
     const cartItems = getCartBySeller ? getCartBySeller(sellerPhone) : [];
     const localStorage_multiCarts = JSON.parse(localStorage.getItem('multiCarts') || '{}');
@@ -126,22 +126,22 @@ export default function CheckoutPage() {
       cartItemsCount: cartItems.length
     };
     
-    console.log('ðŸ” CART DEBUG DATA:', debugData);
+    console.log(' CART DEBUG DATA:', debugData);
     setDebugInfo(debugData);
     
     if (cartItems.length > 0) {
-      console.log('ðŸ§ª Testing individual products...');
+      console.log(' Testing individual products...');
       
       for (const item of cartItems) {
         try {
-          console.log(`ðŸ” Testing product ${item.id} for seller ${sellerPhone}`);
+          console.log(` Testing product ${item.id} for seller ${sellerPhone}`);
           
           const productTestUrl = `${API_BASE_URL}/api/products/${item.id}/`;
           const productResponse = await fetch(productTestUrl);
           
           if (productResponse.ok) {
             const productData = await productResponse.json();
-            console.log(`âœ… Product ${item.id} exists:`, {
+            console.log(` Product ${item.id} exists:`, {
               id: productData.id,
               name: productData.name,
               seller_phone: productData.seller?.phone_number || 'No seller info',
@@ -149,14 +149,14 @@ export default function CheckoutPage() {
             });
             
             if (productData.seller?.phone_number !== sellerPhone) {
-              console.error(`âŒ MISMATCH: Product ${item.id} belongs to seller ${productData.seller?.phone_number}, not ${sellerPhone}`);
+              console.error(` MISMATCH: Product ${item.id} belongs to seller ${productData.seller?.phone_number}, not ${sellerPhone}`);
             }
           } else {
-            console.error(`âŒ Product ${item.id} does not exist in database`);
+            console.error(` Product ${item.id} does not exist in database`);
           }
           
         } catch (error) {
-          console.error(`âŒ Error testing product ${item.id}:`, error);
+          console.error(` Error testing product ${item.id}:`, error);
         }
       }
     }
@@ -171,10 +171,10 @@ export default function CheckoutPage() {
       if (!headers) return [];
 
       const items = getCartBySeller ? getCartBySeller(sellerPhone) : [];
-      console.log('ðŸ” PRODUCT VALIDATION - Items to validate:', items);
+      console.log(' PRODUCT VALIDATION - Items to validate:', items);
       
       if (items.length === 0) {
-        console.log('âŒ No items to validate');
+        console.log(' No items to validate');
         return [];
       }
 
@@ -183,7 +183,7 @@ export default function CheckoutPage() {
         seller_phone: sellerPhone
       };
       
-      console.log('ðŸ” VALIDATION REQUEST:', {
+      console.log(' VALIDATION REQUEST:', {
         url: `${API_BASE_URL}/api/products/validate/`,
         payload: validationPayload,
         headers: headers
@@ -195,17 +195,17 @@ export default function CheckoutPage() {
           timeout: 10000
         });
         
-        console.log('âœ… VALIDATION RESPONSE:', response.data);
+        console.log(' VALIDATION RESPONSE:', response.data);
         return response.data.valid_products || [];
         
       } catch (validationError) {
-        console.error('âŒ VALIDATION API FAILED:', {
+        console.error(' VALIDATION API FAILED:', {
           status: validationError.response?.status,
           data: validationError.response?.data,
           message: validationError.message
         });
         
-        console.log('ðŸ”„ Attempting manual validation...');
+        console.log(' Attempting manual validation...');
         const validProducts = [];
         
         for (const item of items) {
@@ -223,24 +223,24 @@ export default function CheckoutPage() {
                   price: productData.price,
                   quantity: item.quantity
                 });
-                console.log(`âœ… Manual validation: Product ${item.id} is valid`);
+                console.log(` Manual validation: Product ${item.id} is valid`);
               } else {
-                console.error(`âŒ Manual validation: Product ${item.id} belongs to ${productData.seller?.phone_number}, not ${sellerPhone}`);
+                console.error(` Manual validation: Product ${item.id} belongs to ${productData.seller?.phone_number}, not ${sellerPhone}`);
               }
             } else {
-              console.error(`âŒ Manual validation: Product ${item.id} not found`);
+              console.error(` Manual validation: Product ${item.id} not found`);
             }
           } catch (error) {
-            console.error(`âŒ Manual validation error for product ${item.id}:`, error);
+            console.error(` Manual validation error for product ${item.id}:`, error);
           }
         }
         
-        console.log('ðŸ” Manual validation result:', validProducts);
+        console.log(' Manual validation result:', validProducts);
         return validProducts;
       }
       
     } catch (error) {
-      console.error('âŒ Product validation completely failed:', error);
+      console.error(' Product validation completely failed:', error);
       return [];
     }
   }, [sellerPhone, getCartBySeller]);
@@ -277,7 +277,7 @@ export default function CheckoutPage() {
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
     if (!token) {
-      console.log('ðŸ” No auth token found');
+      console.log(' No auth token found');
       const shopContext = getShopContext();
       const redirectUrl = shopContext.isInShop && shopContext.shopId 
         ? `/shop/${shopContext.shopId}/login?redirect=/checkout/${sellerPhone}`
@@ -291,7 +291,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     const loadCheckoutData = async () => {
-      console.log(`ðŸ” Loading checkout data for seller: ${sellerPhone}`);
+      console.log(` Loading checkout data for seller: ${sellerPhone}`);
       
       const headers = getAuthHeaders();
       if (!headers) return;
@@ -302,12 +302,12 @@ export default function CheckoutPage() {
       }
 
       if (!items || items.length === 0) {
-        console.log('ðŸ›’ No cart items found, redirecting to shop');
+        console.log(' No cart items found, redirecting to shop');
         router.push(`/shop/${sellerPhone}`);
         return;
       }
       
-      console.log(`ðŸ›’ Found ${items.length} items for seller ${sellerPhone}`);
+      console.log(` Found ${items.length} items for seller ${sellerPhone}`);
       setCartItems(items);
 
       await debugCartContents();
@@ -355,7 +355,7 @@ export default function CheckoutPage() {
         }
         
       } catch (err) {
-        console.error("âŒ Failed to load checkout data:", err);
+        console.error(" Failed to load checkout data:", err);
         setErrors({ general: 'Failed to load checkout information. Please refresh and try again.' });
       } finally {
         setIsLoading(false);
@@ -367,11 +367,11 @@ export default function CheckoutPage() {
 
   // âœ… COMPLETE: Order placement with cart clearing for BOTH payment methods
   const handlePlaceOrder = async () => {
-    console.log('ðŸ” ENHANCED ORDER PLACEMENT - Starting...');
+    console.log(' ENHANCED ORDER PLACEMENT - Starting...');
     
     try {
       if (isSubmitting) {
-        console.log('âš ï¸ Already submitting, ignoring');
+        console.log(' Already submitting, ignoring');
         return;
       }
       
@@ -391,17 +391,17 @@ export default function CheckoutPage() {
       setIsSubmitting(true);
       setErrors({});
       
-      console.log('ðŸ” Pre-order product validation...');
+      console.log(' Pre-order product validation...');
       const validatedProducts = await validateProductsDetailed();
       
       if (validatedProducts.length === 0) {
-        console.error('âŒ No valid products found for order');
+        console.error(' No valid products found for order');
         alert('No valid products found in cart. Please refresh and try again.');
         setIsSubmitting(false);
         return;
       }
       
-      console.log('âœ… Valid products for order:', validatedProducts);
+      console.log(' Valid products for order:', validatedProducts);
       
       const finalAddress = `${shippingInfo.address}, ${shippingInfo.city}, ${shippingInfo.pincode}`;
       
@@ -419,32 +419,32 @@ export default function CheckoutPage() {
         seller_phone: sellerPhone
       };
       
-      console.log('ðŸ” FINAL ORDER DATA:', orderData);
+      console.log(' FINAL ORDER DATA:', orderData);
 
       if (selectedPaymentMethod === 'COD') {
         try {
-          console.log(`ðŸ” Creating COD order...`);
+          console.log(` Creating COD order...`);
           
           const response = await axios.post(CREATE_ORDER_API, orderData, { 
             headers,
             timeout: 20000
           });
           
-          console.log('âœ… COD order created successfully:', response.data);
+          console.log(' COD order created successfully:', response.data);
           
           // âœ… Clear all carts (or at least this seller) after success
           if (clearAllCarts) {
             clearAllCarts();
-            console.log('ðŸ—‘ï¸ All carts cleared after COD order');
+            console.log(' All carts cleared after COD order');
           } else if (clearCartForSeller) {
             clearCartForSeller(sellerPhone);
-            console.log('ðŸ—‘ï¸ Cart cleared for seller:', sellerPhone);
+            console.log(' Cart cleared for seller:', sellerPhone);
           }
           
           router.push(`/order-confirmation/${response.data.order_id}`);
           
         } catch (error) {
-          console.error('âŒ COD order creation failed:', {
+          console.error(' COD order creation failed:', {
             status: error.response?.status,
             data: error.response?.data,
             message: error.message,
@@ -470,14 +470,14 @@ export default function CheckoutPage() {
       } else if (selectedPaymentMethod === 'ONLINE') {
         // âœ… ONLINE PAYMENT WITH CART CLEARING
         try {
-          console.log('ðŸ” Creating online payment order...');
+          console.log(' Creating online payment order...');
           
           const paymentOrderResponse = await axios.post(CREATE_PAYMENT_ORDER_API, orderData, { 
             headers,
             timeout: 20000
           });
           
-          console.log('âœ… Payment order created:', paymentOrderResponse.data);
+          console.log(' Payment order created:', paymentOrderResponse.data);
           
           const options = {
             key: RAZORPAY_KEY_ID,
@@ -486,7 +486,7 @@ export default function CheckoutPage() {
             order_id: paymentOrderResponse.data.razorpay_order_id,
             handler: async function (response) {
               try {
-                console.log('ðŸ” Verifying payment...');
+                console.log(' Verifying payment...');
                 
                 const verifyResponse = await axios.post(VERIFY_PAYMENT_API, {
                   razorpay_order_id: response.razorpay_order_id,
@@ -495,21 +495,21 @@ export default function CheckoutPage() {
                   order_data: orderData
                 }, { headers });
                 
-                console.log('âœ… Online payment successful:', verifyResponse.data);
+                console.log(' Online payment successful:', verifyResponse.data);
                 
                 // âœ… Clear all carts (or at least this seller) after success
                 if (clearAllCarts) {
                   clearAllCarts();
-                  console.log('ðŸ—‘ï¸ All carts cleared after online payment');
+                  console.log(' All carts cleared after online payment');
                 } else if (clearCartForSeller) {
                   clearCartForSeller(sellerPhone);
-                  console.log('ðŸ—‘ï¸ Cart cleared for seller:', sellerPhone);
+                  console.log(' Cart cleared for seller:', sellerPhone);
                 }
                 
                 router.push(`/order-confirmation/${verifyResponse.data.order_id}`);
                 
               } catch (verifyError) {
-                console.error('âŒ Payment verification failed:', verifyError);
+                console.error(' Payment verification failed:', verifyError);
                 alert('Payment verification failed. Please contact support.');
                 setIsSubmitting(false);
               }
@@ -527,7 +527,7 @@ export default function CheckoutPage() {
           };
           
           if (typeof window.Razorpay === 'undefined') {
-            console.error('âŒ Razorpay not loaded');
+            console.error(' Razorpay not loaded');
             alert('Payment gateway not loaded. Please refresh and try again.');
             setIsSubmitting(false);
             return;
@@ -537,7 +537,7 @@ export default function CheckoutPage() {
           razorpay.open();
           
         } catch (error) {
-          console.error('âŒ Online payment error:', error);
+          console.error(' Online payment error:', error);
           
           let errorMessage = 'Failed to initiate payment. Please try again.';
           if (error.response?.data?.error) {
@@ -550,7 +550,7 @@ export default function CheckoutPage() {
       }
       
     } catch (error) {
-      console.error('âŒ Order placement error:', error);
+      console.error(' Order placement error:', error);
       setIsSubmitting(false);
       alert('Failed to place order. Please try again.');
     }
@@ -595,7 +595,7 @@ export default function CheckoutPage() {
   };
 
   const handlePaymentMethodSelect = (method) => {
-    console.log(`ðŸ’³ Payment method selected: ${method}`);
+    console.log(` Payment method selected: ${method}`);
     setSelectedPaymentMethod(method);
   };
 
@@ -763,13 +763,13 @@ export default function CheckoutPage() {
               {cartItems.map(item => (
                 <div key={item.id} style={styles.summaryItem}>
                   <span>{item.name}</span>
-                  <span>â‚¹{(item.price * item.quantity).toFixed(2)}</span>
+                  <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
               
               <hr />
               <div style={styles.totalRow}>
-                <strong>Total: â‚¹{calculateTotal().toFixed(2)}</strong>
+                <strong>Total: ₹{calculateTotal().toFixed(2)}</strong>
               </div>
               
               <button 

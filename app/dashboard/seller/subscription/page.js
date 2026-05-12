@@ -46,7 +46,7 @@ const SUBSCRIPTION_STATUS_API = `${API_BASE_URL}/api/subscriptions/status/`;
 
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RClyCqWG0I7Frn';
 
-console.log('ðŸ’³ Subscription APIs:', API_BASE_URL);
+console.log(' Subscription APIs:', API_BASE_URL);
 
 
 // âœ… NEW: Helper function for status icons
@@ -73,9 +73,9 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
         try {
             const response = await axios.get(`${STORE_STATUS_API}/${storeId}/status/`);
             setStoreStatus(response.data);
-            console.log('âœ… Store status loaded:', response.data);
+            console.log(' Store status loaded:', response.data);
         } catch (err) {
-            console.error('âŒ Failed to load store status:', err);
+            console.error(' Failed to load store status:', err);
         } finally {
             setStatusLoading(false);
         }
@@ -284,7 +284,7 @@ export default function SubscriptionPage() {
             const response = await axios.get(`${STORE_STATUS_API}/${storeId}/validate-order/`);
             return response.data;
         } catch (error) {
-            console.error('âŒ Order validation failed:', error);
+            console.error(' Order validation failed:', error);
             return { valid: false, message: 'Unable to validate store status' };
         }
     };
@@ -294,11 +294,11 @@ export default function SubscriptionPage() {
         const script = document.createElement('script');
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
         script.onload = () => {
-            console.log('âœ… Razorpay script loaded');
+            console.log(' Razorpay script loaded');
             setRazorpayLoaded(true);
         };
         script.onerror = () => {
-            console.error('âŒ Failed to load Razorpay script');
+            console.error(' Failed to load Razorpay script');
             setError('Payment system failed to load. Please refresh the page.');
             
             // âœ… REPLACED: alert with toast
@@ -321,11 +321,11 @@ export default function SubscriptionPage() {
     const getAuthHeaders = useCallback(() => {
         const token = localStorage.getItem('accessToken');
         if (!token) {
-            console.error('âŒ No access token found');
+            console.error(' No access token found');
             router.push('/login/seller');
             return null;
         }
-        console.log('âœ… Using Bearer token for authentication');
+        console.log(' Using Bearer token for authentication');
         return { Authorization: `Bearer ${token}` };
     }, [router]);
 
@@ -337,9 +337,9 @@ export default function SubscriptionPage() {
         try {
             const response = await axios.get(`${API_BASE_URL}/api/store/profile/`, { headers });
             setStoreId(response.data.id);
-            console.log('âœ… Store ID loaded:', response.data.id);
+            console.log(' Store ID loaded:', response.data.id);
         } catch (err) {
-            console.error('âŒ Failed to load store ID:', err);
+            console.error(' Failed to load store ID:', err);
         }
     }, [getAuthHeaders]);
 
@@ -352,12 +352,12 @@ export default function SubscriptionPage() {
         if (!headers) return;
 
         try {
-            console.log('ðŸ” Fetching current subscription...');
+            console.log(' Fetching current subscription...');
             const subResponse = await axios.get(CURRENT_SUB_API_URL, { headers });
-            console.log('âœ… Current subscription:', subResponse.data);
+            console.log(' Current subscription:', subResponse.data);
             setCurrentSubscription(subResponse.data);
         } catch (subErr) {
-            console.log('âš ï¸ No active subscription found:', subErr.response?.status);
+            console.log(' No active subscription found:', subErr.response?.status);
             setCurrentSubscription(null);
 
             if (subErr.response?.status === 401) {
@@ -372,7 +372,7 @@ export default function SubscriptionPage() {
                 
                 setTimeout(() => router.push('/login/seller'), 2000);
             } else if (subErr.response?.status === 404) {
-                console.log('â„¹ï¸ No subscription found (normal for new users)');
+                console.log(' No subscription found (normal for new users)');
             } else {
                 setSubscriptionError('Failed to load subscription data');
             }
@@ -384,11 +384,11 @@ export default function SubscriptionPage() {
     // âœ… Updated plans loading to match your API structure
     const loadPlansData = useCallback(async () => {
         try {
-            console.log('ðŸ” Fetching plans from:', PLANS_API_URL);
+            console.log(' Fetching plans from:', PLANS_API_URL);
             const plansResponse = await axios.get(PLANS_API_URL);
 
             const plansData = plansResponse.data.results || plansResponse.data || [];
-            console.log('âœ… Plans loaded:', plansData);
+            console.log(' Plans loaded:', plansData);
 
             const sortedPlans = plansData.sort((a, b) => {
                 const priceA = parseFloat(a.price) || 0;
@@ -398,7 +398,7 @@ export default function SubscriptionPage() {
 
             setPlans(sortedPlans);
         } catch (err) {
-            console.error('âŒ Failed to load plans:', err);
+            console.error(' Failed to load plans:', err);
             setError('Failed to load subscription plans. Please refresh the page.');
             
             // âœ… REPLACED: alert with toast
@@ -462,7 +462,7 @@ export default function SubscriptionPage() {
         // âœ… REPLACED: confirm with custom toast confirmation
         const confirmed = confirm(
             `Subscribe to ${planName}?\n\n` +
-            `Price: â‚¹${Math.round(displayPrice).toLocaleString('en-IN')}/${billingCycle === 'yearly' ? 'year' : 'month'}\n\n` +
+            `Price: ₹${Math.round(displayPrice).toLocaleString('en-IN')}/${billingCycle === 'yearly' ? 'year' : 'month'}\n\n` +
             `Click OK to proceed to secure payment.`
         );
 
@@ -476,14 +476,14 @@ export default function SubscriptionPage() {
         }
 
         try {
-            console.log('ðŸ”„ Creating order for plan:', planId, 'billing cycle:', billingCycle);
+            console.log(' Creating order for plan:', planId, 'billing cycle:', billingCycle);
 
             const orderResponse = await axios.post(CREATE_ORDER_API, {
                 plan_id: planId,
                 billing_cycle: billingCycle
             }, { headers });
 
-            console.log('âœ… Order created:', orderResponse.data);
+            console.log(' Order created:', orderResponse.data);
             const { order_id, amount, currency } = orderResponse.data;
 
             const options = {
@@ -502,7 +502,7 @@ export default function SubscriptionPage() {
                     email: currentSubscription?.seller?.email || 'seller@keralasellers.com'
                 },
                 handler: async function (response) {
-                    console.log('âœ… Payment successful:', response);
+                    console.log(' Payment successful:', response);
 
                     const verificationData = {
                         razorpay_payment_id: response.razorpay_payment_id,
@@ -514,7 +514,7 @@ export default function SubscriptionPage() {
 
                     try {
                         const verifyResponse = await axios.post(VERIFY_PAYMENT_API, verificationData, { headers });
-                        console.log('âœ… Payment verified:', verifyResponse.data);
+                        console.log(' Payment verified:', verifyResponse.data);
 
                         setError('');
                         
@@ -528,7 +528,7 @@ export default function SubscriptionPage() {
                         await loadSubscriptionData();
 
                     } catch (verifyError) {
-                        console.error('âŒ Payment verification failed:', verifyError);
+                        console.error(' Payment verification failed:', verifyError);
 
                         if (verifyError.response?.status === 401) {
                             // âœ… REPLACED: alert with toast
@@ -572,7 +572,7 @@ export default function SubscriptionPage() {
             const rzp = new window.Razorpay(options);
 
             rzp.on('payment.failed', function (response) {
-                console.error('âŒ Payment failed:', response.error);
+                console.error(' Payment failed:', response.error);
                 
                 // âœ… REPLACED: alert with toast
                 toast.error(`Payment failed: ${response.error.description}`, {
@@ -587,7 +587,7 @@ export default function SubscriptionPage() {
             rzp.open();
 
         } catch (error) {
-            console.error('âŒ Subscription error:', error);
+            console.error(' Subscription error:', error);
 
             if (error.response?.status === 401) {
                 // âœ… REPLACED: alert with toast
@@ -732,7 +732,7 @@ export default function SubscriptionPage() {
                                     <h2 style={styles.planName}>{plan.name}</h2>
                                     <div className='dashboardsubscribeplanheaderpricecontainer' style={styles.priceContainer}>
                                         <span className='dashboardsubscribeplanheaderprice' style={styles.price}>
-                                            â‚¹{Math.round(displayPrice).toLocaleString('en-IN')}
+                                            ₹{Math.round(displayPrice).toLocaleString('en-IN')}
                                         </span>
                                         <span style={styles.duration}>
                                             /{billingCycle === 'yearly' ? 'year' : 'month'}
@@ -741,9 +741,9 @@ export default function SubscriptionPage() {
 
                                     {billingCycle === 'yearly' && (
                                         <div style={styles.savings}>
-                                            <p>Billed as â‚¹{Math.round(yearlyPrice).toLocaleString('en-IN')} annually</p>
+                                            <p>Billed as ₹{Math.round(yearlyPrice).toLocaleString('en-IN')} annually</p>
                                             <p style={styles.savingsAmount}>
-                                                Save â‚¹{Math.round((basePrice * 12) - yearlyPrice).toLocaleString('en-IN')} per year
+                                                Save ₹{Math.round((basePrice * 12) - yearlyPrice).toLocaleString('en-IN')} per year
                                             </p>
                                         </div>
                                     )}

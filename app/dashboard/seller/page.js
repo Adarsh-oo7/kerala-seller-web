@@ -27,7 +27,7 @@ import {
 //     // 1. Check explicit env vars first
 //     const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
 //     if (envUrl && envUrl.trim() !== '' && envUrl !== 'undefined') {
-//         console.log('ðŸŒ Env var:', envUrl);
+//         console.log(' Env var:', envUrl);
 //         return envUrl.trim();
 //     }
     
@@ -35,10 +35,10 @@ import {
 //     if (typeof window !== 'undefined') {
 //         const hostname = window.location.hostname;
 //         if (hostname === 'localhost' || hostname === '127.0.0.1') {
-//             console.log('ðŸŒ Local dev: Using localhost:8000');
+//             console.log(' Local dev: Using localhost:8000');
 //             return 'https://api.keralasellers.in';
 //         }
-//         console.log('ðŸ“¦ Production: Using api.keralasellers.in');
+//         console.log(' Production: Using api.keralasellers.in');
 //         return 'https://api.keralasellers.in';
 //     }
     
@@ -58,7 +58,7 @@ const DASHBOARD_API_URL = `${API_BASE_URL}/user/dashboard/`;
 const PROFILE_API_URL = `${API_BASE_URL}/user/store/profile/`;
 const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
 
-console.log('ðŸª Layout APIs:', API_BASE_URL);
+console.log(' Layout APIs:', API_BASE_URL);
 
 
 const getFrontendBaseUrl = () => {
@@ -280,9 +280,9 @@ export default function SellerDashboardOverview() {
         try {
             const response = await axios.get(SUBSCRIPTION_API_URL, { headers });
             setSubscription(response.data);
-            console.log('âœ… Subscription loaded:', response.data);
+            console.log(' Subscription loaded:', response.data);
         } catch (err) {
-            console.log('âš ï¸ No active subscription found');
+            console.log(' No active subscription found');
             setSubscription(null);
         }
     }, [getAuthHeaders]);
@@ -298,21 +298,21 @@ export default function SellerDashboardOverview() {
         setError('');
 
         try {
-            console.log('ðŸ” Fetching dashboard data...');
+            console.log(' Fetching dashboard data...');
 
             const [dashboardRes, storeRes] = await Promise.all([
                 axios.get(DASHBOARD_API_URL, { headers, timeout: 15000 }),
                 axios.get(PROFILE_API_URL, { headers, timeout: 15000 }).catch(() => null)
             ]);
 
-            console.log('âœ… Dashboard data received:', dashboardRes.data);
-            console.log('âœ… Store profile data:', storeRes?.data);
+            console.log(' Dashboard data received:', dashboardRes.data);
+            console.log(' Store profile data:', storeRes?.data);
 
             setDashboardData(dashboardRes.data);
             setStoreData(storeRes?.data?.store_profile || storeRes?.data || null);
 
         } catch (error) {
-            console.error('âŒ Failed to fetch dashboard data:', error);
+            console.error(' Failed to fetch dashboard data:', error);
             if (error.response?.status === 401) {
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('buyerAccessToken');
@@ -439,7 +439,7 @@ export default function SellerDashboardOverview() {
                     <div className='dashboardoverviewstatcontainer' style={styles.statsContainer}>
                         <StatCard
                             title="Total Revenue"
-                            value={`â‚¹${(dashboardData.analytics?.total_revenue || 0).toLocaleString('en-IN')}`}
+                            value={`₹${(dashboardData.analytics?.total_revenue || 0).toLocaleString('en-IN')}`}
                             icon={<IndianRupee className='dashboardoverviewstaticon' />}
                             color="#3e7572ff"
                             bgColor="rgba(255, 238, 175, 1)"

@@ -38,7 +38,7 @@ import {
 // const SEND_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/send-otp/`;
 // const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/verify/`;
 
-// console.log('ðŸŒ Forgot Password API URLs configured:', {
+// console.log(' Forgot Password API URLs configured:', {
 //   API_BASE_URL,
 //   SEND_RESET_OTP_API,
 //   VERIFY_RESET_OTP_API
@@ -50,7 +50,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.kerala
 const SEND_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/send-otp/`;
 const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/verify/`;
 
-console.log('ðŸ”‘ Password Reset APIs:', API_BASE_URL);
+console.log(' Password Reset APIs:', API_BASE_URL);
 
 
 // âœ… Loading fallback component
@@ -194,7 +194,7 @@ function ForgotPasswordContent() {
     setIsLoading(true);
 
     try {
-      console.log('ðŸ“§ Sending OTP to:', email.trim());
+      console.log(' Sending OTP to:', email.trim());
 
       const response = await axios.post(SEND_RESET_OTP_API, {
         email: email.trim().toLowerCase()
@@ -202,7 +202,7 @@ function ForgotPasswordContent() {
         timeout: 15000
       });
 
-      console.log('âœ… OTP sent successfully:', response.data);
+      console.log(' OTP sent successfully:', response.data);
 
       setOtpSentTime(new Date());
       setResendCooldown(60); // 60 second cooldown
@@ -210,7 +210,7 @@ function ForgotPasswordContent() {
       setStep(2);
 
     } catch (err) {
-      console.error('âŒ OTP send error:', err);
+      console.error(' OTP send error:', err);
 
       let errorMessage = 'Could not send OTP. Please try again.';
 
@@ -266,7 +266,7 @@ function ForgotPasswordContent() {
     setIsLoading(true);
 
     try {
-      console.log('ðŸ” Resetting password for:', email.trim());
+      console.log(' Resetting password for:', email.trim());
 
       const response = await axios.post(VERIFY_RESET_OTP_API, {
         email: email.trim().toLowerCase(),
@@ -276,7 +276,7 @@ function ForgotPasswordContent() {
         timeout: 15000
       });
 
-      console.log('âœ… Password reset successful:', response.data);
+      console.log(' Password reset successful:', response.data);
 
       showMessage('Password has been reset successfully! Redirecting to login...', 'success');
 
@@ -291,7 +291,7 @@ function ForgotPasswordContent() {
       }, 2500);
 
     } catch (err) {
-      console.error('âŒ Password reset error:', err);
+      console.error(' Password reset error:', err);
 
       let errorMessage = 'Failed to reset password. Please try again.';
 
@@ -321,7 +321,7 @@ function ForgotPasswordContent() {
     setIsLoading(true);
 
     try {
-      console.log('ðŸ”„ Resending OTP to:', email.trim());
+      console.log(' Resending OTP to:', email.trim());
 
       await axios.post(SEND_RESET_OTP_API, {
         email: email.trim().toLowerCase()
@@ -334,7 +334,7 @@ function ForgotPasswordContent() {
       showMessage('OTP has been resent to your email. Please check your inbox.', 'success');
 
     } catch (err) {
-      console.error('âŒ OTP resend error:', err);
+      console.error(' OTP resend error:', err);
       showMessage('Failed to resend OTP. Please try again later.', 'error');
     } finally {
       setIsLoading(false);

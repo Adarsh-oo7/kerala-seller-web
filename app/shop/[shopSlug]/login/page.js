@@ -42,19 +42,19 @@ import SHeader from '../../../../components/common/SHeader';
 // const EMAIL_LOGIN_API = `${API_BASE_URL}/user/buyer/login/`;
 
 
-// console.log('🌐 Shop Login API URLs configured:', {
+// console.log(' Shop Login API URLs configured:', {
 //     API_BASE_URL,
 //     GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'Not configured'
 // });
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const GOOGLE_LOGIN_API = `${API_BASE_URL}/user/buyer/login/google/`;
 const EMAIL_LOGIN_API = `${API_BASE_URL}/user/buyer/login/`;
 
-console.log('🔐 Shop Login:', API_BASE_URL, GOOGLE_CLIENT_ID ? '✅ Google configured' : '❌ No Google ID');
+console.log(' Shop Login:', API_BASE_URL, GOOGLE_CLIENT_ID ? ' Google configured' : ' No Google ID');
 
 
 // ✅ Enhanced EmailLoginForm with store context
@@ -118,7 +118,7 @@ function EmailLoginForm({ onLoginSuccess, storeInfo }) {
         setIsLoading(true);
 
         try {
-            console.log('🔐 Shop login attempt for store:', storeInfo.actualStoreId);
+            console.log(' Shop login attempt for store:', storeInfo.actualStoreId);
 
             const response = await axios.post(EMAIL_LOGIN_API, {
                 email: email.trim().toLowerCase(),
@@ -128,7 +128,7 @@ function EmailLoginForm({ onLoginSuccess, storeInfo }) {
                 timeout: 15000
             });
 
-            console.log('✅ Shop login successful:', response.data);
+            console.log(' Shop login successful:', response.data);
 
             const token = response.data.access_token ||
                 response.data.token ||
@@ -141,7 +141,7 @@ function EmailLoginForm({ onLoginSuccess, storeInfo }) {
             onLoginSuccess(token, response.data);
 
         } catch (err) {
-            console.error('❌ Shop login error:', err);
+            console.error(' Shop login error:', err);
 
             let errorMessage = 'Login failed. Please try again.';
 
@@ -294,7 +294,7 @@ function ShopLoginContent() {
     // Get actual store ID from URL parameters
 // Get actual store ID from URL parameters
 const getActualStoreId = () => {
-    console.log('🔍 Getting store ID for shop login...');
+    console.log(' Getting store ID for shop login...');
     console.log('- shopSlug from params:', shopSlug);
     console.log('- id from search params:', searchParams.get('id'));
 
@@ -334,7 +334,7 @@ const getActualStoreId = () => {
         const { error, storeId } = getActualStoreId();
 
         if (error || !storeId) {
-            console.log('🔍 Invalid shop login URL, redirecting to home...');
+            console.log(' Invalid shop login URL, redirecting to home...');
             router.replace('/');
             return;
         }
@@ -345,7 +345,7 @@ const getActualStoreId = () => {
 // In the fetchStoreData function inside useEffect
 const fetchStoreData = async () => {
     try {
-        console.log('📡 Fetching store data for shop login:', storeId);
+        console.log(' Fetching store data for shop login:', storeId);
         
         // ✅ FIX: Fetch store by either ID or slug
         const response = await fetch(`${API_BASE_URL}/shop/${storeId}/`);
@@ -354,7 +354,7 @@ const fetchStoreData = async () => {
             const storeResData = await response.json();
             const storeData = storeResData.store || storeResData;
             
-            console.log('✅ Store data loaded for login:', {
+            console.log(' Store data loaded for login:', {
                 id: storeData.id,
                 name: storeData.name,
                 slug: storeData.slug || storeData.seller_phone
@@ -370,7 +370,7 @@ const fetchStoreData = async () => {
                 loading: false
             }));
         } else {
-            console.warn('⚠️ Store data not found, using fallback');
+            console.warn(' Store data not found, using fallback');
             setStoreInfo(prev => ({
                 ...prev,
                 storeData: {
@@ -383,7 +383,7 @@ const fetchStoreData = async () => {
             }));
         }
     } catch (error) {
-        console.error('❌ Failed to fetch store data:', error);
+        console.error(' Failed to fetch store data:', error);
         setStoreInfo(prev => ({
             ...prev,
             storeData: {
@@ -403,7 +403,7 @@ const fetchStoreData = async () => {
     }, [shopSlug, searchParams, router]);
 
 const handleLoginSuccess = useCallback((token, userData = {}) => {
-    console.log('🎉 Shop login successful, storing token and redirecting...');
+    console.log(' Shop login successful, storing token and redirecting...');
 
     // Store token with multiple keys for compatibility
     localStorage.setItem('access_token', token);
@@ -420,7 +420,7 @@ const handleLoginSuccess = useCallback((token, userData = {}) => {
     // ✅ FIXED: Better redirect logic
     const redirectTo = searchParams.get('redirect');
     
-    console.log('🔍 Redirect debugging:', {
+    console.log(' Redirect debugging:', {
         redirectTo,
         decoded: redirectTo ? decodeURIComponent(redirectTo) : 'none',
         storeSlug: storeInfo.storeData?.slug,
@@ -430,7 +430,7 @@ const handleLoginSuccess = useCallback((token, userData = {}) => {
     if (redirectTo) {
         // Decode and validate the redirect URL
         const decodedRedirect = decodeURIComponent(redirectTo);
-        console.log('🔄 Redirecting to specified URL:', decodedRedirect);
+        console.log(' Redirecting to specified URL:', decodedRedirect);
         
         // ✅ FIX: Use router.replace instead of router.push to avoid back button issues
         router.replace(decodedRedirect);
@@ -438,12 +438,12 @@ const handleLoginSuccess = useCallback((token, userData = {}) => {
         // ✅ FIX: Check if we have store data with a slug
         if (storeInfo.storeData?.slug) {
             const shopUrl = `/shop/${storeInfo.storeData.slug}`;
-            console.log('🔄 Redirecting to shop via slug:', shopUrl);
+            console.log(' Redirecting to shop via slug:', shopUrl);
             router.replace(shopUrl);
         } else {
             // Fallback to ID-based URL
             const shopUrl = getShopUrl('');
-            console.log('🔄 Redirecting to shop home (fallback):', shopUrl);
+            console.log(' Redirecting to shop home (fallback):', shopUrl);
             router.replace(shopUrl);
         }
     }
@@ -462,7 +462,7 @@ const handleLoginSuccess = useCallback((token, userData = {}) => {
                     return;
                 }
 
-                console.log('🔍 Existing token found, validating...');
+                console.log(' Existing token found, validating...');
 
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/buyer/profile/`, {
@@ -473,20 +473,20 @@ const handleLoginSuccess = useCallback((token, userData = {}) => {
                     });
 
                     if (response.ok) {
-                        console.log('✅ Token is valid, redirecting...');
+                        console.log(' Token is valid, redirecting...');
                         handleLoginSuccess(token);
                     } else if (response.status === 401) {
-                        console.log('🔐 Token is invalid/expired, clearing...');
+                        console.log(' Token is invalid/expired, clearing...');
                         localStorage.removeItem('access_token');
                         localStorage.removeItem('buyerAccessToken');
                         localStorage.removeItem('refresh_token');
                         setHasCheckedToken(true);
                     } else {
-                        console.log('⚠️ Token validation inconclusive, staying on login');
+                        console.log(' Token validation inconclusive, staying on login');
                         setHasCheckedToken(true);
                     }
                 } catch (error) {
-                    console.error('❌ Token validation error:', error);
+                    console.error(' Token validation error:', error);
                     setHasCheckedToken(true);
                 }
             };
@@ -498,7 +498,7 @@ const handleLoginSuccess = useCallback((token, userData = {}) => {
     // Enhanced Google Login Handler with store context
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
-            console.log('🔍 Google credential received for shop:', storeInfo.actualStoreId);
+            console.log(' Google credential received for shop:', storeInfo.actualStoreId);
 
             const response = await axios.post(GOOGLE_LOGIN_API, {
                 credential: credentialResponse.credential,
@@ -511,7 +511,7 @@ const handleLoginSuccess = useCallback((token, userData = {}) => {
                 timeout: 15000
             });
 
-            console.log('✅ Google shop login response:', response.data);
+            console.log(' Google shop login response:', response.data);
 
             const token = response.data.access_token ||
                 response.data.token ||
@@ -524,7 +524,7 @@ const handleLoginSuccess = useCallback((token, userData = {}) => {
             }
 
         } catch (error) {
-            console.error("❌ Google shop login failed:", error);
+            console.error(" Google shop login failed:", error);
 
             let errorMessage = 'Google login failed. Please try again.';
 
@@ -545,7 +545,7 @@ const handleLoginSuccess = useCallback((token, userData = {}) => {
     };
 
     const handleGoogleError = (error) => {
-        console.error('❌ Google shop login error:', error);
+        console.error(' Google shop login error:', error);
         alert('Google login failed. Please try again or use email login.');
     };
 
@@ -557,7 +557,7 @@ const handleLoginSuccess = useCallback((token, userData = {}) => {
             router.push(decodeURIComponent(redirectTo));
         } else {
             const shopUrl = getShopUrl('');
-            console.log('🔙 Back to shop:', shopUrl);
+            console.log(' Back to shop:', shopUrl);
             router.push(shopUrl);
         }
     };

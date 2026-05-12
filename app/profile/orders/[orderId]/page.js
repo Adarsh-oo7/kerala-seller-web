@@ -42,11 +42,11 @@ import {
 // const ORDER_DETAIL_API_URL = `${API_BASE_URL}/user/orders/`;
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                     'https://api.keralasellers.in/api';
+                     'https://api.keralasellers.in';
 
 const ORDER_DETAIL_API_URL = `${API_BASE_URL}/user/orders/`;
 
-console.log('📋 Order Detail API:', API_BASE_URL);
+console.log(' Order Detail API:', API_BASE_URL);
 
 
 export default function OrderDetailPage() {
@@ -64,12 +64,12 @@ export default function OrderDetailPage() {
                       localStorage.getItem('accessToken');
         
         if (!token) {
-            console.error('❌ No authentication token found');
+            console.error(' No authentication token found');
             router.push('/login/buyer');
             return null;
         }
         
-        console.log('🔍 Using token:', token.substring(0, 30) + '...');
+        console.log(' Using token:', token.substring(0, 30) + '...');
         return { 'Authorization': `Bearer ${token}` };
     }, [router]);
 

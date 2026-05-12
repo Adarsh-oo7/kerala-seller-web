@@ -26,18 +26,20 @@ export const auth = getAuth(app);
 // ✅ IMPORTANT: Enable phone auth settings for development
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   // This helps with testing phone auth locally
-  auth.settings.appVerificationDisabledForTesting = false; // Set to true only for test numbers
+  auth.settings.appVerificationDisabledForTesting = false; // Must use test phone numbers in Firebase Console
 }
 
-// Conditionally initialize Analytics on client only
+// Conditionally initialize Analytics on client only (Disabled in development to avoid 400 errors)
 export let analytics = null;
 
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'development') {
   import('firebase/analytics').then(({ getAnalytics }) => {
     analytics = getAnalytics(app);
-    console.log('✅ Firebase Analytics initialized');
+    console.log('Firebase Analytics initialized');
   }).catch((e) => {
-    console.warn('⚠️ Firebase analytics failed to load:', e);
+    if (process.env.NODE_ENV !== 'development') {
+        console.warn('Firebase analytics failed to load:', e);
+    }
   });
 }
 
@@ -46,6 +48,6 @@ export default app;
 
 // Debug log (remove in production)
 if (typeof window !== 'undefined') {
-  console.log('🔥 Firebase initialized successfully');
-  console.log('🔐 Auth Domain:', firebaseConfig.authDomain);
+  console.log(' Firebase initialized successfully');
+  console.log(' Auth Domain:', firebaseConfig.authDomain);
 }

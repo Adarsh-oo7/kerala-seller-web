@@ -38,7 +38,7 @@ const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 const CREATE_BILL_URL = `${API_BASE_URL}/user/orders/create-local-bill/`;      // âœ… CHANGED
 const GENERATE_BILL_URL = `${API_BASE_URL}/user/orders/generate-local-bill/`;  // âœ… NEW
 
-console.log('ðŸ§¾ Local bill APIs:', {
+console.log(' Local bill APIs:', {
   API_BASE_URL,
   PRODUCTS_API_URL,
   CREATE_BILL_URL,
@@ -90,7 +90,7 @@ export default function LocalBillingPage() {
     setIsAutoDetecting(true);
 
     try {
-      console.log('ðŸ” Auto-detecting seller phone...');
+      console.log(' Auto-detecting seller phone...');
 
       // Try store profile API (this worked in your logs)
       try {
@@ -104,7 +104,7 @@ export default function LocalBillingPage() {
         if (phone) {
           setSellerPhone(phone);
           localStorage.setItem('sellerPhone', phone);
-          console.log('âœ… Phone detected from store profile:', phone);
+          console.log(' Phone detected from store profile:', phone);
           setIsAutoDetecting(false);
           return;
         }
@@ -119,12 +119,12 @@ export default function LocalBillingPage() {
 
       if (storedPhone) {
         setSellerPhone(storedPhone);
-        console.log('âœ… Phone found in localStorage:', storedPhone);
+        console.log(' Phone found in localStorage:', storedPhone);
         setIsAutoDetecting(false);
         return;
       }
 
-      console.log('âš ï¸ Could not auto-detect seller phone. Manual input required.');
+      console.log(' Could not auto-detect seller phone. Manual input required.');
 
     } catch (error) {
       console.error('Auto-detection failed:', error);
@@ -290,7 +290,7 @@ export default function LocalBillingPage() {
         }))
       };
 
-      console.log('ðŸ” Creating local bill:', billData);
+      console.log(' Creating local bill:', billData);
 
       const requestConfig = {
         headers: {
@@ -300,7 +300,7 @@ export default function LocalBillingPage() {
       };
 
       const billResponse = await axios.post(CREATE_BILL_URL, billData, requestConfig);
-      console.log('âœ… Local bill created:', billResponse.data);
+      console.log(' Local bill created:', billResponse.data);
 
       // âœ… Step 2: Generate and display bill HTML
       const billId = billResponse.data.bill_id;
@@ -319,7 +319,7 @@ export default function LocalBillingPage() {
         }))
       };
 
-      console.log('ðŸ” Generating bill HTML...');
+      console.log(' Generating bill HTML...');
       const htmlResponse = await axios.post(GENERATE_BILL_URL, billHtmlData, {
         headers: requestConfig.headers,
         responseType: 'blob'
@@ -339,8 +339,8 @@ export default function LocalBillingPage() {
       // Refresh products to show updated stock
       fetchProducts();
     } catch (error) {
-      console.error('âŒ Billing error:', error);
-      console.error('âŒ Error response:', error.response?.data);
+      console.error(' Billing error:', error);
+      console.error(' Error response:', error.response?.data);
 
       if (error.response?.status === 401) {
         setError('Session expired. Please log in again.');
@@ -510,7 +510,7 @@ export default function LocalBillingPage() {
                         <span style={styles.productModel}>({product.model_name})</span>
                       )}
                     </div>
-                    <div style={styles.productPrice}>â‚¹{parseFloat(product.price).toFixed(2)}</div>
+                    <div style={styles.productPrice}>₹{parseFloat(product.price).toFixed(2)}</div>
                     <div style={styles.productStock}>
                       <span style={styles.localStockBadge}>
                         ðŸ“¦ {product.total_stock} in store
@@ -623,11 +623,11 @@ export default function LocalBillingPage() {
                           <div style={styles.priceSection}>
                             <div style={styles.priceLine}>
                               <span>Price</span>
-                              <strong>â‚¹{parseFloat(item.price).toFixed(2)}</strong>
+                              <strong>₹{parseFloat(item.price).toFixed(2)}</strong>
                             </div>
                             <div style={styles.priceLine}>
                               <span>Total</span>
-                              <strong>â‚¹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
+                              <strong>₹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
                             </div>
                           </div>
                         </div>
@@ -683,9 +683,9 @@ export default function LocalBillingPage() {
                               </button>
                             </div>
                           </td>
-                          <td style={styles.billTableCell}>â‚¹{parseFloat(item.price).toFixed(2)}</td>
+                          <td style={styles.billTableCell}>₹{parseFloat(item.price).toFixed(2)}</td>
                           <td style={styles.billTableCell}>
-                            <strong>â‚¹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
+                            <strong>₹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
                           </td>
                           <td style={styles.billTableCell}>
                             <button
@@ -716,7 +716,7 @@ export default function LocalBillingPage() {
               <div style={styles.billSummary}>
                 <div className='dashboardbillingtotalcash' style={styles.billTotal}>
                   <span>Total Cash Amount: </span>
-                  <strong>â‚¹{calculateTotal().toFixed(2)}</strong>
+                  <strong>₹{calculateTotal().toFixed(2)}</strong>
                 </div>
                 <div style={styles.billItems}>
                   {billItems.length} item{billItems.length !== 1 ? 's' : ''}

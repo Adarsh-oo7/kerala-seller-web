@@ -33,7 +33,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ||
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/register/send-otp/`;
 const REGISTER_API = `${API_BASE_URL}/user/buyer/register/verify-otp/`;
 
-console.log('ðŸ“± Register APIs:', API_BASE_URL);
+console.log(' Register APIs:', API_BASE_URL);
 
 
 export default function BuyerRegisterPage() {

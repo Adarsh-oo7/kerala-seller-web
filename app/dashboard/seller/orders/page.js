@@ -22,7 +22,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ||
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
 const NOTIFICATIONS_API_URL = `${API_BASE_URL}/api/notifications/`;
 
-console.log('ðŸ”” Notifications:', {
+console.log(' Notifications:', {
   API_BASE_URL,
   ORDERS_API_URL,
   usingLocal: process.env.NEXT_PUBLIC_API_BASE_URL
@@ -264,7 +264,7 @@ function OrderCard({ order, getStatusStyle, getPaymentStatusStyle }) {
               color: 'rgb(23, 94, 84)',
             }}
           >
-            â‚¹ {parseFloat(order.total_amount).toFixed(2)}
+            ₹ {parseFloat(order.total_amount).toFixed(2)}
           </span>
         </div>
 
@@ -382,11 +382,11 @@ export default function OrdersListPage() {
         url += `?${params.toString()}`;
       }
 
-      console.log('ðŸ“¡ Fetching all orders:', url);
+      console.log(' Fetching all orders:', url);
       const response = await axios.get(url, { headers });
 
       const orderData = response.data.results || response.data || [];
-      console.log('âœ… Fetched orders:', orderData.length);
+      console.log(' Fetched orders:', orderData.length);
 
       setAllOrders(orderData);
 
@@ -398,7 +398,7 @@ export default function OrdersListPage() {
       setOrderStats(stats);
 
     } catch (error) {
-      console.error('âŒ Error:', error);
+      console.error(' Error:', error);
       if (error.response?.status === 401) {
         setError('Session expired.');
         setTimeout(() => router.push('/login/seller'), 2000);
@@ -482,7 +482,7 @@ export default function OrdersListPage() {
       }
     });
 
-    console.log(`âœ… Filtered orders: ${filtered.length} (Status: ${statusFilter}, Payment: ${paymentFilter}, Search: "${searchTerm}")`);
+    console.log(` Filtered orders: ${filtered.length} (Status: ${statusFilter}, Payment: ${paymentFilter}, Search: "${searchTerm}")`);
     setDisplayedOrders(filtered);
   }, [allOrders, searchTerm, statusFilter, paymentFilter, dateFilter, minAmount, maxAmount, sortBy]);
 

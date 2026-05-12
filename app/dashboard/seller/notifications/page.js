@@ -25,7 +25,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ||
 
 const NOTIFICATIONS_API = `${API_BASE_URL}/api/notifications/`;
 
-console.log('ðŸ”” Notifications:', API_BASE_URL);
+console.log(' Notifications:', API_BASE_URL);
 
 
 
@@ -147,7 +147,7 @@ const handleNotificationClick = async (notification) => {
       correctLink = correctLink.replace('/dashboard/', '/dashboard/seller/');
     }
     
-    console.log('âœ… Navigating to:', correctLink);
+    console.log(' Navigating to:', correctLink);
     router.push(correctLink);
   }
 };
@@ -219,7 +219,7 @@ const handleNotificationClick = async (notification) => {
 
     if (lowercaseMessage.includes('order')) {
       return <ShoppingCart className='dashboardnotificationcarticon' size={20} color="#3b82f6" />;
-    } else if (lowercaseMessage.includes('payment') || lowercaseMessage.includes('payout') || lowercaseMessage.includes('â‚¹')) {
+    } else if (lowercaseMessage.includes('payment') || lowercaseMessage.includes('payout') || lowercaseMessage.includes('₹')) {
       return <IndianRupee className='dashboardnotificationcarticon' size={20} color="#059669" />;
     } else if (lowercaseMessage.includes('product') || lowercaseMessage.includes('stock')) {
       return <Package className='dashboardnotificationcarticon' size={20} color="#8b5cf6" />;

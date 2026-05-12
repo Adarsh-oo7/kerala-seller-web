@@ -57,7 +57,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ||
 const ORDERS_API_URL = `${API_BASE_URL}/user/orders/`;
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 
-console.log('ðŸ›’ Orders/Products:', {
+console.log(' Orders/Products:', {
   API_BASE_URL,
   LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL || 'using fallback'
 });
@@ -113,7 +113,7 @@ export default function AnalyticsPage() {
       const orders = ordersResponse.data.results || ordersResponse.data || [];
       const products = productsResponse.data.results || productsResponse.data || [];
 
-      console.log(`ðŸ“Š Analytics data: ${orders.length} orders, ${products.length} products`);
+      console.log(` Analytics data: ${orders.length} orders, ${products.length} products`);
 
       // Process analytics data
       const processedAnalytics = processAnalyticsData(orders, products, parseInt(dateRange));
@@ -203,7 +203,7 @@ export default function AnalyticsPage() {
       .map(order => ({
         type: 'order',
         title: `Order #${order.id}`,
-        description: `â‚¹${parseFloat(order.total_amount).toFixed(2)} - ${order.customer_name}`,
+        description: `₹${parseFloat(order.total_amount).toFixed(2)} - ${order.customer_name}`,
         time: order.created_at,
         status: order.status
       }));
@@ -294,10 +294,10 @@ export default function AnalyticsPage() {
   const exportAnalytics = () => {
     const csvContent = [
       ['Metric', 'Value'],
-      ['Total Revenue', `â‚¹${analytics.overview.totalRevenue.toFixed(2)}`],
+      ['Total Revenue', `₹${analytics.overview.totalRevenue.toFixed(2)}`],
       ['Total Orders', analytics.overview.totalOrders],
       ['Total Products', analytics.overview.totalProducts],
-      ['Average Order Value', `â‚¹${analytics.overview.avgOrderValue.toFixed(2)}`],
+      ['Average Order Value', `₹${analytics.overview.avgOrderValue.toFixed(2)}`],
       ['Revenue Change', `${analytics.overview.revenueChange.toFixed(1)}%`],
       ['Orders Change', `${analytics.overview.ordersChange.toFixed(1)}%`],
       [],
@@ -305,7 +305,7 @@ export default function AnalyticsPage() {
       ['Product Name', 'Revenue', 'Quantity Sold', 'Orders'],
       ...analytics.topProducts.map(product => [
         product.name,
-        `â‚¹${product.revenue.toFixed(2)}`,
+        `₹${product.revenue.toFixed(2)}`,
         product.quantity,
         product.orders
       ])
@@ -395,7 +395,7 @@ export default function AnalyticsPage() {
             <div className='dashboardanalyticsoverviewcardtitle' style={styles.cardTitle}>Total Revenue</div>
             <DollarSign size={20} color="#059669" />
           </div>
-          <div className='dashboardanalyticsoverviewcardvalue' style={styles.cardValue}>â‚¹{analytics.overview.totalRevenue.toLocaleString('en-IN')}</div>
+          <div className='dashboardanalyticsoverviewcardvalue' style={styles.cardValue}>₹{analytics.overview.totalRevenue.toLocaleString('en-IN')}</div>
           <div className='dashboardanalyticsoverviewcardchange' style={styles.cardChange}>
             {analytics.overview.revenueChange >= 0 ? (
               <ArrowUpRight size={16} color="#059669" />
@@ -435,7 +435,7 @@ export default function AnalyticsPage() {
             <div className='dashboardanalyticsoverviewcardtitle' style={styles.cardTitle}>Average Order Value</div>
             <Target size={20} color="#8b5cf6" />
           </div>
-          <div className='dashboardanalyticsoverviewcardvalue' style={styles.cardValue}>â‚¹{analytics.overview.avgOrderValue.toFixed(0)}</div>
+          <div className='dashboardanalyticsoverviewcardvalue' style={styles.cardValue}>₹{analytics.overview.avgOrderValue.toFixed(0)}</div>
           <div className='dashboardanalyticsoverviewcardchange' style={styles.cardChange}>
             <Clock size={16} color="#6b7280" />
             <span style={{ color: '#6b7280' }}>
@@ -483,7 +483,7 @@ export default function AnalyticsPage() {
                           ...styles.trendBarFill,
                           height: `${height}%`
                         }}
-                        title={`â‚¹${point.revenue.toFixed(0)} (${point.orders} orders)`}
+                        title={`₹${point.revenue.toFixed(0)} (${point.orders} orders)`}
                       />
                       <div style={styles.trendBarLabel}>{point.date}</div>
                     </div>
@@ -516,11 +516,11 @@ export default function AnalyticsPage() {
                     <div style={styles.productInfo}>
                       <div style={styles.productName}>{product.name}</div>
                       <div style={styles.productStats}>
-                        {product.quantity} units â€¢ â‚¹{product.revenue.toFixed(0)}
+                        {product.quantity} units â€¢ ₹{product.revenue.toFixed(0)}
                       </div>
                     </div>
                     <div style={styles.productRevenue}>
-                      â‚¹{product.revenue.toLocaleString('en-IN')}
+                      ₹{product.revenue.toLocaleString('en-IN')}
                     </div>
                   </div>
                 ))}

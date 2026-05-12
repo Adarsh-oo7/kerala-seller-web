@@ -41,7 +41,7 @@ const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 
-console.log('âœ… API URLs configured:', {
+console.log(' API URLs configured:', {
   API_BASE_URL,
   PRODUCTS_API_URL,
   CATEGORIES_API_URL,
@@ -55,11 +55,11 @@ const getAuthHeaders = () => {
     localStorage.getItem('buyerAccessToken');
 
   if (!token) {
-    console.error('âŒ No authentication token found');
+    console.error(' No authentication token found');
     return null;
   }
 
-  console.log('ðŸ” Using token:', token.substring(0, 30) + '...');
+  console.log(' Using token:', token.substring(0, 30) + '...');
   return { 'Authorization': `Bearer ${token}` };
 };
 
@@ -107,7 +107,7 @@ function useInfiniteScroll(callback, hasMore, isLoading) {
       const nearBottom = scrollHeight - scrollTop - clientHeight < 200;
 
       if (nearBottom && hasMore && !isLoading) {
-        console.log('ðŸ“œ Near bottom - loading more products...');
+        console.log(' Near bottom - loading more products...');
         callback();
       }
     };
@@ -316,7 +316,7 @@ export default function Home() {
   };
 
   const handleToggleWishlist = async (productId) => {
-    console.log('ðŸ” Toggle wishlist for product:', productId);
+    console.log(' Toggle wishlist for product:', productId);
 
     const headers = getAuthHeaders();
     if (!headers) {
@@ -325,14 +325,14 @@ export default function Home() {
     }
 
     if (wishlistLoading.has(productId)) {
-      console.log('â³ Wishlist request already in progress for product:', productId);
+      console.log(' Wishlist request already in progress for product:', productId);
       return;
     }
 
     setWishlistLoading(prev => new Set([...prev, productId]));
 
     try {
-      console.log('ðŸ”„ Sending wishlist toggle request...');
+      console.log(' Sending wishlist toggle request...');
       const response = await axios.post(WISHLIST_TOGGLE_API, {
         product_id: productId
       }, {
@@ -340,7 +340,7 @@ export default function Home() {
         timeout: 10000
       });
 
-      console.log('âœ… Wishlist toggle response:', response.data);
+      console.log(' Wishlist toggle response:', response.data);
 
       const updateProducts = (prevProducts) =>
         prevProducts.map(product =>
@@ -354,12 +354,12 @@ export default function Home() {
 
       const action = response.data.is_wishlisted ? 'added to' : 'removed from';
       const productName = response.data.product_name || 'Product';
-      console.log(`âœ… ${productName} ${action} wishlist`);
+      console.log(` ${productName} ${action} wishlist`);
 
       showWishlistFeedback(productId, response.data.is_wishlisted, productName);
 
     } catch (error) {
-      console.error('âŒ Wishlist toggle error:', error);
+      console.error(' Wishlist toggle error:', error);
 
       if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
@@ -399,7 +399,7 @@ export default function Home() {
       autoClose: 1500,
       theme: "colored",
     });
-    console.log(`ðŸ’– ${productName} ${action} wishlist!`);
+    console.log(` ${productName} ${action} wishlist!`);
   };
 
   const checkWishlistStatus = async (productIds) => {
@@ -407,7 +407,7 @@ export default function Home() {
     if (!headers || productIds.length === 0) return;
 
     try {
-      console.log('ðŸ” Checking wishlist status for products:', productIds.length);
+      console.log(' Checking wishlist status for products:', productIds.length);
 
       const promises = productIds.slice(0, 10).map(id =>
         axios.get(`${WISHLIST_CHECK_API}?product_id=${id}`, { headers, timeout: 5000 })
@@ -419,7 +419,7 @@ export default function Home() {
       );
 
       const results = await Promise.all(promises);
-      console.log('âœ… Wishlist status results:', results);
+      console.log(' Wishlist status results:', results);
 
       const updateProductsWithWishlist = (prevProducts) =>
         prevProducts.map(product => {
@@ -872,7 +872,7 @@ export default function Home() {
               </div>
               <div style={dynamicStyles.statDivider}></div>
               <div style={dynamicStyles.statItem}>
-                <div style={dynamicStyles.statNumber}>â‚¹0</div>
+                <div style={dynamicStyles.statNumber}>₹0</div>
                 <div style={dynamicStyles.statLabel}>Commission Fee</div>
               </div>
             </div>

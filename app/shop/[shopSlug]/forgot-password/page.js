@@ -37,14 +37,14 @@ import SHeader from '../../../../components/common/SHeader';
 // const SEND_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/send-otp/`;
 // const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/verify/`;
 
-// console.log('🌐 Shop Forgot Password API:', { API_BASE_URL });
+// console.log(' Shop Forgot Password API:', { API_BASE_URL });
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const SEND_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/send-otp/`;
 const VERIFY_RESET_OTP_API = `${API_BASE_URL}/user/buyer/password-reset/verify/`;
 
-console.log('🔑 Shop Password Reset:', API_BASE_URL);
+console.log(' Shop Password Reset:', API_BASE_URL);
 
 
 // ✅ Loading Fallback
@@ -257,7 +257,7 @@ function ShopForgotPasswordContent() {
     setIsLoading(true);
 
     try {
-      console.log('📧 Sending password reset OTP for shop:', storeInfo.actualStoreId);
+      console.log(' Sending password reset OTP for shop:', storeInfo.actualStoreId);
 
       await axios.post(SEND_RESET_OTP_API, {
         email: email.trim().toLowerCase(),
@@ -272,7 +272,7 @@ function ShopForgotPasswordContent() {
       setStep(2);
 
     } catch (err) {
-      console.error('❌ OTP send error:', err);
+      console.error(' OTP send error:', err);
 
       let errorMessage = 'Could not send OTP. Please try again.';
 
@@ -325,7 +325,7 @@ function ShopForgotPasswordContent() {
     setIsLoading(true);
 
     try {
-      console.log('🔐 Resetting password for shop buyer');
+      console.log(' Resetting password for shop buyer');
 
       await axios.post(VERIFY_RESET_OTP_API, {
         email: email.trim().toLowerCase(),
@@ -343,7 +343,7 @@ function ShopForgotPasswordContent() {
       }, 2500);
 
     } catch (err) {
-      console.error('❌ Password reset error:', err);
+      console.error(' Password reset error:', err);
 
       let errorMessage = 'Failed to reset password. Please try again.';
 

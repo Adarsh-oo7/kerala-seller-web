@@ -71,12 +71,12 @@ export default function EditProfilePage() {
       localStorage.getItem('buyerAccessToken');
 
     if (!token) {
-      console.error('âŒ No authentication token found');
+      console.error(' No authentication token found');
       router.push('/login/buyer');
       return null;
     }
 
-    console.log('ðŸ” Using token:', token.substring(0, 30) + '...');
+    console.log(' Using token:', token.substring(0, 30) + '...');
     return { 'Authorization': `Bearer ${token}` };
   }, [router]);
 

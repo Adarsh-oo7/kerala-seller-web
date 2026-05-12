@@ -27,7 +27,7 @@ import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw, ChevronLef
 // const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const API_URL = `${API_BASE_URL}/api/products/`;
 const BUYER_PROFILE_URL = `${API_BASE_URL}/api/buyer/profile/`;
@@ -41,7 +41,7 @@ const WISHLIST_API = `${API_BASE_URL}/api/wishlist/`;
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
 
-console.log('🛒 Product/Wishlist APIs:', API_BASE_URL);
+console.log(' Product/Wishlist APIs:', API_BASE_URL);
 
 
 // ✅ Enhanced auth headers function
@@ -60,7 +60,7 @@ const getBestImageUrl = (product, imageType = 'main', size = 'default') => {
 
     // ✅ Priority 1: CLOUDINARY URL FIRST (regardless of imageType)
     if (product.cloudinary_url) {
-        console.log('✅ Using Cloudinary URL:', product.cloudinary_url);
+        console.log(' Using Cloudinary URL:', product.cloudinary_url);
         return product.cloudinary_url;
     }
 
@@ -77,7 +77,7 @@ const getBestImageUrl = (product, imageType = 'main', size = 'default') => {
 
     // ✅ If it's already a Cloudinary URL, return as is
     if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
-        console.log('✅ Using Cloudinary URL from imageUrl:', imageUrl);
+        console.log(' Using Cloudinary URL from imageUrl:', imageUrl);
         return imageUrl;
     }
 
@@ -176,7 +176,7 @@ function ProductImageGallery({ product }) {
     const currentImage = allImages[selectedImageIndex];
 
     // ✅ Debug log (optional - remove after testing)
-    console.log('🖼️ Gallery image URL:', currentImage.large, 'Product ID:', product.id);
+    console.log(' Gallery image URL:', currentImage.large, 'Product ID:', product.id);
 
     return (
         <div style={styles.imageGallery} className="image-gallery">
@@ -209,7 +209,7 @@ function ProductImageGallery({ product }) {
                         }}
                         onLoad={() => setImageLoaded(true)}
                         onError={(e) => {
-                            console.error('❌ Image failed to load:', e.target.src);
+                            console.error(' Image failed to load:', e.target.src);
                             e.target.src = 'https://placehold.co/600x400?text=No+Image';
                             setImageLoaded(true);
                         }}
@@ -460,16 +460,16 @@ function WishlistButton({ productId, isLoggedIn, router }) {
             if (!headers || !productId) return;
 
             try {
-                console.log(`🔍 Checking wishlist status for product ${productId}`);
+                console.log(` Checking wishlist status for product ${productId}`);
                 const response = await axios.get(`${WISHLIST_CHECK_API}?product_id=${productId}`, {
                     headers,
                     timeout: 5000
                 });
                 const isInWishlist = response.data.is_wishlisted || false;
-                console.log(`✅ Product ${productId} wishlist status:`, isInWishlist);
+                console.log(` Product ${productId} wishlist status:`, isInWishlist);
                 setIsWishlisted(isInWishlist);
             } catch (error) {
-                console.warn('❌ Failed to check wishlist status:', error);
+                console.warn(' Failed to check wishlist status:', error);
             }
         };
 
@@ -487,7 +487,7 @@ function WishlistButton({ productId, isLoggedIn, router }) {
         }
 
         if (isWishlistLoading) {
-            console.log('⏳ Wishlist request already in progress for product:', productId);
+            console.log(' Wishlist request already in progress for product:', productId);
             return;
         }
 
@@ -498,7 +498,7 @@ function WishlistButton({ productId, isLoggedIn, router }) {
         setIsWishlisted(!isWishlisted);
 
         try {
-            console.log('🔄 Toggling wishlist for product:', productId);
+            console.log(' Toggling wishlist for product:', productId);
 
             const response = await axios.post(WISHLIST_TOGGLE_API, {
                 product_id: productId
@@ -507,14 +507,14 @@ function WishlistButton({ productId, isLoggedIn, router }) {
                 timeout: 10000
             });
 
-            console.log('✅ Wishlist toggle response:', response.data);
+            console.log(' Wishlist toggle response:', response.data);
 
             const newWishlistState = response.data.is_wishlisted ?? response.data.wishlisted;
             setIsWishlisted(newWishlistState);
 
             // Show user feedback
             const action = newWishlistState ? 'added to' : 'removed from';
-            console.log(`✅ Product ${action} wishlist`);
+            console.log(` Product ${action} wishlist`);
 
             // Visual feedback
             const button = document.querySelector('[data-wishlist-button]');
@@ -526,7 +526,7 @@ function WishlistButton({ productId, isLoggedIn, router }) {
             }
 
         } catch (error) {
-            console.error('❌ Wishlist toggle error:', error);
+            console.error(' Wishlist toggle error:', error);
 
             // Revert optimistic update
             setIsWishlisted(previousState);
@@ -776,7 +776,7 @@ const handleBuyNow = () => {
         return;
     }
     
-    console.log('🛒 Buy Now clicked:', {
+    console.log(' Buy Now clicked:', {
         productId: product.id,
         quantity,
         sellerPhone: product.store.seller_phone

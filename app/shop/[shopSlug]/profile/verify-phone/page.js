@@ -39,13 +39,13 @@ import {
 // const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;
 // const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const SEND_OTP_API = `${API_BASE_URL}/user/buyer/send-otp/`;
 const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 
-console.log('📱 OTP APIs:', API_BASE_URL);
+console.log(' OTP APIs:', API_BASE_URL);
 
 
 export default function VerifyPhonePage() {
@@ -109,13 +109,13 @@ export default function VerifyPhonePage() {
         const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
           size: 'invisible',
           callback: () => {
-            console.log('✅ reCAPTCHA verified');
+            console.log(' reCAPTCHA verified');
           },
         });
         setRecaptchaVerifier(verifier);
         return verifier;
       } catch (error) {
-        console.error('❌ reCAPTCHA initialization failed:', error);
+        console.error(' reCAPTCHA initialization failed:', error);
         setError('Failed to initialize reCAPTCHA');
         return null;
       }
@@ -152,12 +152,12 @@ export default function VerifyPhonePage() {
           const storeRes = await axios.get(`${API_BASE_URL}/shop/${actualStoreId}/`);
           setStoreData(storeRes.data.store || storeRes.data);
         } catch (storeError) {
-          console.warn('⚠️ Store data not found');
+          console.warn(' Store data not found');
           setStoreData({ name: `Store ${actualStoreId}`, id: actualStoreId });
         }
       }
     } catch (error) {
-      console.error('❌ Failed to fetch profile:', error);
+      console.error(' Failed to fetch profile:', error);
       if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('buyerAccessToken');
@@ -195,10 +195,10 @@ export default function VerifyPhonePage() {
     setError('');
 
     try {
-      console.log('🔄 Step 1: Preparing backend for phone:', phoneNumber);
+      console.log(' Step 1: Preparing backend for phone:', phoneNumber);
       await axios.post(SEND_OTP_API, { phone: phoneNumber }, { headers });
 
-      console.log('🔄 Step 2: Sending Firebase SMS OTP...');
+      console.log(' Step 2: Sending Firebase SMS OTP...');
       const formattedPhone = `+91${phoneNumber}`;
       const verifier = setupRecaptcha();
 
@@ -212,7 +212,7 @@ export default function VerifyPhonePage() {
         verifier
       );
 
-      console.log('✅ Firebase OTP sent successfully!');
+      console.log(' Firebase OTP sent successfully!');
       setVerificationId(confirmationResult);
       setOtpSent(true);
       setResendTimer(60);
@@ -221,7 +221,7 @@ export default function VerifyPhonePage() {
 
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
-      console.error('❌ OTP sending failed:', error);
+      console.error(' OTP sending failed:', error);
 
       let errorMessage = 'Failed to send OTP. Please try again.';
       if (error.code === 'auth/too-many-requests') {
@@ -258,18 +258,18 @@ export default function VerifyPhonePage() {
     setError('');
 
     try {
-      console.log('🔄 Step 1: Verifying Firebase OTP...');
+      console.log(' Step 1: Verifying Firebase OTP...');
       const result = await verificationId.confirm(otp);
       const idToken = await result.user.getIdToken();
 
-      console.log('🔄 Step 2: Verifying with backend...');
+      console.log(' Step 2: Verifying with backend...');
       await axios.post(
         VERIFY_FIREBASE_API,
         { firebase_id_token: idToken },
         { headers }
       );
 
-      console.log('✅ Backend verification successful!');
+      console.log(' Backend verification successful!');
       setSuccessMessage('Phone verified successfully! 🎉');
 
       await fetchProfile();
@@ -282,7 +282,7 @@ export default function VerifyPhonePage() {
         router.push(profileBack);
       }, 2000);
     } catch (error) {
-      console.error('❌ OTP verification failed:', error);
+      console.error(' OTP verification failed:', error);
       setOtpAttempts((prev) => prev + 1);
 
       let errorMessage = 'Invalid OTP. Please try again.';

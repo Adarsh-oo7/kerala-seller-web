@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -43,7 +43,7 @@ import {
 // const GOOGLE_LOGIN_API = `${API_BASE_URL}/user/buyer/login/google/`;
 // const EMAIL_LOGIN_API = `${API_BASE_URL}/user/buyer/login/`;
 
-// console.log('ðŸŒ Buyer Login API URLs configured:', {
+// console.log(' Buyer Login API URLs configured:', {
 //     API_BASE_URL,
 //     GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'Not configured'
 // });
@@ -56,7 +56,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ||
 const GOOGLE_LOGIN_API = `${API_BASE_URL}/user/buyer/login/google/`;
 const EMAIL_LOGIN_API = `${API_BASE_URL}/user/buyer/login/`;
 
-console.log('ðŸŒ Buyer Login APIs:', {
+console.log(' Buyer Login APIs:', {
     API_BASE_URL,
     GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'Not set',
     LOCAL: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -127,7 +127,7 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
         setIsLoading(true);
 
         try {
-            console.log('ðŸ” Attempting buyer login for:', email.trim());
+            console.log(' Attempting buyer login for:', email.trim());
 
             const response = await axios.post(EMAIL_LOGIN_API, {
                 email: email.trim().toLowerCase(),
@@ -136,7 +136,7 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
                 timeout: 15000
             });
 
-            console.log('âœ… Login successful:', response.data);
+            console.log(' Login successful:', response.data);
 
             // Handle different token field names
             const token = response.data.access_token ||
@@ -150,7 +150,7 @@ function EmailLoginForm({ onLoginSuccess, currentStoreInfo }) {
             onLoginSuccess(token, response.data);
 
         } catch (err) {
-            console.error('âŒ Login error:', err);
+            console.error(' Login error:', err);
 
             let errorMessage = 'Login failed. Please try again.';
 
@@ -385,7 +385,7 @@ function LoginContent() {
     }, []);
 
     const handleLoginSuccess = useCallback((token, userData = {}) => {
-        console.log('ðŸŽ‰ Login successful, storing token and redirecting...');
+        console.log(' Login successful, storing token and redirecting...');
 
         // Store token with multiple keys for compatibility
         localStorage.setItem('access_token', token);
@@ -414,7 +414,7 @@ function LoginContent() {
 useEffect(() => {
     const token = localStorage.getItem('buyerAccessToken') || localStorage.getItem('access_token');
     if (token) {
-        console.log('🔐 Existing token found, redirecting...');
+        console.log(' Existing token found, redirecting...');
         const redirectTo = searchParams.get('redirect');
         router.push(redirectTo ? decodeURIComponent(redirectTo) : '/profile');
     }
@@ -426,13 +426,13 @@ useEffect(() => {
 // Then in handleGoogleSuccess, replace axios.post with api.post:
 const handleGoogleSuccess = async (credentialResponse) => {
     try {
-        console.log('🔐 Google credential received, processing...');
+        console.log(' Google credential received, processing...');
 
         const response = await api.post('/user/buyer/login/google/', {  // ✅ relative path
             credential: credentialResponse.credential,
             store_context: currentStoreInfo.isInStore ? currentStoreInfo.storeId : null
         }, {
-            timeout: 15000
+            timeout: 60000 // Increased to 60s for extremely slow local environments
         });
 
         const token = response.data.access_token ||
@@ -446,13 +446,13 @@ const handleGoogleSuccess = async (credentialResponse) => {
         }
 
     } catch (error) {
-        console.error('❌ Google login failed:', error);
+        console.error(' Google login failed:', error);
         alert('Google login failed. Please try again.');
     }
 };
 
     const handleGoogleError = (error) => {
-        console.error('âŒ Google login error:', error);
+        console.error(' Google login error:', error);
         alert('Google login failed. Please try again or use email login.');
     };
 

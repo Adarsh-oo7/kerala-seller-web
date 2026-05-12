@@ -53,20 +53,20 @@ import SHeader from '../../../../components/common/SHeader';
 
 //   return 'https://api.keralasellers.in';
 // };
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 
 
 // ✅ Helper function to extract phone from slug or query params
 const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
-  console.log('🔍 About page - Extracting phone from:', {
+  console.log(' About page - Extracting phone from:', {
     shopSlug,
     searchParams: searchParams?.toString(),
     isDev: process.env.NODE_ENV === 'development'
   });
 
   if (!shopSlug) {
-    console.log('❌ Missing shopSlug');
+    console.log(' Missing shopSlug');
     return null;
   }
 
@@ -74,12 +74,12 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
   if (typeof shopSlug === 'string') {
     if (process.env.NODE_ENV === 'development') {
       if (/^\d+$/.test(shopSlug)) {
-        console.log('✅ Direct phone URL detected (dev mode):', shopSlug);
+        console.log(' Direct phone URL detected (dev mode):', shopSlug);
         return shopSlug;
       }
     } else {
       if (/^[6-9]\d{9}$/.test(shopSlug)) {
-        console.log('✅ Direct phone URL detected (production):', shopSlug);
+        console.log(' Direct phone URL detected (production):', shopSlug);
         return shopSlug;
       }
     }
@@ -87,17 +87,17 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
 
   // Try to get phone from query params (for SEO URLs)
   const phoneFromParams = searchParams?.get('id');
-  console.log('📱 Phone from params:', phoneFromParams);
+  console.log(' Phone from params:', phoneFromParams);
 
   if (phoneFromParams) {
     if (process.env.NODE_ENV === 'development') {
       if (/^\d+$/.test(phoneFromParams)) {
-        console.log('✅ Valid phone found from params (dev mode):', phoneFromParams);
+        console.log(' Valid phone found from params (dev mode):', phoneFromParams);
         return phoneFromParams;
       }
     } else {
       if (/^[6-9]\d{9}$/.test(phoneFromParams)) {
-        console.log('✅ Valid Indian mobile number from params:', phoneFromParams);
+        console.log(' Valid Indian mobile number from params:', phoneFromParams);
         return phoneFromParams;
       }
     }
@@ -108,19 +108,19 @@ const getSellerPhoneFromSlug = (shopSlug, searchParams) => {
     if (process.env.NODE_ENV === 'development') {
       const phoneMatch = shopSlug.match(/\d+$/);
       if (phoneMatch) {
-        console.log('✅ Phone extracted from compound slug (dev):', phoneMatch[0]);
+        console.log(' Phone extracted from compound slug (dev):', phoneMatch[0]);
         return phoneMatch[0];
       }
     } else {
       const phoneMatch = shopSlug.match(/[6-9]\d{9}$/);
       if (phoneMatch) {
-        console.log('✅ Phone extracted from compound slug (production):', phoneMatch[0]);
+        console.log(' Phone extracted from compound slug (production):', phoneMatch[0]);
         return phoneMatch[0];
       }
     }
   }
 
-  console.log('❌ No valid phone number found');
+  console.log(' No valid phone number found');
   return null;
 };
 
@@ -162,7 +162,7 @@ function StoreAboutContent() {
   // ✅ Extract seller phone from slug or query params
   const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams);
 
-  console.log('📍 About page debug:', {
+  console.log(' About page debug:', {
     shopSlug,
     sellerPhone,
     url: typeof window !== 'undefined' ? window.location.href : 'SSR'
@@ -241,7 +241,7 @@ function StoreAboutContent() {
 
   const fetchStoreData = async () => {
     if (!sellerPhone) {
-      console.error('❌ No sellerPhone provided:', { shopSlug, sellerPhone });
+      console.error(' No sellerPhone provided:', { shopSlug, sellerPhone });
       setError('Invalid store URL - phone number is missing');
       setIsLoading(false);
       return;
@@ -251,16 +251,16 @@ function StoreAboutContent() {
     setError('');
 
     try {
-      console.log('🔍 Fetching store data for phone:', sellerPhone);
+      console.log(' Fetching store data for phone:', sellerPhone);
 
       // ✅ Use the working main shop endpoint first
       let response;
       try {
-        console.log('🔍 Trying main shop endpoint...');
+        console.log(' Trying main shop endpoint...');
         response = await axios.get(`${API_BASE_URL}/shop/${sellerPhone}/`, {
           timeout: 15000
         });
-        console.log('✅ Main shop endpoint successful:', response.data);
+        console.log(' Main shop endpoint successful:', response.data);
 
         // Handle main endpoint response
         if (response.data.store) {
@@ -281,22 +281,22 @@ function StoreAboutContent() {
         return;
 
       } catch (mainError) {
-        console.log('⚠️ Main shop endpoint failed, trying about endpoint');
+        console.log(' Main shop endpoint failed, trying about endpoint');
         try {
           response = await axios.get(`${API_BASE_URL}/shop/${sellerPhone}/about/`, {
             timeout: 15000
           });
-          console.log('✅ About endpoint successful:', response.data);
+          console.log(' About endpoint successful:', response.data);
           setStoreData(response.data);
           setIsLoading(false);
           return;
         } catch (aboutError) {
-          console.log('⚠️ About endpoint failed, trying profile endpoint');
+          console.log(' About endpoint failed, trying profile endpoint');
           try {
             response = await axios.get(`${API_BASE_URL}/shop/${sellerPhone}/profile/`, {
               timeout: 15000
             });
-            console.log('✅ Profile endpoint successful:', response.data);
+            console.log(' Profile endpoint successful:', response.data);
             setStoreData(response.data);
             setIsLoading(false);
             return;
@@ -307,7 +307,7 @@ function StoreAboutContent() {
       }
 
     } catch (error) {
-      console.error("❌ Failed to fetch store data:", error);
+      console.error(" Failed to fetch store data:", error);
       if (error.response?.status === 404) {
         setError('Store not found. This store may no longer exist or the URL is incorrect.');
       } else if (error.response?.status >= 500) {

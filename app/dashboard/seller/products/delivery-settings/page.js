@@ -258,10 +258,10 @@ export default function DeliverySettingsPage() {
       }
 
       const scenarios = [
-        { cart_total: 300, total_weight_kg: 0.5, is_cod: false, label: 'Small (â‚¹300, 0.5kg)' },
+        { cart_total: 300, total_weight_kg: 0.5, is_cod: false, label: 'Small (₹300, 0.5kg)' },
         { cart_total: 300, total_weight_kg: 0.5, is_cod: true, label: 'Small + COD' },
-        { cart_total: 1000, total_weight_kg: 2, is_cod: false, label: 'Medium (â‚¹1000, 2kg)' },
-        { cart_total: 1500, total_weight_kg: 6, is_cod: true, label: 'Heavy (â‚¹1500, 6kg) + COD' }
+        { cart_total: 1000, total_weight_kg: 2, is_cod: false, label: 'Medium (₹1000, 2kg)' },
+        { cart_total: 1500, total_weight_kg: 6, is_cod: true, label: 'Heavy (₹1500, 6kg) + COD' }
       ];
 
       const results = await Promise.all(scenarios.map(async scenario => {
@@ -356,7 +356,7 @@ export default function DeliverySettingsPage() {
                   <span style={styles.labelHint}>(0 to disable)</span>
                 </label>
                 <div style={styles.inputWrapper}>
-                  <span style={styles.inputPrefix}>â‚¹</span>
+                  <span style={styles.inputPrefix}>₹</span>
                   <input
                     type="number"
                     name="free_delivery_above"
@@ -376,7 +376,7 @@ export default function DeliverySettingsPage() {
                   <span style={styles.labelHint}>(Added to all COD orders)</span>
                 </label>
                 <div style={styles.inputWrapper}>
-                  <span style={styles.inputPrefix}>â‚¹</span>
+                  <span style={styles.inputPrefix}>₹</span>
                   <input
                     type="number"
                     name="cod_extra_charge"
@@ -396,7 +396,7 @@ export default function DeliverySettingsPage() {
                   <span style={styles.labelHint}>(When no slab matches)</span>
                 </label>
                 <div style={styles.inputWrapper}>
-                  <span style={styles.inputPrefix}>â‚¹</span>
+                  <span style={styles.inputPrefix}>₹</span>
                   <input
                     type="number"
                     name="fallback_flat_charge"
@@ -463,8 +463,8 @@ export default function DeliverySettingsPage() {
                           onChange={(e) => updateSlab(idx, 'pricing_type', e.target.value)}
                           style={styles.select}
                         >
-                          <option value="FIXED">Fixed â‚¹</option>
-                          <option value="PER_KG">â‚¹/kg</option>
+                          <option value="FIXED">Fixed ₹</option>
+                          <option value="PER_KG">₹/kg</option>
                         </select>
 
                         {slab.pricing_type === 'FIXED' ? (
@@ -484,7 +484,7 @@ export default function DeliverySettingsPage() {
                               value={slab.price_per_kg}
                               onChange={(e) => updateSlab(idx, 'price_per_kg', e.target.value)}
                               style={styles.priceInput}
-                              placeholder="â‚¹/kg"
+                              placeholder="₹/kg"
                               min="0"
                               step="0.01"
                             />
@@ -631,7 +631,7 @@ export default function DeliverySettingsPage() {
                   {preview.map((item, idx) => (
                     <tr key={idx} style={styles.tr}>
                       <td style={styles.td}>{item.label}</td>
-                      <td style={styles.td}>â‚¹{item.cart_total}</td>
+                      <td style={styles.td}>₹{item.cart_total}</td>
                       <td style={styles.td}>{item.total_weight_kg}kg</td>
                       <td style={styles.td}>{item.is_cod ? 'âœ“' : '-'}</td>
                       <td style={{
@@ -642,7 +642,7 @@ export default function DeliverySettingsPage() {
                         {item.error ? (
                           <span title={item.error}>âŒ Error</span>
                         ) : (
-                          `â‚¹${item.delivery_charge}`
+                          `₹${item.delivery_charge}`
                         )}
                       </td>
                       <td style={styles.td}>

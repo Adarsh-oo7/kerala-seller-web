@@ -16,11 +16,11 @@ import {
 // const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
 // const INVOICE_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/invoice/`;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const INVOICE_API_URL = (orderId) => `${API_BASE_URL}/user/orders/${orderId}/invoice/`;
 
-console.log('📄 Invoice API:', API_BASE_URL);
+console.log(' Invoice API:', API_BASE_URL);
 
 
 
@@ -70,7 +70,7 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
     }
 
     try {
-      console.log('📝 Submitting product review:', { productId, rating, comment: comment.trim() });
+      console.log(' Submitting product review:', { productId, rating, comment: comment.trim() });
 
       const response = await axios.post(
         `${API_BASE_URL}/api/products/${productId}/create-review/`,
@@ -85,7 +85,7 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
         }
       );
 
-      console.log('✅ Review submitted successfully:', response.data);
+      console.log(' Review submitted successfully:', response.data);
 
       setComment('');
       setRating(5);
@@ -101,7 +101,7 @@ function ProductReviewForm({ productId, productName, onReviewSubmitted, onClose 
       }
 
     } catch (err) {
-      console.error('❌ Review submission error:', err);
+      console.error(' Review submission error:', err);
 
       let errorMessage = 'Failed to submit review. Please try again.';
 
@@ -271,7 +271,7 @@ function ProductReviewButton({ product, onReviewSubmitted }) {
 
       setCheckingPermission(true);
       try {
-        console.log('🔍 Checking review permission for product:', product.id);
+        console.log(' Checking review permission for product:', product.id);
 
         const response = await axios.get(
           `${API_BASE_URL}/api/products/${product.id}/can-review/`,
@@ -282,11 +282,11 @@ function ProductReviewButton({ product, onReviewSubmitted }) {
         );
 
         const canReviewProduct = response.data.can_review || false;
-        console.log('✅ Can review status:', canReviewProduct);
+        console.log(' Can review status:', canReviewProduct);
 
         setCanReview(canReviewProduct);
       } catch (error) {
-        console.warn('⚠️ Can review check failed:', error.message);
+        console.warn(' Can review check failed:', error.message);
 
         // If endpoint doesn't exist, allow reviews for logged in users
         if (error.response?.status === 404) {
@@ -389,7 +389,7 @@ export default function ShopOrdersPage() {
 
   // ✅ Get the actual store ID from query parameter or shopSlug
   const getActualStoreId = () => {
-    console.log('🔍 Getting store ID for orders...');
+    console.log(' Getting store ID for orders...');
     console.log('- shopSlug from params:', shopSlug);
     console.log('- id from search params:', searchParams.get('id'));
 
@@ -412,12 +412,12 @@ export default function ShopOrdersPage() {
   };
 
   const actualStoreId = getActualStoreId();
-  console.log('📦 Orders store ID:', actualStoreId);
+  console.log(' Orders store ID:', actualStoreId);
 
   // ✅ URL generation with validation
   const getShopUrl = (path = '') => {
     if (!actualStoreId) {
-      console.error('❌ Cannot generate URL - no store ID available');
+      console.error(' Cannot generate URL - no store ID available');
       return '/';
     }
 
@@ -435,7 +435,7 @@ export default function ShopOrdersPage() {
       const loginUrl = getShopUrl('/login');
       const currentUrl = getShopUrl('/profile/orders');
       const redirectUrl = `${loginUrl}?redirect=${encodeURIComponent(currentUrl)}`;
-      console.log('🔐 No token, redirecting to login:', redirectUrl);
+      console.log(' No token, redirecting to login:', redirectUrl);
       router.push(redirectUrl);
       return null;
     }
@@ -445,7 +445,7 @@ export default function ShopOrdersPage() {
   // ✅ REDIRECT: If we have an invalid URL, redirect appropriately
   useEffect(() => {
     if (urlError || !actualStoreId) {
-      console.log('🔍 Invalid orders URL, redirecting...');
+      console.log(' Invalid orders URL, redirecting...');
       router.replace('/profile');
       return;
     }
@@ -472,7 +472,7 @@ export default function ShopOrdersPage() {
       const headers = checkAuth();
       if (!headers) return;
 
-      console.log('📦 Loading orders for store:', actualStoreId);
+      console.log(' Loading orders for store:', actualStoreId);
 
       try {
         const [ordersRes, storeRes] = await Promise.allSettled([
@@ -484,18 +484,18 @@ export default function ShopOrdersPage() {
           const ordersData = await ordersRes.value.json();
           const ordersList = Array.isArray(ordersData) ? ordersData : ordersData.results || [];
           setOrders(ordersList);
-          console.log('✅ Orders loaded:', ordersList.length);
+          console.log(' Orders loaded:', ordersList.length);
         } else {
-          console.warn('⚠️ Orders API failed');
+          console.warn(' Orders API failed');
           setOrders([]);
         }
 
         if (storeRes.status === 'fulfilled' && storeRes.value.ok) {
           const storeResData = await storeRes.value.json();
           setStoreData(storeResData.store || storeResData);
-          console.log('✅ Store data loaded for orders');
+          console.log(' Store data loaded for orders');
         } else {
-          console.warn('⚠️ Store API failed, using fallback');
+          console.warn(' Store API failed, using fallback');
           setStoreData({
             name: `Store ${actualStoreId}`,
             seller_phone: actualStoreId,
@@ -503,7 +503,7 @@ export default function ShopOrdersPage() {
           });
         }
       } catch (error) {
-        console.error('❌ Failed to fetch orders:', error);
+        console.error(' Failed to fetch orders:', error);
         setOrders([]);
       } finally {
         setLoading(false);
@@ -517,7 +517,7 @@ export default function ShopOrdersPage() {
 
   // ✅ Handle view details
   const handleViewDetails = (order) => {
-    console.log('👁️ Viewing order details:', order.id);
+    console.log(' Viewing order details:', order.id);
     setSelectedOrder(order);
     setShowOrderDetails(true);
   };
@@ -530,7 +530,7 @@ export default function ShopOrdersPage() {
 
   // ✅ Handle cancel order request
   const handleCancelOrderRequest = (order) => {
-    console.log('❌ Requesting to cancel order:', order.id);
+    console.log(' Requesting to cancel order:', order.id);
     setOrderToCancel(order);
     setCancelReason('');
     setCustomReason('');
@@ -584,7 +584,7 @@ export default function ShopOrdersPage() {
       const reasonText = cancelReason === 'other' ? customReason :
         cancelReasons.find(r => r.value === cancelReason)?.label || cancelReason;
 
-      console.log('🚫 Cancelling order:', orderToCancel.id, 'with reason:', reasonText);
+      console.log(' Cancelling order:', orderToCancel.id, 'with reason:', reasonText);
 
       const response = await fetch(`${API_BASE_URL}/user/orders/${orderToCancel.id}/cancel/`, {
         method: 'POST',
@@ -607,7 +607,7 @@ export default function ShopOrdersPage() {
           )
         );
 
-        console.log('✅ Order cancelled successfully');
+        console.log(' Order cancelled successfully');
         // alert('Order cancelled successfully! The seller has been notified.');
         toast.success('Order cancelled successfully! The seller has been notified.', {
           position: 'top-center',
@@ -620,11 +620,11 @@ export default function ShopOrdersPage() {
       } else {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.message || errorData.error || 'Failed to cancel order';
-        console.error('❌ Cancel order failed:', errorMessage);
+        console.error(' Cancel order failed:', errorMessage);
         alert(`Failed to cancel order: ${errorMessage}`);
       }
     } catch (error) {
-      console.error('❌ Cancel order error:', error);
+      console.error(' Cancel order error:', error);
       alert('Network error. Please check your connection and try again.');
     } finally {
       setCancelLoading(false);
@@ -712,13 +712,13 @@ export default function ShopOrdersPage() {
 
   const handleBackClick = () => {
     const profileUrl = getShopUrl('/profile');
-    console.log('🔙 Back to profile:', profileUrl);
+    console.log(' Back to profile:', profileUrl);
     router.push(profileUrl);
   };
 
   const handleStartShopping = () => {
     const shopUrl = getShopUrl('');
-    console.log('🛍️ Start shopping:', shopUrl);
+    console.log(' Start shopping:', shopUrl);
     router.push(shopUrl);
   };
 
@@ -750,7 +750,7 @@ export default function ShopOrdersPage() {
 
   // ✅ Handle review submitted callback
   const handleReviewSubmitted = () => {
-    console.log('🔄 Product review submitted successfully! Reviews will appear in product pages.');
+    console.log(' Product review submitted successfully! Reviews will appear in product pages.');
     // alert('Review submitted successfully! Your review will appear on the product page.');
     toast.success(
       'Review submitted successfully! Your review will appear on the product page.',

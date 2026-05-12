@@ -44,19 +44,19 @@ import axios from "axios";
 // const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 // const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 
-// console.log('🌐 API URLs configured:', {
+// console.log(' API URLs configured:', {
 //   API_BASE_URL,
 //   PRODUCTS_API_URL,
 //   CATEGORIES_API_URL,
 //   ENVIRONMENT: process.env.NODE_ENV
 // });
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories/`;
 
-console.log('📦 Products/Categories:', API_BASE_URL);
+console.log(' Products/Categories:', API_BASE_URL);
 
 
 // ✅ Create Axios instance with proper configuration for your hosted backend
@@ -72,7 +72,7 @@ const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    console.log('🔄 Making API request to:', `${config.baseURL}${config.url}`);
+    console.log(' Making API request to:', `${config.baseURL}${config.url}`);
     return config;
   },
   (error) => Promise.reject(error)
@@ -81,14 +81,14 @@ apiClient.interceptors.request.use(
 // Response interceptor
 apiClient.interceptors.response.use(
   (response) => {
-    console.log('✅ API response received:', {
+    console.log(' API response received:', {
       status: response.status,
       url: response.config.url
     });
     return response;
   },
   (error) => {
-    console.error('❌ API error:', {
+    console.error(' API error:', {
       status: error.response?.status,
       url: error.config?.url,
       message: error.message
@@ -155,11 +155,11 @@ const TopCategory = ({ onCategoryClick }) => {
         setLoading(true);
         setError(null);
 
-        console.log('🔄 Fetching categories from hosted backend:', CATEGORIES_API_URL);
+        console.log(' Fetching categories from hosted backend:', CATEGORIES_API_URL);
 
         const response = await apiClient.get('/api/categories/');
 
-        console.log('📊 Categories API Response:', {
+        console.log(' Categories API Response:', {
           status: response.status,
           dataStructure: typeof response.data,
           isArray: Array.isArray(response.data),
@@ -178,30 +178,30 @@ const TopCategory = ({ onCategoryClick }) => {
           } else if (Array.isArray(response.data.data)) {
             categoryData = response.data.data;
           } else {
-            console.warn('⚠️ Unexpected response structure:', response.data);
+            console.warn(' Unexpected response structure:', response.data);
             categoryData = [];
           }
         }
 
-        console.log('📋 Total categories received:', categoryData.length);
+        console.log(' Total categories received:', categoryData.length);
 
         // Get only root categories (categories without parent)
         const rootCategories = categoryData.filter(category =>
           category && (!category.parent || category.parent === null)
         );
 
-        console.log('🌳 Root categories found:', rootCategories.length);
+        console.log(' Root categories found:', rootCategories.length);
 
         // Limit to 8 categories for display
         const displayCategories = rootCategories.slice(0, 8);
 
-        console.log('🎯 Final display categories:', displayCategories);
+        console.log(' Final display categories:', displayCategories);
 
         // ✅ Force new array creation to ensure re-render
         setCategories([...displayCategories]);
 
       } catch (error) {
-        console.error("❌ Failed to fetch categories from hosted backend:", error);
+        console.error(" Failed to fetch categories from hosted backend:", error);
 
         let errorMessage = 'Failed to load categories from server';
 
@@ -251,7 +251,7 @@ const TopCategory = ({ onCategoryClick }) => {
 
   // Handle category click
   const handleCategoryClick = (categoryId, categoryName) => {
-    console.log('🖱️ Category clicked:', { id: categoryId, name: categoryName });
+    console.log(' Category clicked:', { id: categoryId, name: categoryName });
     if (onCategoryClick) {
       onCategoryClick(categoryId, categoryName);
     }

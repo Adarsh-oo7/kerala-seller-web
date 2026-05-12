@@ -22,7 +22,7 @@ import {
 import SHeader from '../../../../components/common/SHeader';
 
 // const API_BASE_URL = 'https://api.keralasellers.in' || 'https://api.keralasellers.in';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 export default function ShopProfilePage() {
   const { shopSlug } = useParams();
@@ -51,7 +51,7 @@ export default function ShopProfilePage() {
   }, [buyer]);
 
   const getActualStoreId = () => {
-    console.log('🔍 Getting store ID for profile...');
+    console.log(' Getting store ID for profile...');
     console.log('- shopSlug from params:', shopSlug);
     console.log('- id from search params:', searchParams.get('id'));
 
@@ -74,11 +74,11 @@ export default function ShopProfilePage() {
   };
 
   const actualStoreId = getActualStoreId();
-  console.log('👤 Profile store ID:', actualStoreId);
+  console.log(' Profile store ID:', actualStoreId);
 
   const getShopUrl = (path = '') => {
     if (!actualStoreId) {
-      console.error('❌ Cannot generate URL - no store ID available');
+      console.error(' Cannot generate URL - no store ID available');
       return '/';
     }
 
@@ -98,13 +98,13 @@ export default function ShopProfilePage() {
     const token = localStorage.getItem('access_token') || localStorage.getItem('buyerAccessToken');
 
     if (!token) {
-      console.log('🔐 No token found, redirecting to login...');
+      console.log(' No token found, redirecting to login...');
       redirectToLogin();
       return null;
     }
 
     try {
-      console.log('🔍 Validating token...');
+      console.log(' Validating token...');
       const response = await fetch(`${API_BASE_URL}/api/buyer/profile/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -113,11 +113,11 @@ export default function ShopProfilePage() {
       });
 
       if (response.ok) {
-        console.log('✅ Token is valid');
+        console.log(' Token is valid');
         setAuthChecked(true);
         return { 'Authorization': `Bearer ${token}` };
       } else if (response.status === 401) {
-        console.log('🔐 Token is invalid/expired, removing and redirecting...');
+        console.log(' Token is invalid/expired, removing and redirecting...');
         localStorage.removeItem('access_token');
         localStorage.removeItem('buyerAccessToken');
         localStorage.removeItem('refresh_token');
@@ -125,12 +125,12 @@ export default function ShopProfilePage() {
         redirectToLogin();
         return null;
       } else {
-        console.log('⚠️ Token validation failed with status:', response.status);
+        console.log(' Token validation failed with status:', response.status);
         setAuthChecked(true);
         return { 'Authorization': `Bearer ${token}` };
       }
     } catch (error) {
-      console.error('❌ Token validation error:', error);
+      console.error(' Token validation error:', error);
       setAuthChecked(true);
       return { 'Authorization': `Bearer ${token}` };
     }
@@ -141,14 +141,14 @@ export default function ShopProfilePage() {
       const loginUrl = getShopUrl('/login');
       const currentUrl = getShopUrl('/profile');
       const redirectUrl = `${loginUrl}?redirect=${encodeURIComponent(currentUrl)}`;
-      console.log('🔐 Redirecting to login:', redirectUrl);
+      console.log(' Redirecting to login:', redirectUrl);
       router.push(redirectUrl);
     }
   };
 
   useEffect(() => {
     if (urlError || !actualStoreId) {
-      console.log('🔍 Invalid profile URL, redirecting to home...');
+      console.log(' Invalid profile URL, redirecting to home...');
       router.replace('/');
       return;
     }
@@ -157,25 +157,25 @@ export default function ShopProfilePage() {
   const fetchOrdersCount = async (storeId, headers) => {
     const endpoint = `${API_BASE_URL}/user/orders/count/?store_id=${storeId}`;
     try {
-      console.log('📊 Fetching orders count from:', endpoint);
+      console.log(' Fetching orders count from:', endpoint);
       const response = await fetch(endpoint, { headers });
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Orders count response:', data);
+        console.log(' Orders count response:', data);
         let count = 0;
         if (typeof data === 'object' && data !== null) {
           count = data.count || data.orders_count || data.total || 0;
         } else if (typeof data === 'number') {
           count = data;
         }
-        console.log('📊 Final orders count:', count);
+        console.log(' Final orders count:', count);
         return count;
       } else {
-        console.log('❌ Orders count failed:', response.status);
+        console.log(' Orders count failed:', response.status);
         return 0;
       }
     } catch (error) {
-      console.log('❌ Orders count error:', error);
+      console.log(' Orders count error:', error);
       return 0;
     }
   };
@@ -183,11 +183,11 @@ export default function ShopProfilePage() {
   const fetchWishlistCount = async (storeId, headers) => {
     const endpoint = `${API_BASE_URL}/api/wishlist/?store_id=${storeId}`;
     try {
-      console.log('❤️ Fetching wishlist count from:', endpoint);
+      console.log(' Fetching wishlist count from:', endpoint);
       const response = await fetch(endpoint, { headers });
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Wishlist response:', data);
+        console.log(' Wishlist response:', data);
         let count = 0;
         if (Array.isArray(data)) {
           count = data.length;
@@ -198,14 +198,14 @@ export default function ShopProfilePage() {
             data.total_items ||
             data.total || 0;
         }
-        console.log('❤️ Final wishlist count:', count);
+        console.log(' Final wishlist count:', count);
         return count;
       } else {
-        console.log('❌ Wishlist count failed:', response.status);
+        console.log(' Wishlist count failed:', response.status);
         return 0;
       }
     } catch (error) {
-      console.log('❌ Wishlist count error:', error);
+      console.log(' Wishlist count error:', error);
       return 0;
     }
   };
@@ -221,14 +221,14 @@ export default function ShopProfilePage() {
     if (!headers) return;
 
     if (!actualStoreId) {
-      console.error('❌ No valid store ID found');
+      console.error(' No valid store ID found');
       setLoading(false);
       setRefreshing(false);
       return;
     }
 
     try {
-      console.log('📡 Fetching profile data for store ID:', actualStoreId);
+      console.log(' Fetching profile data for store ID:', actualStoreId);
 
       const [profileRes, storeRes] = await Promise.allSettled([
         fetch(`${API_BASE_URL}/api/buyer/profile/`, { headers }),
@@ -239,17 +239,17 @@ export default function ShopProfilePage() {
         const profileData = await profileRes.value.json();
         setBuyer(profileData);
         setIsLoggedIn(true);
-        console.log('✅ Profile data loaded');
+        console.log(' Profile data loaded');
       } else {
-        console.warn('⚠️ Profile API failed');
+        console.warn(' Profile API failed');
       }
 
       if (storeRes.status === 'fulfilled' && storeRes.value.ok) {
         const storeResData = await storeRes.value.json();
         setStoreData(storeResData.store || storeResData);
-        console.log('✅ Store data loaded:', storeResData.store || storeResData);
+        console.log(' Store data loaded:', storeResData.store || storeResData);
       } else {
-        console.warn('⚠️ Store data not found, using fallback');
+        console.warn(' Store data not found, using fallback');
         setStoreData({
           name: `Store ${actualStoreId}`,
           seller_phone: actualStoreId,
@@ -257,7 +257,7 @@ export default function ShopProfilePage() {
         });
       }
 
-      console.log('📊 Fetching counts for store:', actualStoreId);
+      console.log(' Fetching counts for store:', actualStoreId);
 
       const [ordersCountResult, wishlistCountResult] = await Promise.allSettled([
         fetchOrdersCount(actualStoreId, headers),
@@ -266,22 +266,22 @@ export default function ShopProfilePage() {
 
       if (ordersCountResult.status === 'fulfilled') {
         setOrdersCount(ordersCountResult.value);
-        console.log('✅ Orders count set to:', ordersCountResult.value);
+        console.log(' Orders count set to:', ordersCountResult.value);
       } else {
         setOrdersCount(0);
-        console.warn('⚠️ Orders count failed');
+        console.warn(' Orders count failed');
       }
 
       if (wishlistCountResult.status === 'fulfilled') {
         setWishlistCount(wishlistCountResult.value);
-        console.log('✅ Wishlist count set to:', wishlistCountResult.value);
+        console.log(' Wishlist count set to:', wishlistCountResult.value);
       } else {
         setWishlistCount(0);
-        console.warn('⚠️ Wishlist count failed');
+        console.warn(' Wishlist count failed');
       }
 
     } catch (error) {
-      console.error('❌ Failed to fetch profile data:', error);
+      console.error(' Failed to fetch profile data:', error);
       setOrdersCount(0);
       setWishlistCount(0);
     } finally {
@@ -311,7 +311,7 @@ export default function ShopProfilePage() {
             <button
               className="cart-remove-btn danger"
               onClick={() => {
-                console.log('🔐 Logging out from store:', actualStoreId);
+                console.log(' Logging out from store:', actualStoreId);
 
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('buyerAccessToken');
@@ -348,7 +348,7 @@ export default function ShopProfilePage() {
   };
 
   const handleRefresh = () => {
-    console.log('🔄 Refreshing profile data...');
+    console.log(' Refreshing profile data...');
     fetchData(true);
   };
 

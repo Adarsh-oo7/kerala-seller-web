@@ -11,7 +11,7 @@ import ShopFooter from '../../../../../components/common/ShopFooter';
 
 //const API_BASE_URL = 'https://api.keralasellers.in';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
 
 export default function ShopWishlistPage() {
@@ -39,28 +39,28 @@ export default function ShopWishlistPage() {
 
   const buildImageUrl = (imagePath) => {
     if (!imagePath) {
-      console.log('🖼️ No image path provided, using placeholder');
+      console.log(' No image path provided, using placeholder');
       return '/placeholder.svg';
     }
 
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      console.log('🖼️ Using full URL:', imagePath);
+      console.log(' Using full URL:', imagePath);
       return imagePath;
     }
 
     if (imagePath.startsWith('/')) {
       const fullUrl = `${API_BASE_URL}${imagePath}`;
-      console.log('🖼️ Built image URL from path:', fullUrl);
+      console.log(' Built image URL from path:', fullUrl);
       return fullUrl;
     }
 
     const fullUrl = `${API_BASE_URL}/${imagePath}`;
-    console.log('🖼️ Built image URL with added slash:', fullUrl);
+    console.log(' Built image URL with added slash:', fullUrl);
     return fullUrl;
   };
 
   const getActualStoreId = () => {
-    console.log('🔍 Getting store ID for wishlist...');
+    console.log(' Getting store ID for wishlist...');
     console.log('- shopSlug from params:', shopSlug);
     console.log('- id from search params:', searchParams.get('id'));
 
@@ -83,11 +83,11 @@ export default function ShopWishlistPage() {
   };
 
   const actualStoreId = getActualStoreId();
-  console.log('❤️ Wishlist store ID:', actualStoreId);
+  console.log(' Wishlist store ID:', actualStoreId);
 
   const getShopUrl = (path = '') => {
     if (!actualStoreId) {
-      console.error('❌ Cannot generate URL - no store ID available');
+      console.error(' Cannot generate URL - no store ID available');
       return '/';
     }
 
@@ -105,7 +105,7 @@ export default function ShopWishlistPage() {
       const loginUrl = getShopUrl('/login');
       const currentUrl = getShopUrl('/profile/wishlist');
       const redirectUrl = `${loginUrl}?redirect=${encodeURIComponent(currentUrl)}`;
-      console.log('🔐 No token, redirecting to login:', redirectUrl);
+      console.log(' No token, redirecting to login:', redirectUrl);
       router.push(redirectUrl);
       return null;
     }
@@ -114,7 +114,7 @@ export default function ShopWishlistPage() {
 
   useEffect(() => {
     if (urlError || !actualStoreId) {
-      console.log('🔍 Invalid wishlist URL, redirecting...');
+      console.log(' Invalid wishlist URL, redirecting...');
       router.replace('/profile');
       return;
     }
@@ -127,7 +127,7 @@ export default function ShopWishlistPage() {
       const headers = checkAuth();
       if (!headers) return;
 
-      console.log('❤️ Loading wishlist for store:', actualStoreId);
+      console.log(' Loading wishlist for store:', actualStoreId);
 
       try {
         const [wishlistRes, storeRes] = await Promise.allSettled([
@@ -155,18 +155,18 @@ export default function ShopWishlistPage() {
           });
 
           setWishlist(processedWishlist);
-          console.log('✅ Wishlist loaded and processed:', processedWishlist.length, 'items');
+          console.log(' Wishlist loaded and processed:', processedWishlist.length, 'items');
         } else {
-          console.warn('⚠️ Wishlist API failed');
+          console.warn(' Wishlist API failed');
           setWishlist([]);
         }
 
         if (storeRes.status === 'fulfilled' && storeRes.value.ok) {
           const storeResData = await storeRes.value.json();
           setStoreData(storeResData.store || storeResData);
-          console.log('✅ Store data loaded for wishlist');
+          console.log(' Store data loaded for wishlist');
         } else {
-          console.warn('⚠️ Store API failed, using fallback');
+          console.warn(' Store API failed, using fallback');
           setStoreData({
             name: `Store ${actualStoreId}`,
             seller_phone: actualStoreId,
@@ -174,7 +174,7 @@ export default function ShopWishlistPage() {
           });
         }
       } catch (error) {
-        console.error('❌ Failed to fetch wishlist:', error);
+        console.error(' Failed to fetch wishlist:', error);
         setWishlist([]);
       } finally {
         setLoading(false);
@@ -190,7 +190,7 @@ export default function ShopWishlistPage() {
     const headers = checkAuth();
     if (!headers) return;
 
-    console.log('🗑️ Removing from wishlist:', productId);
+    console.log(' Removing from wishlist:', productId);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/wishlist/${productId}/`, {
@@ -200,7 +200,7 @@ export default function ShopWishlistPage() {
 
       if (response.ok) {
         setWishlist(prev => prev.filter(item => item.id !== productId));
-        console.log('✅ Item removed from wishlist');
+        console.log(' Item removed from wishlist');
         toast.success('Item removed from wishlist', {
           position: 'top-right',
           autoClose: 3000,
@@ -209,7 +209,7 @@ export default function ShopWishlistPage() {
           theme: "colored",
         });
       } else {
-        console.error('❌ Failed to remove from wishlist');
+        console.error(' Failed to remove from wishlist');
         toast.error('Failed to remove item from wishlist', {
           position: 'top-center',
           autoClose: 3000,
@@ -217,7 +217,7 @@ export default function ShopWishlistPage() {
         });
       }
     } catch (error) {
-      console.error('❌ Failed to remove from wishlist:', error);
+      console.error(' Failed to remove from wishlist:', error);
       toast.error('Network error. Please try again.', {
         position: 'top-center',
         autoClose: 3000,
@@ -228,11 +228,11 @@ export default function ShopWishlistPage() {
 
   // ✅ FIXED addToCart function with cart update trigger
   const addToCart = async (productData) => {
-    console.log('🛒 Adding to cart - Raw data:', productData);
+    console.log(' Adding to cart - Raw data:', productData);
     
     const product = productData.product || productData;
     
-    console.log('🛒 Product extracted:', {
+    console.log(' Product extracted:', {
       id: product.id,
       name: product.name,
       price: product.price,
@@ -240,7 +240,7 @@ export default function ShopWishlistPage() {
     });
 
     if (!product.id || !product.price) {
-      console.error('❌ Invalid product data:', product);
+      console.error(' Invalid product data:', product);
       toast.error('Cannot add product to cart - missing data', {
         position: 'top-center',
         autoClose: 3000,
@@ -266,7 +266,7 @@ export default function ShopWishlistPage() {
 
       if (existingItem) {
         existingItem.quantity += 1;
-        console.log('🔄 Updated quantity in cart:', existingItem.quantity);
+        console.log(' Updated quantity in cart:', existingItem.quantity);
         toast.success(`${product.name} quantity updated in cart!`, {
           position: 'top-center',
           autoClose: 2000,
@@ -292,7 +292,7 @@ export default function ShopWishlistPage() {
         };
         
         storeCart.push(cartItem);
-        console.log('➕ Added new item to cart:', cartItem);
+        console.log(' Added new item to cart:', cartItem);
         
         toast.success(`${product.name} added to cart!`, {
           position: 'top-center',
@@ -304,7 +304,7 @@ export default function ShopWishlistPage() {
       cartData[actualStoreId] = storeCart;
       localStorage.setItem('multiCarts', JSON.stringify(cartData));
       
-      console.log('✅ Cart updated successfully:', {
+      console.log(' Cart updated successfully:', {
         storeId: actualStoreId,
         itemCount: storeCart.length,
         totalItems: storeCart.reduce((sum, item) => sum + item.quantity, 0)
@@ -328,7 +328,7 @@ export default function ShopWishlistPage() {
       setCartUpdateTrigger(prev => prev + 1);
 
     } catch (error) {
-      console.error('❌ Failed to add to cart:', error);
+      console.error(' Failed to add to cart:', error);
       toast.error('Failed to add item to cart. Please try again.', {
         position: 'top-center',
         autoClose: 3000,
@@ -339,27 +339,27 @@ export default function ShopWishlistPage() {
 
   const handleBackClick = () => {
     const profileUrl = getShopUrl('/profile');
-    console.log('🔙 Back to profile:', profileUrl);
+    console.log(' Back to profile:', profileUrl);
     router.push(profileUrl);
   };
 
   const handleBrowseStore = () => {
     const shopUrl = getShopUrl('');
-    console.log('🛍️ Browse store:', shopUrl);
+    console.log(' Browse store:', shopUrl);
     router.push(shopUrl);
   };
 
   const handleViewProduct = (productId) => {
     const productUrl = getShopUrl(`/product/${productId}`);
-    console.log('👁️ View product:', productUrl);
+    console.log(' View product:', productUrl);
     router.push(productUrl);
   };
 
   const formatPrice = (price) => `₹${parseFloat(price).toFixed(2)}`;
 
   const handleImageError = (e, productName) => {
-    console.warn('🖼️ Image failed to load for:', productName);
-    console.warn('🖼️ Failed URL:', e.target.src);
+    console.warn(' Image failed to load for:', productName);
+    console.warn(' Failed URL:', e.target.src);
     e.target.src = '/placeholder.svg';
   };
 
@@ -448,7 +448,7 @@ export default function ShopWishlistPage() {
 
               const productDescription = product.description || item.description;
 
-              console.log('🖼️ Rendering product image:', productName, '→', productImage);
+              console.log(' Rendering product image:', productName, '', productImage);
 
               const getStockStatus = () => {
                 const stock = product.online_stock || 0;
@@ -479,7 +479,7 @@ export default function ShopWishlistPage() {
                       alt={productName}
                       style={styles.productImageLink}
                       onError={(e) => handleImageError(e, productName)}
-                      onLoad={() => console.log('✅ Image loaded successfully for:', productName)}
+                      onLoad={() => console.log(' Image loaded successfully for:', productName)}
                     />
 
                     <div style={styles.ratingOverlay}>
@@ -586,8 +586,8 @@ export default function ShopWishlistPage() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('🛒 Button clicked for:', product.name);
-                        console.log('🛒 Full item data:', item);
+                        console.log(' Button clicked for:', product.name);
+                        console.log(' Full item data:', item);
                         addToCart(item);
                       }}
                       style={{

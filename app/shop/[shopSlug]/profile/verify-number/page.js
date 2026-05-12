@@ -35,7 +35,7 @@ import {
 //   return 'https://api.keralasellers.in';
 // };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in'
 const PROFILE_API = `${API_BASE_URL}/api/buyer/profile/`;
 const VERIFY_FIREBASE_API = `${API_BASE_URL}/user/buyer/verify-phone-firebase/`;
 
@@ -100,7 +100,7 @@ export default function ShopVerificationPage() {
       localStorage.getItem('buyerAccessToken');
 
     if (!token) {
-      console.error('❌ No authentication token found');
+      console.error(' No authentication token found');
       const loginUrl = getShopUrl('/login');
       router.push(loginUrl);
       return null;
@@ -118,7 +118,7 @@ export default function ShopVerificationPage() {
         try {
           const container = document.getElementById('recaptcha-container');
           if (!container) {
-            console.error('❌ reCAPTCHA container not found');
+            console.error(' reCAPTCHA container not found');
             return;
           }
 
@@ -136,17 +136,17 @@ export default function ShopVerificationPage() {
             {
               size: 'invisible',
               callback: (response) => {
-                console.log('✅ reCAPTCHA solved');
+                console.log(' reCAPTCHA solved');
               },
               'expired-callback': () => {
-                console.log('⚠️ reCAPTCHA expired');
+                console.log(' reCAPTCHA expired');
               }
             }
           );
 
-          console.log('✅ reCAPTCHA initialized successfully');
+          console.log(' reCAPTCHA initialized successfully');
         } catch (error) {
-          console.error('❌ reCAPTCHA initialization error:', error);
+          console.error(' reCAPTCHA initialization error:', error);
         }
       }, 1000);
     };
@@ -219,7 +219,7 @@ export default function ShopVerificationPage() {
       }
 
     } catch (error) {
-      console.error("❌ Failed to fetch profile:", error);
+      console.error(" Failed to fetch profile:", error);
       if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('buyerAccessToken');
@@ -261,7 +261,7 @@ export default function ShopVerificationPage() {
 
     try {
       const fullPhoneNumber = `+91${phoneNumber}`;
-      console.log('📱 Sending Firebase OTP to:', fullPhoneNumber);
+      console.log(' Sending Firebase OTP to:', fullPhoneNumber);
 
       const appVerifier = window.recaptchaVerifier;
       const result = await signInWithPhoneNumber(auth, fullPhoneNumber, appVerifier);
@@ -274,7 +274,7 @@ export default function ShopVerificationPage() {
       setTimeout(() => setSuccessMessage(''), 3000);
 
     } catch (error) {
-      console.error('❌ Firebase OTP error:', error);
+      console.error(' Firebase OTP error:', error);
       
       let errorMessage = 'Failed to send OTP.';
       if (error.code === 'auth/invalid-phone-number') {
@@ -307,20 +307,20 @@ export default function ShopVerificationPage() {
     setError('');
 
     try {
-      console.log('🔄 Verifying Firebase OTP...');
+      console.log(' Verifying Firebase OTP...');
       
       const userCredential = await confirmationResult.confirm(otp);
-      console.log('✅ Firebase OTP verified');
+      console.log(' Firebase OTP verified');
 
       const firebaseIdToken = await userCredential.user.getIdToken();
-      console.log('✅ Firebase ID token obtained');
+      console.log(' Firebase ID token obtained');
 
       await axios.post(VERIFY_FIREBASE_API, {
         firebase_id_token: firebaseIdToken,
         phone_number: phoneNumber
       }, { headers, timeout: 15000 });
 
-      console.log('✅ Backend verification complete');
+      console.log(' Backend verification complete');
       setSuccessMessage('Phone verified successfully! 🎉');
       
       await fetchProfile();
@@ -331,7 +331,7 @@ export default function ShopVerificationPage() {
       }, 2000);
 
     } catch (error) {
-      console.error('❌ Verification failed:', error);
+      console.error(' Verification failed:', error);
       setOtpAttempts(prev => prev + 1);
 
       let errorMessage = 'Invalid OTP';
