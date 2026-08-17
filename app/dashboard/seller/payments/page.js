@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import RazorpaySetupModal from '../../../../components/RazorpaySetupModal';
+import StoreModePanel from '../../../../components/seller/StoreModePanel';
 import "../../../../styles/DashboardPayments.css"
 
 import {
@@ -248,6 +249,8 @@ export default function PaymentsDashboard() {
         onSuccess={handleRazorpaySuccess}
         editMode={editMode}
       />
+
+      <StoreModePanel variant="payments" />
 
       {/* Header */}
       <div className='dashboardpaymentheader' style={s.h}>

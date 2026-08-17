@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import axios from 'axios';
 import DashboardHeader from '../../../components/common/DashboardHeader';
+import StorefrontBanner from '../../../components/seller/StorefrontBanner';
 import '../../../styles/DashboardSellerPage.css'
 
 import {
@@ -488,6 +489,7 @@ export default function DashboardLayout({ children }) {
           notificationCount={notificationCounts.notifications}
           onNotificationUpdate={fetchNotificationCounts}
         />
+        <StorefrontBanner />
         <main style={styles.mainContent}>
           {children}
         </main>

@@ -322,9 +322,6 @@ function LoginForm() {
         if (!store_setup_completed) {
           redirectUrl = '/dashboard/seller/settings';
           console.log('📍 Redirecting to: Setup Store (Settings)');
-        } else if (!razorpay_connected) {
-          redirectUrl = '/dashboard/seller/payments';
-          console.log('📍 Redirecting to: Connect Razorpay (Payments)');
         } else if (redirect) {
           redirectUrl = decodeURIComponent(redirect);
           console.log('📍 Redirecting to: Custom redirect');

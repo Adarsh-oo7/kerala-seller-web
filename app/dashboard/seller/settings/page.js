@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import "../../../../styles/DashboardSettings.css"
 import { Upload, Check, AlertCircle, Star, Building, Save, Image as ImageIcon, Trash2, X, Settings } from 'lucide-react';
+import StoreModePanel from '../../../../components/seller/StoreModePanel';
 
 const getApiBaseUrl = () => {
   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
@@ -304,6 +305,7 @@ export default function SettingsPage() {
           <p className='dashboardsettingspagesubtitle' style={s.st}>Manage your store info & media</p>
         </div>
       </div>
+      <StoreModePanel variant="settings" />
 
 
 
