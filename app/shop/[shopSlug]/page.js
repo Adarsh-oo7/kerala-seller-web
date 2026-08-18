@@ -11,6 +11,7 @@ import Whatsapp from '../../../components/common/Whatsapp'
 import ShopFooter from '../../../components/common/ShopFooter';
 import ShopProductCard from '../../../components/common/ShopProductCard';
 import { buyerStorefrontMessage } from '../../lib/storefront-status';
+import { publicShopApiIdentifier, canonicalShopHref } from '../../lib/shop-identifier.cjs';
 
 import {
   ShoppingCart,
@@ -187,7 +188,7 @@ function ShopSEOHead({ store, products, shopSlug, sellerPhone }) {
     updateOrCreateMeta('description', metaDescription);
     updateOrCreateMeta('og:title', pageTitle);
     updateOrCreateMeta('og:description', metaDescription);
-    updateOrCreateMeta('og:url', `https://keralasellers.in/shop/${shopSlug}`);
+    updateOrCreateMeta('og:url', canonicalShopHref(store.store_slug, shopSlug));
 
     const structuredData = generateShopStructuredData(store, products, shopSlug);
     if (structuredData) {
@@ -567,7 +568,11 @@ function EnhancedSellerStorefrontPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { shopSlug } = params;
-  const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams);
+  const apiIdentifier = publicShopApiIdentifier(shopSlug, searchParams);
+  const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams)
+    || store?.seller_phone
+    || store?.phone
+    || store?.whatsapp_number;
   const cartContext = useCart();
   const { addToCart, cartItems } = cartContext || { addToCart: null, cartItems: [] };
   const abortControllerRef = useRef(null);
@@ -705,7 +710,7 @@ function EnhancedSellerStorefrontPage() {
   }, [products, filters]);
 
   useEffect(() => {
-    if (!sellerPhone) {
+    if (!apiIdentifier) {
       setError('Invalid shop URL. Please check the link and try again.');
       setIsLoading(false);
       return;
@@ -716,7 +721,7 @@ function EnhancedSellerStorefrontPage() {
         setIsLoading(true);
         setError(null);
         abortControllerRef.current = new AbortController();
-        const response = await axios.get(`${'https://api.keralasellers.in'}/shop/${sellerPhone}/`, {
+        const response = await axios.get(`${'https://api.keralasellers.in'}/shop/${apiIdentifier}/`, {
           signal: abortControllerRef.current.signal,
           timeout: 15000,
         });
@@ -770,7 +775,7 @@ function EnhancedSellerStorefrontPage() {
       }
       clearTimeout(timeoutId);
     };
-  }, [sellerPhone, fetchWishlist]);
+  }, [apiIdentifier, fetchWishlist]);
 
   useEffect(() => {
     applyFilters();

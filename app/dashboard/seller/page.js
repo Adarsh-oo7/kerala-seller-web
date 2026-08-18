@@ -120,14 +120,12 @@ function SetupStorePrompt() {
 
 function StoreLink({ storeData, phone, copySuccess, onCopy, onVisit }) {
     const getShopUrl = () => {
-        if (!phone) return `${getFrontendBaseUrl()}/shop`;
-
+        const slug = storeData?.store_slug;
+        if (slug) return `${getFrontendBaseUrl()}/shop/${slug}`;
         if (storeData && storeData.name) {
-            const shopSlug = generateShopSlug(storeData);
-            return `${getFrontendBaseUrl()}/shop/${shopSlug}?id=${phone}`;
+            return `${getFrontendBaseUrl()}/shop/${generateShopSlug(storeData)}`;
         }
-
-        return `${getFrontendBaseUrl()}/shop/shop-${phone}?id=${phone}`;
+        return `${getFrontendBaseUrl()}/shop`;
     };
 
     const shopUrl = getShopUrl();

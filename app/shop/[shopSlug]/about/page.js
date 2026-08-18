@@ -326,14 +326,10 @@ function StoreAboutContent() {
 
   // ✅ Generate SEO-friendly shop URL for navigation
   const getShopUrl = () => {
-    if (!storeData || !sellerPhone) return `/shop`;
-
-    if (storeData.name) {
-      const shopSlug = generateShopSlug(storeData);
-      return `/shop/${shopSlug}?id=${sellerPhone}`;
-    }
-
-    return `/shop/${sellerPhone}`;
+    if (!storeData) return `/shop`;
+    if (storeData.store_slug) return `/shop/${storeData.store_slug}`;
+    if (storeData.name) return `/shop/${generateShopSlug(storeData)}`;
+    return `/shop`;
   };
 
   const formatJoinDate = (dateString) => {

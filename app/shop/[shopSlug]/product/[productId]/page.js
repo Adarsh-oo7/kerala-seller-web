@@ -1161,9 +1161,10 @@ function ShopProductPageContent() {
 
   // Generate shop URL for navigation
   const getShopUrl = () => {
-    if (!store || !sellerPhone) return `/shop`;
-    const shopSlug = generateShopSlug(store);
-    return `/shop/${shopSlug}?id=${sellerPhone}`;
+    if (!store) return `/shop`;
+    if (store.store_slug) return `/shop/${store.store_slug}`;
+    if (store.name) return `/shop/${generateShopSlug(store)}`;
+    return `/shop`;
   };
 
   // ✅ ENHANCED: Fetch product and store data with reviews
