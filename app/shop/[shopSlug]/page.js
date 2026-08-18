@@ -11,7 +11,7 @@ import Whatsapp from '../../../components/common/Whatsapp'
 import ShopFooter from '../../../components/common/ShopFooter';
 import ShopProductCard from '../../../components/common/ShopProductCard';
 import { buyerStorefrontMessage } from '../../lib/storefront-status';
-import { publicShopApiIdentifier, canonicalShopHref } from '../../lib/shop-identifier.cjs';
+import { publicShopApiIdentifier, canonicalShopHref, shopListPhone, shopMatchesSlug } from '../../lib/shop-identifier.cjs';
 
 import {
   ShoppingCart,
@@ -710,7 +710,7 @@ function EnhancedSellerStorefrontPage() {
   }, [products, filters]);
 
   useEffect(() => {
-    if (!apiIdentifier) {
+    if (!shopSlug) {
       setError('Invalid shop URL. Please check the link and try again.');
       setIsLoading(false);
       return;
@@ -721,25 +721,58 @@ function EnhancedSellerStorefrontPage() {
         setIsLoading(true);
         setError(null);
         abortControllerRef.current = new AbortController();
-        const response = await axios.get(`${'https://api.keralasellers.in'}/shop/${apiIdentifier}/`, {
-          signal: abortControllerRef.current.signal,
-          timeout: 15000,
-        });
-        if (response.data) {
-          setStore(response.data.store || null);
-          const productsData = response.data.products || [];
-          const normalizedProducts = productsData.map(product => ({
-            ...product,
-            id: Number(product.id)
-          }));
-          setProducts(normalizedProducts);
-          setCanOrder(response.data.can_order !== false);
-          setStorefrontNotice(
-            buyerStorefrontMessage(response.data.reason || response.data.code)
-          );
-        } else {
-          throw new Error('No data received from server');
+        const signal = abortControllerRef.current.signal;
+        const apiBase = 'https://api.keralasellers.in';
+        const tried = new Set();
+
+        const getShop = async (id) => {
+          if (!id || tried.has(id)) return null;
+          tried.add(id);
+          try {
+            const response = await axios.get(`${apiBase}/shop/${id}/`, { signal, timeout: 15000 });
+            return response.data?.store || response.data ? response : null;
+          } catch (error) {
+            if (axios.isCancel(error)) throw error;
+            if (error.response?.status === 404) return null;
+            throw error;
+          }
+        };
+
+        let response = await getShop(apiIdentifier);
+        if (!response) {
+          try {
+            const listResponse = await axios.get(`${apiBase}/shops/`, {
+              signal,
+              timeout: 15000,
+              params: { search: shopSlug, page_size: 50 },
+            });
+            const shops = Array.isArray(listResponse.data)
+              ? listResponse.data
+              : listResponse.data?.results || [];
+            const match = shops.find((shop) => shopMatchesSlug(shop, shopSlug));
+            response = await getShop(shopListPhone(match));
+          } catch (error) {
+            if (axios.isCancel(error)) throw error;
+          }
         }
+        if (!response) {
+          response = await getShop(searchParams.get('id'));
+        }
+        if (!response?.data) {
+          setError('Shop not found.');
+          return;
+        }
+        setStore(response.data.store || null);
+        const productsData = response.data.products || [];
+        const normalizedProducts = productsData.map(product => ({
+          ...product,
+          id: Number(product.id)
+        }));
+        setProducts(normalizedProducts);
+        setCanOrder(response.data.can_order !== false);
+        setStorefrontNotice(
+          buyerStorefrontMessage(response.data.reason || response.data.code)
+        );
       } catch (error) {
         if (axios.isCancel(error)) return;
         if (error.response?.status === 404) {
@@ -775,7 +808,7 @@ function EnhancedSellerStorefrontPage() {
       }
       clearTimeout(timeoutId);
     };
-  }, [apiIdentifier, fetchWishlist]);
+  }, [apiIdentifier, fetchWishlist, shopSlug, searchParams]);
 
   useEffect(() => {
     applyFilters();
