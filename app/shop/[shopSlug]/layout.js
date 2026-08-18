@@ -1,9 +1,7 @@
-import { canonicalShopHref, publicShopApiIdentifier } from '../../lib/shop-identifier.cjs';
+import { canonicalShopHref } from '../../lib/shop-identifier.cjs';
 
-export async function generateMetadata({ params, searchParams }) {
+export async function generateMetadata({ params }) {
   const { shopSlug } = await params;
-  const query = await searchParams;
-  const identifier = publicShopApiIdentifier(shopSlug, query);
   const canonical = canonicalShopHref(null, shopSlug);
   return {
     alternates: { canonical },
