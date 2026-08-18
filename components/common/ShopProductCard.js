@@ -1,9 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import "../../styles/ShopProductcard.css";
+import {
+  firstProductImage,
+  PRODUCT_PLACEHOLDER,
+  productImageCandidates,
+  normalizeImageUrl,
+} from '../../app/lib/productImage';
+import { getBuyerAuthHeaders } from '../../app/lib/buyerAuth';
 
 import {
   ShoppingCart,
@@ -15,26 +22,11 @@ import {
   Eye
 } from 'lucide-react';
 
-// ✅ Helper function to get API base URL
-// ✅ SINGLE API BASE URL - Works for both dev and production
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ||
   'https://api.keralasellers.in';
-
 const WISHLIST_TOGGLE_API = `${API_BASE_URL}/api/wishlist/toggle_product/`;
 const WISHLIST_CHECK_API = `${API_BASE_URL}/api/wishlist/check_product/`;
-
-// ✅ Enhanced token handling function
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('access_token') ||
-    localStorage.getItem('buyerAccessToken') ||
-    localStorage.getItem('buyerToken') ||
-    localStorage.getItem('accessToken');
-
-  if (!token) {
-    return null;
-  }
-  return { 'Authorization': `Bearer ${token}` };
-};
+const getAuthHeaders = () => getBuyerAuthHeaders();
 
 /**
  * ShopProductCard - Product card with integrated wishlist functionality and ratings
@@ -59,34 +51,36 @@ export default function ShopProductCard({
   const [localWishlistState, setLocalWishlistState] = useState(isWishlisted);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageSrc, setImageSrc] = useState(firstProductImage(product));
+  const failedImages = useRef(new Set());
 
-  // ✅ Sync with parent wishlist state + debug logging
   useEffect(() => {
-    console.log(` Product ${product?.id}: isWishlisted prop changed to:`, isWishlisted);
+    failedImages.current = new Set();
+    setImageSrc(firstProductImage(product));
+    setImageError(false);
+  }, [product?.id, product?.main_image_url]);
+
+  useEffect(() => {
     setLocalWishlistState(isWishlisted);
   }, [isWishlisted, product?.id]);
 
-  // ✅ Fallback: Check individual wishlist status if parent doesn't provide
   useEffect(() => {
     const checkWishlistStatus = async () => {
       const headers = getAuthHeaders();
       if (!headers || !product?.id) return;
-
       try {
-        console.log(` Checking wishlist status for product ${product.id}`);
         const response = await axios.get(`${WISHLIST_CHECK_API}?product_id=${product.id}`, {
           headers,
           timeout: 5000
         });
-        const isInWishlist = response.data.is_wishlisted || false;
-        console.log(` Product ${product.id} wishlist status:`, isInWishlist);
-        setLocalWishlistState(isInWishlist);
+        setLocalWishlistState(response.data.is_wishlisted || false);
       } catch (error) {
-        console.warn(' Failed to check wishlist status:', error);
+        if (error.response?.status !== 401) {
+          /* ignore */
+        }
       }
     };
 
-    // Only check if no wishlist prop provided from parent AND we have a product ID
     if (isWishlisted === false && product?.id && !onWishlistUpdate) {
       checkWishlistStatus();
     }
@@ -106,33 +100,7 @@ export default function ShopProductCard({
   };
 
   // ✅ Enhanced image URL function with Cloudinary support
-  const getImageUrl = (product) => {
-    if (!product) return 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
-
-    // Priority order for different image types
-    const imageUrl = product.main_image_url ||
-      product.image_url ||
-      product.cloudinary_url ||
-      product.thumbnail_url;
-
-    if (!imageUrl) return 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image';
-
-    // If it's already a Cloudinary URL, return as is
-    if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
-      return imageUrl;
-    }
-
-    // Handle local URLs
-    if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
-      return `${API_BASE_URL}${imageUrl}`;
-    }
-
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-
-    return imageUrl.startsWith('/') ? `${API_BASE_URL}${imageUrl}` : imageUrl;
-  };
+  const getImageUrl = (product) => firstProductImage(product);
 
   // ✅ Helper function to get login redirect URL with query parameters
   const getLoginRedirectUrl = () => {
@@ -315,12 +283,19 @@ export default function ShopProductCard({
           aria-label={`View ${product.name || 'product'} in ${store?.name || 'store'}`}
         >
           <img
-            src={imageError ? 'https://placehold.co/300x200/e9ecef/6c757d?text=No+Image' : getImageUrl(product)}
+            src={imageSrc}
             alt={product.name || 'Product image'}
             className="product-image"
             style={styles.productImage}
             loading="lazy"
-            onError={() => setImageError(true)}
+            onError={(e) => {
+              failedImages.current.add(normalizeImageUrl(e.target.src));
+              const next = productImageCandidates(product).find(
+                (url) => !failedImages.current.has(normalizeImageUrl(url)),
+              );
+              setImageSrc(next || PRODUCT_PLACEHOLDER);
+              if (!next) setImageError(true);
+            }}
           />
         </Link>
 

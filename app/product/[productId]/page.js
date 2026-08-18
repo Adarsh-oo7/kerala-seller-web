@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { useParams, useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
@@ -9,6 +9,8 @@ import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
 import "../../../styles/Keralasellersproductpage.css";
 import { toast } from "react-toastify";
+import { getBuyerAuthHeaders } from '../../lib/buyerAuth';
+import { firstProductImage, normalizeImageUrl, PRODUCT_PLACEHOLDER, productImageCandidates } from '../../lib/productImage';
 
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw, ChevronLeft, Minus, Plus, ChevronRight, Zap, CreditCard } from 'lucide-react';
 
@@ -45,56 +47,14 @@ console.log(' Product/Wishlist APIs:', API_BASE_URL);
 
 
 // ✅ Enhanced auth headers function
-const getAuthHeaders = () => {
-    const token = localStorage.getItem('access_token') ||
-        localStorage.getItem('buyerAccessToken') ||
-        localStorage.getItem('buyerToken') ||
-        localStorage.getItem('accessToken');
-
-    return token ? { 'Authorization': `Bearer ${token}` } : null;
-};
+const getAuthHeaders = () => getBuyerAuthHeaders();
 
 // ✅ FIXED: Cloudinary gets HIGHEST priority
 const getBestImageUrl = (product, imageType = 'main', size = 'default') => {
-    if (!product) return 'https://placehold.co/400x400?text=No+Image';
-
-    // ✅ Priority 1: CLOUDINARY URL FIRST (regardless of imageType)
-    if (product.cloudinary_url) {
-        console.log(' Using Cloudinary URL:', product.cloudinary_url);
-        return product.cloudinary_url;
-    }
-
-    // ✅ Priority 2: Size-specific URLs
-    const imageUrls = {
-        thumbnail: product.thumbnail_url || product.main_image_url,
-        large: product.large_image_url || product.main_image_url,
-        main: product.main_image_url
-    };
-
-    let imageUrl = imageUrls[imageType] || product.main_image_url;
-
-    if (!imageUrl) return 'https://placehold.co/400x400?text=No+Image';
-
-    // ✅ If it's already a Cloudinary URL, return as is
-    if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
-        console.log(' Using Cloudinary URL from imageUrl:', imageUrl);
-        return imageUrl;
-    }
-
-    // Handle local URLs
-    if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
-        return `${API_BASE_URL}${imageUrl}`;
-    }
-
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-        return imageUrl;
-    }
-
-    return imageUrl.startsWith('/') ? `${API_BASE_URL}${imageUrl}` : imageUrl;
+    if (!product) return PRODUCT_PLACEHOLDER;
+    return firstProductImage(product);
 };
 
-
-// ✅ Enhanced Image Gallery Component with Mobile Square Support
 // ✅ Helper to validate URLs
 const isValidUrl = (url) => {
     return url && typeof url === 'string' && url.trim().length > 10 && 
@@ -106,6 +66,7 @@ function ProductImageGallery({ product }) {
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [isZoomed, setIsZoomed] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
+    const failedImages = useRef(new Set());
 
     // ✅ FIXED: Build main image URLs with same logic as ProductCard
     const getMainImageUrl = () => {
@@ -175,9 +136,6 @@ function ProductImageGallery({ product }) {
 
     const currentImage = allImages[selectedImageIndex];
 
-    // ✅ Debug log (optional - remove after testing)
-    console.log(' Gallery image URL:', currentImage.large, 'Product ID:', product.id);
-
     return (
         <div style={styles.imageGallery} className="image-gallery">
             {/* Main Image Display */}
@@ -209,8 +167,11 @@ function ProductImageGallery({ product }) {
                         }}
                         onLoad={() => setImageLoaded(true)}
                         onError={(e) => {
-                            console.error(' Image failed to load:', e.target.src);
-                            e.target.src = 'https://placehold.co/600x400?text=No+Image';
+                            failedImages.current.add(normalizeImageUrl(e.target.src));
+                            const next = productImageCandidates(product).find(
+                                (url) => !failedImages.current.has(normalizeImageUrl(url)),
+                            );
+                            e.target.src = next || PRODUCT_PLACEHOLDER;
                             setImageLoaded(true);
                         }}
                     />
@@ -661,26 +622,23 @@ export default function ProductDetailPage() {
     };
 
     const checkReviewPermission = async () => {
-        const token = localStorage.getItem('buyerAccessToken');
-        if (token) {
-            try {
-                const canReviewResponse = await axios.get(
-                    `${API_URL}${productId}/can-review/`,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-                setCanReview(canReviewResponse.data.can_review);
-            } catch (e) {
-                console.log('Can review check failed:', e.message);
-                setCanReview(false);
-            }
+        const headers = getBuyerAuthHeaders();
+        if (!headers) return;
+        try {
+            const canReviewResponse = await axios.get(
+                `${API_URL}${productId}/can-review/`,
+                { headers }
+            );
+            setCanReview(canReviewResponse.data.can_review);
+        } catch {
+            setCanReview(false);
         }
     };
 
     // ✅ Check buyer status and login state
     useEffect(() => {
-        const token = localStorage.getItem('buyerAccessToken');
-        if (token) {
-            const headers = { 'Authorization': `Bearer ${token}` };
+        const headers = getBuyerAuthHeaders();
+        if (headers) {
             axios.get(BUYER_PROFILE_URL, { headers })
                 .then(res => {
                     setBuyerStatus({
@@ -691,8 +649,7 @@ export default function ProductDetailPage() {
                         phone: res.data.phone_number
                     });
                 })
-                .catch(err => {
-                    console.error("Could not verify buyer status", err);
+                .catch(() => {
                     setBuyerStatus({ isLoggedIn: false, isVerified: false });
                 });
         } else {

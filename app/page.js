@@ -15,6 +15,7 @@ import Skeleton from "../components/common/Skeleton";
 import { toast } from "react-toastify";
 import { Search, X, Filter, Grid, AlertCircle, Package, Heart } from 'lucide-react';
 import { useRouter } from "next/navigation";
+import { getBuyerAuthHeaders } from './lib/buyerAuth';
 
 
 const bannerImages = [
@@ -48,20 +49,6 @@ console.log(' API URLs configured:', {
   WISHLIST_TOGGLE_API,
   WISHLIST_CHECK_API
 });
-
-// âœ… Enhanced token handling function
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('access_token') ||
-    localStorage.getItem('buyerAccessToken');
-
-  if (!token) {
-    console.error(' No authentication token found');
-    return null;
-  }
-
-  console.log(' Using token:', token.substring(0, 30) + '...');
-  return { 'Authorization': `Bearer ${token}` };
-};
 
 // Custom hook for media queries
 function useMediaQuery(query) {
@@ -318,7 +305,7 @@ export default function Home() {
   const handleToggleWishlist = async (productId) => {
     console.log(' Toggle wishlist for product:', productId);
 
-    const headers = getAuthHeaders();
+    const headers = getBuyerAuthHeaders();
     if (!headers) {
       router.push("/login/buyer");
       return;
@@ -403,23 +390,20 @@ export default function Home() {
   };
 
   const checkWishlistStatus = async (productIds) => {
-    const headers = getAuthHeaders();
+    const headers = getBuyerAuthHeaders();
     if (!headers || productIds.length === 0) return;
 
     try {
-      console.log(' Checking wishlist status for products:', productIds.length);
-
-      const promises = productIds.slice(0, 10).map(id =>
-        axios.get(`${WISHLIST_CHECK_API}?product_id=${id}`, { headers, timeout: 5000 })
-          .then(response => ({ id, isWishlisted: response.data.is_wishlisted }))
-          .catch(error => {
-            console.warn(`Failed to check wishlist for product ${id}:`, error);
-            return { id, isWishlisted: false };
-          })
-      );
-
-      const results = await Promise.all(promises);
-      console.log(' Wishlist status results:', results);
+      const results = [];
+      for (const id of productIds.slice(0, 10)) {
+        try {
+          const response = await axios.get(`${WISHLIST_CHECK_API}?product_id=${id}`, { headers, timeout: 5000 });
+          results.push({ id, isWishlisted: response.data.is_wishlisted });
+        } catch (error) {
+          if (error.response?.status === 401) return;
+          results.push({ id, isWishlisted: false });
+        }
+      }
 
       const updateProductsWithWishlist = (prevProducts) =>
         prevProducts.map(product => {
@@ -741,12 +725,11 @@ export default function Home() {
                       mrp={product.mrp || null}
                       rating={product.average_rating || 0}
                       reviewCount={product.review_count || 0}
-                      primaryImage={
-                        product.main_image_url ||
-                        product.image_url ||
-                        product.images?.[0]?.url ||
-                        "/placeholder.svg"
-                      }
+                      primaryImage={product.main_image_url || product.image_url}
+                      thumbnailUrl={product.thumbnail_url}
+                      largeImageUrl={product.large_image_url}
+                      cloudinaryUrl={product.cloudinary_url}
+                      subImages={product.sub_images || []}
                       hoverImage={
                         product.sub_images?.[0]?.image_url ||
                         product.images?.[1]?.url ||

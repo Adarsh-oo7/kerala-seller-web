@@ -1,13 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Heart, Star, ShoppingCart, Ban } from "lucide-react"
 import Link from "next/link"
 import "../../styles/ProductCard.css";
-
-// ✅ Enhanced API base URL function
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-  'https://api.keralasellers.in';
+import { firstProductImage, normalizeImageUrl, PRODUCT_PLACEHOLDER, productImageCandidates } from "../../app/lib/productImage";
 
 export default function ProductCard({
   id,
@@ -34,7 +31,8 @@ export default function ProductCard({
   hasDiscount,
   discountPercentage,
   isInStock,
-  canBePurchasedOnline
+  canBePurchasedOnline,
+  subImages = [],
 }) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
@@ -42,6 +40,22 @@ export default function ProductCard({
   const [touchStarted, setTouchStarted] = useState(false)
   const [wishlistState, setWishlistState] = useState(isWishlisted)
   const [localWishlistLoading, setLocalWishlistLoading] = useState(false)
+  const imageCandidates = productImageCandidates({
+    cloudinary_url: cloudinaryUrl,
+    main_image_url: primaryImage,
+    thumbnail_url: thumbnailUrl,
+    large_image_url: largeImageUrl,
+    sub_images: subImages,
+  })
+  const [displaySrc, setDisplaySrc] = useState(imageCandidates[0] || PRODUCT_PLACEHOLDER)
+  const failedImages = useRef(new Set())
+
+  useEffect(() => {
+    failedImages.current = new Set()
+    setDisplaySrc(imageCandidates[0] || PRODUCT_PLACEHOLDER)
+    setImageLoaded(false)
+    setImageError(false)
+  }, [imageCandidates.join('|')])
 
   // ✅ Sync with parent state
   useEffect(() => {
@@ -94,8 +108,19 @@ export default function ProductCard({
           price: parseFloat(price) || 0,
           mrp: mrp ? parseFloat(mrp) : null,
           // ✅ FIXED: Cloudinary URL gets HIGHEST priority
-          main_image_url: cloudinaryUrl || getBestImageUrl(),
-          image_url: cloudinaryUrl || getBestImageUrl(),
+          main_image_url: cloudinaryUrl || firstProductImage({
+            cloudinary_url: cloudinaryUrl,
+            main_image_url: primaryImage,
+            thumbnail_url: thumbnailUrl,
+            large_image_url: largeImageUrl,
+            sub_images: subImages,
+          }),
+          image_url: cloudinaryUrl || firstProductImage({
+            cloudinary_url: cloudinaryUrl,
+            main_image_url: primaryImage,
+            thumbnail_url: thumbnailUrl,
+            sub_images: subImages,
+          }),
           thumbnail_url: thumbnailUrl || cloudinaryUrl || getBestImageUrl('thumbnail'),
           online_stock: onlineStock,
           seller_phone: sellerPhone,
@@ -163,92 +188,20 @@ export default function ProductCard({
 
   // ✅ FIXED: Cloudinary gets HIGHEST priority
   const getBestImageUrl = (size = 'default') => {
-    // ✅ Priority 1: Cloudinary URL (FASTEST CDN)
-    if (cloudinaryUrl) {
-      return cloudinaryUrl
+    if (size === 'thumbnail') {
+      return thumbnailUrl || displaySrc || PRODUCT_PLACEHOLDER
     }
-
-    // ✅ Priority 2: Size-specific optimized images
-    if (size === 'thumbnail' && thumbnailUrl) {
-      return thumbnailUrl
-    }
-
-    if (size === 'large' && largeImageUrl) {
-      return largeImageUrl
-    }
-
-    // ✅ Priority 3: Default size - prefer thumbnailUrl
-    if (thumbnailUrl && size === 'default') {
-      return thumbnailUrl
-    }
-
-    // ✅ Priority 4: Fallback to primaryImage
-    if (primaryImage) {
-      return getImageUrl(primaryImage)
-    }
-
-    // ✅ Priority 5: Final fallback
-    return "/placeholder.svg"
+    return displaySrc || PRODUCT_PLACEHOLDER
   }
 
-  // ✅ Enhanced image URL handling with Cloudinary support
-  const getImageUrl = (imageUrl) => {
-    if (!imageUrl) return "/placeholder.svg"
-
-    // ✅ CLOUDINARY: Direct use if Cloudinary URL
-    if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
-      return imageUrl
-    }
-
-    // ✅ Handle local media URLs
-    if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/static/')) {
-      return `${API_BASE_URL}${imageUrl}`
-    }
-
-    // ✅ Handle full URLs
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl
-    }
-
-    // ✅ Handle relative URLs
-    if (imageUrl.startsWith('/')) {
-      return `${API_BASE_URL}${imageUrl}`
-    }
-
-    return imageUrl || "/placeholder.svg"
-  }
-
-  // ✅ ENHANCED: Smart image error handling with Cloudinary priority
   const handleImageError = (e) => {
-    if (imageError) return // Prevent infinite loop
-
-    setImageError(true)
-
-    // ✅ Try fallback URLs with Cloudinary FIRST
-    const fallbacks = [
-      cloudinaryUrl, // ✅ Cloudinary gets highest priority
-      primaryImage && getImageUrl(primaryImage),
-      thumbnailUrl,
-      "/placeholder.svg"
-    ].filter(Boolean)
-
-    let currentSrc = e.target.src
-    let nextFallback = null
-
-    for (let i = 0; i < fallbacks.length; i++) {
-      if (fallbacks[i] === currentSrc && i < fallbacks.length - 1) {
-        nextFallback = fallbacks[i + 1]
-        break
-      }
-    }
-
-    if (nextFallback && nextFallback !== currentSrc) {
-      console.warn(`Failed to load image for product ${id}, trying fallback:`, nextFallback)
-      e.target.src = nextFallback
-    } else {
-      console.warn(`All image fallbacks failed for product ${id}, using placeholder`)
-      e.target.src = "/placeholder.svg"
-    }
+    const failed = normalizeImageUrl(e.target.src)
+    failedImages.current.add(failed)
+    const next = imageCandidates.find((url) => !failedImages.current.has(normalizeImageUrl(url)))
+    const fallback = next || PRODUCT_PLACEHOLDER
+    if (normalizeImageUrl(fallback) === failed) return
+    setDisplaySrc(fallback)
+    if (!next) setImageError(true)
   }
 
   // ✅ Determine stock status
@@ -336,12 +289,11 @@ export default function ProductCard({
           <Link href={getProductUrl()} className="image-link">
             <div className="image-wrapper">
               <img
-                src={getBestImageUrl()}
+                src={displaySrc}
                 alt={title || 'Product'}
                 className={`primary-image ${imageLoaded ? 'loaded' : ''}`}
                 onLoad={() => {
                   setImageLoaded(true)
-                  setImageError(false)
                 }}
                 onError={handleImageError}
                 loading="lazy"

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCart } from '../../app/context/CartContext';
 import { ShoppingCart, User, Menu, X as CloseIcon, ChevronRight } from 'lucide-react';
 import BottomNav from "./BottomNav";
+import { isBuyerLoggedIn } from "../../app/lib/buyerAuth";
 
 // ==============================================================================
 // SUB-COMPONENTS (for better organization)  
@@ -135,17 +136,10 @@ export default function Header() {
   // ✅ FIXED: Enhanced authentication check to support both token types
   useEffect(() => {
     // Check both possible token locations
-    const token = localStorage.getItem('access_token') ||
-      localStorage.getItem('buyerAccessToken');
-    setIsLoggedIn(!!token);
+    setIsLoggedIn(isBuyerLoggedIn());
 
-    console.log(' Auth check - Token found:', !!token);
-
-    // Listen for storage changes (login/logout from other tabs)
     const handleStorageChange = () => {
-      const newToken = localStorage.getItem('access_token') ||
-        localStorage.getItem('buyerAccessToken');
-      setIsLoggedIn(!!newToken);
+      setIsLoggedIn(isBuyerLoggedIn());
     };
 
     window.addEventListener('storage', handleStorageChange);
