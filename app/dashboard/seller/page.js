@@ -118,6 +118,7 @@ function SetupStorePrompt() {
 
 function StoreLink({ storeData, phone, copySuccess, onCopy, onVisit }) {
     const getShopUrl = () => {
+        if (storeData?.official_url) return storeData.official_url;
         const slug = storeData?.store_slug
             || (storeData && storeData.name ? generateShopSlug(storeData) : '');
         if (slug) return `${getFrontendBaseUrl()}/shop/${slug}`;
@@ -294,7 +295,12 @@ export default function SellerDashboardOverview() {
             console.log(' Store profile data:', storeRes?.data);
 
             setDashboardData(dashboardRes.data);
-            setStoreData(storeRes?.data?.store_profile || storeRes?.data || null);
+            setStoreData({
+                ...(storeRes?.data?.store_profile || storeRes?.data || null),
+                official_url: storeRes?.data?.official_url
+                    || storeRes?.data?.store_profile?.official_url
+                    || null,
+            });
 
         } catch (error) {
             console.error(' Failed to fetch dashboard data:', error);

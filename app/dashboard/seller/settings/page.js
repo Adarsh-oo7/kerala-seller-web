@@ -325,6 +325,29 @@ export default function SettingsPage() {
         </Link>
       </div>
 
+      {(store.official_url || store.store_slug) && (
+        <div style={{ border: '1px solid #d1fae5', background: '#f0fdf4', borderRadius: 12, padding: 16, marginBottom: 20 }}>
+          <strong style={{ color: '#175E54' }}>Your official store URL</strong>
+          <p style={{ margin: '8px 0 0', wordBreak: 'break-all' }}>
+            {store.official_url || `https://www.keralasellers.in/shop/${store.store_slug}/`}
+          </p>
+          {store.entitlements?.can_use_custom_subdomain && store.entitlements?.subdomain_live ? (
+            <p style={{ margin: '8px 0 0', fontSize: 13, color: '#065f46' }}>
+              Custom subdomain is included on your current plan. The path URL redirects here.
+            </p>
+          ) : store.entitlements?.can_use_custom_subdomain ? (
+            <p style={{ margin: '8px 0 0', fontSize: 13, color: '#4b5563' }}>
+              Your custom store link is being set up. Share the path URL above until it is ready.
+            </p>
+          ) : (
+            <p style={{ margin: '8px 0 0', fontSize: 13, color: '#4b5563' }}>
+              {store.entitlements?.locked_feature_message
+                || 'Available with your current plan — upgrade or add as an add-on.'}
+            </p>
+          )}
+        </div>
+      )}
+
 
 
 

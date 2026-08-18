@@ -64,6 +64,11 @@ export default function DeliverySettingsPage() {
   const [mode, setMode] = useState('weight');
   const [flatPrice, setFlatPrice] = useState('50');
   const [bandPrices, setBandPrices] = useState(['50', '80', '120']);
+  const [valueBands, setValueBands] = useState([
+    { min: 0, max: 499, charge: '50' },
+    { min: 500, max: 999, charge: '30' },
+    { min: 1000, max: '', charge: '0' },
+  ]);
   const [savedSlabs, setSavedSlabs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -106,11 +111,13 @@ export default function DeliverySettingsPage() {
       return;
     }
     try {
-      const [configRes, slabsRes] = await Promise.all([
+      const [configRes, slabsRes, valueRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/user/store/delivery-slabs/config/`, { headers }),
         axios.get(`${API_BASE_URL}/user/store/delivery-slabs/slabs/`, { headers }),
+        axios.get(`${API_BASE_URL}/user/store/delivery-slabs/order_value_slabs/`, { headers }).catch(() => ({ data: [] })),
       ]);
       const nextSlabs = Array.isArray(slabsRes.data) ? slabsRes.data : [];
+      const nextValue = Array.isArray(valueRes.data) ? valueRes.data : [];
       const enabled = Boolean(configRes.data.enabled);
       setConfig({
         enabled,
@@ -119,8 +126,17 @@ export default function DeliverySettingsPage() {
         free_delivery_above: configRes.data.free_delivery_above ?? 0,
       });
       setSavedSlabs(nextSlabs);
+      if (nextValue.length) {
+        setValueBands(nextValue.map((slab) => ({
+          min: toNum(slab.min_order_value, 0),
+          max: slab.max_order_value == null ? '' : toNum(slab.max_order_value),
+          charge: String(toNum(slab.delivery_charge, 0)),
+          id: slab.id,
+        })));
+      }
       if (enabled) {
-        const nextMode = detectMode(nextSlabs);
+        const pricingMode = configRes.data.pricing_mode;
+        const nextMode = pricingMode === 'ORDER_VALUE' ? 'value' : detectMode(nextSlabs);
         setMode(nextMode);
         if (nextMode === 'flat') {
           setFlatPrice(String(toNum(nextSlabs[0]?.fixed_price, 50)));
@@ -207,11 +223,27 @@ export default function DeliverySettingsPage() {
       const fallback = mode === 'flat' ? toNum(flatPrice, 50) : toNum(bandPrices[2], 120);
       await axios.post(`${API_BASE_URL}/user/store/delivery-slabs/update_config/`, {
         enabled: !freeDelivery,
+        pricing_mode: freeDelivery ? 'FREE' : mode === 'flat' ? 'FLAT' : mode === 'value' ? 'ORDER_VALUE' : 'WEIGHT',
         fallback_flat_charge: fallback,
         cod_extra_charge: toNum(config.cod_extra_charge, 0),
         free_delivery_above: toNum(config.free_delivery_above, 0),
       }, { headers });
-      if (!freeDelivery) await persistSlabs(slabs, headers);
+      if (!freeDelivery && mode === 'value') {
+        const existing = await axios.get(`${API_BASE_URL}/user/store/delivery-slabs/order_value_slabs/`, { headers });
+        const rows = Array.isArray(existing.data) ? existing.data : [];
+        for (const slab of rows) {
+          await axios.delete(`${API_BASE_URL}/user/store/delivery-slabs/${slab.id}/delete_order_value_slab/`, { headers });
+        }
+        for (const band of valueBands) {
+          await axios.post(`${API_BASE_URL}/user/store/delivery-slabs/create_order_value_slab/`, {
+            min_order_value: toNum(band.min, 0),
+            max_order_value: band.max === '' ? null : toNum(band.max),
+            delivery_charge: toNum(band.charge, 0),
+          }, { headers });
+        }
+      } else if (!freeDelivery) {
+        await persistSlabs(slabs, headers);
+      }
       setSuccess(
         freeDelivery
           ? 'Buyers are not charged extra delivery.'
@@ -262,6 +294,9 @@ export default function DeliverySettingsPage() {
             <button type="button" style={mode === 'weight' ? styles.modeOn : styles.modeOff} onClick={() => setMode('weight')}>
               Charge by total weight
             </button>
+            <button type="button" style={mode === 'value' ? styles.modeOn : styles.modeOff} onClick={() => setMode('value')}>
+              Charge by order value
+            </button>
           </div>
 
           {mode === 'flat' ? (
@@ -270,6 +305,24 @@ export default function DeliverySettingsPage() {
               <label style={styles.label}>Delivery charge
                 <input value={flatPrice} onChange={(e) => setFlatPrice(e.target.value)} style={styles.input} type="number" min="1" />
               </label>
+            </>
+          ) : mode === 'value' ? (
+            <>
+              <p style={styles.info}>Charge by cart total. Ranges cannot overlap.</p>
+              {valueBands.map((band, index) => (
+                <label key={index} style={styles.label}>
+                  ₹{band.min} to {band.max === '' ? 'and above' : `₹${band.max}`}
+                  <input
+                    value={band.charge}
+                    onChange={(event) => setValueBands((current) => current.map((row, i) => (
+                      i === index ? { ...row, charge: event.target.value } : row
+                    )))}
+                    style={styles.input}
+                    type="number"
+                    min="0"
+                  />
+                </label>
+              ))}
             </>
           ) : (
             <>
