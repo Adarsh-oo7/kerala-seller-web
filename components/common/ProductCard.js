@@ -1,16 +1,24 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Heart, Star, ShoppingCart, Ban } from "lucide-react"
 import Link from "next/link"
 import "../../styles/ProductCard.css";
-import {
-  firstProductImage,
-  isPlaceholderImage,
-  nextProductImage,
-  PRODUCT_PLACEHOLDER,
-  productImageCandidates,
-} from "../../app/lib/productImage";
+import { PRODUCT_PLACEHOLDER } from "../../app/lib/productImage";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ||
+  'https://api.keralasellers.in';
+
+function resolveImageUrl(imageUrl) {
+  if (!imageUrl) return PRODUCT_PLACEHOLDER
+  if (imageUrl.includes('cloudinary.com') || imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl
+  }
+  if (imageUrl.startsWith('/')) {
+    return `${API_BASE_URL}${imageUrl}`
+  }
+  return imageUrl
+}
 
 export default function ProductCard({
   id,
@@ -38,40 +46,20 @@ export default function ProductCard({
   discountPercentage,
   isInStock,
   canBePurchasedOnline,
-  subImages,
 }) {
   const [isHovered, setIsHovered] = useState(false)
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const [imageError, setImageError] = useState(false)
   const [touchStarted, setTouchStarted] = useState(false)
   const [wishlistState, setWishlistState] = useState(isWishlisted)
   const [localWishlistLoading, setLocalWishlistLoading] = useState(false)
-  const imageCandidates = useMemo(
-    () => productImageCandidates({
-      cloudinary_url: cloudinaryUrl,
-      main_image_url: primaryImage,
-      thumbnail_url: thumbnailUrl,
-      large_image_url: largeImageUrl,
-      sub_images: subImages,
-    }),
-    [cloudinaryUrl, primaryImage, thumbnailUrl, largeImageUrl, subImages],
-  )
-  const [displaySrc, setDisplaySrc] = useState(imageCandidates[0] || PRODUCT_PLACEHOLDER)
-  const failedImages = useRef(new Set())
-  const imageSettled = useRef(false)
-  const candidatesRef = useRef(imageCandidates)
+  const productImage = resolveImageUrl(cloudinaryUrl || thumbnailUrl || primaryImage)
+  const [displaySrc, setDisplaySrc] = useState(productImage)
   const productIdRef = useRef(id)
-  candidatesRef.current = imageCandidates
 
   useEffect(() => {
     if (productIdRef.current === id) return
     productIdRef.current = id
-    imageSettled.current = false
-    failedImages.current = new Set()
-    setDisplaySrc(imageCandidates[0] || PRODUCT_PLACEHOLDER)
-    setImageLoaded(false)
-    setImageError(false)
-  }, [id, imageCandidates])
+    setDisplaySrc(resolveImageUrl(cloudinaryUrl || thumbnailUrl || primaryImage))
+  }, [id, cloudinaryUrl, thumbnailUrl, primaryImage])
 
   // ✅ Sync with parent state
   useEffect(() => {
@@ -124,20 +112,9 @@ export default function ProductCard({
           price: parseFloat(price) || 0,
           mrp: mrp ? parseFloat(mrp) : null,
           // ✅ FIXED: Cloudinary URL gets HIGHEST priority
-          main_image_url: cloudinaryUrl || firstProductImage({
-            cloudinary_url: cloudinaryUrl,
-            main_image_url: primaryImage,
-            thumbnail_url: thumbnailUrl,
-            large_image_url: largeImageUrl,
-            sub_images: subImages,
-          }),
-          image_url: cloudinaryUrl || firstProductImage({
-            cloudinary_url: cloudinaryUrl,
-            main_image_url: primaryImage,
-            thumbnail_url: thumbnailUrl,
-            sub_images: subImages,
-          }),
-          thumbnail_url: thumbnailUrl || cloudinaryUrl || getBestImageUrl('thumbnail'),
+          main_image_url: displaySrc,
+          image_url: displaySrc,
+          thumbnail_url: thumbnailUrl || displaySrc,
           online_stock: onlineStock,
           seller_phone: sellerPhone,
           store: storeName ? { name: storeName } : null,
@@ -202,38 +179,8 @@ export default function ProductCard({
     return `/product/${id}`
   }
 
-  // ✅ FIXED: Cloudinary gets HIGHEST priority
-  const getBestImageUrl = (size = 'default') => {
-    if (size === 'thumbnail') {
-      return thumbnailUrl || displaySrc || PRODUCT_PLACEHOLDER
-    }
-    return displaySrc || PRODUCT_PLACEHOLDER
-  }
-
-  const handleImageError = (e) => {
-    const img = e.currentTarget
-    if (imageSettled.current || isPlaceholderImage(img.src)) {
-      imageSettled.current = true
-      img.onerror = null
-      if (!isPlaceholderImage(img.src)) img.src = PRODUCT_PLACEHOLDER
-      setImageLoaded(true)
-      setImageError(true)
-      return
-    }
-
-    const next = nextProductImage(candidatesRef.current, failedImages.current, img.src)
-    if (!next) {
-      imageSettled.current = true
-      img.onerror = null
-      img.src = PRODUCT_PLACEHOLDER
-      setDisplaySrc(PRODUCT_PLACEHOLDER)
-      setImageLoaded(true)
-      setImageError(true)
-      return
-    }
-
-    img.src = next
-    setDisplaySrc(next)
+  const handleImageError = () => {
+    setDisplaySrc((current) => (current === PRODUCT_PLACEHOLDER ? current : PRODUCT_PLACEHOLDER))
   }
 
   // ✅ Determine stock status
@@ -288,7 +235,7 @@ export default function ProductCard({
           )}
 
           {/* ✅ Optimized badge for Cloudinary images */}
-          {cloudinaryUrl && !imageError && !isPlaceholderImage(displaySrc) && (
+          {cloudinaryUrl && displaySrc !== PRODUCT_PLACEHOLDER && (
             <div className="optimized-badge" title="Fast loading Cloudinary image">
               ☁️
             </div>
@@ -323,33 +270,10 @@ export default function ProductCard({
               <img
                 src={displaySrc}
                 alt={title || 'Product'}
-                className={`primary-image ${imageLoaded || imageError ? 'loaded' : ''}`}
-                onLoad={() => {
-                  setImageLoaded(true)
-                }}
+                className="primary-image loaded"
                 onError={handleImageError}
                 loading="lazy"
-                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
               />
-
-              {!imageLoaded && !imageError && (
-                <div className="image-skeleton">
-                  <div className="skeleton-shimmer"></div>
-                </div>
-              )}
-
-              {isHovered && !imageError && largeImageUrl && largeImageUrl !== displaySrc && (
-                <img
-                  src={largeImageUrl}
-                  alt={`${title} - detailed view`}
-                  className="hover-image"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null
-                    e.currentTarget.style.display = 'none'
-                  }}
-                />
-              )}
             </div>
           </Link>
 

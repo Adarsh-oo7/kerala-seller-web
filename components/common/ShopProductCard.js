@@ -6,10 +6,7 @@ import axios from 'axios';
 import "../../styles/ShopProductcard.css";
 import {
   firstProductImage,
-  isPlaceholderImage,
-  nextProductImage,
   PRODUCT_PLACEHOLDER,
-  productImageCandidates,
 } from '../../app/lib/productImage';
 import { getBuyerAuthHeaders } from '../../app/lib/buyerAuth';
 
@@ -48,24 +45,16 @@ export default function ShopProductCard({
   showQuickView = false,
   compact = false // For mobile grid view
 }) {
-  const [imageError, setImageError] = useState(false);
   const [localWishlistState, setLocalWishlistState] = useState(isWishlisted);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageSrc, setImageSrc] = useState(firstProductImage(product));
-  const failedImages = useRef(new Set());
-  const imageSettled = useRef(false);
+  const [imageSrc, setImageSrc] = useState(() => firstProductImage(product));
   const productIdRef = useRef(product?.id);
 
   useEffect(() => {
     if (productIdRef.current === product?.id) return;
     productIdRef.current = product?.id;
-    imageSettled.current = false;
-    failedImages.current = new Set();
     setImageSrc(firstProductImage(product));
-    setImageError(false);
-    setImageLoaded(false);
-  }, [product, product?.id, product?.main_image_url]);
+  }, [product, product?.id]);
 
   useEffect(() => {
     setLocalWishlistState(isWishlisted);
@@ -295,32 +284,10 @@ export default function ShopProductCard({
             className="product-image"
             style={styles.productImage}
             loading="lazy"
-            onError={(e) => {
-              const img = e.currentTarget;
-              if (imageSettled.current || isPlaceholderImage(img.src)) {
-                imageSettled.current = true;
-                img.onerror = null;
-                if (!isPlaceholderImage(img.src)) img.src = PRODUCT_PLACEHOLDER;
-                setImageError(true);
-                setImageLoaded(true);
-                return;
-              }
-              const next = nextProductImage(
-                productImageCandidates(product),
-                failedImages.current,
-                img.src,
-              );
-              if (!next) {
-                imageSettled.current = true;
-                img.onerror = null;
-                img.src = PRODUCT_PLACEHOLDER;
-                setImageSrc(PRODUCT_PLACEHOLDER);
-                setImageError(true);
-                setImageLoaded(true);
-                return;
-              }
-              img.src = next;
-              setImageSrc(next);
+            onError={() => {
+              setImageSrc((current) => (
+                current === PRODUCT_PLACEHOLDER ? current : PRODUCT_PLACEHOLDER
+              ));
             }}
           />
         </Link>

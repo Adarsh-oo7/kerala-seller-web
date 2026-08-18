@@ -10,7 +10,7 @@ import Footer from '../../../components/common/Footer';
 import "../../../styles/Keralasellersproductpage.css";
 import { toast } from "react-toastify";
 import { getBuyerAuthHeaders } from '../../lib/buyerAuth';
-import { firstProductImage, isPlaceholderImage, nextProductImage, PRODUCT_PLACEHOLDER, productImageCandidates } from '../../lib/productImage';
+import { firstProductImage, PRODUCT_PLACEHOLDER } from '../../lib/productImage';
 
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw, ChevronLeft, Minus, Plus, ChevronRight, Zap, CreditCard } from 'lucide-react';
 
@@ -66,7 +66,6 @@ function ProductImageGallery({ product }) {
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [isZoomed, setIsZoomed] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
-    const failedImages = useRef(new Set());
 
     // ✅ FIXED: Build main image URLs with same logic as ProductCard
     const getMainImageUrl = () => {
@@ -166,20 +165,7 @@ function ProductImageGallery({ product }) {
                             objectFit: 'contain'
                         }}
                         onLoad={() => setImageLoaded(true)}
-                        onError={(e) => {
-                            const img = e.currentTarget;
-                            if (isPlaceholderImage(img.src)) {
-                                img.onerror = null;
-                                setImageLoaded(true);
-                                return;
-                            }
-                            const next = nextProductImage(
-                                productImageCandidates(product),
-                                failedImages.current,
-                                img.src,
-                            );
-                            img.onerror = next ? img.onerror : null;
-                            img.src = next || PRODUCT_PLACEHOLDER;
+                        onError={() => {
                             setImageLoaded(true);
                         }}
                     />
