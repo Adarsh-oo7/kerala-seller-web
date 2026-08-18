@@ -10,7 +10,7 @@ import Footer from '../../../components/common/Footer';
 import "../../../styles/Keralasellersproductpage.css";
 import { toast } from "react-toastify";
 import { getBuyerAuthHeaders } from '../../lib/buyerAuth';
-import { firstProductImage, normalizeImageUrl, PRODUCT_PLACEHOLDER, productImageCandidates } from '../../lib/productImage';
+import { firstProductImage, isPlaceholderImage, nextProductImage, PRODUCT_PLACEHOLDER, productImageCandidates } from '../../lib/productImage';
 
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw, ChevronLeft, Minus, Plus, ChevronRight, Zap, CreditCard } from 'lucide-react';
 
@@ -167,11 +167,19 @@ function ProductImageGallery({ product }) {
                         }}
                         onLoad={() => setImageLoaded(true)}
                         onError={(e) => {
-                            failedImages.current.add(normalizeImageUrl(e.target.src));
-                            const next = productImageCandidates(product).find(
-                                (url) => !failedImages.current.has(normalizeImageUrl(url)),
+                            const img = e.currentTarget;
+                            if (isPlaceholderImage(img.src)) {
+                                img.onerror = null;
+                                setImageLoaded(true);
+                                return;
+                            }
+                            const next = nextProductImage(
+                                productImageCandidates(product),
+                                failedImages.current,
+                                img.src,
                             );
-                            e.target.src = next || PRODUCT_PLACEHOLDER;
+                            img.onerror = next ? img.onerror : null;
+                            img.src = next || PRODUCT_PLACEHOLDER;
                             setImageLoaded(true);
                         }}
                     />
@@ -220,7 +228,8 @@ function ProductImageGallery({ product }) {
                                         alt={image.alt}
                                         style={styles.thumbnailImage}
                                         onError={(e) => {
-                                            e.target.src = 'https://placehold.co/80x80?text=No+Image';
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = PRODUCT_PLACEHOLDER;
                                         }}
                                     />
                                 </div>

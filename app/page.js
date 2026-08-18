@@ -711,9 +711,9 @@ export default function Home() {
                   padding: '10px 0',
                 }}
               >
-                {filteredProducts.map((product, index) => (
+                {filteredProducts.map((product) => (
                   <div
-                    key={`product-${product.id}-${index}`}
+                    key={product.id}
                     data-product-id={product.id}
                     style={{ flex: '1 0 210px', maxWidth: '220px' }}
                   >
@@ -729,7 +729,7 @@ export default function Home() {
                       thumbnailUrl={product.thumbnail_url}
                       largeImageUrl={product.large_image_url}
                       cloudinaryUrl={product.cloudinary_url}
-                      subImages={product.sub_images || []}
+                      subImages={product.sub_images}
                       hoverImage={
                         product.sub_images?.[0]?.image_url ||
                         product.images?.[1]?.url ||

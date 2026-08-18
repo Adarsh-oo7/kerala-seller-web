@@ -6,9 +6,10 @@ import axios from 'axios';
 import "../../styles/ShopProductcard.css";
 import {
   firstProductImage,
+  isPlaceholderImage,
+  nextProductImage,
   PRODUCT_PLACEHOLDER,
   productImageCandidates,
-  normalizeImageUrl,
 } from '../../app/lib/productImage';
 import { getBuyerAuthHeaders } from '../../app/lib/buyerAuth';
 
@@ -53,12 +54,18 @@ export default function ShopProductCard({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageSrc, setImageSrc] = useState(firstProductImage(product));
   const failedImages = useRef(new Set());
+  const imageSettled = useRef(false);
+  const productIdRef = useRef(product?.id);
 
   useEffect(() => {
+    if (productIdRef.current === product?.id) return;
+    productIdRef.current = product?.id;
+    imageSettled.current = false;
     failedImages.current = new Set();
     setImageSrc(firstProductImage(product));
     setImageError(false);
-  }, [product?.id, product?.main_image_url]);
+    setImageLoaded(false);
+  }, [product, product?.id, product?.main_image_url]);
 
   useEffect(() => {
     setLocalWishlistState(isWishlisted);
@@ -289,12 +296,31 @@ export default function ShopProductCard({
             style={styles.productImage}
             loading="lazy"
             onError={(e) => {
-              failedImages.current.add(normalizeImageUrl(e.target.src));
-              const next = productImageCandidates(product).find(
-                (url) => !failedImages.current.has(normalizeImageUrl(url)),
+              const img = e.currentTarget;
+              if (imageSettled.current || isPlaceholderImage(img.src)) {
+                imageSettled.current = true;
+                img.onerror = null;
+                if (!isPlaceholderImage(img.src)) img.src = PRODUCT_PLACEHOLDER;
+                setImageError(true);
+                setImageLoaded(true);
+                return;
+              }
+              const next = nextProductImage(
+                productImageCandidates(product),
+                failedImages.current,
+                img.src,
               );
-              setImageSrc(next || PRODUCT_PLACEHOLDER);
-              if (!next) setImageError(true);
+              if (!next) {
+                imageSettled.current = true;
+                img.onerror = null;
+                img.src = PRODUCT_PLACEHOLDER;
+                setImageSrc(PRODUCT_PLACEHOLDER);
+                setImageError(true);
+                setImageLoaded(true);
+                return;
+              }
+              img.src = next;
+              setImageSrc(next);
             }}
           />
         </Link>

@@ -1,11 +1,4 @@
-export const PRODUCT_PLACEHOLDER =
-  'data:image/svg+xml;charset=UTF-8,' +
-  encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
-  <rect width="400" height="400" fill="#F3F6F5"/>
-  <rect x="118" y="108" width="164" height="184" rx="18" fill="#175E54" opacity="0.12"/>
-  <circle cx="212" cy="168" r="16" fill="#175E54" opacity="0.28"/>
-  <path d="M152 268h96l-28-84-22 48-14-26z" fill="#175E54" opacity="0.4"/>
-</svg>`);
+export const PRODUCT_PLACEHOLDER = '/placeholder.svg';
 
 function pushUrl(list, value) {
   if (!value || typeof value !== 'string') return;
@@ -57,4 +50,34 @@ export function normalizeImageUrl(url) {
   } catch {
     return String(url || '');
   }
+}
+
+export function isPlaceholderImage(url) {
+  const value = String(url || '');
+  return (
+    !value ||
+    value.startsWith('data:image/') ||
+    value.includes('placeholder.svg') ||
+    value.includes('placehold.co')
+  );
+}
+
+export function cloudinaryAssetKey(url) {
+  const path = normalizeImageUrl(url);
+  const match = path.match(/\/upload\/(?:v\d+\/)?(.+)$/);
+  if (!match) return path;
+  return match[1].replace(/\.[a-zA-Z0-9]+$/, '');
+}
+
+export function nextProductImage(candidates, failedSet, failedSrc) {
+  const failed = String(failedSrc || '');
+  failedSet.add(normalizeImageUrl(failed));
+  failedSet.add(cloudinaryAssetKey(failed));
+
+  return (candidates || []).find((url) => {
+    if (!url || isPlaceholderImage(url)) return false;
+    if (failedSet.has(normalizeImageUrl(url))) return false;
+    if (failedSet.has(cloudinaryAssetKey(url))) return false;
+    return true;
+  }) || null;
 }

@@ -1,10 +1,16 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Heart, Star, ShoppingCart, Ban } from "lucide-react"
 import Link from "next/link"
 import "../../styles/ProductCard.css";
-import { firstProductImage, normalizeImageUrl, PRODUCT_PLACEHOLDER, productImageCandidates } from "../../app/lib/productImage";
+import {
+  firstProductImage,
+  isPlaceholderImage,
+  nextProductImage,
+  PRODUCT_PLACEHOLDER,
+  productImageCandidates,
+} from "../../app/lib/productImage";
 
 export default function ProductCard({
   id,
@@ -32,7 +38,7 @@ export default function ProductCard({
   discountPercentage,
   isInStock,
   canBePurchasedOnline,
-  subImages = [],
+  subImages,
 }) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
@@ -40,22 +46,32 @@ export default function ProductCard({
   const [touchStarted, setTouchStarted] = useState(false)
   const [wishlistState, setWishlistState] = useState(isWishlisted)
   const [localWishlistLoading, setLocalWishlistLoading] = useState(false)
-  const imageCandidates = productImageCandidates({
-    cloudinary_url: cloudinaryUrl,
-    main_image_url: primaryImage,
-    thumbnail_url: thumbnailUrl,
-    large_image_url: largeImageUrl,
-    sub_images: subImages,
-  })
+  const imageCandidates = useMemo(
+    () => productImageCandidates({
+      cloudinary_url: cloudinaryUrl,
+      main_image_url: primaryImage,
+      thumbnail_url: thumbnailUrl,
+      large_image_url: largeImageUrl,
+      sub_images: subImages,
+    }),
+    [cloudinaryUrl, primaryImage, thumbnailUrl, largeImageUrl, subImages],
+  )
   const [displaySrc, setDisplaySrc] = useState(imageCandidates[0] || PRODUCT_PLACEHOLDER)
   const failedImages = useRef(new Set())
+  const imageSettled = useRef(false)
+  const candidatesRef = useRef(imageCandidates)
+  const productIdRef = useRef(id)
+  candidatesRef.current = imageCandidates
 
   useEffect(() => {
+    if (productIdRef.current === id) return
+    productIdRef.current = id
+    imageSettled.current = false
     failedImages.current = new Set()
     setDisplaySrc(imageCandidates[0] || PRODUCT_PLACEHOLDER)
     setImageLoaded(false)
     setImageError(false)
-  }, [imageCandidates.join('|')])
+  }, [id, imageCandidates])
 
   // ✅ Sync with parent state
   useEffect(() => {
@@ -195,13 +211,29 @@ export default function ProductCard({
   }
 
   const handleImageError = (e) => {
-    const failed = normalizeImageUrl(e.target.src)
-    failedImages.current.add(failed)
-    const next = imageCandidates.find((url) => !failedImages.current.has(normalizeImageUrl(url)))
-    const fallback = next || PRODUCT_PLACEHOLDER
-    if (normalizeImageUrl(fallback) === failed) return
-    setDisplaySrc(fallback)
-    if (!next) setImageError(true)
+    const img = e.currentTarget
+    if (imageSettled.current || isPlaceholderImage(img.src)) {
+      imageSettled.current = true
+      img.onerror = null
+      if (!isPlaceholderImage(img.src)) img.src = PRODUCT_PLACEHOLDER
+      setImageLoaded(true)
+      setImageError(true)
+      return
+    }
+
+    const next = nextProductImage(candidatesRef.current, failedImages.current, img.src)
+    if (!next) {
+      imageSettled.current = true
+      img.onerror = null
+      img.src = PRODUCT_PLACEHOLDER
+      setDisplaySrc(PRODUCT_PLACEHOLDER)
+      setImageLoaded(true)
+      setImageError(true)
+      return
+    }
+
+    img.src = next
+    setDisplaySrc(next)
   }
 
   // ✅ Determine stock status
@@ -256,7 +288,7 @@ export default function ProductCard({
           )}
 
           {/* ✅ Optimized badge for Cloudinary images */}
-          {cloudinaryUrl && (
+          {cloudinaryUrl && !imageError && !isPlaceholderImage(displaySrc) && (
             <div className="optimized-badge" title="Fast loading Cloudinary image">
               ☁️
             </div>
@@ -291,7 +323,7 @@ export default function ProductCard({
               <img
                 src={displaySrc}
                 alt={title || 'Product'}
-                className={`primary-image ${imageLoaded ? 'loaded' : ''}`}
+                className={`primary-image ${imageLoaded || imageError ? 'loaded' : ''}`}
                 onLoad={() => {
                   setImageLoaded(true)
                 }}
@@ -306,13 +338,16 @@ export default function ProductCard({
                 </div>
               )}
 
-              {/* Hover effect with large image */}
-              {isHovered && largeImageUrl && largeImageUrl !== getBestImageUrl() && (
+              {isHovered && !imageError && largeImageUrl && largeImageUrl !== displaySrc && (
                 <img
                   src={largeImageUrl}
                   alt={`${title} - detailed view`}
                   className="hover-image"
                   loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null
+                    e.currentTarget.style.display = 'none'
+                  }}
                 />
               )}
             </div>
