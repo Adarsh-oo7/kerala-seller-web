@@ -1,16 +1,19 @@
+'use client';
+
 import React from "react";
 import { Facebook, Instagram, Youtube } from "lucide-react";
+import Link from "next/link";
 
 
 export default function Footer() {
   return (
     <footer className="footer">
-      <div className="footer-left">© 2025 DPS</div>
+      <div className="footer-left">© {new Date().getFullYear()} Kerala Sellers</div>
       <nav className="footer-links">
-        <a href="#">Privacy policy</a>
-        <a href="#">Terms and Conditions</a>
-        <a href="#">Cancellation and Refund</a>
-        <a href="#">Shipping and Delivery</a>
+        <Link href="/privacy-policy">Privacy policy</Link>
+        <Link href="/terms-and-conditions">Terms and Conditions</Link>
+        <Link href="/cancellation-refund">Cancellation and Refund</Link>
+        <Link href="/shipping-delivery">Shipping and Delivery</Link>
       </nav>
       <div className="footer-socials">
         <a href="https://www.facebook.com/profile.php?id=61579701681445" target="blank" aria-label="Facebook">

@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import "../../../../styles/DashboardSettings.css"
 import { Upload, Check, AlertCircle, Star, Building, Save, Image as ImageIcon, Trash2, X, Settings } from 'lucide-react';
 
@@ -303,10 +304,25 @@ export default function SettingsPage() {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Settings className='dashboardsettingspackageicon' style={{ marginBottom: '5px' }} size={28} color="#1a4845" />
-            <h1 className='dashboardsettingspagetitle' style={s.t}>Store Settings</h1>
+            <h1 className='dashboardsettingspagetitle' style={s.t}>Basic settings</h1>
           </div>
-          <p className='dashboardsettingspagesubtitle' style={s.st}>Manage your store info & media</p>
+          <p className='dashboardsettingspagesubtitle' style={s.st}>Shop name, logo, WhatsApp, and banners</p>
         </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
+        <div style={{ border: '2px solid #175E54', borderRadius: 12, padding: 14, background: '#f0fdf4' }}>
+          <strong>Basic settings</strong>
+          <p style={{ margin: '6px 0 0', color: '#4b5563', fontSize: 13 }}>This page</p>
+        </div>
+        <Link href="/dashboard/seller/homepage-listing" style={{ textDecoration: 'none', color: 'inherit', border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, background: 'white' }}>
+          <strong>Advanced settings</strong>
+          <p style={{ margin: '6px 0 0', color: '#4b5563', fontSize: 13 }}>Verification, home listing, and shop policies</p>
+        </Link>
+        <Link href="/dashboard/seller/products/delivery-settings" style={{ textDecoration: 'none', color: 'inherit', border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, background: 'white' }}>
+          <strong>Delivery settings</strong>
+          <p style={{ margin: '6px 0 0', color: '#4b5563', fontSize: 13 }}>Free delivery, or charge by weight</p>
+        </Link>
       </div>
 
 

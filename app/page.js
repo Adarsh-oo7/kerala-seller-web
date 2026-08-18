@@ -471,8 +471,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchCategories();
-    // fetchProducts(1); // âŒ COMMENTED OUT - Not fetching products anymore
-    setIsLoading(false); // âœ… Set loading to false immediately
+    fetchProducts(1);
   }, [fetchCategories]);
 
   const loadMoreProducts = useCallback(() => {

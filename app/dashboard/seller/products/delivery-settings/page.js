@@ -1,738 +1,359 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { 
-  Truck, DollarSign, Package, AlertCircle, CheckCircle,
-  Eye, Save, RefreshCw, Info, Ban, Layers, Scale, Plus, Trash2
-} from 'lucide-react';
+import Link from 'next/link';
+import { AlertCircle, BadgeCheck, Check, Truck } from 'lucide-react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-  ('https://api.keralasellers.in');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
+
+const EASY_BANDS = [
+  { key: 'light', title: 'Light', hint: 'Up to 1 kg', min: 0, max: 1, defaultPrice: 50 },
+  { key: 'medium', title: 'Medium', hint: '1 kg to 3 kg', min: 1, max: 3, defaultPrice: 80 },
+  { key: 'heavy', title: 'Heavy', hint: 'Above 3 kg', min: 3, max: null, defaultPrice: 120 },
+];
+
+function toNum(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function isOpenEnded(slab) {
+  return slab?.max_weight_kg == null || slab.max_weight_kg === '';
+}
+
+function detectMode(slabs) {
+  if (
+    slabs.length === 1 &&
+    toNum(slabs[0].min_weight_kg) === 0 &&
+    isOpenEnded(slabs[0]) &&
+    slabs[0].pricing_type === 'FIXED'
+  ) {
+    return 'flat';
+  }
+  return 'weight';
+}
+
+function authHeaders() {
+  const token = localStorage.getItem('accessToken') || localStorage.getItem('sellerAccessToken');
+  return token ? { Authorization: `Bearer ${token}` } : null;
+}
+
+function previewCharge(weightKg, subtotal, config, slabs) {
+  if (!config.enabled || slabs.length === 0) return 0;
+  const freeAbove = toNum(config.free_delivery_above);
+  if (freeAbove > 0 && subtotal >= freeAbove) return 0;
+  const match = [...slabs]
+    .sort((a, b) => toNum(a.min_weight_kg) - toNum(b.min_weight_kg))
+    .find((slab) => {
+      const min = toNum(slab.min_weight_kg);
+      const max = isOpenEnded(slab) ? null : toNum(slab.max_weight_kg);
+      return weightKg >= min && (max == null || weightKg <= max);
+    });
+  if (!match) return toNum(config.fallback_flat_charge);
+  return toNum(match.fixed_price);
+}
 
 export default function DeliverySettingsPage() {
-  // State management
-  const [mode, setMode] = useState('slab');
   const [config, setConfig] = useState({
     enabled: false,
-    fallback_flat_charge: null,
-    cod_extra_charge: 0.00,
-    free_delivery_above: 0.00,
+    fallback_flat_charge: 50,
+    cod_extra_charge: 0,
+    free_delivery_above: 0,
   });
-  const [slabs, setSlabs] = useState([]);
+  const [mode, setMode] = useState('weight');
+  const [flatPrice, setFlatPrice] = useState('50');
+  const [bandPrices, setBandPrices] = useState(['50', '80', '120']);
+  const [savedSlabs, setSavedSlabs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
-  const [preview, setPreview] = useState([]);
 
-  useEffect(() => {
-    fetchAllData();
-  }, []);
+  const freeDelivery = !config.enabled;
 
-  const fetchAllData = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
-      
-      if (!token) {
-        setError('âš ï¸ Not logged in. Please login to manage delivery settings.');
-        setLoading(false);
-        return;
-      }
-
-      const [configRes, slabsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/user/store/delivery-slabs/config/`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${API_BASE_URL}/user/store/delivery-slabs/slabs/`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ]);
-
-      setConfig(configRes.data);
-      setSlabs(slabsRes.data);
-      setMode(configRes.data.enabled ? 'slab' : 'legacy');
-      setLoading(false);
-    } catch (err) {
-      console.error('Failed to fetch delivery data:', err);
-      
-      // âœ… Better error messages
-      if (err.response?.status === 401) {
-        setError('ðŸ”’ Session expired. Please login again.');
-      } else if (err.response?.status === 403) {
-        setError('â›” You don\'t have permission to access delivery settings.');
-      } else if (err.response?.status === 404) {
-        setError('âŒ Delivery settings endpoint not found. Contact support.');
-      } else if (!err.response) {
-        setError('ðŸŒ Network error. Check your internet connection.');
-      } else {
-        setError(`âš ï¸ Failed to load settings: ${err.response?.data?.error || err.message}`);
-      }
-      setLoading(false);
+  const slabs = useMemo(() => {
+    if (freeDelivery) return [];
+    if (mode === 'flat') {
+      const existing = savedSlabs[0];
+      return [{
+        id: typeof existing?.id === 'number' ? existing.id : `temp_flat`,
+        min_weight_kg: 0,
+        max_weight_kg: null,
+        pricing_type: 'FIXED',
+        fixed_price: toNum(flatPrice, 50),
+        is_new: typeof existing?.id !== 'number',
+      }];
     }
-  };
+    return EASY_BANDS.map((band, index) => {
+      const match = savedSlabs.find((slab) => toNum(slab.min_weight_kg) === band.min) || savedSlabs[index];
+      return {
+        id: typeof match?.id === 'number' ? match.id : `temp_${band.key}`,
+        min_weight_kg: band.min,
+        max_weight_kg: band.max,
+        pricing_type: 'FIXED',
+        fixed_price: toNum(bandPrices[index], band.defaultPrice),
+        is_new: typeof match?.id !== 'number',
+      };
+    });
+  }, [bandPrices, flatPrice, freeDelivery, mode, savedSlabs]);
 
-  const handleConfigChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setConfig(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : (value === '' ? null : parseFloat(value))
-    }));
-    setError(''); // Clear errors on change
-  };
-
-  const addSlab = () => {
-    const lastSlab = slabs[slabs.length - 1];
-    const newMin = lastSlab ? (lastSlab.max_weight_kg || 5) : 0;
-    
-    setSlabs([...slabs, {
-      id: `temp_${Date.now()}`,
-      min_weight_kg: newMin,
-      max_weight_kg: newMin + 1,
-      pricing_type: 'FIXED',
-      fixed_price: 50,
-      price_per_kg: 0,
-      base_fee: 0,
-      is_new: true
-    }]);
-    setError(''); // Clear errors
-  };
-
-  const updateSlab = (index, field, value) => {
-    const updated = [...slabs];
-    updated[index] = { ...updated[index], [field]: value === '' ? null : parseFloat(value) || value };
-    setSlabs(updated);
-    setError(''); // Clear errors
-  };
-
-  const removeSlab = async (index) => {
-    const slab = slabs[index];
-    
-    // If it's a new unsaved slab, just remove from UI
-    if (slab.is_new || String(slab.id).startsWith('temp_')) {
-      setSlabs(slabs.filter((_, i) => i !== index));
+  const load = async () => {
+    const headers = authHeaders();
+    if (!headers) {
+      setError('Please login to manage delivery settings.');
+      setLoading(false);
       return;
     }
-
-    // âœ… Delete from server
     try {
-      const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
-      await axios.delete(`${API_BASE_URL}/user/store/delivery-slabs/${slab.id}/delete_slab/`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const [configRes, slabsRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/user/store/delivery-slabs/config/`, { headers }),
+        axios.get(`${API_BASE_URL}/user/store/delivery-slabs/slabs/`, { headers }),
+      ]);
+      const nextSlabs = Array.isArray(slabsRes.data) ? slabsRes.data : [];
+      const enabled = Boolean(configRes.data.enabled);
+      setConfig({
+        enabled,
+        fallback_flat_charge: configRes.data.fallback_flat_charge ?? 50,
+        cod_extra_charge: configRes.data.cod_extra_charge ?? 0,
+        free_delivery_above: configRes.data.free_delivery_above ?? 0,
       });
-      
-      setSlabs(slabs.filter((_, i) => i !== index));
-      setSuccess('âœ… Slab deleted successfully');
-      setTimeout(() => setSuccess(''), 2000);
+      setSavedSlabs(nextSlabs);
+      if (enabled) {
+        const nextMode = detectMode(nextSlabs);
+        setMode(nextMode);
+        if (nextMode === 'flat') {
+          setFlatPrice(String(toNum(nextSlabs[0]?.fixed_price, 50)));
+        } else {
+          setBandPrices(
+            EASY_BANDS.map((band, index) => {
+              const match = nextSlabs.find((slab) => toNum(slab.min_weight_kg) === band.min) || nextSlabs[index];
+              const price = toNum(match?.fixed_price, band.defaultPrice);
+              return String(price > 0 ? price : band.defaultPrice);
+            }),
+          );
+        }
+      }
     } catch (err) {
-      setError(`âŒ Failed to delete slab: ${err.response?.data?.error || err.message}`);
+      setError(err.response?.data?.error || 'Could not load delivery settings.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const saveSettings = async () => {
-    try {
-      setSaving(true);
-      setError('');
-      setSuccess('');
-      
-      const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
+  useEffect(() => {
+    load();
+  }, []);
 
-      if (!token) {
-        setError('ðŸ”’ Not logged in. Please login to save settings.');
-        setSaving(false);
-        return;
+  const previews = [
+    { label: 'One light item (0.5 kg)', weight: 0.5, subtotal: 400 },
+    { label: 'Two items together (1.5 kg)', weight: 1.5, subtotal: 800 },
+    { label: 'A heavy order (4 kg)', weight: 4, subtotal: 1500 },
+  ].map((row) => ({
+    ...row,
+    charge: previewCharge(row.weight, row.subtotal, { ...config, enabled: true }, slabs),
+  }));
+
+  const persistSlabs = async (nextSlabs, headers) => {
+    const keepIds = new Set(
+      nextSlabs.map((slab) => slab.id).filter((id) => typeof id === 'number'),
+    );
+    const existingRes = await axios.get(`${API_BASE_URL}/user/store/delivery-slabs/slabs/`, { headers });
+    const existing = Array.isArray(existingRes.data) ? existingRes.data : [];
+    for (const slab of existing) {
+      if (slab.id && !keepIds.has(Number(slab.id))) {
+        await axios.delete(`${API_BASE_URL}/user/store/delivery-slabs/${slab.id}/delete_slab/`, { headers });
       }
-
-      // âœ… Validation
-      if (mode === 'slab' && slabs.length === 0) {
-        setError('âš ï¸ Add at least one weight slab or switch to Legacy mode.');
-        setSaving(false);
-        return;
-      }
-
-      // Validate slab ranges
-      for (let i = 0; i < slabs.length; i++) {
-        const slab = slabs[i];
-        if (slab.min_weight_kg < 0) {
-          setError(`âš ï¸ Slab ${i + 1}: Minimum weight cannot be negative.`);
-          setSaving(false);
-          return;
-        }
-        if (slab.max_weight_kg !== null && slab.max_weight_kg <= slab.min_weight_kg) {
-          setError(`âš ï¸ Slab ${i + 1}: Maximum weight must be greater than minimum.`);
-          setSaving(false);
-          return;
-        }
-        if (slab.pricing_type === 'FIXED' && slab.fixed_price <= 0) {
-          setError(`âš ï¸ Slab ${i + 1}: Fixed price must be greater than 0.`);
-          setSaving(false);
-          return;
-        }
-        if (slab.pricing_type === 'PER_KG' && slab.price_per_kg <= 0) {
-          setError(`âš ï¸ Slab ${i + 1}: Price per kg must be greater than 0.`);
-          setSaving(false);
-          return;
-        }
-      }
-
-      // Save config
-      await axios.post(`${API_BASE_URL}/user/store/delivery-slabs/update_config/`, {
-        ...config,
-        enabled: mode === 'slab'
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      // Save/update slabs
-      let createdCount = 0;
-      let updatedCount = 0;
-
-      for (const slab of slabs) {
-        if (slab.is_new || String(slab.id).startsWith('temp_')) {
-          await axios.post(`${API_BASE_URL}/user/store/delivery-slabs/create_slab/`, {
-            min_weight_kg: slab.min_weight_kg,
-            max_weight_kg: slab.max_weight_kg,
-            pricing_type: slab.pricing_type,
-            fixed_price: slab.pricing_type === 'FIXED' ? slab.fixed_price : 0,
-            price_per_kg: slab.pricing_type === 'PER_KG' ? slab.price_per_kg : 0,
-            base_fee: slab.pricing_type === 'PER_KG' ? slab.base_fee : 0
-          }, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          createdCount++;
-        } else {
-          await axios.patch(`${API_BASE_URL}/user/store/delivery-slabs/${slab.id}/update_slab/`, {
-            min_weight_kg: slab.min_weight_kg,
-            max_weight_kg: slab.max_weight_kg,
-            pricing_type: slab.pricing_type,
-            fixed_price: slab.pricing_type === 'FIXED' ? slab.fixed_price : 0,
-            price_per_kg: slab.pricing_type === 'PER_KG' ? slab.price_per_kg : 0,
-            base_fee: slab.pricing_type === 'PER_KG' ? slab.base_fee : 0
-          }, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          updatedCount++;
-        }
-      }
-
-      setSuccess(`âœ… Settings saved! ${createdCount > 0 ? `Created ${createdCount} slab(s). ` : ''}${updatedCount > 0 ? `Updated ${updatedCount} slab(s).` : ''}`);
-      setTimeout(() => setSuccess(''), 5000);
-      fetchAllData();
-      
-    } catch (err) {
-      console.error('Save error:', err);
-      
-      // âœ… Better error messages
-      if (err.response?.status === 401) {
-        setError('ðŸ”’ Session expired. Please login again.');
-      } else if (err.response?.status === 403) {
-        setError('â›” You don\'t have permission to save delivery settings.');
-      } else if (err.response?.status === 400) {
-        setError(`âš ï¸ Validation error: ${err.response?.data?.error || 'Check your input values.'}`);
-      } else if (!err.response) {
-        setError('ðŸŒ Network error. Check your internet connection.');
+    }
+    for (let index = 0; index < nextSlabs.length; index += 1) {
+      const slab = nextSlabs[index];
+      const payload = {
+        min_weight_kg: toNum(slab.min_weight_kg),
+        max_weight_kg: slab.max_weight_kg == null ? null : toNum(slab.max_weight_kg),
+        pricing_type: 'FIXED',
+        fixed_price: toNum(slab.fixed_price),
+        price_per_kg: 0,
+        base_fee: 0,
+        sort_order: index,
+      };
+      if (slab.is_new || String(slab.id).startsWith('temp_')) {
+        await axios.post(`${API_BASE_URL}/user/store/delivery-slabs/create_slab/`, payload, { headers });
       } else {
-        setError(`âŒ Failed to save: ${err.response?.data?.error || err.message}`);
+        await axios.patch(`${API_BASE_URL}/user/store/delivery-slabs/${slab.id}/update_slab/`, payload, { headers });
       }
+    }
+  };
+
+  const save = async () => {
+    const headers = authHeaders();
+    if (!headers) {
+      setError('Please login to save.');
+      return;
+    }
+    if (!freeDelivery) {
+      if (mode === 'flat' && toNum(flatPrice) <= 0) {
+        setError('Enter the amount buyers should pay for delivery.');
+        return;
+      }
+      if (mode === 'weight' && bandPrices.some((price) => toNum(price) <= 0)) {
+        setError('Enter a delivery charge for light, medium, and heavy orders.');
+        return;
+      }
+    }
+    setSaving(true);
+    setError('');
+    setSuccess('');
+    try {
+      const fallback = mode === 'flat' ? toNum(flatPrice, 50) : toNum(bandPrices[2], 120);
+      await axios.post(`${API_BASE_URL}/user/store/delivery-slabs/update_config/`, {
+        enabled: !freeDelivery,
+        fallback_flat_charge: fallback,
+        cod_extra_charge: toNum(config.cod_extra_charge, 0),
+        free_delivery_above: toNum(config.free_delivery_above, 0),
+      }, { headers });
+      if (!freeDelivery) await persistSlabs(slabs, headers);
+      setSuccess(
+        freeDelivery
+          ? 'Buyers are not charged extra delivery.'
+          : mode === 'flat'
+            ? `Every order adds ₹${toNum(flatPrice)} delivery. Several products still pay this once.`
+            : 'Checkout adds every product’s packed weight, then uses light, medium, or heavy.',
+      );
+      await load();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not save delivery settings.');
     } finally {
       setSaving(false);
     }
   };
 
-  const calculatePreview = async () => {
-    try {
-      setError('');
-      const token = localStorage.getItem('sellerAccessToken') || localStorage.getItem('accessToken');
-      
-      if (!token) {
-        setError('ðŸ”’ Please login to preview delivery charges.');
-        return;
-      }
-
-      if (mode === 'slab' && slabs.length === 0) {
-        setError('âš ï¸ No slabs configured. Add slabs or switch to Legacy mode.');
-        return;
-      }
-
-      const scenarios = [
-        { cart_total: 300, total_weight_kg: 0.5, is_cod: false, label: 'Small (₹300, 0.5kg)' },
-        { cart_total: 300, total_weight_kg: 0.5, is_cod: true, label: 'Small + COD' },
-        { cart_total: 1000, total_weight_kg: 2, is_cod: false, label: 'Medium (₹1000, 2kg)' },
-        { cart_total: 1500, total_weight_kg: 6, is_cod: true, label: 'Heavy (₹1500, 6kg) + COD' }
-      ];
-
-      const results = await Promise.all(scenarios.map(async scenario => {
-        try {
-          const res = await axios.post(`${API_BASE_URL}/user/store/delivery-slabs/calculate/`, scenario, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          return { ...scenario, ...res.data, error: null };
-        } catch (err) {
-          return { 
-            ...scenario, 
-            delivery_charge: 'N/A', 
-            method: 'error',
-            error: err.response?.data?.error || 'Calculation failed'
-          };
-        }
-      }));
-
-      setPreview(results);
-      setShowPreview(true);
-      
-    } catch (err) {
-      console.error('Preview error:', err);
-      setError(`âŒ Preview failed: ${err.message}. Make sure your settings are saved first.`);
-    }
-  };
-
   if (loading) {
-    return (
-      <div style={styles.loadingContainer}>
-        <RefreshCw size={40} className="animate-spin" />
-        <p>Loading delivery settings...</p>
-        <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
+    return <div style={styles.wrap}><p>Loading delivery settings…</p></div>;
   }
 
   return (
-    <div style={styles.pageContainer}>
-      {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerLeft}>
-          <Truck size={28} style={{ color: '#059669' }} />
-          <div>
-            <h1 style={styles.pageTitle}>Delivery Settings</h1>
-            <p style={styles.pageSubtitle}>
-              {mode === 'slab' ? 'Weight Slab Mode (Advanced)' : 'Legacy Mode'}
-            </p>
-          </div>
-        </div>
-        <button onClick={fetchAllData} style={styles.refreshBtn} title="Refresh settings">
-          <RefreshCw size={16} />
-        </button>
-      </div>
+    <div style={styles.wrap}>
+      <h1 style={styles.title}><Truck size={22} /> Delivery settings</h1>
+      <p style={styles.lead}>
+        Same as the seller app. Start with free delivery. Add a charge only if you need it.
+      </p>
 
-      <div style={styles.contentGrid}>
-        {/* Main Card */}
-        <div style={styles.card}>
-          {/* Mode Toggle */}
-          <div style={styles.modeToggle}>
-            <button 
-              style={{
-                ...styles.toggleBtn,
-                backgroundColor: mode === 'slab' ? '#059669' : '#e5e7eb',
-                color: mode === 'slab' ? 'white' : '#374151'
-              }}
-              onClick={() => { setMode('slab'); setError(''); }}
-            >
-              <Layers size={16} /> Weight Slabs
+      <label style={styles.switchRow}>
+        <span>
+          <strong>Free delivery</strong>
+          <span style={styles.hint}>Recommended. Buyers pay only for products.</span>
+        </span>
+        <input
+          type="checkbox"
+          checked={freeDelivery}
+          onChange={(event) => setConfig((current) => ({ ...current, enabled: !event.target.checked }))}
+        />
+      </label>
+
+      {freeDelivery ? (
+        <p style={styles.ok}><BadgeCheck size={16} /> No extra delivery charge. One item or many items, delivery stays free.</p>
+      ) : (
+        <>
+          <p style={styles.section}>How should buyers be charged?</p>
+          <div style={styles.modes}>
+            <button type="button" style={mode === 'flat' ? styles.modeOn : styles.modeOff} onClick={() => setMode('flat')}>
+              One charge for all orders
             </button>
-            <button 
-              style={{
-                ...styles.toggleBtn,
-                backgroundColor: mode === 'legacy' ? '#059669' : '#e5e7eb',
-                color: mode === 'legacy' ? 'white' : '#374151'
-              }}
-              onClick={() => { setMode('legacy'); setError(''); }}
-            >
-              <DollarSign size={16} /> Legacy Mode
+            <button type="button" style={mode === 'weight' ? styles.modeOn : styles.modeOff} onClick={() => setMode('weight')}>
+              Charge by total weight
             </button>
           </div>
 
-          {/* Slab Mode */}
-          {mode === 'slab' && (
+          {mode === 'flat' ? (
             <>
-              <h2 style={styles.cardTitle}><Scale size={20} /> Slab Configuration</h2>
-              
-              {/* Global Settings */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>
-                  Free Delivery Above
-                  <span style={styles.labelHint}>(0 to disable)</span>
-                </label>
-                <div style={styles.inputWrapper}>
-                  <span style={styles.inputPrefix}>₹</span>
+              <p style={styles.info}>If a buyer buys 3 products, they still pay this delivery amount once — not 3 times.</p>
+              <label style={styles.label}>Delivery charge
+                <input value={flatPrice} onChange={(e) => setFlatPrice(e.target.value)} style={styles.input} type="number" min="1" />
+              </label>
+            </>
+          ) : (
+            <>
+              <p style={styles.info}>
+                Two 0.6 kg products become 1.2 kg, so the medium charge is used. Add packed weight on each product.
+              </p>
+              {EASY_BANDS.map((band, index) => (
+                <label key={band.key} style={styles.label}>
+                  {band.title} · {band.hint}
                   <input
-                    type="number"
-                    name="free_delivery_above"
-                    value={config.free_delivery_above || ''}
-                    onChange={handleConfigChange}
+                    value={bandPrices[index]}
+                    onChange={(event) => setBandPrices((current) => current.map((price, i) => (i === index ? event.target.value : price)))}
                     style={styles.input}
-                    placeholder="0"
-                    min="0"
-                    step="0.01"
+                    type="number"
+                    min="1"
                   />
-                </div>
-              </div>
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>
-                  COD Extra Charge
-                  <span style={styles.labelHint}>(Added to all COD orders)</span>
                 </label>
-                <div style={styles.inputWrapper}>
-                  <span style={styles.inputPrefix}>₹</span>
-                  <input
-                    type="number"
-                    name="cod_extra_charge"
-                    value={config.cod_extra_charge || ''}
-                    onChange={handleConfigChange}
-                    style={styles.input}
-                    placeholder="0"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-              </div>
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>
-                  Fallback Charge
-                  <span style={styles.labelHint}>(When no slab matches)</span>
-                </label>
-                <div style={styles.inputWrapper}>
-                  <span style={styles.inputPrefix}>₹</span>
-                  <input
-                    type="number"
-                    name="fallback_flat_charge"
-                    value={config.fallback_flat_charge || ''}
-                    onChange={handleConfigChange}
-                    style={styles.input}
-                    placeholder="Optional"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <small style={styles.helpText}>
-                  â„¹ï¸ Recommended: Set a fallback to handle edge cases
-                </small>
-              </div>
-
-              {/* Slabs */}
-              <div style={styles.slabsSection}>
-                <div style={styles.sectionHeader}>
-                  <h3 style={styles.sectionTitle}>Weight Slabs ({slabs.length})</h3>
-                  <button onClick={addSlab} style={styles.addBtn}>
-                    <Plus size={16} /> Add Slab
-                  </button>
-                </div>
-
-                {slabs.length === 0 ? (
-                  <div style={styles.emptyState}>
-                    <Package size={48} style={{ opacity: 0.5 }} />
-                    <p style={{ marginTop: '16px', fontSize: '14px' }}>
-                      No slabs configured yet
-                    </p>
-                    <button onClick={addSlab} style={{...styles.addBtn, marginTop: '12px'}}>
-                      <Plus size={16} /> Add Your First Slab
-                    </button>
-                  </div>
-                ) : (
-                  <div style={styles.slabsList}>
-                    {slabs.map((slab, idx) => (
-                      <div key={slab.id} style={styles.slabRow}>
-                        <div style={styles.slabInputs}>
-                          <input
-                            type="number"
-                            value={slab.min_weight_kg}
-                            onChange={(e) => updateSlab(idx, 'min_weight_kg', e.target.value)}
-                            style={styles.slabInput}
-                            placeholder="Min kg"
-                            min="0"
-                            step="0.1"
-                          />
-                          <span>to</span>
-                          <input
-                            type="number"
-                            value={slab.max_weight_kg || ''}
-                            onChange={(e) => updateSlab(idx, 'max_weight_kg', e.target.value)}
-                            style={styles.slabInput}
-                            placeholder="Max (âˆž)"
-                            min={slab.min_weight_kg}
-                            step="0.1"
-                          />
-                        </div>
-
-                        <select
-                          value={slab.pricing_type}
-                          onChange={(e) => updateSlab(idx, 'pricing_type', e.target.value)}
-                          style={styles.select}
-                        >
-                          <option value="FIXED">Fixed ₹</option>
-                          <option value="PER_KG">₹/kg</option>
-                        </select>
-
-                        {slab.pricing_type === 'FIXED' ? (
-                          <input
-                            type="number"
-                            value={slab.fixed_price}
-                            onChange={(e) => updateSlab(idx, 'fixed_price', e.target.value)}
-                            style={styles.priceInput}
-                            placeholder="Price"
-                            min="0"
-                            step="0.01"
-                          />
-                        ) : (
-                          <div style={styles.perKgInputs}>
-                            <input
-                              type="number"
-                              value={slab.price_per_kg}
-                              onChange={(e) => updateSlab(idx, 'price_per_kg', e.target.value)}
-                              style={styles.priceInput}
-                              placeholder="₹/kg"
-                              min="0"
-                              step="0.01"
-                            />
-                            <span>+</span>
-                            <input
-                              type="number"
-                              value={slab.base_fee}
-                              onChange={(e) => updateSlab(idx, 'base_fee', e.target.value)}
-                              style={styles.priceInput}
-                              placeholder="Base"
-                              min="0"
-                              step="0.01"
-                            />
-                          </div>
-                        )}
-
-                        <button 
-                          onClick={() => removeSlab(idx)} 
-                          style={styles.deleteBtn}
-                          title="Delete slab"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              ))}
             </>
           )}
 
-          {/* Legacy Mode */}
-          {mode === 'legacy' && (
-            <div style={styles.legacyInfo}>
-              <Info size={48} style={{ opacity: 0.5 }} />
-              <p style={{ marginTop: '16px' }}>
-                Legacy mode uses old flat-rate delivery settings.
+          <label style={styles.label}>Free delivery if order is above (optional)
+            <input
+              value={config.free_delivery_above || ''}
+              onChange={(e) => setConfig((current) => ({ ...current, free_delivery_above: e.target.value }))}
+              style={styles.input}
+              type="number"
+              min="0"
+            />
+          </label>
+          <label style={styles.label}>Extra for cash on delivery (optional)
+            <input
+              value={config.cod_extra_charge || ''}
+              onChange={(e) => setConfig((current) => ({ ...current, cod_extra_charge: e.target.value }))}
+              style={styles.input}
+              type="number"
+              min="0"
+            />
+          </label>
+
+          <div style={styles.preview}>
+            <p style={styles.section}>Example</p>
+            {previews.map((row) => (
+              <p key={row.label} style={styles.previewRow}>
+                <span>{row.label}</span>
+                <strong>₹{row.charge}</strong>
               </p>
-              <p style={{ fontSize: '12px', opacity: 0.7, marginTop: '8px' }}>
-                Switch to Weight Slabs for advanced weight-based pricing.
-              </p>
-            </div>
-          )}
-
-          {/* Messages */}
-          {error && (
-            <div style={styles.errorBox}>
-              <AlertCircle size={16} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {success && (
-            <div style={styles.successBox}>
-              <CheckCircle size={16} />
-              <span>{success}</span>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div style={styles.buttonGroup}>
-            <button onClick={calculatePreview} style={styles.buttonSecondary} disabled={saving}>
-              <Eye size={16} /> Preview
-            </button>
-            <button 
-              onClick={saveSettings} 
-              disabled={saving} 
-              style={{
-                ...styles.buttonPrimary,
-                opacity: saving ? 0.6 : 1,
-                cursor: saving ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {saving ? (
-                <>
-                  <RefreshCw size={16} className="animate-spin" /> 
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save size={16} /> 
-                  Save Settings
-                </>
-              )}
-            </button>
+            ))}
           </div>
-        </div>
-
-        {/* Sidebar */}
-        <div style={styles.sidebarContainer}>
-          <div style={styles.infoCard}>
-            <h3 style={styles.infoCardTitle}><Info size={18} /> How It Works</h3>
-            <ul style={styles.tipsList}>
-              <li>Define weight ranges (0-0.5kg, 0.5-2kg, etc.)</li>
-              <li>Set fixed price or per-kg pricing for each range</li>
-              <li>System auto-selects correct slab based on order weight</li>
-              <li>Falls back to legacy or zero if no match</li>
-            </ul>
-          </div>
-
-          <div style={styles.tipsCard}>
-            <h3 style={styles.tipsCardTitle}><Package size={18} /> Tips</h3>
-            <ul style={styles.tipsList}>
-              <li>Use open-ended slabs (leave max empty for âˆž)</li>
-              <li>Per-kg pricing for heavy items saves costs</li>
-              <li>Always set a fallback for edge cases</li>
-              <li>Test with preview before saving changes</li>
-            </ul>
-          </div>
-
-          <div style={styles.warningCard}>
-            <h3 style={styles.warningCardTitle}><Ban size={18} /> Important</h3>
-            <ul style={styles.restrictionsList}>
-              <li>Weight slabs must not overlap</li>
-              <li>Min weight must be less than max weight</li>
-              <li>Prices must be greater than zero</li>
-              <li>Save settings before testing preview</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Preview Modal */}
-      {showPreview && (
-        <div style={styles.modalOverlay} onClick={() => setShowPreview(false)}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.modalTitle}>Delivery Charge Preview</h3>
-              <button onClick={() => setShowPreview(false)} style={styles.modalClose}>Ã—</button>
-            </div>
-            <div style={styles.previewTable}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Scenario</th>
-                    <th style={styles.th}>Cart</th>
-                    <th style={styles.th}>Weight</th>
-                    <th style={styles.th}>COD</th>
-                    <th style={styles.th}>Charge</th>
-                    <th style={styles.th}>Method</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {preview.map((item, idx) => (
-                    <tr key={idx} style={styles.tr}>
-                      <td style={styles.td}>{item.label}</td>
-                      <td style={styles.td}>₹{item.cart_total}</td>
-                      <td style={styles.td}>{item.total_weight_kg}kg</td>
-                      <td style={styles.td}>{item.is_cod ? 'âœ“' : '-'}</td>
-                      <td style={{
-                        ...styles.td, 
-                        fontWeight: '600', 
-                        color: item.error ? '#dc2626' : '#059669'
-                      }}>
-                        {item.error ? (
-                          <span title={item.error}>âŒ Error</span>
-                        ) : (
-                          `₹${item.delivery_charge}`
-                        )}
-                      </td>
-                      <td style={styles.td}>
-                        {item.method === 'slab' && 'ðŸ“¦ Slab'}
-                        {item.method === 'slab-free' && 'ðŸŽ Free'}
-                        {item.method === 'slab-fallback' && 'âš ï¸ Fallback'}
-                        {item.method === 'legacy' && 'ðŸ”„ Legacy'}
-                        {item.method === 'none' && 'ðŸ’¸ None'}
-                        {item.method === 'error' && 'âŒ Error'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div style={styles.previewNote}>
-                <Info size={14} />
-                <span>These are example calculations based on your current settings. Actual charges may vary based on product weights.</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        </>
       )}
 
-      <style jsx>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .animate-spin { animation: spin 1s linear infinite; }
-      `}</style>
+      {error ? <p style={styles.warn}><AlertCircle size={14} /> {error}</p> : null}
+      {success ? <p style={styles.ok}><Check size={14} /> {success}</p> : null}
+
+      <button type="button" onClick={save} disabled={saving} style={styles.primary}>
+        {saving ? 'Saving…' : 'Save delivery settings'}
+      </button>
+      <p style={styles.lead}>
+        Add packed weight in{' '}
+        <Link href="/dashboard/seller/products" style={styles.link}>Products</Link>
+        {' '}if you charge by weight.
+      </p>
     </div>
   );
 }
 
-// Styles
 const styles = {
-  pageContainer: { padding: '24px', maxWidth: '1400px', margin: '0 auto', backgroundColor: '#f9fafb', minHeight: '100vh' },
-  loadingContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '16px', color: '#6b7280' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' },
-  headerLeft: { display: 'flex', alignItems: 'center', gap: '16px' },
-  pageTitle: { fontSize: '24px', fontWeight: '600', color: '#1f2937', margin: 0 },
-  pageSubtitle: { fontSize: '14px', color: '#6b7280', margin: 0 },
-  refreshBtn: { padding: '8px', border: 'none', borderRadius: '6px', cursor: 'pointer', backgroundColor: '#f3f4f6', transition: 'background-color 0.2s' },
-  contentGrid: { display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' },
-  card: { backgroundColor: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' },
-  cardTitle: { fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' },
-  modeToggle: { display: 'flex', gap: '12px', marginBottom: '24px' },
-  toggleBtn: { flex: 1, padding: '10px', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.2s' },
-  formGroup: { marginBottom: '20px' },
-  label: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' },
-  labelHint: { fontSize: '12px', color: '#9ca3af', fontWeight: 'normal' },
-  inputWrapper: { position: 'relative', display: 'flex', alignItems: 'center' },
-  inputPrefix: { position: 'absolute', left: '12px', color: '#6b7280', fontSize: '14px', fontWeight: '500' },
-  input: { width: '100%', padding: '10px 12px 10px 28px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', transition: 'border-color 0.2s' },
-  helpText: { display: 'block', fontSize: '12px', color: '#6b7280', marginTop: '6px' },
-  slabsSection: { marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e5e7eb' },
-  sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
-  sectionTitle: { fontSize: '16px', fontWeight: '600', margin: 0, color: '#374151' },
-  addBtn: { padding: '8px 16px', backgroundColor: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', transition: 'background-color 0.2s' },
-  emptyState: { textAlign: 'center', padding: '40px', color: '#6b7280', display: 'flex', flexDirection: 'column', alignItems: 'center' },
-  slabsList: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  slabRow: { display: 'flex', gap: '8px', alignItems: 'center', padding: '12px', backgroundColor: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' },
-  slabInputs: { display: 'flex', alignItems: 'center', gap: '8px', flex: 1 },
-  slabInput: { width: '80px', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' },
-  select: { padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px', backgroundColor: 'white' },
-  priceInput: { width: '70px', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' },
-  perKgInputs: { display: 'flex', alignItems: 'center', gap: '6px' },
-  deleteBtn: { padding: '8px', backgroundColor: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer', transition: 'background-color 0.2s' },
-  legacyInfo: { textAlign: 'center', padding: '60px 20px', color: '#6b7280', display: 'flex', flexDirection: 'column', alignItems: 'center' },
-  errorBox: { display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#fee2e2', border: '1px solid #ef4444', color: '#dc2626', padding: '12px', borderRadius: '8px', fontSize: '14px', marginTop: '16px' },
-  successBox: { display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#d1fae5', border: '1px solid #10b981', color: '#065f46', padding: '12px', borderRadius: '8px', fontSize: '14px', marginTop: '16px' },
-  buttonGroup: { display: 'flex', gap: '12px', marginTop: '24px' },
-  buttonPrimary: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 20px', backgroundColor: '#059669', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', transition: 'background-color 0.2s' },
-  buttonSecondary: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 20px', backgroundColor: '#6b7280', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', transition: 'background-color 0.2s' },
-  sidebarContainer: { display: 'flex', flexDirection: 'column', gap: '16px' },
-  infoCard: { backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '16px' },
-  infoCardTitle: { fontSize: '14px', fontWeight: '600', color: '#1e40af', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 },
-  tipsCard: { backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '12px', padding: '16px' },
-  tipsCardTitle: { fontSize: '14px', fontWeight: '600', color: '#065f46', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 },
-  warningCard: { backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '16px' },
-  warningCardTitle: { fontSize: '14px', fontWeight: '600', color: '#991b1b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 },
-  tipsList: { margin: 0, paddingLeft: '20px', fontSize: '13px', lineHeight: '1.6', color: 'inherit' },
-  restrictionsList: { margin: 0, paddingLeft: '20px', fontSize: '13px', lineHeight: '1.6', color: '#991b1b' },
-  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
-  modalContent: { backgroundColor: '#fff', borderRadius: '12px', width: '90%', maxWidth: '900px', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 25px rgba(0,0,0,0.3)' },
-  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #e5e7eb' },
-  modalTitle: { fontSize: '18px', fontWeight: '600', color: '#1f2937', margin: 0 },
-  modalClose: { background: 'none', border: 'none', fontSize: '28px', cursor: 'pointer', color: '#6b7280', padding: 0, width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  previewTable: { padding: '24px' },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  th: { textAlign: 'left', padding: '12px', borderBottom: '2px solid #e5e7eb', fontSize: '13px', fontWeight: '600', color: '#374151', backgroundColor: '#f9fafb' },
-  tr: { borderBottom: '1px solid #e5e7eb' },
-  td: { padding: '12px', fontSize: '13px', color: '#6b7280' },
-  previewNote: { display: 'flex', alignItems: 'flex-start', gap: '8px', marginTop: '16px', padding: '12px', backgroundColor: '#f0f9ff', borderRadius: '8px', fontSize: '12px', color: '#0369a1' },
+  wrap: { maxWidth: 720, margin: '0 auto', padding: '24px 16px 48px', color: '#111827' },
+  title: { display: 'flex', gap: 8, alignItems: 'center', fontSize: 24, margin: '0 0 8px' },
+  lead: { color: '#4b5563', marginBottom: 16 },
+  switchRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 16 },
+  hint: { display: 'block', color: '#6b7280', fontSize: 13, fontWeight: 400, marginTop: 4 },
+  section: { fontWeight: 700, margin: '8px 0' },
+  modes: { display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 },
+  modeOn: { background: '#175E54', color: 'white', border: 0, borderRadius: 999, padding: '10px 14px', fontWeight: 700, cursor: 'pointer' },
+  modeOff: { background: 'white', color: '#111827', border: '1px solid #d1d5db', borderRadius: 999, padding: '10px 14px', cursor: 'pointer' },
+  label: { display: 'flex', flexDirection: 'column', gap: 6, fontWeight: 600, fontSize: 14, marginBottom: 12 },
+  input: { border: '1px solid #d1d5db', borderRadius: 8, padding: '10px 12px', fontWeight: 400 },
+  preview: { border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, margin: '8px 0 16px' },
+  previewRow: { display: 'flex', justifyContent: 'space-between', margin: '8px 0' },
+  primary: { background: '#175E54', color: 'white', border: 0, borderRadius: 8, padding: '12px 16px', fontWeight: 700, cursor: 'pointer' },
+  ok: { color: '#047857', display: 'flex', gap: 6, alignItems: 'center' },
+  info: { color: '#1d4ed8', marginBottom: 12 },
+  warn: { color: '#b45309', display: 'flex', gap: 6, alignItems: 'center' },
+  link: { color: '#175E54', fontWeight: 700 },
 };
-

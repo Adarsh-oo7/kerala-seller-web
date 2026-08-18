@@ -1,19 +1,25 @@
+'use client';
+
 import React from "react";
 import { Facebook, Instagram, Youtube } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function ShopFooter({ store }) {
-    // Extract social media links from store data
+    const pathname = usePathname() || '';
     const facebookUrl = store?.facebook_link || store?.facebook_url;
     const instagramUrl = store?.instagram_link || store?.instagram_url;
     const youtubeUrl = store?.youtube_link || store?.youtube_url;
     const storeName = store?.name || store?.seller_name || 'Kerala Sellers';
     const logoUrl = store?.logo_url || store?.logo || "https://via.placeholder.com/150x50/1a4845/ffffff?text=KS";
+    const shopMatch = pathname.match(/^\/shop\/([^/]+)/);
+    const shopSlug = shopMatch?.[1] || store?.store_slug || '';
+    const legalBase = shopSlug ? `/shop/${shopSlug}` : '';
 
     return (
         <footer className="Shopfooter">
             <div className="Shopfooter-left">
-                © 2025 {storeName}
+                © {new Date().getFullYear()} {storeName}
             </div>
             
             <div className="Shopfooter-logo">
@@ -21,18 +27,17 @@ export default function ShopFooter({ store }) {
                     src={logoUrl} 
                     alt={storeName}
                     onError={(e) => { 
-                        // ✅ FIXED: Use placeholder instead of missing /logo.png
                         e.target.src = 'https://via.placeholder.com/150x50/1a4845/ffffff?text=KS';
-                        e.target.onerror = null; // Prevent infinite loop
+                        e.target.onerror = null;
                     }}
                 />
             </div>
             
             <nav className="Shopfooter-links">
-                <Link href="/privacy-policy">Privacy policy</Link>
-                <Link href="/terms-and-conditions">Terms and Conditions</Link>
-                <Link href="/cancellation-refund">Cancellation and Refund</Link>
-                <Link href="/shipping-delivery">Shipping and Delivery</Link>
+                <Link href={legalBase ? `${legalBase}/privacy-policy` : '/privacy-policy'}>Privacy policy</Link>
+                <Link href={legalBase ? `${legalBase}/terms-and-conditions` : '/terms-and-conditions'}>Terms and Conditions</Link>
+                <Link href={legalBase ? `${legalBase}/cancellation-refund` : '/cancellation-refund'}>Cancellation and Refund</Link>
+                <Link href={legalBase ? `${legalBase}/shipping-delivery` : '/shipping-delivery'}>Shipping and Delivery</Link>
             </nav>
             
             <div className="Shopfooter-socials">

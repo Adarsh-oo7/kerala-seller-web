@@ -2167,7 +2167,7 @@ const handleMainImageUpload = (uploadedImages) => {
     <label className="dashboardproductmodalsectionlabel" style={styles.label}>
       Weight (in kg)
       <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px', fontWeight: 'normal' }}>
-        Optional
+        Needed if you charge delivery by weight. Checkout adds every product’s weight.
       </span>
     </label>
     <input
@@ -2186,9 +2186,8 @@ const handleMainImageUpload = (uploadedImages) => {
       }}
     />
     <small style={styles.helpText}>
-      💡 <strong>Why add weight?</strong> When the delivery system is enabled, 
-      shipping charges are calculated automatically based on product weight using your configured slabs. 
-      Leave empty if not applicable.
+      Checkout adds every product’s packed weight, then uses your Delivery settings:
+      Light (up to 1 kg), Medium (1–3 kg), or Heavy (above 3 kg). Leave empty if delivery is free.
     </small>
     {formData.weight_kg && parseFloat(formData.weight_kg) > 0 && (
       <div style={{
@@ -2205,8 +2204,8 @@ const handleMainImageUpload = (uploadedImages) => {
       }}>
         <CheckCircle size={16} />
         <span>
-          Weight set to <strong>{parseFloat(formData.weight_kg).toFixed(2)} kg</strong> - 
-          Delivery charges will be calculated automatically when the delivery system is enabled
+          Packed weight set to <strong>{parseFloat(formData.weight_kg).toFixed(2)} kg</strong>.
+          Combined with other items in the cart, this chooses light, medium, or heavy delivery.
         </span>
       </div>
     )}

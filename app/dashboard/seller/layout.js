@@ -18,7 +18,9 @@ import {
   Settings,
   Crown,
   Store,
-  LogOut
+  LogOut,
+  BadgeCheck,
+  Truck
 } from 'lucide-react';
 
 // âœ… FIXED: Use hostname detection (same as your login page)
@@ -439,13 +441,26 @@ export default function DashboardLayout({ children }) {
         </nav>
 
         <div className='dashboardoverviewsidebarnav' style={styles.sidebarFooter}>
-          <h3 style={styles.sectionTitle}>ACCOUNT</h3>
+          <h3 style={styles.sectionTitle}>STORE SETTINGS</h3>
           <NavItem
             href="/dashboard/seller/settings"
-            name="Settings"
+            name="Basic settings"
             pathname={pathname}
             icon={<Settings size={18} />}
           />
+          <NavItem
+            href="/dashboard/seller/homepage-listing"
+            name="Advanced settings"
+            pathname={pathname}
+            icon={<BadgeCheck size={18} />}
+          />
+          <NavItem
+            href="/dashboard/seller/products/delivery-settings"
+            name="Delivery settings"
+            pathname={pathname}
+            icon={<Truck size={18} />}
+          />
+          <h3 style={{ ...styles.sectionTitle, marginTop: 20 }}>ACCOUNT</h3>
           <NavItem
             href="/dashboard/seller/subscription"
             name="Subscription"
@@ -536,7 +551,12 @@ export default function DashboardLayout({ children }) {
 }
 
 function NavItem({ href, name, pathname, count = 0, icon }) {
-  const isActive = href === '/dashboard/seller' ? pathname === href : pathname.startsWith(href);
+  const isActive =
+    href === '/dashboard/seller'
+      ? pathname === href
+      : href === '/dashboard/seller/products'
+        ? pathname === href || (pathname.startsWith(`${href}/`) && !pathname.includes('delivery-settings'))
+        : pathname.startsWith(href);
 
   return (
     <Link

@@ -1091,6 +1091,17 @@ export default function ShopCheckoutPage() {
                 <span>Payments are secured by Razorpay</span>
               </div>
             )}
+            <p style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5, marginTop: 12 }}>
+              By placing this order you agree to this shop’s{' '}
+              <a href={`/shop/${shopSlug}/terms-and-conditions${searchParams?.get('id') ? `?id=${searchParams.get('id')}` : ''}`} style={{ color: '#175E54', fontWeight: 700 }}>
+                terms
+              </a>
+              {' '}and{' '}
+              <a href={`/shop/${shopSlug}/privacy-policy${searchParams?.get('id') ? `?id=${searchParams.get('id')}` : ''}`} style={{ color: '#175E54', fontWeight: 700 }}>
+                privacy policy
+              </a>
+              . This shop is run by the seller. Kerala Sellers provides the software only and is not responsible for the products or delivery.
+            </p>
           </div>
         </div>
       </div>
