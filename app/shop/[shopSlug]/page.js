@@ -45,6 +45,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { toast } from "react-toastify";
+import { shopListPhone, fetchPublicShop } from '../../lib/shop-public';
 
 
 // ✅ Helper function to get API base URL
@@ -574,7 +575,7 @@ function EnhancedSellerStorefrontPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { shopSlug } = params;
-  const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams);
+  const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams) || shopListPhone(store);
   const cartContext = useCart();
   const { addToCart, cartItems } = cartContext || { addToCart: null, cartItems: [] };
   const abortControllerRef = useRef(null);
@@ -712,7 +713,7 @@ function EnhancedSellerStorefrontPage() {
   }, [products, filters]);
 
   useEffect(() => {
-    if (!sellerPhone) {
+    if (!shopSlug) {
       setError('Invalid shop URL. Please check the link and try again.');
       setIsLoading(false);
       return;
@@ -723,11 +724,14 @@ function EnhancedSellerStorefrontPage() {
         setIsLoading(true);
         setError(null);
         abortControllerRef.current = new AbortController();
-const response = await axios.get(`${API_BASE_URL}/shop/${sellerPhone}/`, {
-          signal: abortControllerRef.current.signal,
-          timeout: 15000,
-        });
-        if (response.data) {
+        const response = await fetchPublicShop(
+          axios,
+          API_BASE_URL,
+          shopSlug,
+          searchParams,
+          abortControllerRef.current.signal,
+        );
+        if (response?.data) {
           setStore(response.data.store || null);
           const productsData = response.data.products || [];
           const normalizedProducts = productsData.map(product => ({
@@ -736,7 +740,7 @@ const response = await axios.get(`${API_BASE_URL}/shop/${sellerPhone}/`, {
           }));
           setProducts(normalizedProducts);
         } else {
-          throw new Error('No data received from server');
+          setError('Shop not found.');
         }
       } catch (error) {
         if (axios.isCancel(error)) return;
@@ -773,7 +777,7 @@ const response = await axios.get(`${API_BASE_URL}/shop/${sellerPhone}/`, {
       }
       clearTimeout(timeoutId);
     };
-  }, [sellerPhone, fetchWishlist]);
+  }, [fetchWishlist, shopSlug, searchParams]);
 
   useEffect(() => {
     applyFilters();

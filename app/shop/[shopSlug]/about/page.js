@@ -38,6 +38,7 @@ import {
   Check, ShieldCheck, Lock, Headphones,
 } from 'lucide-react';
 import SHeader from '../../../../components/common/SHeader';
+import { shopListPhone, fetchPublicShop } from '../../../lib/shop-public';
 
 // ✅ Enhanced environment variable handling
 // const getApiBaseUrl = () => {
@@ -160,7 +161,7 @@ function StoreAboutContent() {
   const { shopSlug } = params;
 
   // ✅ Extract seller phone from slug or query params
-  const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams);
+  const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams) || shopListPhone(storeData);
 
   console.log(' About page debug:', {
     shopSlug,
@@ -240,9 +241,8 @@ function StoreAboutContent() {
   };
 
   const fetchStoreData = async () => {
-    if (!sellerPhone) {
-      console.error(' No sellerPhone provided:', { shopSlug, sellerPhone });
-      setError('Invalid store URL - phone number is missing');
+    if (!shopSlug) {
+      setError('Invalid store URL - please check the link and try again.');
       setIsLoading(false);
       return;
     }
@@ -251,61 +251,32 @@ function StoreAboutContent() {
     setError('');
 
     try {
-      console.log(' Fetching store data for phone:', sellerPhone);
+      const response = await fetchPublicShop(
+        axios,
+        API_BASE_URL,
+        shopSlug,
+        searchParams,
+      );
 
-      // ✅ Use the working main shop endpoint first
-      let response;
-      try {
-        console.log(' Trying main shop endpoint...');
-        response = await axios.get(`${API_BASE_URL}/shop/${sellerPhone}/`, {
-          timeout: 15000
-        });
-        console.log(' Main shop endpoint successful:', response.data);
-
-        // Handle main endpoint response
-        if (response.data.store) {
-          // Main endpoint returns { store: {...}, products: [...], products_count: 5 }
-          const storeWithStats = {
-            ...response.data.store,
-            products_count: response.data.products_count,
-            available_products: response.data.products_count,
-            total_orders: response.data.store.total_orders || 0,
-            completed_orders: response.data.store.completed_orders || 0,
-            average_rating: response.data.store.average_rating || 0.0,
-          };
-          setStoreData(storeWithStats);
-        } else {
-          setStoreData(response.data);
-        }
-        setIsLoading(false);
+      if (!response?.data) {
+        setError('Store not found. This store may no longer exist or the URL is incorrect.');
+        setStoreData(null);
         return;
-
-      } catch (mainError) {
-        console.log(' Main shop endpoint failed, trying about endpoint');
-        try {
-          response = await axios.get(`${API_BASE_URL}/shop/${sellerPhone}/about/`, {
-            timeout: 15000
-          });
-          console.log(' About endpoint successful:', response.data);
-          setStoreData(response.data);
-          setIsLoading(false);
-          return;
-        } catch (aboutError) {
-          console.log(' About endpoint failed, trying profile endpoint');
-          try {
-            response = await axios.get(`${API_BASE_URL}/shop/${sellerPhone}/profile/`, {
-              timeout: 15000
-            });
-            console.log(' Profile endpoint successful:', response.data);
-            setStoreData(response.data);
-            setIsLoading(false);
-            return;
-          } catch (profileError) {
-            throw new Error('All endpoints failed');
-          }
-        }
       }
 
+      if (response.data.store) {
+        const storeWithStats = {
+          ...response.data.store,
+          products_count: response.data.products_count,
+          available_products: response.data.products_count,
+          total_orders: response.data.store.total_orders || 0,
+          completed_orders: response.data.store.completed_orders || 0,
+          average_rating: response.data.store.average_rating || 0.0,
+        };
+        setStoreData(storeWithStats);
+      } else {
+        setStoreData(response.data);
+      }
     } catch (error) {
       console.error(" Failed to fetch store data:", error);
       if (error.response?.status === 404) {
@@ -325,18 +296,12 @@ function StoreAboutContent() {
 
   useEffect(() => {
     fetchStoreData();
-  }, [sellerPhone]);
+  }, [shopSlug]);
 
   // ✅ Generate SEO-friendly shop URL for navigation
   const getShopUrl = () => {
-    if (!storeData || !sellerPhone) return `/shop`;
-
-    if (storeData.name) {
-      const shopSlug = generateShopSlug(storeData);
-      return `/shop/${shopSlug}?id=${sellerPhone}`;
-    }
-
-    return `/shop/${sellerPhone}`;
+    if (shopSlug) return `/shop/${shopSlug}`;
+    return `/shop`;
   };
 
   const formatJoinDate = (dateString) => {
@@ -373,28 +338,7 @@ function StoreAboutContent() {
     );
   }
 
-  if (!sellerPhone) {
-    return (
-      <div style={styles.pageContainer}>
-        <SHeader
-          store={null}
-          isLoggedIn={isLoggedIn}
-        />
-        <div style={styles.errorContainer}>
-          <Store size={64} style={styles.errorIcon} />
-          <h2 style={styles.errorTitle}>Invalid Store URL</h2>
-          <p style={styles.errorText}>The store information is missing from the URL.</p>
-          <Link href="/shop" style={styles.backLink}>
-            <ArrowLeft size={16} />
-            Browse All Shops
-          </Link>
-        </div>
-<ShopFooter store={storeData} />
-      </div>
-    );
-  }
-
-  if (error) {
+  if (error || !storeData) {
     return (
       <div style={styles.pageContainer}>
         <SHeader store={null} isLoggedIn={isLoggedIn} />

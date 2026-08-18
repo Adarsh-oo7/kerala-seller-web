@@ -71,22 +71,11 @@ const getFrontendBaseUrl = () => {
 const generateShopSlug = (shop) => {
     if (!shop || !shop.name) return 'shop';
 
-    const shopName = shop.name.toLowerCase()
+    return shop.name.toLowerCase()
         .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
-        .trim('-');
-
-    const location = (shop.seller_address || shop.address || '')
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim('-')
-        .split('-')[0];
-
-    const slug = location ? `${shopName}-${location}` : shopName;
-    return slug.length >= 3 ? slug : `shop-${shop.seller_phone || 'store'}`;
+        .replace(/^-|-$/g, '') || 'shop';
 };
 
 function SetupStorePrompt() {
@@ -129,14 +118,10 @@ function SetupStorePrompt() {
 
 function StoreLink({ storeData, phone, copySuccess, onCopy, onVisit }) {
     const getShopUrl = () => {
-        if (!phone) return `${getFrontendBaseUrl()}/shop`;
-
-        if (storeData && storeData.name) {
-            const shopSlug = generateShopSlug(storeData);
-            return `${getFrontendBaseUrl()}/shop/${shopSlug}?id=${phone}`;
-        }
-
-        return `${getFrontendBaseUrl()}/shop/shop-${phone}?id=${phone}`;
+        const slug = storeData?.store_slug
+            || (storeData && storeData.name ? generateShopSlug(storeData) : '');
+        if (slug) return `${getFrontendBaseUrl()}/shop/${slug}`;
+        return `${getFrontendBaseUrl()}/shop`;
     };
 
     const shopUrl = getShopUrl();

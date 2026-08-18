@@ -7,6 +7,7 @@ import Link from 'next/link';
 import "../../../../../styles/Shopslugproduct.css";
 import { useCart } from '../../../../context/CartContext';
 import SHeader from '../../../../../components/common/SHeader';
+import { shopListPhone, fetchPublicShop } from '../../../../lib/shop-public';
 import Footer from '../../../../../components/common/Footer';
 import { toast } from "react-toastify";
 
@@ -1158,7 +1159,7 @@ function ShopProductPageContent() {
   const router = useRouter();
   const { shopSlug, productId } = params;
 
-  const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams);
+  const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams) || shopListPhone(store);
 
   const cartContext = useCart();
   const { addToCart, cartItems } = cartContext || { addToCart: null, cartItems: [] };
@@ -1241,14 +1242,13 @@ function ShopProductPageContent() {
 
   // Generate shop URL for navigation
   const getShopUrl = () => {
-    if (!store || !sellerPhone) return `/shop`;
-    const shopSlug = generateShopSlug(store);
-    return `/shop/${shopSlug}?id=${sellerPhone}`;
+    if (shopSlug) return `/shop/${shopSlug}`;
+    return `/shop`;
   };
 
   // ✅ ENHANCED: Fetch product and store data with reviews
   const fetchProductData = async () => {
-    if (!sellerPhone || !productId) {
+    if (!productId || !shopSlug) {
       setError('Invalid product URL. Please check the link and try again.');
       setIsLoading(false);
       return;
@@ -1258,21 +1258,19 @@ function ShopProductPageContent() {
       setIsLoading(true);
       setError(null);
 
-      console.log(' Fetching product data:', { sellerPhone, productId });
-
-      // Fetch both product and store data
       const [productRes, storeRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/api/products/${productId}/`, { timeout: 15000 }),
-        axios.get(`${API_BASE_URL}/shop/${sellerPhone}/`, { timeout: 15000 })
+        fetchPublicShop(axios, API_BASE_URL, shopSlug, searchParams),
       ]);
 
-      console.log(' Product data received:', productRes.data);
-      console.log(' Store data received:', storeRes.data);
+      if (!storeRes?.data) {
+        setError('Shop not found. Please check the link and try again.');
+        return;
+      }
 
       setProduct(productRes.data);
       setStore(storeRes.data.store || storeRes.data);
 
-      // Set related products from the same store
       if (storeRes.data.products) {
         const related = storeRes.data.products
           .filter(p => p.id !== parseInt(productId))
@@ -1280,7 +1278,6 @@ function ShopProductPageContent() {
         setRelatedProducts(related);
       }
 
-      // ✅ NEW: Fetch reviews and check review permission
       await fetchReviews();
       await checkReviewPermission();
 
@@ -1302,7 +1299,7 @@ function ShopProductPageContent() {
   // Fetch product and store data
   useEffect(() => {
     fetchProductData();
-  }, [sellerPhone, productId]);
+  }, [shopSlug, productId]);
 
   // Add to cart handler
   const handleAddToCart = useCallback(async (quantity = 1) => {
