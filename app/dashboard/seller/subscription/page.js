@@ -8,14 +8,12 @@ import { toast } from 'react-toastify'; // âœ… ADD: Import toast
 import {
     CheckCircle,
     Star,
-    Package,
     Calendar,
     AlertCircle,
     Loader,
     CreditCard,
     RefreshCw,
     Crown,
-    Zap,
     Shield,
     Clock
 } from 'lucide-react';
@@ -60,8 +58,112 @@ function getStatusIcon(status) {
     return icons[status] || 'â“';
 }
 
+function humanizeFeatureCode(code) {
+    return String(code || '')
+        .split('_')
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+}
+
+function planFeatures(plan, entitlementCodes) {
+    const raw = Array.isArray(plan?.features) ? plan.features : [];
+    const fromPlan = raw
+        .map((item, index) => {
+            if (typeof item === 'string' && item.trim()) {
+                return { code: item, name: item };
+            }
+            if (item && item.is_implemented === false) return null;
+            const name = item?.name || item?.code;
+            if (!name) return null;
+            return { code: item.code || String(index), name };
+        })
+        .filter(Boolean);
+    if (Array.isArray(entitlementCodes) && entitlementCodes.length) {
+        const names = new Map(fromPlan.map((item) => [item.code, item.name]));
+        return entitlementCodes.map((code) => ({
+            code,
+            name: names.get(code) || humanizeFeatureCode(code),
+        }));
+    }
+    return fromPlan;
+}
+
+function catalogPlanFor(subscription, plans) {
+    const id = subscription?.plan?.id;
+    if (id != null) {
+        const match = (plans || []).find((plan) => plan.id === id);
+        if (match) return { ...match, ...(subscription.plan || {}) };
+    }
+    const name = subscription?.plan_name || subscription?.plan?.name;
+    if (name) {
+        const match = (plans || []).find((plan) => plan.name === name);
+        if (match) return { ...match, ...(subscription.plan || {}) };
+    }
+    return subscription?.plan || null;
+}
+
+function PlanDetailItems({ plan, entitlements, checkIconStyle }) {
+    const limits = entitlements?.limits || {};
+    const products = Object.prototype.hasOwnProperty.call(limits, 'max_products')
+        ? limits.max_products
+        : plan?.product_limit;
+    const staff = Object.prototype.hasOwnProperty.call(limits, 'max_staff')
+        ? limits.max_staff
+        : plan?.max_staff;
+    const branches = Object.prototype.hasOwnProperty.call(limits, 'max_branches')
+        ? limits.max_branches
+        : plan?.max_branches;
+    const liveUrl = entitlements?.official_url || entitlements?.path_url;
+    const features = planFeatures(plan, entitlements?.features);
+    const items = [];
+
+    if (plan?.description) items.push({ key: 'description', text: plan.description });
+    if (products !== undefined) {
+        items.push({
+            key: 'products',
+            text: products != null ? `Up to ${products} products` : 'Unlimited products',
+        });
+    }
+    if (staff !== undefined) {
+        items.push({
+            key: 'staff',
+            text: staff == null ? 'Unlimited staff logins' : `${staff} staff login${staff === 1 ? '' : 's'}`,
+        });
+    }
+    if (branches !== undefined) {
+        items.push({
+            key: 'locations',
+            text: branches == null ? 'Unlimited locations' : `${branches} location${branches === 1 ? '' : 's'}`,
+        });
+    }
+    if (plan?.allows_custom_subdomain !== undefined) {
+        items.push({
+            key: 'url',
+            text: plan.allows_custom_subdomain
+                ? 'Custom store URL: {slug}.keralasellers.in once active'
+                : 'Store URL: keralasellers.in/shop/{slug}/',
+        });
+    }
+    if (liveUrl) items.push({ key: 'live-url', text: liveUrl });
+    features.forEach((item) => items.push({ key: `feature-${item.code}`, text: item.name }));
+
+    if (!items.length) return null;
+
+    return (
+        <ul className='dashboardsubscribelistfont' style={styles.featureList}>
+            {items.map((item) => (
+                <li key={item.key} style={styles.featureItem}>
+                    <CheckCircle size={16} style={checkIconStyle || styles.checkIcon} />
+                    <span>{item.text}</span>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
 // âœ… ENHANCED: Current Plan Card with Store Status
-function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId }) {
+function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId, plans }) {
     const [storeStatus, setStoreStatus] = useState(null);
     const [statusLoading, setStatusLoading] = useState(false);
 
@@ -193,16 +295,11 @@ function CurrentPlanCard({ subscription, isLoading, error, onRefresh, storeId })
                             : 'Expires today'}
                     </span>
                 </div>
-                <div style={styles.detailItem}>
-                    <Package size={20} />
-                    <span>
-                        {subscription.plan.product_limit
-                            ? `Up to ${subscription.plan.product_limit} products online`
-                            : 'Unlimited products online'
-                        }
-                    </span>
-                </div>
             </div>
+            <PlanDetailItems
+                plan={catalogPlanFor(subscription, plans)}
+                entitlements={subscription.entitlements}
+            />
 
             {/* âœ… NEW: Enhanced Store Status Section */}
             {storeStatus && (
@@ -686,6 +783,7 @@ export default function SubscriptionPage() {
                 error={subscriptionError}
                 onRefresh={loadSubscriptionData}
                 storeId={storeId}
+                plans={plans}
             />
 
             {/* Plans Grid */}
@@ -752,48 +850,7 @@ export default function SubscriptionPage() {
                                 </div>
 
                                 <div style={styles.featuresContainer}>
-                                    <ul className='dashboardsubscribelistfont' style={styles.featureList}>
-                                        <li style={styles.featureItem}>
-                                            <CheckCircle size={16} style={styles.checkIcon} />
-                                            <span>
-                                                {plan.product_limit
-                                                    ? `${plan.product_limit} Online Products`
-                                                    : 'Unlimited Online Products'
-                                                }
-                                            </span>
-                                        </li>
-                                        <li style={styles.featureItem}>
-                                            <CheckCircle size={16} style={styles.checkIcon} />
-                                            <span>
-                                                {plan.allows_custom_subdomain
-                                                    ? 'Custom store URL: {slug}.keralasellers.in (after Vercel is active)'
-                                                    : 'Store URL: keralasellers.in/shop/{slug}/'
-                                                }
-                                            </span>
-                                        </li>
-                                        <li style={styles.featureItem}>
-                                            <CheckCircle size={16} style={styles.checkIcon} />
-                                            <span>Unlimited stock Products</span>
-                                        </li>
-                                        <li style={styles.featureItem}>
-                                            <CheckCircle size={16} style={styles.checkIcon} />
-                                            <span>Professional Storefront</span>
-                                        </li>
-                                        <li style={styles.featureItem}>
-                                            <CheckCircle size={16} style={styles.checkIcon} />
-                                            <span>WhatsApp Integration</span>
-                                        </li>
-                                        <li style={styles.featureItem}>
-                                            <CheckCircle size={16} style={styles.checkIcon} />
-                                            <span>24/7 Customer Support</span>
-                                        </li>
-                                        {isPopular && (
-                                            <li style={styles.featureItem}>
-                                                <Zap size={16} style={{ ...styles.checkIcon, color: '#f59e0b' }} />
-                                                <span>Priority Support</span>
-                                            </li>
-                                        )}
-                                    </ul>
+                                    <PlanDetailItems plan={plan} />
                                 </div>
 
                                 <button
