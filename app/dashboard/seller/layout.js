@@ -23,7 +23,11 @@ import {
   Truck,
   Users,
   Wallet,
+  ScanLine,
+  Puzzle,
+  Trash2,
 } from 'lucide-react';
+import { canUseTool, ownerToolsWhenStaffMeMissing } from '../../lib/storeAccess';
 
 // âœ… FIXED: Use hostname detection (same as your login page)
 // const getApiBaseUrl = () => {
@@ -76,10 +80,7 @@ export default function DashboardLayout({ children }) {
   const [permissions, setPermissions] = useState(null);
   const [isOwner, setIsOwner] = useState(true);
 
-  const can = (code) => {
-    if (permissions === null) return isOwner;
-    return permissions.includes(code);
-  };
+  const can = (code) => canUseTool(permissions, code, isOwner);
 
   // âœ… FIXED: Better auth headers with validation
   const getAuthHeaders = useCallback(() => {
@@ -167,11 +168,15 @@ export default function DashboardLayout({ children }) {
       try {
         const me = await axios.get(`${API_BASE_URL}/user/staff/me/`, { headers, timeout: 8000 });
         if (!isLoggingOut.current) {
-          setIsOwner(Boolean(me.data.is_owner));
-          setPermissions(me.data.allowed_permissions || me.data.permissions || []);
+          const owner = me.data.is_owner !== false;
+          setIsOwner(owner);
+          setPermissions(ownerToolsWhenStaffMeMissing(owner, me.data.allowed_permissions || me.data.permissions));
         }
       } catch (meErr) {
-        console.warn('Staff profile not available:', meErr.message);
+        if (!isLoggingOut.current) {
+          setIsOwner(true);
+          setPermissions(null);
+        }
       }
 
       // Try to fetch dashboard data (optional)
@@ -369,6 +374,7 @@ export default function DashboardLayout({ children }) {
         can('orders.view') && { name: 'Orders', href: '/dashboard/seller/orders', count: notificationCounts.orders, icon: <ShoppingCart size={18} /> },
         can('customers.view') && { name: 'Customers', href: '/dashboard/seller/customers', icon: <Users size={18} /> },
         can('reports.view_basic') && { name: 'Reports', href: '/dashboard/seller/reports', icon: <BarChart3 size={18} /> },
+        can('reports.view_basic') && { name: 'Analytics', href: '/dashboard/seller/analytics', icon: <BarChart3 size={18} /> },
         can('expenses.view') && { name: 'Expenses', href: '/dashboard/seller/expenses', icon: <Wallet size={18} /> },
         { name: 'Notifications', href: '/dashboard/seller/notifications', count: notificationCounts.notifications, icon: <Bell size={18} /> },
       ].filter(Boolean)
@@ -452,6 +458,14 @@ export default function DashboardLayout({ children }) {
             icon={<CreditCard size={18} />}
           />
           ) : null}
+          {can(['products.view', 'billing.access_pos']) ? (
+          <NavItem
+            href="/dashboard/seller/barcodes"
+            name="Barcodes"
+            pathname={pathname}
+            icon={<ScanLine size={18} />}
+          />
+          ) : null}
 
           {visibleNavSections.map(section => (
             <div key={section.title} style={styles.navSection}>
@@ -518,9 +532,15 @@ export default function DashboardLayout({ children }) {
             href="/dashboard/seller/addons"
             name="Add-ons"
             pathname={pathname}
-            icon={<Crown size={18} />}
+            icon={<Puzzle size={18} />}
           />
           ) : null}
+          <NavItem
+            href="/dashboard/seller/account/delete"
+            name="Delete account"
+            pathname={pathname}
+            icon={<Trash2 size={18} />}
+          />
 
           <button
             onClick={handleLogout}

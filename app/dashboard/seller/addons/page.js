@@ -1,13 +1,84 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import Link from 'next/link';
+import { Puzzle } from 'lucide-react';
+import { asList } from '../../../lib/storeAccess';
+import {
+  addonBuyLabel,
+  addonCapacityLines,
+  addonCatalogIsEmpty,
+  addonNeedHint,
+  addonPurchaseCounts,
+  collectAddonCatalog,
+  partitionAddons,
+} from '../../../lib/addonAccess';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 const ENTITLEMENTS_URL = `${API_BASE_URL}/api/subscriptions/entitlements/`;
+const ADDONS_URL = `${API_BASE_URL}/api/subscriptions/addons/`;
+const CURRENT_URL = `${API_BASE_URL}/api/subscriptions/current/`;
 const CREATE_URL = `${API_BASE_URL}/api/subscriptions/addons/create-order/`;
 const VERIFY_URL = `${API_BASE_URL}/api/subscriptions/addons/verify-payment/`;
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
+
+function isMissingCatalog(err) {
+  return err?.response?.status === 404;
+}
+
+async function loadCatalog(headers) {
+  const [entitlementsResult, addonsResult, subscriptionResult] = await Promise.allSettled([
+    axios.get(ENTITLEMENTS_URL, { headers }),
+    axios.get(ADDONS_URL),
+    axios.get(CURRENT_URL, { headers }),
+  ]);
+
+  if (entitlementsResult.status === 'rejected' && !isMissingCatalog(entitlementsResult.reason)) {
+    throw entitlementsResult.reason;
+  }
+
+  const entitlements = entitlementsResult.status === 'fulfilled' ? entitlementsResult.value.data : null;
+  const publicAddons = addonsResult.status === 'fulfilled' ? asList(addonsResult.value.data) : [];
+  const subscription = subscriptionResult.status === 'fulfilled' ? subscriptionResult.value.data : null;
+  const billing = entitlements?.billing ?? subscription?.entitlements?.billing;
+
+  return {
+    commercially_active: entitlements?.commercially_active ?? Boolean(subscription?.is_active),
+    plan_id: entitlements?.plan_id ?? subscription?.plan?.id ?? subscription?.entitlements?.plan_id ?? null,
+    plan_name: entitlements?.plan_name || subscription?.plan_name || subscription?.plan?.name || subscription?.entitlements?.plan_name,
+    features: entitlements?.features ?? subscription?.entitlements?.features ?? [],
+    addons: collectAddonCatalog({
+      entitlementsAddons: entitlements?.addons,
+      publicAddons,
+      activeAddons: billing?.active_addons,
+    }),
+    billing,
+  };
+}
+
+function AddonCard({ addon, badge, hint, actionLabel, disabled, onPress }) {
+  const extras = addonCapacityLines(addon);
+  return (
+    <div style={cardStyle}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+        <strong>{addon.name}</strong>
+        {badge ? <span style={badge === 'Not on this plan' ? warningBadgeStyle : badgeStyle}>{badge}</span> : null}
+      </div>
+      {addon.description ? <p style={metaStyle}>{addon.description}</p> : null}
+      <p style={{ margin: '8px 0', color: '#175E54', fontWeight: 700 }}>
+        ₹{addon.price} / {addon.billing_period === 'one_time' ? 'one time' : addon.billing_period || 'month'}
+      </p>
+      {extras.map((line) => <p key={line} style={metaStyle}>• {line}</p>)}
+      {hint ? <p style={metaStyle}>{hint}</p> : null}
+      {actionLabel ? (
+        <button type="button" disabled={disabled} onClick={onPress} style={buttonStyle}>
+          {actionLabel}
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 export default function AddonsPage() {
   const [data, setData] = useState(null);
@@ -21,8 +92,7 @@ export default function AddonsPage() {
 
   const load = useCallback(async () => {
     try {
-      const response = await axios.get(ENTITLEMENTS_URL, { headers: headers() });
-      setData(response.data);
+      setData(await loadCatalog(headers()));
       setError('');
     } catch (err) {
       setError(err.response?.data?.error || 'Could not load add-ons.');
@@ -69,35 +139,137 @@ export default function AddonsPage() {
   };
 
   const billing = data?.billing || {};
-  const addons = data?.addons || [];
-  const active = billing.active_addons || [];
+  const purchaseCounts = useMemo(
+    () => addonPurchaseCounts(billing.active_addons),
+    [billing],
+  );
+  const groups = useMemo(
+    () => partitionAddons(data?.addons || [], {
+      planId: data?.plan_id,
+      activeIds: purchaseCounts.keys(),
+      featureCodes: data?.features,
+    }),
+    [data, purchaseCounts],
+  );
+  const emptyCatalog = addonCatalogIsEmpty(groups);
+  const canPurchase = Boolean(data?.commercially_active);
 
   return (
-    <div style={{ padding: 24, maxWidth: 880 }}>
-      <h1>Add-ons</h1>
+    <div style={{ maxWidth: 880 }}>
+      <h1 style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#175E54' }}>
+        <Puzzle size={22} /> Add-ons
+      </h1>
       <p style={{ color: '#64748b' }}>
-        Extra capacity and features billed monthly on top of your current plan. Superuser sets prices in admin — nothing here is hardcoded.
+        Buy only the extras this shop needs. Your plan stays the same. Add GST, loyalty, extra products, staff, or locations if you need them. Capacity extras can be added more than once.
       </p>
       {error ? <p style={{ color: '#b91c1c' }}>{error}</p> : null}
-      <p>Add-on monthly total: ₹{billing.monthly_total ?? 0}</p>
-      <p>Base plan ₹{billing.base_plan_price ?? 0} + add-ons ₹{billing.addons_price ?? 0}</p>
-      <h2>Active</h2>
-      {active.length === 0 ? <p>No add-ons yet.</p> : active.map((item) => (
-        <div key={item.id || item.slug} style={{ padding: 12, border: '1px solid #e5e7eb', borderRadius: 10, marginBottom: 8 }}>
-          {item.name} · ₹{item.price}/{item.billing_period || 'month'}
+      {!canPurchase && data ? (
+        <p style={{ ...cardStyle, background: '#fffbeb', color: '#92400e' }}>
+          Take a plan first, then come back and buy only the extras this shop needs.{' '}
+          <Link href="/dashboard/seller/subscription" style={{ color: '#175E54', fontWeight: 600 }}>View plans</Link>
+        </p>
+      ) : null}
+      <div style={cardStyle}>
+        <div style={{ color: '#64748b', fontSize: 13 }}>{data?.plan_name || 'Current plan'}</div>
+        <div style={{ fontSize: 24, color: '#175E54', fontWeight: 700 }}>₹{billing.monthly_total ?? 0}</div>
+        <div style={metaStyle}>Plan ₹{billing.base_plan_price ?? 0} + add-ons ₹{billing.addons_price ?? 0} this month</div>
+      </div>
+
+      {emptyCatalog ? (
+        <div style={cardStyle}>
+          <strong>No extras in the catalog yet</strong>
+          <p style={metaStyle}>When extra products, staff logins, GST, or locations are listed for this shop, they appear here so you can buy only what you need.</p>
         </div>
-      ))}
-      <h2>Available</h2>
-      {addons.map((addon) => (
-        <div key={addon.id} style={{ padding: 16, border: '1px solid #e5e7eb', borderRadius: 12, marginBottom: 12 }}>
-          <strong>{addon.name}</strong>
-          <p>{addon.description}</p>
-          <p>₹{addon.price} / {addon.billing_period}</p>
-          <button type="button" disabled={buying === addon.id} onClick={() => purchase(addon)}>
-            {buying === addon.id ? 'Opening payment…' : 'Purchase'}
-          </button>
-        </div>
-      ))}
+      ) : (
+        <>
+          <h2>Add if this shop needs it</h2>
+          {groups.compatible.length === 0 ? (
+            <p style={metaStyle}>Nothing extra to buy on this plan right now. Other extras are listed below.</p>
+          ) : null}
+          {groups.compatible.map((addon) => {
+            const count = purchaseCounts.get(addon.id) || 0;
+            return (
+              <AddonCard
+                key={addon.id}
+                addon={addon}
+                badge={count > 0 ? `On this shop ×${count}` : null}
+                hint={addonNeedHint(addon, count)}
+                actionLabel={canPurchase ? (buying === addon.id ? 'Opening payment…' : addonBuyLabel(addon, count)) : null}
+                disabled={buying != null}
+                onPress={canPurchase ? () => purchase(addon) : undefined}
+              />
+            );
+          })}
+
+          {groups.onPlan.length > 0 ? (
+            <>
+              <h2>Already in this plan</h2>
+              {groups.onPlan.map((addon) => (
+                <AddonCard
+                  key={addon.id}
+                  addon={addon}
+                  badge="Included"
+                  hint="This shop already has this on the current plan, so there is nothing extra to buy."
+                />
+              ))}
+            </>
+          ) : null}
+
+          {groups.included.length > 0 ? (
+            <>
+              <h2>Already bought</h2>
+              {groups.included.map((addon) => (
+                <AddonCard
+                  key={addon.id}
+                  addon={addon}
+                  badge="Active"
+                  hint="This extra is already on this shop. One purchase is enough."
+                />
+              ))}
+            </>
+          ) : null}
+
+          {groups.otherPlans.length > 0 ? (
+            <>
+              <h2>Not on this plan</h2>
+              <p style={metaStyle}>These extras stay visible, but they cannot be added on the plan this shop is on.</p>
+              {groups.otherPlans.map((addon) => (
+                <AddonCard key={addon.id} addon={addon} badge="Not on this plan" />
+              ))}
+            </>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }
+
+const cardStyle = {
+  padding: 16,
+  border: '1px solid #e5e7eb',
+  borderRadius: 12,
+  marginBottom: 12,
+  background: '#fff',
+};
+const metaStyle = { color: '#64748b', fontSize: 14, margin: '6px 0 0' };
+const buttonStyle = {
+  marginTop: 12,
+  padding: '10px 14px',
+  border: 0,
+  borderRadius: 8,
+  background: '#175E54',
+  color: '#fff',
+  cursor: 'pointer',
+};
+const badgeStyle = {
+  fontSize: 12,
+  background: '#ecfdf5',
+  color: '#047857',
+  padding: '4px 8px',
+  borderRadius: 999,
+};
+const warningBadgeStyle = {
+  ...badgeStyle,
+  background: '#fffbeb',
+  color: '#b45309',
+};

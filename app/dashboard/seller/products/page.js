@@ -33,7 +33,7 @@ import {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
                      'https://api.keralasellers.in';
 
-const API_URL = `${API_BASE_URL}/api/products/`;
+const API_URL = `${API_BASE_URL}/user/store/products/`;
 const SUBSCRIPTION_API_URL = `${API_BASE_URL}/api/subscriptions/current/`;
 
 export default function ProductsPage() {

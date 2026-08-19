@@ -19,9 +19,11 @@ import {
   RefreshCw,
   Banknote,
   Wallet,
-  Coin,
-  CoinsIcon
+  ScanLine,
 } from 'lucide-react';
+import BarcodeScanner from '../../../../components/BarcodeScanner';
+import { findProductByCode } from '../../../lib/barcode';
+import { asList } from '../../../lib/storeAccess';
 
 // âœ… Using environment variables for API URLs
 // const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
@@ -34,7 +36,7 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   'https://api.keralasellers.in';
 
-const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
+const PRODUCTS_API_URL = `${API_BASE_URL}/user/store/products/`;
 const CREATE_BILL_URL = `${API_BASE_URL}/user/orders/create-local-bill/`;      // âœ… CHANGED
 const GENERATE_BILL_URL = `${API_BASE_URL}/user/orders/generate-local-bill/`;  // âœ… NEW
 const LOCAL_BILLS_URL = `${API_BASE_URL}/user/orders/local-bills/`;
@@ -68,6 +70,9 @@ export default function LocalBillingPage() {
   const [useLoyalty, setUseLoyalty] = useState(false);
   const [lastBillId, setLastBillId] = useState(null);
   const [recentBills, setRecentBills] = useState([]);
+  const [editingBillId, setEditingBillId] = useState(null);
+  const [editingBillLabel, setEditingBillLabel] = useState('');
+  const [scanner, setScanner] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -174,21 +179,19 @@ export default function LocalBillingPage() {
 
     try {
       console.log('Fetching products from:', PRODUCTS_API_URL);
-      const response = await axios.get(PRODUCTS_API_URL, { headers });
-      const productData = response.data.results || response.data || [];
-
-      // Filter to show only products with local stock
-      const locallyAvailableProducts = productData.filter(product => {
+      const response = await axios.get(PRODUCTS_API_URL, { headers, params: { page_size: 200 } });
+      const productData = asList(response.data);
+      const locallyAvailableProducts = productData.filter((product) => {
         const localStock = product.total_stock || 0;
-        return localStock > 0;
+        return localStock > 0 && product.sale_type !== 'ONLINE';
       });
 
       console.log(`Fetched ${productData.length} products, ${locallyAvailableProducts.length} locally available`);
       setProducts(locallyAvailableProducts);
       setFilteredProducts(locallyAvailableProducts);
       try {
-        const bills = await axios.get(LOCAL_BILLS_URL, { headers });
-        setRecentBills(bills.data.bills || []);
+        const bills = await axios.get(LOCAL_BILLS_URL, { headers, params: { page_size: 50 } });
+        setRecentBills((asList(bills.data)).filter((bill) => bill.status !== 'CANCELLED' && bill.payment_status !== 'CANCELLED'));
       } catch (billErr) {
         console.log('Bill history not available', billErr);
       }
@@ -270,23 +273,64 @@ export default function LocalBillingPage() {
     setTimeout(() => setSuccess(''), 2000);
   };
 
-  const updateQuantity = (productId, quantity) => {
+  const updateQuantity = (lineKey, quantity) => {
     const newQty = Math.max(1, parseInt(quantity, 10) || 1);
-    const product = products.find(p => p.id === productId);
-
-    if (product && newQty > product.total_stock) {
-      setError(`Only ${product.total_stock} units available for ${product.name}`);
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    setBillItems(prev => prev.map(item =>
-      item.lineKey === productId || item.id === productId ? { ...item, quantity: newQty } : item
-    ));
+    setBillItems((prev) => prev.map((item) => {
+      if (item.lineKey !== lineKey) return item;
+      if (newQty > item.total_stock) {
+        setError(`Only ${item.total_stock} units available for ${item.name}`);
+        setTimeout(() => setError(''), 3000);
+        return item;
+      }
+      return { ...item, quantity: newQty };
+    }));
   };
 
-  const removeFromBill = (productId) => {
-    setBillItems(prev => prev.filter(item => item.id !== productId));
+  const updatePrice = (lineKey, price) => {
+    const next = Number(price);
+    setBillItems((prev) => prev.map((item) => (
+      item.lineKey === lineKey && Number.isFinite(next) && next >= 0
+        ? { ...item, price: next }
+        : item
+    )));
+  };
+
+  const removeFromBill = (lineKey) => {
+    setBillItems((prev) => prev.filter((item) => item.lineKey !== lineKey));
+  };
+
+  const addScanned = (code) => {
+    const match = findProductByCode(products, code);
+    if (!match) {
+      setSearchTerm(code);
+      setError(`${code} is not on a shop product. Create or attach a barcode from Barcodes.`);
+      setTimeout(() => setError(''), 4000);
+      return;
+    }
+    addToBill(match.product, match.variant || null);
+  };
+
+  const applyBill = (bill) => {
+    if (!bill?.id) return;
+    setEditingBillId(bill.id);
+    setEditingBillLabel(bill.bill_id || bill.bill_number || `Bill ${bill.id}`);
+    setCustomer({ name: bill.customer_name || '', phone: bill.customer_phone || '' });
+    const method = String(bill.payment_method || 'CASH').toUpperCase();
+    setPaymentMethod(['CASH', 'UPI', 'CARD', 'OTHER', 'SPLIT'].includes(method) ? method : 'CASH');
+    setBillItems((bill.items || []).map((item) => {
+      const found = products.find((product) => product.id === item.product_id);
+      const variant = (found?.variants || []).find((row) => row.id === item.variant_id);
+      const name = item.variant_name ? `${item.name} (${item.variant_name})` : (item.name || found?.name || 'Item');
+      return {
+        id: item.product_id || found?.id,
+        lineKey: `${item.product_id || found?.id}-${item.variant_id || 0}`,
+        variant_id: item.variant_id || null,
+        name,
+        price: Number(item.price),
+        total_stock: variant?.total_stock ?? found?.total_stock ?? 9999,
+        quantity: item.quantity,
+      };
+    }));
   };
 
   const calculateTotal = () => {
@@ -369,10 +413,26 @@ export default function LocalBillingPage() {
         }
       };
 
-      const billResponse = await axios.post(CREATE_BILL_URL, billData, requestConfig);
-      console.log(' Local bill created:', billResponse.data);
+      let billResponse;
+      if (editingBillId) {
+        try {
+          billResponse = await axios.post(`${LOCAL_BILLS_URL}${editingBillId}/update/`, billData, requestConfig);
+        } catch (err) {
+          if (err.response?.status === 404) {
+            billResponse = await axios.post(CREATE_BILL_URL, billData, requestConfig);
+            setSuccess('Saved as a new bill because this shop API cannot edit an old bill yet.');
+          } else {
+            throw err;
+          }
+        }
+      } else {
+        billResponse = await axios.post(CREATE_BILL_URL, billData, requestConfig);
+      }
+      console.log(' Local bill saved:', billResponse.data);
       const savedBill = billResponse.data;
       setLastBillId(savedBill.id || null);
+      setEditingBillId(null);
+      setEditingBillLabel('');
       let silentPrinted = false;
       try {
         const health = await fetch('http://127.0.0.1:17890/', { method: 'GET' });
@@ -471,6 +531,8 @@ export default function LocalBillingPage() {
     setCouponCode('');
     setUseLoyalty(false);
     setLoyaltyBalance(0);
+    setEditingBillId(null);
+    setEditingBillLabel('');
     setError('');
     setSuccess('Bill cleared');
     setTimeout(() => setSuccess(''), 2000);
@@ -481,7 +543,7 @@ export default function LocalBillingPage() {
       <div className='dashboardbillingheader' style={styles.header}>
         <h1 className='dashboardbillingtitle' style={styles.pageTitle}>
           <Wallet className='dashboardbillingpackageicon' size={28} />
-          Direct Local Billing
+          {editingBillId ? `Edit ${editingBillLabel || 'bill'}` : 'Direct Local Billing'}
         </h1>
         <p className='dashboardbillingsubtitle' style={styles.pageSubtitle}>
           Instant walk-in billing. After save, a print preview opens. Silent thermal print needs the local print bridge on this computer (http://127.0.0.1:17890) — the browser cannot send bytes to a USB printer by itself.
@@ -605,11 +667,20 @@ export default function LocalBillingPage() {
             <input
               className='dashboardbillinginput'
               type="text"
-              placeholder="Search name, SKU, or barcode..."
+              placeholder="Search name, SKU, or barcode — USB scanner works here"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchTerm.trim()) {
+                  e.preventDefault();
+                  addScanned(searchTerm.trim());
+                }
+              }}
               style={styles.searchInput}
             />
+            <button type="button" onClick={() => setScanner(true)} style={styles.autoDetectButton} title="Scan with camera">
+              <ScanLine size={16} />
+            </button>
           </div>
 
           <div className='billingscroll' style={styles.productList}>
@@ -763,14 +834,14 @@ export default function LocalBillingPage() {
                   // âœ… Mobile Card Layout
                   <div style={styles.mobileCardList}>
                     {billItems.map(item => (
-                      <div key={item.id} style={styles.mobileCard}>
+                      <div key={item.lineKey} style={styles.mobileCard}>
                         <div style={styles.mobileCardHeader}>
                           <div style={styles.mobileCardTitle}>
                             <div style={styles.itemName}>{item.name}</div>
                             {item.model_name && <div style={styles.itemModel}>{item.model_name}</div>}
                             <div style={styles.itemStock}>âœ“ Stock: {item.total_stock} available</div>
                           </div>
-                          <button onClick={() => removeFromBill(item.id)} style={styles.removeButton}>
+                          <button onClick={() => removeFromBill(item.lineKey)} style={styles.removeButton}>
                             <X size={16} />
                           </button>
                         </div>
@@ -780,7 +851,7 @@ export default function LocalBillingPage() {
                             <span style={styles.qtyLabel}>Quantity</span>
                             <div style={styles.qtyControls}>
                               <button
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                onClick={() => updateQuantity(item.lineKey, item.quantity - 1)}
                                 style={styles.qtyButton}
                                 disabled={item.quantity <= 1}
                               >
@@ -793,7 +864,7 @@ export default function LocalBillingPage() {
                                 style={styles.qtyInput}
                               />
                               <button
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                onClick={() => updateQuantity(item.lineKey, item.quantity + 1)}
                                 style={styles.qtyButton}
                                 disabled={item.quantity >= item.total_stock}
                               >
@@ -805,7 +876,14 @@ export default function LocalBillingPage() {
                           <div style={styles.priceSection}>
                             <div style={styles.priceLine}>
                               <span>Price</span>
-                              <strong>₹{parseFloat(item.price).toFixed(2)}</strong>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={item.price}
+                                onChange={(e) => updatePrice(item.lineKey, e.target.value)}
+                                style={styles.qtyInput}
+                              />
                             </div>
                             <div style={styles.priceLine}>
                               <span>Total</span>
@@ -829,7 +907,7 @@ export default function LocalBillingPage() {
                     </thead>
                     <tbody>
                       {billItems.map(item => (
-                        <tr key={item.id} style={styles.billTableRow}>
+                        <tr key={item.lineKey} style={styles.billTableRow}>
                           <td style={styles.billTableCell}>
                             <div style={styles.billItemName}>{item.name}</div>
                             {item.model_name && (
@@ -842,7 +920,7 @@ export default function LocalBillingPage() {
                           <td style={styles.billTableCell}>
                             <div style={styles.quantityContainer}>
                               <button
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                onClick={() => updateQuantity(item.lineKey, item.quantity - 1)}
                                 style={styles.quantityButton}
                                 disabled={item.quantity <= 1}
                               >
@@ -851,13 +929,13 @@ export default function LocalBillingPage() {
                               <input
                                 type="number"
                                 value={item.quantity}
-                                onChange={e => updateQuantity(item.id, e.target.value)}
+                                onChange={e => updateQuantity(item.lineKey, e.target.value)}
                                 style={styles.quantityInput}
                                 min={1}
                                 max={item.total_stock}
                               />
                               <button
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                onClick={() => updateQuantity(item.lineKey, item.quantity + 1)}
                                 style={styles.quantityButton}
                                 disabled={item.quantity >= item.total_stock}
                               >
@@ -865,13 +943,22 @@ export default function LocalBillingPage() {
                               </button>
                             </div>
                           </td>
-                          <td style={styles.billTableCell}>₹{parseFloat(item.price).toFixed(2)}</td>
+                          <td style={styles.billTableCell}>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={item.price}
+                              onChange={(e) => updatePrice(item.lineKey, e.target.value)}
+                              style={styles.quantityInput}
+                            />
+                          </td>
                           <td style={styles.billTableCell}>
                             <strong>₹{(parseFloat(item.price) * item.quantity).toFixed(2)}</strong>
                           </td>
                           <td style={styles.billTableCell}>
                             <button
-                              onClick={() => removeFromBill(item.id)}
+                              onClick={() => removeFromBill(item.lineKey)}
                               style={styles.removeButton}
                               title="Remove item"
                             >
@@ -936,7 +1023,7 @@ export default function LocalBillingPage() {
                 ) : (
                   <span style={styles.buttonContent}>
                     <Banknote size={18} />
-                    Generate Cash Bill
+                    {editingBillId ? 'Save bill changes' : 'Generate Cash Bill'}
                   </span>
                 )}
               </button>
@@ -944,6 +1031,40 @@ export default function LocalBillingPage() {
           )}
         </div>
       </div>
+
+      {recentBills.length > 0 ? (
+        <div style={{ marginTop: 24 }}>
+          <h3>Recent bills</h3>
+          <p style={{ color: '#64748b', fontSize: 13 }}>Tap a bill to edit quantity, price, or items.</p>
+          {recentBills.slice(0, 8).map((bill) => (
+            <button
+              key={bill.id || bill.bill_id}
+              type="button"
+              onClick={() => applyBill(bill)}
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: 12,
+                border: 0,
+                borderBottom: '1px solid #e5e7eb',
+                background: editingBillId === bill.id ? '#ecfdf5' : 'transparent',
+                cursor: 'pointer',
+              }}
+            >
+              <strong>{bill.bill_id || bill.bill_number}</strong> · ₹{bill.total_amount} · {bill.customer_name || 'Walk-in'}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <BarcodeScanner
+        open={scanner}
+        title="Scan to add to bill"
+        continuous
+        onClose={() => setScanner(false)}
+        onScan={addScanned}
+      />
 
       <style jsx>{`
         @keyframes spin {

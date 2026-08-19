@@ -25,7 +25,7 @@ import {
 // const API_URL = `${API_BASE_URL}/api/products/`;
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
-const API_URL = `${API_BASE_URL}/api/products/`;
+const API_URL = `${API_BASE_URL}/user/store/products/`;
 
 
 // Enhanced Confirmation Modal Component
@@ -137,7 +137,8 @@ export default function StockManagementPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      const productData = response.data.results || response.data || [];
+      const raw = response.data.results || response.data.products || response.data || [];
+      const productData = Array.isArray(raw) ? raw : [];
       console.log('Products fetched for stock management:', productData.length);
 
       setProducts(productData);

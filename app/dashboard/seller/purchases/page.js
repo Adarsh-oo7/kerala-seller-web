@@ -22,10 +22,10 @@ export default function PurchasesPage() {
     try {
       const [stock, catalog] = await Promise.all([
         axios.get(`${API_BASE_URL}/user/store/purchases/`, { headers: headers() }),
-        axios.get(`${API_BASE_URL}/api/products/`, { headers: headers() }),
+        axios.get(`${API_BASE_URL}/user/store/products/`, { headers: headers(), params: { page_size: 200 } }),
       ]);
       setPurchases(stock.data.purchases || []);
-      const list = catalog.data.results || catalog.data || [];
+      const list = catalog.data.results || catalog.data.products || catalog.data || [];
       setProducts(Array.isArray(list) ? list : []);
       setError('');
     } catch (err) {

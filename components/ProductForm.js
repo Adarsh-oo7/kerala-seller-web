@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Package2, Edit, Cloud, Box, Globe, Folder, File, ArrowLeft, CheckCircle, X, Home, Trash2, Loader2, CloudUpload, Rocket, AlertCircle   } from "lucide-react";
+import { Package2, Edit, Cloud, Box, Globe, Folder, File, ArrowLeft, CheckCircle, X, Home, Trash2, Loader2, CloudUpload, Rocket, AlertCircle, ScanLine   } from "lucide-react";
+import BarcodeScanner from './BarcodeScanner';
+import { codesFromProduct, findProductByCode, generateShopBarcode, storedBarcode } from '../app/lib/barcode';
 
 // ✅ Enhanced environment variable handling for your hosted backend
 // const getApiBaseUrl = () => {
@@ -1505,6 +1507,8 @@ export default function ProductForm({ product, onClose, onSuccess }) {
   const [productCount, setProductCount] = useState(0);
   const [limitReached, setLimitReached] = useState(false);
   const [loadingLimits, setLoadingLimits] = useState(true);
+  const [barcodeScanner, setBarcodeScanner] = useState(false);
+  const [shopCatalog, setShopCatalog] = useState([]);
 
   useEffect(() => {
     if (product) {
@@ -1565,15 +1569,17 @@ const subImages = product.sub_images
         );
         setSubscription(subResponse.data);
 
+        const catalogRes = await axios.get(PRODUCTS_API_URL, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          params: { page_size: 200 },
+        }).catch(() => ({ data: [] }));
+        const catalog = Array.isArray(catalogRes.data)
+          ? catalogRes.data
+          : (catalogRes.data.results || catalogRes.data.products || []);
+        setShopCatalog(Array.isArray(catalog) ? catalog : []);
+
         if (!product) {
-          const productsResponse = await axios.get(
-            `${API_BASE_URL}/api/products/`,
-            { headers: { 'Authorization': `Bearer ${token}` } }
-          );
-          const count = Array.isArray(productsResponse.data) 
-            ? productsResponse.data.length 
-            : productsResponse.data.results?.length || 0;
-          
+          const count = catalog.length;
           setProductCount(count);
 
           if (subResponse.data.product_limit && count >= subResponse.data.product_limit) {
@@ -1827,6 +1833,12 @@ const handleMainImageUpload = (uploadedImages) => {
     return;
   }
 
+  const duplicate = findProductByCode(shopCatalog, formData.barcode);
+  if (duplicate && (!product || duplicate.product.id !== product.id)) {
+    setError(`${storedBarcode(formData.barcode)} is already on ${duplicate.product.name}. Use a different code.`);
+    return;
+  }
+
   // ✅ NEW: Validate weight (optional but if provided must be valid)
   if (formData.weight_kg && formData.weight_kg !== '') {
     const weightValidation = validateWeight(formData.weight_kg);
@@ -1851,7 +1863,7 @@ const handleMainImageUpload = (uploadedImages) => {
     })),
     weight_kg: formData.weight_kg && formData.weight_kg !== '' ? parseFloat(formData.weight_kg) : null, // ✅ NEW: Include weight
     sku: formData.sku || '',
-    barcode: formData.barcode || '',
+    barcode: storedBarcode(formData.barcode || ''),
     cost_price: formData.cost_price === '' || formData.cost_price == null ? null : formData.cost_price,
     hsn_code: formData.hsn_code || '',
     gst_rate: formData.gst_rate === '' || formData.gst_rate == null ? null : formData.gst_rate,
@@ -2238,7 +2250,50 @@ const handleMainImageUpload = (uploadedImages) => {
     </div>
     <div>
       <label className="dashboardproductmodalsectionlabel" style={styles.label}>Barcode</label>
-      <input name="barcode" value={formData.barcode} onChange={handleChange} style={styles.input} placeholder="Scan or type" />
+      <p style={{ ...styles.helpText, marginTop: 0 }}>
+        Create a shop sticker, or attach the barcode already on the packet.
+      </p>
+      <input
+        name="barcode"
+        value={formData.barcode}
+        onChange={handleChange}
+        style={styles.input}
+        placeholder="Scan or type the existing barcode"
+      />
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+        <button
+          type="button"
+          onClick={() => setBarcodeScanner(true)}
+          style={{ ...styles.input, width: 'auto', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+        >
+          <ScanLine size={14} /> Scan existing
+        </button>
+        <button
+          type="button"
+          onClick={() => setFormData((prev) => ({
+            ...prev,
+            barcode: generateShopBarcode(shopCatalog.flatMap((row) => codesFromProduct(row)).concat([prev.barcode, prev.sku])),
+          }))}
+          style={{ ...styles.input, width: 'auto', cursor: 'pointer' }}
+        >
+          Create shop code
+        </button>
+        {formData.barcode ? (
+          <button type="button" onClick={() => setFormData((prev) => ({ ...prev, barcode: '' }))} style={{ ...styles.input, width: 'auto', cursor: 'pointer' }}>
+            Clear
+          </button>
+        ) : null}
+      </div>
+      {formData.barcode ? (
+        <p style={{ letterSpacing: 2, fontWeight: 700, marginTop: 8 }}>{storedBarcode(formData.barcode)}</p>
+      ) : null}
+      {(() => {
+        const match = findProductByCode(shopCatalog, formData.barcode);
+        if (match && (!product || match.product.id !== product.id)) {
+          return <p style={{ color: '#b91c1c', fontSize: 13 }}>Already on {match.product.name}. Use a different code.</p>;
+        }
+        return null;
+      })()}
     </div>
     <div>
       <label className="dashboardproductmodalsectionlabel" style={styles.label}>Cost price (private)</label>
@@ -2410,6 +2465,15 @@ const handleMainImageUpload = (uploadedImages) => {
           </div>
         </form>
       </div>
+      <BarcodeScanner
+        open={barcodeScanner}
+        title="Scan packet barcode"
+        onClose={() => setBarcodeScanner(false)}
+        onScan={(code) => {
+          setFormData((prev) => ({ ...prev, barcode: storedBarcode(code) }));
+          setBarcodeScanner(false);
+        }}
+      />
     </div>
   );
 }

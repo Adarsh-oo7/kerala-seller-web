@@ -528,6 +528,18 @@ export default function SellerDashboardOverview() {
                     <div style={styles.quickActionsContainer}>
                         <h3 className='dashboardoverviewsectiontitle' style={styles.sectionTitle}>Quick Actions</h3>
                         <div className='dashboardoverviewquickactiongrid' style={styles.quickActionsGrid}>
+                            <Link href="/dashboard/seller/billing" style={styles.quickActionCard}>
+                                <ShoppingCart size={24} color='#175E54' />
+                                <span>New bill</span>
+                            </Link>
+                            <Link href="/dashboard/seller/barcodes" style={styles.quickActionCard}>
+                                <Package size={24} color='#175E54' />
+                                <span>Barcodes</span>
+                            </Link>
+                            <Link href="/dashboard/seller/addons" style={styles.quickActionCard}>
+                                <Crown size={24} color='#175E54' />
+                                <span>Add-ons</span>
+                            </Link>
                             <Link href="/dashboard/seller/history" style={styles.quickActionCard}>
                                 <BarChart3 size={24} color='#175E54' />
                                 <span>Stock History</span>
