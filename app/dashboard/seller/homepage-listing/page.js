@@ -51,6 +51,7 @@ export default function HomepageListingPage() {
   const [shopName, setShopName] = useState('this shop');
   const [policies, setPolicies] = useState(policiesFromStore({ name: 'this shop' }));
   const [savingPolicies, setSavingPolicies] = useState(false);
+  const [savingProducts, setSavingProducts] = useState(false);
 
   const headers = useCallback(() => {
     const token = localStorage.getItem('accessToken');
@@ -224,8 +225,15 @@ export default function HomepageListingPage() {
     <div style={styles.wrap}>
       <h1 style={styles.title}><BadgeCheck size={22} /> Advanced settings</h1>
       <p style={styles.lead}>
-        Same as the seller app. Products appear on keralasellers.in only after a superuser verifies your business details.
+        Three steps: verify the shop, wait for Kerala Sellers approval, then choose which products appear on keralasellers.in.
+        Your own shop page still shows the full online catalog.
       </p>
+
+      <ol style={styles.steps}>
+        <li><strong>1. Basic settings</strong> — shop name, logo, WhatsApp</li>
+        <li><strong>2. Verify here</strong> — business details and document, then request listing</li>
+        <li><strong>3. Home page products</strong> — pick what buyers see on the Kerala Sellers home page</li>
+      </ol>
 
       {status === 'approved' ? <p style={styles.ok}>Verified. Your products can appear on the home page.</p> : null}
       {status === 'pending' ? <p style={styles.info}>Request sent. Waiting for superuser verification.</p> : null}
@@ -284,6 +292,72 @@ export default function HomepageListingPage() {
       </form>
 
       <section style={styles.policySection}>
+        <h2 style={styles.sectionTitle}>3. Home page products</h2>
+        <p style={styles.lead}>
+          {status === 'approved'
+            ? 'These products appear on keralasellers.in. Shop-only items never appear there. Your shop page is unchanged.'
+            : 'Choose now. They go live on the Kerala Sellers home page after a superuser verifies the shop.'}
+        </p>
+        {(listing?.products || []).length === 0 ? (
+          <p style={styles.lead}>Add products first. Then come back and pick which ones to list.</p>
+        ) : (
+          <div style={styles.productList}>
+            {(listing.products || []).map((item) => (
+              <label key={item.id} style={{ ...styles.productRow, opacity: item.eligible ? 1 : 0.55 }}>
+                <input
+                  type="checkbox"
+                  disabled={!item.eligible}
+                  checked={Boolean(item.show_on_homepage)}
+                  onChange={() => {
+                    setListing((current) => ({
+                      ...current,
+                      products: (current?.products || []).map((row) =>
+                        row.id === item.id ? { ...row, show_on_homepage: !row.show_on_homepage } : row
+                      ),
+                    }));
+                  }}
+                />
+                <span>
+                  {item.name}
+                  {item.eligible ? '' : ' · shop only'}
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={async () => {
+            const auth = headers();
+            if (!auth) return;
+            setSavingProducts(true);
+            setError('');
+            try {
+              const response = await axios.patch(
+                LISTING_API,
+                {
+                  homepage_product_ids: (listing?.products || [])
+                    .filter((row) => row.eligible && row.show_on_homepage)
+                    .map((row) => row.id),
+                },
+                { headers: auth },
+              );
+              applyPayload(response.data);
+              setMessage('Home page products saved.');
+            } catch (err) {
+              setError(err.response?.data?.error || 'Could not save home page products.');
+            } finally {
+              setSavingProducts(false);
+            }
+          }}
+          disabled={savingProducts || !(listing?.products || []).length}
+          style={styles.primary}
+        >
+          {savingProducts ? 'Saving products…' : 'Save home page products'}
+        </button>
+      </section>
+
+      <section style={styles.policySection}>
         <h2 style={styles.sectionTitle}>Shop policies</h2>
         <p style={styles.lead}>
           These start from Kerala Sellers defaults. You can edit them for your shop.
@@ -320,6 +394,9 @@ const styles = {
   wrap: { maxWidth: 760, margin: '0 auto', padding: '24px 16px 48px', color: '#111827' },
   title: { display: 'flex', gap: 8, alignItems: 'center', fontSize: 24, margin: '0 0 8px' },
   lead: { color: '#4b5563', marginBottom: 16 },
+  steps: { color: '#374151', paddingLeft: 18, margin: '0 0 20px', lineHeight: 1.6 },
+  productList: { display: 'flex', flexDirection: 'column', gap: 8 },
+  productRow: { display: 'flex', gap: 10, alignItems: 'center', fontWeight: 500, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 12px' },
   form: { display: 'flex', flexDirection: 'column', gap: 14 },
   sectionTitle: { fontSize: 20, margin: '8px 0' },
   policySection: { marginTop: 36, paddingTop: 24, borderTop: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: 14 },

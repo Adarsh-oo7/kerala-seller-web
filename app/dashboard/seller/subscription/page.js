@@ -690,15 +690,13 @@ export default function SubscriptionPage() {
 
             {/* Plans Grid */}
             <div className='plan-grid' style={styles.planGrid}>
-                {plans.map((plan, index) => {
+                {plans.map((plan) => {
                     const basePrice = parseFloat(plan.price) || 0;
                     const yearlyPrice = parseFloat(plan.yearly_price || '') || (basePrice * 12 * 0.90);
                     const displayPrice = billingCycle === 'yearly' ? yearlyPrice : basePrice;
 
                     const isCurrentPlan = currentSubscription?.plan?.id === plan.id && currentSubscription?.is_active;
-                    const isPopular = plan.name.toLowerCase().includes('pro') ||
-                        plan.name.toLowerCase().includes('professional') ||
-                        index === Math.floor(plans.length / 2);
+                    const isPopular = Boolean(plan.is_popular);
                     
                     const isComingSoon = billingCycle === 'yearly';
 
@@ -761,6 +759,15 @@ export default function SubscriptionPage() {
                                                 {plan.product_limit
                                                     ? `${plan.product_limit} Online Products`
                                                     : 'Unlimited Online Products'
+                                                }
+                                            </span>
+                                        </li>
+                                        <li style={styles.featureItem}>
+                                            <CheckCircle size={16} style={styles.checkIcon} />
+                                            <span>
+                                                {plan.allows_custom_subdomain
+                                                    ? 'Custom store URL: {slug}.keralasellers.in (after Vercel is active)'
+                                                    : 'Store URL: keralasellers.in/shop/{slug}/'
                                                 }
                                             </span>
                                         </li>

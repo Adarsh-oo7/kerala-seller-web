@@ -61,6 +61,13 @@ export default function SettingsPage() {
   const [store, setStore] = useState({
     name: '', description: '', tagline: '', whatsappnumber: '', deliverytimelocal: '', deliverytimenational: '',
     acceptscod: false,
+    print_paper_size: '80mm',
+    print_footer_message: '',
+    print_copies: 1,
+    print_show_cashier: true,
+    print_show_customer: true,
+    gst_number: '',
+    default_gst_rate: '',
   });
 
   const [currentLogoUrl, setCurrentLogoUrl] = useState('');
@@ -317,7 +324,7 @@ export default function SettingsPage() {
         </div>
         <Link href="/dashboard/seller/homepage-listing" style={{ textDecoration: 'none', color: 'inherit', border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, background: 'white' }}>
           <strong>Advanced settings</strong>
-          <p style={{ margin: '6px 0 0', color: '#4b5563', fontSize: 13 }}>Verification, home listing, and shop policies</p>
+          <p style={{ margin: '6px 0 0', color: '#4b5563', fontSize: 13 }}>Verify the shop, then pick home page products</p>
         </Link>
         <Link href="/dashboard/seller/products/delivery-settings" style={{ textDecoration: 'none', color: 'inherit', border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, background: 'white' }}>
           <strong>Delivery settings</strong>
@@ -743,6 +750,42 @@ export default function SettingsPage() {
               />
               Accept Cash on Delivery (COD)
             </label>
+          </div>
+          <div style={s.fg}>
+            <label style={s.l}>Receipt paper</label>
+            <select name="print_paper_size" value={store.print_paper_size || '80mm'} onChange={handleInputChange} style={s.in}>
+              <option value="58mm">58mm thermal</option>
+              <option value="80mm">80mm thermal</option>
+              <option value="A4">A4 invoice</option>
+            </select>
+          </div>
+          <div style={s.fg}>
+            <label style={s.l}>Receipt footer</label>
+            <input name="print_footer_message" value={store.print_footer_message || ''} onChange={handleInputChange} style={s.in} placeholder="Thank you. Visit again." />
+          </div>
+          <div style={s.fg}>
+            <label style={s.l}>Print copies</label>
+            <input type="number" min="1" max="5" name="print_copies" value={store.print_copies || 1} onChange={handleInputChange} style={s.in} />
+          </div>
+          <div style={s.fg}>
+            <label style={s.cl}>
+              <input type="checkbox" name="print_show_cashier" checked={store.print_show_cashier !== false} onChange={handleInputChange} style={s.cb2} />
+              Show cashier name on receipt
+            </label>
+          </div>
+          <div style={s.fg}>
+            <label style={s.cl}>
+              <input type="checkbox" name="print_show_customer" checked={store.print_show_customer !== false} onChange={handleInputChange} style={s.cb2} />
+              Show customer details on receipt
+            </label>
+          </div>
+          <div style={s.fg}>
+            <label style={s.l}>GSTIN (optional)</label>
+            <input name="gst_number" value={store.gst_number || ''} onChange={handleInputChange} style={s.in} placeholder="Needed for GST invoice" />
+          </div>
+          <div style={s.fg}>
+            <label style={s.l}>Default GST % (optional)</label>
+            <input type="number" min="0" step="0.01" name="default_gst_rate" value={store.default_gst_rate || ''} onChange={handleInputChange} style={s.in} placeholder="Used if a product has no GST %" />
           </div>
         </div>
 

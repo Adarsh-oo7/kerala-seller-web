@@ -1481,6 +1481,13 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     online_stock: 0,
     sale_type: 'BOTH',
     weight_kg: '', // ✅ NEW: Weight field
+    sku: '',
+    barcode: '',
+    cost_price: '',
+    hsn_code: '',
+    gst_rate: '',
+    show_on_homepage: true,
+    low_stock_threshold: 0,
 
   });
 
@@ -1513,6 +1520,13 @@ export default function ProductForm({ product, onClose, onSuccess }) {
         online_stock: product.online_stock || 0,
         sale_type: product.sale_type || 'BOTH',
          weight_kg: product.weight_kg || '', // ✅ NEW: Load existing weight
+        sku: product.sku || '',
+        barcode: product.barcode || '',
+        cost_price: product.cost_price || '',
+        hsn_code: product.hsn_code || '',
+        gst_rate: product.gst_rate || '',
+        show_on_homepage: product.show_on_homepage !== false,
+        low_stock_threshold: product.low_stock_threshold || 0,
 
       });
       
@@ -1836,6 +1850,13 @@ const handleMainImageUpload = (uploadedImages) => {
       public_id: img.public_id
     })),
     weight_kg: formData.weight_kg && formData.weight_kg !== '' ? parseFloat(formData.weight_kg) : null, // ✅ NEW: Include weight
+    sku: formData.sku || '',
+    barcode: formData.barcode || '',
+    cost_price: formData.cost_price === '' || formData.cost_price == null ? null : formData.cost_price,
+    hsn_code: formData.hsn_code || '',
+    gst_rate: formData.gst_rate === '' || formData.gst_rate == null ? null : formData.gst_rate,
+    show_on_homepage: formData.sale_type === 'OFFLINE' ? false : formData.show_on_homepage !== false,
+    low_stock_threshold: parseInt(formData.low_stock_threshold, 10) || 0,
   };
 
   console.log(' Submitting product data:', submissionData);
@@ -2210,6 +2231,32 @@ const handleMainImageUpload = (uploadedImages) => {
       </div>
     )}
   </div>
+  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
+    <div>
+      <label className="dashboardproductmodalsectionlabel" style={styles.label}>SKU</label>
+      <input name="sku" value={formData.sku} onChange={handleChange} style={styles.input} placeholder="SKU-001" />
+    </div>
+    <div>
+      <label className="dashboardproductmodalsectionlabel" style={styles.label}>Barcode</label>
+      <input name="barcode" value={formData.barcode} onChange={handleChange} style={styles.input} placeholder="Scan or type" />
+    </div>
+    <div>
+      <label className="dashboardproductmodalsectionlabel" style={styles.label}>Cost price (private)</label>
+      <input type="number" name="cost_price" value={formData.cost_price} onChange={handleChange} style={styles.input} min="0" step="0.01" />
+    </div>
+    <div>
+      <label className="dashboardproductmodalsectionlabel" style={styles.label}>Low-stock alert at</label>
+      <input type="number" name="low_stock_threshold" value={formData.low_stock_threshold} onChange={handleChange} style={styles.input} min="0" />
+    </div>
+    <div>
+      <label className="dashboardproductmodalsectionlabel" style={styles.label}>HSN (optional)</label>
+      <input name="hsn_code" value={formData.hsn_code || ''} onChange={handleChange} style={styles.input} placeholder="For GST invoice" />
+    </div>
+    <div>
+      <label className="dashboardproductmodalsectionlabel" style={styles.label}>GST % (optional)</label>
+      <input type="number" name="gst_rate" value={formData.gst_rate || ''} onChange={handleChange} style={styles.input} min="0" step="0.01" placeholder="18" />
+    </div>
+  </div>
 </div>
 
 
@@ -2233,6 +2280,16 @@ const handleMainImageUpload = (uploadedImages) => {
             </select>
             <small style={styles.helpText}>Choose where customers can buy this product</small>
           </div>
+          {formData.sale_type !== 'OFFLINE' ? (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 14 }}>
+              <input
+                type="checkbox"
+                checked={formData.show_on_homepage !== false}
+                onChange={(event) => setFormData({ ...formData, show_on_homepage: event.target.checked })}
+              />
+              Show on Kerala Sellers home after the shop is verified
+            </label>
+          ) : null}
 
           <hr style={styles.hr} />
 

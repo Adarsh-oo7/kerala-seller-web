@@ -37,6 +37,7 @@ const API_BASE_URL =
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products/`;
 const CREATE_BILL_URL = `${API_BASE_URL}/user/orders/create-local-bill/`;      // âœ… CHANGED
 const GENERATE_BILL_URL = `${API_BASE_URL}/user/orders/generate-local-bill/`;  // âœ… NEW
+const LOCAL_BILLS_URL = `${API_BASE_URL}/user/orders/local-bills/`;
 
 console.log(' Local bill APIs:', {
   API_BASE_URL,
@@ -59,6 +60,14 @@ export default function LocalBillingPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [paymentMethod, setPaymentMethod] = useState('CASH');
+  const [splitCash, setSplitCash] = useState('');
+  const [splitUpi, setSplitUpi] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [loyaltyBalance, setLoyaltyBalance] = useState(0);
+  const [useLoyalty, setUseLoyalty] = useState(false);
+  const [lastBillId, setLastBillId] = useState(null);
+  const [recentBills, setRecentBills] = useState([]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -81,6 +90,28 @@ export default function LocalBillingPage() {
 
     return { 'Authorization': `Bearer ${token}` };
   }, []);
+
+  useEffect(() => {
+    const phone = (customer.phone || '').replace(/\D/g, '').slice(-10);
+    setUseLoyalty(false);
+    if (phone.length !== 10) {
+      setLoyaltyBalance(0);
+      return undefined;
+    }
+    const headers = getAuthHeaders();
+    if (!headers) return undefined;
+    let cancelled = false;
+    axios.get(`${API_BASE_URL}/user/store/loyalty/`, { headers, params: { phone } })
+      .then((res) => {
+        if (!cancelled) setLoyaltyBalance(Number(res.data.balance || 0));
+      })
+      .catch(() => {
+        if (!cancelled) setLoyaltyBalance(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [customer.phone, getAuthHeaders]);
 
   // âœ… AUTO-DETECT SELLER PHONE from /api/store/profile/
   const autoDetectSellerPhone = useCallback(async () => {
@@ -155,6 +186,12 @@ export default function LocalBillingPage() {
       console.log(`Fetched ${productData.length} products, ${locallyAvailableProducts.length} locally available`);
       setProducts(locallyAvailableProducts);
       setFilteredProducts(locallyAvailableProducts);
+      try {
+        const bills = await axios.get(LOCAL_BILLS_URL, { headers });
+        setRecentBills(bills.data.bills || []);
+      } catch (billErr) {
+        console.log('Bill history not available', billErr);
+      }
     } catch (error) {
       console.error('Failed to fetch products:', error);
       if (error.response?.status === 401) {
@@ -172,10 +209,16 @@ export default function LocalBillingPage() {
     if (!searchTerm.trim()) {
       setFilteredProducts(products);
     } else {
+      const q = searchTerm.toLowerCase();
       const filtered = products.filter(product =>
-        product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.model_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+        product.name?.toLowerCase().includes(q) ||
+        product.model_name?.toLowerCase().includes(q) ||
+        product.description?.toLowerCase().includes(q) ||
+        product.sku?.toLowerCase() === q ||
+        product.barcode?.toLowerCase() === q ||
+        (product.variants || []).some((variant) =>
+          variant.sku?.toLowerCase() === q || variant.barcode?.toLowerCase() === q || variant.name?.toLowerCase().includes(q)
+        )
       );
       setFilteredProducts(filtered);
     }
@@ -187,30 +230,43 @@ export default function LocalBillingPage() {
     fetchProducts();
   }, [autoDetectSellerPhone, fetchProducts]);
 
-  const addToBill = (product) => {
-    if (product.total_stock <= 0) {
-      setError(`${product.name} is out of stock`);
+  const addToBill = (product, variant = null) => {
+    const stock = variant ? variant.total_stock : product.total_stock;
+    const lineKey = variant ? `${product.id}-${variant.id}` : String(product.id);
+    const label = variant ? `${product.name} (${variant.name})` : product.name;
+    const price = variant?.selling_price ?? variant?.price ?? product.price;
+    if (stock <= 0) {
+      setError(`${label} is out of stock`);
       setTimeout(() => setError(''), 3000);
       return;
     }
 
     setBillItems(prev => {
-      const existingItem = prev.find(item => item.id === product.id);
+      const existingItem = prev.find(item => item.lineKey === lineKey);
       if (existingItem) {
         const newQuantity = existingItem.quantity + 1;
-        if (newQuantity > product.total_stock) {
-          setError(`Only ${product.total_stock} units available for ${product.name}`);
+        if (newQuantity > stock) {
+          setError(`Only ${stock} units available for ${label}`);
           setTimeout(() => setError(''), 3000);
           return prev;
         }
         return prev.map(item =>
-          item.id === product.id ? { ...item, quantity: newQuantity } : item
+          item.lineKey === lineKey ? { ...item, quantity: newQuantity } : item
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, {
+        ...product,
+        id: product.id,
+        lineKey,
+        variant_id: variant?.id || null,
+        name: label,
+        price,
+        total_stock: stock,
+        quantity: 1,
+      }];
     });
 
-    setSuccess(`Added ${product.name} to bill`);
+    setSuccess(`Added ${label} to bill`);
     setTimeout(() => setSuccess(''), 2000);
   };
 
@@ -225,7 +281,7 @@ export default function LocalBillingPage() {
     }
 
     setBillItems(prev => prev.map(item =>
-      item.id === productId ? { ...item, quantity: newQty } : item
+      item.lineKey === productId || item.id === productId ? { ...item, quantity: newQty } : item
     ));
   };
 
@@ -285,10 +341,24 @@ export default function LocalBillingPage() {
         seller_phone: sellerPhone,
         items: billItems.map(item => ({
           id: item.id,
+          variant_id: item.variant_id || undefined,
           quantity: item.quantity,
           price: parseFloat(item.price)
-        }))
+        })),
+        payment_method: paymentMethod,
       };
+      if (couponCode.trim()) {
+        billData.coupon_code = couponCode.trim();
+      }
+      if (useLoyalty && loyaltyBalance > 0) {
+        billData.loyalty_points = Math.min(loyaltyBalance, Math.floor(calculateTotal()));
+      }
+      if (paymentMethod === 'SPLIT') {
+        billData.payments = [
+          Number(splitCash) > 0 ? { method: 'CASH', amount: Number(splitCash) } : null,
+          Number(splitUpi) > 0 ? { method: 'UPI', amount: Number(splitUpi) } : null,
+        ].filter(Boolean);
+      }
 
       console.log(' Creating local bill:', billData);
 
@@ -301,6 +371,23 @@ export default function LocalBillingPage() {
 
       const billResponse = await axios.post(CREATE_BILL_URL, billData, requestConfig);
       console.log(' Local bill created:', billResponse.data);
+      const savedBill = billResponse.data;
+      setLastBillId(savedBill.id || null);
+      let silentPrinted = false;
+      try {
+        const health = await fetch('http://127.0.0.1:17890/', { method: 'GET' });
+        if (health.ok && savedBill.id) {
+          const esc = await axios.get(`${API_BASE_URL}/user/orders/local-bills/${savedBill.id}/escpos/`, { headers });
+          const printed = await fetch('http://127.0.0.1:17890/print', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ escpos_base64: esc.data.escpos_base64 }),
+          });
+          silentPrinted = printed.ok;
+        }
+      } catch (_bridgeErr) {
+        silentPrinted = false;
+      }
 
       // âœ… Step 2: Generate and display bill HTML
       const billId = billResponse.data.bill_id;
@@ -334,7 +421,14 @@ export default function LocalBillingPage() {
       // Reset form
       setBillItems([]);
       setCustomer({ name: '', phone: '' });
-      setSuccess(`âœ… Bill ${billId} generated! Stock updated automatically.`);
+      setSplitCash('');
+      setSplitUpi('');
+      setCouponCode('');
+      setUseLoyalty(false);
+      setLoyaltyBalance(0);
+      setSuccess(silentPrinted
+        ? `Bill ${billId} saved and sent to the local print bridge.`
+        : `Bill ${billId} saved. Print preview opened — the browser cannot silently print to a USB printer. Run the local print bridge on this computer (http://127.0.0.1:17890) for thermal print.`);
       setTimeout(() => setSuccess(''), 5000);
       // Refresh products to show updated stock
       fetchProducts();
@@ -374,6 +468,9 @@ export default function LocalBillingPage() {
   const clearBill = () => {
     setBillItems([]);
     setCustomer({ name: '', phone: '' });
+    setCouponCode('');
+    setUseLoyalty(false);
+    setLoyaltyBalance(0);
     setError('');
     setSuccess('Bill cleared');
     setTimeout(() => setSuccess(''), 2000);
@@ -387,7 +484,7 @@ export default function LocalBillingPage() {
           Direct Local Billing
         </h1>
         <p className='dashboardbillingsubtitle' style={styles.pageSubtitle}>
-          Instant cash billing for walk-in customers â€¢ No order tracking
+          Instant walk-in billing. After save, a print preview opens. Silent thermal print needs the local print bridge on this computer (http://127.0.0.1:17890) — the browser cannot send bytes to a USB printer by itself.
         </p>
       </div>
 
@@ -459,6 +556,31 @@ export default function LocalBillingPage() {
         <div style={styles.successMessage}>
           <CheckCircle size={16} />
           <span>{success}</span>
+          {lastBillId ? (
+            <button
+              type="button"
+              onClick={async () => {
+                const headers = getAuthHeaders();
+                if (!headers) return;
+                try {
+                  const htmlResponse = await axios.get(
+                    `${API_BASE_URL}/user/orders/local-bills/${lastBillId}/print/?layout=gst`,
+                    { headers, responseType: 'blob' }
+                  );
+                  const file = new Blob([htmlResponse.data], { type: 'text/html' });
+                  window.open(URL.createObjectURL(file), '_blank');
+                } catch (err) {
+                  const status = err.response?.status;
+                  if (status === 403) setError('GST invoice is not on the current plan.');
+                  else if (status === 400) setError('Add the store GSTIN in Settings before printing a GST invoice.');
+                  else setError('Could not open GST invoice.');
+                }
+              }}
+              style={{ ...styles.closeButton, marginLeft: 8, width: 'auto', padding: '4px 8px' }}
+            >
+              GST invoice
+            </button>
+          ) : null}
           <button onClick={() => setSuccess('')} style={styles.closeButton}>
             <X size={14} />
           </button>
@@ -483,7 +605,7 @@ export default function LocalBillingPage() {
             <input
               className='dashboardbillinginput'
               type="text"
-              placeholder="Search local inventory..."
+              placeholder="Search name, SKU, or barcode..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               style={styles.searchInput}
@@ -498,12 +620,8 @@ export default function LocalBillingPage() {
               </div>
             ) : filteredProducts.length > 0 ? (
               filteredProducts.map(product => (
-                <div
-                  key={product.id}
-                  onClick={() => addToBill(product)}
-                  style={styles.productItem}
-                >
-                  <div style={styles.productInfo}>
+                <div key={product.id} style={styles.productItem}>
+                  <div style={styles.productInfo} onClick={() => !(product.variants || []).length && addToBill(product)}>
                     <div style={styles.productName}>
                       {product.name}
                       {product.model_name && (
@@ -513,13 +631,25 @@ export default function LocalBillingPage() {
                     <div style={styles.productPrice}>₹{parseFloat(product.price).toFixed(2)}</div>
                     <div style={styles.productStock}>
                       <span style={styles.localStockBadge}>
-                        ðŸ“¦ {product.total_stock} in store
+                        {product.total_stock} in store
                       </span>
                     </div>
+                    {(product.variants || []).map((variant) => (
+                      <button
+                        key={variant.id}
+                        type="button"
+                        onClick={() => addToBill(product, variant)}
+                        style={{ marginTop: 6, marginRight: 6, fontSize: 12 }}
+                      >
+                        {variant.name} ({variant.total_stock})
+                      </button>
+                    ))}
                   </div>
-                  <div className='dashboardbillingaddbtn' style={styles.addButton}>
+                  {!(product.variants || []).length ? (
+                  <div className='dashboardbillingaddbtn' style={styles.addButton} onClick={() => addToBill(product)}>
                     <Plus className='dashboardbillingaddbtnicon' size={16} />
                   </div>
+                  ) : null}
                 </div>
               ))
             ) : (
@@ -572,6 +702,58 @@ export default function LocalBillingPage() {
                 maxLength={10}
               />
             </div>
+          </div>
+          <div style={styles.customerDetails}>
+            <label style={{ fontSize: 13 }}>Payment</label>
+            <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} style={styles.customerInput}>
+              <option value="CASH">Cash</option>
+              <option value="UPI">UPI</option>
+              <option value="CARD">Card</option>
+              <option value="OTHER">Other</option>
+              <option value="SPLIT">Split (Cash + UPI)</option>
+            </select>
+            {paymentMethod === 'SPLIT' ? (
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <input
+                  className='dashboardbillinginput'
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Cash amount"
+                  value={splitCash}
+                  onChange={(e) => setSplitCash(e.target.value)}
+                  style={styles.customerInput}
+                />
+                <input
+                  className='dashboardbillinginput'
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="UPI amount"
+                  value={splitUpi}
+                  onChange={(e) => setSplitUpi(e.target.value)}
+                  style={styles.customerInput}
+                />
+              </div>
+            ) : null}
+            <input
+              className='dashboardbillinginput'
+              type="text"
+              placeholder="Coupon code (optional)"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+              style={{ ...styles.customerInput, marginTop: 8 }}
+            />
+            {loyaltyBalance > 0 ? (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 13 }}>
+                <input
+                  type="checkbox"
+                  checked={useLoyalty}
+                  onChange={(e) => setUseLoyalty(e.target.checked)}
+                />
+                Use {loyaltyBalance} loyalty points
+              </label>
+            ) : null}
           </div>
 
           <div style={styles.billItemsContainer}>

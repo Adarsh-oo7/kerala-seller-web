@@ -20,7 +20,9 @@ import {
   Store,
   LogOut,
   BadgeCheck,
-  Truck
+  Truck,
+  Users,
+  Wallet,
 } from 'lucide-react';
 
 // âœ… FIXED: Use hostname detection (same as your login page)
@@ -71,6 +73,13 @@ export default function DashboardLayout({ children }) {
     orders: 0,
     notifications: 0
   });
+  const [permissions, setPermissions] = useState(null);
+  const [isOwner, setIsOwner] = useState(true);
+
+  const can = (code) => {
+    if (permissions === null) return isOwner;
+    return permissions.includes(code);
+  };
 
   // âœ… FIXED: Better auth headers with validation
   const getAuthHeaders = useCallback(() => {
@@ -154,6 +163,16 @@ export default function DashboardLayout({ children }) {
         'Seller';
 
       setSellerName(name);
+
+      try {
+        const me = await axios.get(`${API_BASE_URL}/user/staff/me/`, { headers, timeout: 8000 });
+        if (!isLoggingOut.current) {
+          setIsOwner(Boolean(me.data.is_owner));
+          setPermissions(me.data.allowed_permissions || me.data.permissions || []);
+        }
+      } catch (meErr) {
+        console.warn('Staff profile not available:', meErr.message);
+      }
 
       // Try to fetch dashboard data (optional)
       try {
@@ -346,31 +365,40 @@ export default function DashboardLayout({ children }) {
     {
       title: 'SALES & E-COMMERCE',
       items: [
-        { name: 'Products', href: '/dashboard/seller/products', icon: <Package size={18} /> },
-        { name: 'Orders', href: '/dashboard/seller/orders', count: notificationCounts.orders, icon: <ShoppingCart size={18} /> },
+        can('products.view') && { name: 'Products', href: '/dashboard/seller/products', icon: <Package size={18} /> },
+        can('orders.view') && { name: 'Orders', href: '/dashboard/seller/orders', count: notificationCounts.orders, icon: <ShoppingCart size={18} /> },
+        can('customers.view') && { name: 'Customers', href: '/dashboard/seller/customers', icon: <Users size={18} /> },
+        can('reports.view_basic') && { name: 'Reports', href: '/dashboard/seller/reports', icon: <BarChart3 size={18} /> },
+        can('expenses.view') && { name: 'Expenses', href: '/dashboard/seller/expenses', icon: <Wallet size={18} /> },
         { name: 'Notifications', href: '/dashboard/seller/notifications', count: notificationCounts.notifications, icon: <Bell size={18} /> },
-      ]
+      ].filter(Boolean)
     },
     {
       title: 'INVENTORY',
       items: [
-        { name: 'Stock', href: '/dashboard/seller/stock', icon: <BarChart3 size={18} /> },
-        { name: 'History', href: '/dashboard/seller/history', icon: <History size={18} /> },
-      ]
+        can('inventory.view') && { name: 'Stock', href: '/dashboard/seller/stock', icon: <BarChart3 size={18} /> },
+        can('inventory.view_history') && { name: 'History', href: '/dashboard/seller/history', icon: <History size={18} /> },
+        can('inventory.manage_suppliers') && { name: 'Suppliers', href: '/dashboard/seller/suppliers', icon: <Truck size={18} /> },
+        can('inventory.manage_purchases') && { name: 'Purchases', href: '/dashboard/seller/purchases', icon: <Package size={18} /> },
+        can('branches.view') && { name: 'Locations', href: '/dashboard/seller/locations', icon: <Store size={18} /> },
+        can('loyalty.view') && { name: 'Loyalty', href: '/dashboard/seller/loyalty', icon: <BadgeCheck size={18} /> },
+      ].filter(Boolean)
     },
       {
     title: 'PAYMENTS & EARNINGS',
     items: [
-      { 
+      can('account.manage_payments') && { 
         name: 'Payments', 
         href: '/dashboard/seller/payments', 
         icon: <CreditCard size={18} />,
-        description: 'ðŸ’° View earnings & bank details'
+        description: 'View earnings & bank details'
       },
-    ]
+    ].filter(Boolean)
   }
 
   ];
+
+  const visibleNavSections = navSections.filter((section) => section.items.length > 0);
 
   return (
     <div style={styles.layoutContainer}>
@@ -416,14 +444,16 @@ export default function DashboardLayout({ children }) {
             pathname={pathname}
             icon={<Home size={18} />}
           />
+          {can('billing.access_pos') ? (
           <NavItem
             href="/dashboard/seller/billing"
             name="Local Billing"
             pathname={pathname}
             icon={<CreditCard size={18} />}
           />
+          ) : null}
 
-          {navSections.map(section => (
+          {visibleNavSections.map(section => (
             <div key={section.title} style={styles.navSection}>
               <h3 style={styles.sectionTitle}>{section.title}</h3>
               {section.items.map(item => (
@@ -442,31 +472,55 @@ export default function DashboardLayout({ children }) {
 
         <div className='dashboardoverviewsidebarnav' style={styles.sidebarFooter}>
           <h3 style={styles.sectionTitle}>STORE SETTINGS</h3>
+          {can('store.view_settings') ? (
           <NavItem
             href="/dashboard/seller/settings"
             name="Basic settings"
             pathname={pathname}
             icon={<Settings size={18} />}
           />
+          ) : null}
+          {can('staff.view') ? (
+          <NavItem
+            href="/dashboard/seller/staff"
+            name="Staff"
+            pathname={pathname}
+            icon={<Users size={18} />}
+          />
+          ) : null}
+          {can('store.edit_settings') ? (
           <NavItem
             href="/dashboard/seller/homepage-listing"
             name="Advanced settings"
             pathname={pathname}
             icon={<BadgeCheck size={18} />}
           />
+          ) : null}
+          {can('store.manage_delivery') ? (
           <NavItem
             href="/dashboard/seller/products/delivery-settings"
             name="Delivery settings"
             pathname={pathname}
             icon={<Truck size={18} />}
           />
+          ) : null}
           <h3 style={{ ...styles.sectionTitle, marginTop: 20 }}>ACCOUNT</h3>
+          {can('account.manage_subscription') ? (
           <NavItem
             href="/dashboard/seller/subscription"
             name="Subscription"
             pathname={pathname}
             icon={<Crown size={18} />}
           />
+          ) : null}
+          {can('account.manage_subscription') ? (
+          <NavItem
+            href="/dashboard/seller/addons"
+            name="Add-ons"
+            pathname={pathname}
+            icon={<Crown size={18} />}
+          />
+          ) : null}
 
           <button
             onClick={handleLogout}
