@@ -11,6 +11,7 @@ export default function Footer() {
       <div className="footer-left">© {new Date().getFullYear()} Kerala Sellers</div>
       <nav className="footer-links">
         <Link href="/privacy-policy">Privacy policy</Link>
+        <Link href="/delete-account">Delete account</Link>
         <Link href="/terms-and-conditions">Terms and Conditions</Link>
         <Link href="/cancellation-refund">Cancellation and Refund</Link>
         <Link href="/shipping-delivery">Shipping and Delivery</Link>

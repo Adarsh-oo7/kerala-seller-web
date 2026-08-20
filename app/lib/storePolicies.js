@@ -170,7 +170,10 @@ When you buy from a shop, that seller also receives the details they need to ful
 2. We do not sell personal data
 We use data to operate the platform, prevent fraud, and improve the service.
 
-3. Questions
+3. Account deletion
+Sellers can close their Kerala Sellers account in the Android app (More → Delete account) or on ${PLATFORM_URL}/delete-account. Login is disabled and the public shop is hidden. Order and bill records needed for GST, disputes, or the law may be kept.
+
+4. Questions
 Platform privacy questions can be sent through ${PLATFORM_URL}. Order privacy questions should go to the seller of that shop.
 
 ${PLATFORM_DISCLAIMER}
