@@ -8,6 +8,7 @@ import "../../../../../styles/Shopslugproduct.css";
 import { useCart } from '../../../../context/CartContext';
 import SHeader from '../../../../../components/common/SHeader';
 import { shopListPhone, fetchPublicShop } from '../../../../lib/shop-public';
+import { descriptionLooksLikeHtml, sanitizeDescriptionHtml } from '../../../../lib/productDescription';
 import Footer from '../../../../../components/common/Footer';
 import { toast } from "react-toastify";
 
@@ -1431,7 +1432,14 @@ if (!isLoggedIn) {
           <div style={styles.descriptionContainer}>
             <h2 className='shopslugproductpagedescriptiontitle' style={styles.sectionTitle}>Product Description</h2>
             <div className='shopslugproductpagedescription' style={styles.description}>
-              <p>{product.description}</p>
+              {descriptionLooksLikeHtml(product.description) ? (
+                <div
+                  className="product-description-html"
+                  dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(product.description) }}
+                />
+              ) : (
+                <p>{product.description}</p>
+              )}
             </div>
           </div>
         )}

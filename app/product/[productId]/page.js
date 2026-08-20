@@ -11,6 +11,7 @@ import "../../../styles/Keralasellersproductpage.css";
 import { toast } from "react-toastify";
 import { getBuyerAuthHeaders } from '../../lib/buyerAuth';
 import { firstProductImage, PRODUCT_PLACEHOLDER } from '../../lib/productImage';
+import { descriptionLooksLikeHtml, sanitizeDescriptionHtml } from '../../lib/productDescription';
 
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw, ChevronLeft, Minus, Plus, ChevronRight, Zap, CreditCard } from 'lucide-react';
 
@@ -1018,7 +1019,14 @@ const handleBuyNow = () => {
                     <div style={styles.descriptionContainer}>
                         <h2 className='keralasellersproductpagedescriptiontitle' style={styles.sectionTitle}>Product Description</h2>
                         <div className='keralasellersproductpagedescription' style={styles.description}>
-                            <p>{product.description}</p>
+                            {descriptionLooksLikeHtml(product.description) ? (
+                                <div
+                                    className="product-description-html"
+                                    dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(product.description) }}
+                                />
+                            ) : (
+                                <p>{product.description}</p>
+                            )}
                         </div>
                     </div>
                 )}

@@ -455,3 +455,15 @@
     }
 
 }
+
+.product-description-html p,
+.product-description-html h2,
+.product-description-html h3 {
+    margin: 0 0 10px;
+}
+
+.product-description-html ul,
+.product-description-html ol {
+    margin: 0 0 10px;
+    padding-left: 1.25rem;
+}

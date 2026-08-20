@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Package2, Edit, Cloud, Box, Globe, Folder, File, ArrowLeft, CheckCircle, X, Home, Trash2, Loader2, CloudUpload, Rocket, AlertCircle, ScanLine   } from "lucide-react";
+import { Package2, Edit, Cloud, Box, Globe, Folder, File, ArrowLeft, CheckCircle, X, Home, Trash2, Loader2, CloudUpload, Rocket, AlertCircle, ScanLine, ChevronDown, ChevronUp, Plus } from "lucide-react";
 import BarcodeScanner from './BarcodeScanner';
+import DescriptionEditor from './DescriptionEditor';
 import { codesFromProduct, findProductByCode, generateShopBarcode, storedBarcode } from '../app/lib/barcode';
+import { descriptionIsEmpty, sanitizeDescriptionHtml } from '../app/lib/productDescription';
 
 // ✅ Enhanced environment variable handling for your hosted backend
 // const getApiBaseUrl = () => {
@@ -1382,11 +1384,91 @@ const CategorySelector = ({ selectedCategoryId, onCategorySelect, onAttributesCh
             )}
           </div>
         )}
+        <CategoryCreateRow
+          parentId={currentPath.length ? currentPath[currentPath.length - 1].id : null}
+          parentName={currentPath.length ? currentPath[currentPath.length - 1].name : null}
+          onCreated={async (created) => {
+            const response = await apiClient.get('/api/categories/');
+            const categories = response.data.results || response.data || [];
+            setAllCategories(categories);
+            const hasChildren = categories.some((cat) => cat.parent === created.id);
+            if (!hasChildren) {
+              setSelectedCategory(created);
+              onCategorySelect(created.id);
+              const newAttributes = {};
+              (created.default_attributes || []).forEach((attr) => {
+                const name = typeof attr === 'object' ? attr.name : attr;
+                if (name) newAttributes[name] = '';
+              });
+              onAttributesChange(newAttributes);
+            }
+          }}
+        />
       </div>
     </div>
     
   );
 };
+
+function parseSellUnit(value) {
+  const text = String(value || '').trim().toLowerCase();
+  if (text === 'kg' || text === 'kilogram' || text === 'kilograms') return 'Kg';
+  if (text === 'litre' || text === 'liter' || text === 'l' || text === 'ltr') return 'Litre';
+  return 'Piece';
+}
+
+function CategoryCreateRow({ parentId, parentName, onCreated }) {
+  const [name, setName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const onCreate = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError('Type the category to add at this level.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      const response = await apiClient.post('/api/categories/', {
+        name: trimmed,
+        parent: parentId || null,
+      });
+      setName('');
+      await onCreated(response.data);
+    } catch (err) {
+      setError(err.response?.data?.error || err.response?.data?.detail || 'Could not add this category.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
+      <label className="dashboardproductmodalsectionlabel" style={{ fontSize: 13, color: '#1a4845' }}>
+        {parentName ? `Add under ${parentName}` : 'Add a main category'}
+      </label>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder={parentName ? 'Shorts, Top, 1 kg pack…' : 'Dress, Grocery, Electronics…'}
+          style={{ ...styles.input, flex: 1, minWidth: 180 }}
+        />
+        <button
+          type="button"
+          onClick={onCreate}
+          disabled={saving}
+          style={{ ...styles.input, width: 'auto', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+        >
+          <Plus size={14} /> {saving ? 'Adding…' : 'Add this category'}
+        </button>
+      </div>
+      {error ? <small style={{ color: '#b91c1c' }}>{error}</small> : null}
+    </div>
+  );
+}
 
 // ✅ Smart Stock Input Component
 const SmartStockInput = ({ formData, setFormData }) => {
@@ -1509,6 +1591,11 @@ export default function ProductForm({ product, onClose, onSuccess }) {
   const [loadingLimits, setLoadingLimits] = useState(true);
   const [barcodeScanner, setBarcodeScanner] = useState(false);
   const [shopCatalog, setShopCatalog] = useState([]);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [sellUnit, setSellUnit] = useState('Piece');
+  const [newAttribute, setNewAttribute] = useState('');
+  const [variants, setVariants] = useState([]);
+  const [originalVariantIds, setOriginalVariantIds] = useState([]);
 
   useEffect(() => {
     if (product) {
@@ -1528,15 +1615,32 @@ export default function ProductForm({ product, onClose, onSuccess }) {
         barcode: product.barcode || '',
         cost_price: product.cost_price || '',
         hsn_code: product.hsn_code || '',
-        gst_rate: product.gst_rate || '',
+        gst_rate: product.gst_rate && Number(product.gst_rate) !== 0 ? product.gst_rate : '',
         show_on_homepage: product.show_on_homepage !== false,
         low_stock_threshold: product.low_stock_threshold || 0,
 
       });
       
       setSelectedCategoryId(product.category || '');
-      setDynamicAttributes(product.attributes || {});
+      const loadedAttributes = product.attributes && typeof product.attributes === 'object' ? { ...product.attributes } : {};
+      setSellUnit(parseSellUnit(loadedAttributes.unit || loadedAttributes.Unit));
+      delete loadedAttributes.unit;
+      delete loadedAttributes.Unit;
+      setDynamicAttributes(loadedAttributes);
       setMainImageUrl(product.main_image_url || product.cloudinary_image_url || '');
+      const loadedVariants = (product.variants || []).filter((row) => row.is_active !== false);
+      setOriginalVariantIds(loadedVariants.map((row) => row.id));
+      setVariants(loadedVariants.map((row) => ({
+        key: `id-${row.id}`,
+        id: row.id,
+        name: row.name || '',
+        price: row.price != null && row.price !== '' ? String(row.price) : String(product.price || ''),
+        total_stock: String(row.total_stock ?? 0),
+        online_stock: String(row.online_stock ?? 0),
+      })));
+      if (product.model_name || product.mrp || product.barcode || product.sku || product.weight_kg || product.cost_price || product.hsn_code || (product.gst_rate && Number(product.gst_rate) !== 0)) {
+        setMoreOpen(true);
+      }
       
       const mainImage = product.main_image_url || product.cloudinary_image_url || '';
 const subImages = product.sub_images
@@ -1797,6 +1901,12 @@ const handleMainImageUpload = (uploadedImages) => {
     return;
   }
 
+  if (descriptionIsEmpty(formData.description)) {
+    setError('Add a product description. Tell buyers what it is, materials or ingredients, and who it is for.');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
   const priceValidation = validatePositiveNumber(formData.price, 'Selling Price');
   if (!priceValidation.isValid) {
     setError(priceValidation.error);
@@ -1849,24 +1959,40 @@ const handleMainImageUpload = (uploadedImages) => {
     }
   }
 
+  const filledVariants = variants.filter((row) => String(row.name || '').trim());
+  if (filledVariants.some((row) => row.online_stock !== '' && Number(row.online_stock) > Number(row.total_stock || 0))) {
+    setError('Online stock cannot be more than shop stock on a size or pack.');
+    return;
+  }
+  const variantTotals = filledVariants.reduce((sum, row) => sum + (parseInt(row.total_stock || '0', 10) || 0), 0);
+  const variantOnline = filledVariants.reduce((sum, row) => sum + (parseInt(row.online_stock || '0', 10) || 0), 0);
+
   setIsSubmitting(true);
   setError('');
 
+  const attributes = { ...dynamicAttributes };
+  delete attributes.unit;
+  delete attributes.Unit;
+  if (sellUnit) attributes.unit = sellUnit;
+
   const submissionData = {
     ...formData,
+    description: sanitizeDescriptionHtml(formData.description),
     category: selectedCategoryId ? parseInt(selectedCategoryId) : null,
-    attributes: dynamicAttributes,
+    attributes,
     main_image_url: mainImageUrl,
     sub_image_urls: subImageUrls.map(img => ({
       url: img.url,
       public_id: img.public_id
     })),
+    total_stock: filledVariants.length ? variantTotals : formData.total_stock,
+    online_stock: filledVariants.length ? variantOnline : formData.online_stock,
     weight_kg: formData.weight_kg && formData.weight_kg !== '' ? parseFloat(formData.weight_kg) : null, // ✅ NEW: Include weight
     sku: formData.sku || '',
     barcode: storedBarcode(formData.barcode || ''),
     cost_price: formData.cost_price === '' || formData.cost_price == null ? null : formData.cost_price,
     hsn_code: formData.hsn_code || '',
-    gst_rate: formData.gst_rate === '' || formData.gst_rate == null ? null : formData.gst_rate,
+    gst_rate: formData.gst_rate === '' || formData.gst_rate == null ? 0 : formData.gst_rate,
     show_on_homepage: formData.sale_type === 'OFFLINE' ? false : formData.show_on_homepage !== false,
     low_stock_threshold: parseInt(formData.low_stock_threshold, 10) || 0,
   };
@@ -1892,6 +2018,29 @@ const handleMainImageUpload = (uploadedImages) => {
     });
 
     console.log(' Product saved successfully:', response.data);
+    const savedId = response.data?.id;
+    const tokenHeaders = { Authorization: `Bearer ${token}` };
+    if (savedId) {
+      const keptIds = new Set(filledVariants.map((row) => row.id).filter(Boolean));
+      for (const id of originalVariantIds) {
+        if (!keptIds.has(id)) {
+          await axios.delete(`${PRODUCTS_API_URL}${savedId}/variants/${id}/`, { headers: tokenHeaders }).catch(() => undefined);
+        }
+      }
+      for (const row of filledVariants) {
+        const payload = {
+          name: String(row.name).trim(),
+          price: row.price === '' || row.price == null ? Number(formData.price) : Number(row.price),
+          total_stock: Math.max(0, parseInt(row.total_stock || '0', 10) || 0),
+          online_stock: Math.max(0, parseInt(row.online_stock || '0', 10) || 0),
+        };
+        if (row.id) {
+          await axios.patch(`${PRODUCTS_API_URL}${savedId}/variants/${row.id}/`, payload, { headers: tokenHeaders });
+        } else {
+          await axios.post(`${PRODUCTS_API_URL}${savedId}/variants/`, payload, { headers: tokenHeaders });
+        }
+      }
+    }
     onSuccess();
   } catch (err) {
     let errorMessage = 'Something went wrong. Please check your details and try again.';
@@ -2053,7 +2202,7 @@ const handleMainImageUpload = (uploadedImages) => {
           <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Basic Product Information *</h3>
           <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
             <div style={styles.formGroup}>
-              <label className='dashboardproductmodalsectionlabel' style={styles.label}>Product Name</label>
+              <label className='dashboardproductmodalsectionlabel' style={styles.label}>Product Name *</label>
               <input
                 type="text"
                 name="name"
@@ -2067,73 +2216,11 @@ const handleMainImageUpload = (uploadedImages) => {
               <small style={styles.helpText}>Give your product a clear, descriptive name</small>
             </div>
 
-            {/* ✅ ENHANCED MODEL NAME INPUT WITH VALIDATION */}
             <div style={styles.formGroup}>
-              <label className='dashboardproductmodalsectionlabel' style={styles.label}>
-                Model/Variation
-                <span style={{ 
-                  fontSize: '12px', 
-                  color: modelNameError ? '#dc3545' : (formData.model_name.length > 80 ? '#ffc107' : '#6c757d'),
-                  marginLeft: '8px',
-                  fontWeight: 'normal'
-                }}>
-                  ({formData.model_name.length}/100 characters)
-                </span>
-              </label>
-              <input
-                type="text"
-                name="model_name"
-                value={formData.model_name}
-                onChange={handleChange}
-                style={{
-                  ...styles.input,
-                  borderColor: modelNameError ? '#dc3545' : (formData.model_name.length > 80 ? '#ffc107' : '#1a4845')
-                }}
-                className='dashboardproductmodalselectinput'
-                placeholder="e.g., Red XL, 128GB Black, Size 42..."
-                maxLength={100}
-              />
-              {modelNameError && (
-                <div style={{
-                  color: '#dc3545',
-                  fontSize: '13px',
-                  marginTop: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}>
-                  <AlertCircle size={14} />
-                  {modelNameError}
-                </div>
-              )}
-              {formData.model_name.length > 80 && !modelNameError && (
-                <div style={{
-                  color: '#ffc107',
-                  fontSize: '13px',
-                  marginTop: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}>
-                  <AlertCircle size={14} />
-                  Warning: You're close to the character limit
-                </div>
-              )}
-              <small style={styles.helpText}>Specify color, size, model year, or any variations (max 100 characters)</small>
-            </div>
-
-            <div style={styles.formGroup}>
-              <label className='dashboardproductmodalsectionlabel' style={styles.label}>Product Description</label>
-              <textarea
-                name="description"
+              <DescriptionEditor
                 value={formData.description}
-                onChange={handleChange}
-                style={styles.textArea}
-                className='dashboardproductmodalselectinput'
-                placeholder="Describe your product: features, benefits, materials..."
-                rows="4"
+                onChange={(html) => setFormData((prev) => ({ ...prev, description: html }))}
               />
-              <small style={styles.helpText}>Help customers understand why they should buy your product</small>
             </div>
           </div>
 
@@ -2147,7 +2234,7 @@ const handleMainImageUpload = (uploadedImages) => {
 
             <div className='dashboardproductmodalpriceinputgap' style={styles.formRow}>
               <div style={styles.formGroup}>
-                <label className='dashboardproductmodalsectionlabel' style={styles.label}>Your Selling Price (₹)</label>
+                <label className='dashboardproductmodalsectionlabel' style={styles.label}>Your Selling Price (₹) *</label>
                 <input
                   type="number"
                   name="price"
@@ -2165,25 +2252,6 @@ const handleMainImageUpload = (uploadedImages) => {
                 />
                 <small style={styles.helpText}>The price you want to charge customers</small>
               </div>
-
-              <div style={styles.formGroup}>
-                <label className='dashboardproductmodalsectionlabel' style={styles.label}>MRP - Maximum Retail Price (₹)</label>
-                <input
-                  type="number"
-                  name="mrp"
-                  value={formData.mrp}
-                  onChange={handleChange}
-                  style={styles.input}
-                  className='dashboardproductmodalselectinput'
-                  step="0.01"
-                  min="0"
-                  placeholder="399.99"
-                  onKeyPress={(e) => {
-                    if (e.key === '-') e.preventDefault();
-                  }}
-                />
-                <small style={styles.helpText}>Original price (must be higher than or equal to selling price)</small>
-              </div>
             </div>
             {formData.price && formData.mrp && parseFloat(formData.mrp) > parseFloat(formData.price) && (
               <div className='dashboardproductmodaldiscountlabel' style={styles.discountDisplay}>
@@ -2192,133 +2260,7 @@ const handleMainImageUpload = (uploadedImages) => {
               </div>
             )}
           </div>
-          <h3 className="dashboardproductmodalsectiontitle" style={styles.sectionTitle}>
-  📦 Product Weight (for Delivery Charges)
-</h3>
-<div className="dashboardproductmodalsectioncontainer" style={styles.sectionContainer}>
-  <div style={styles.formGroup}>
-    <label className="dashboardproductmodalsectionlabel" style={styles.label}>
-      Weight (in kg)
-      <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px', fontWeight: 'normal' }}>
-        Needed if you charge delivery by weight. Checkout adds every product’s weight.
-      </span>
-    </label>
-    <input
-      type="number"
-      name="weight_kg"
-      value={formData.weight_kg}
-      onChange={handleChange}
-      style={styles.input}
-      className="dashboardproductmodalselectinput"
-      step="0.01"
-      min="0"
-      max="1000"
-      placeholder="e.g., 0.5, 2.5, 10"
-      onKeyPress={(e) => {
-        if (e.key === '-') e.preventDefault();
-      }}
-    />
-    <small style={styles.helpText}>
-      Checkout adds every product’s packed weight, then uses your Delivery settings:
-      Light (up to 1 kg), Medium (1–3 kg), or Heavy (above 3 kg). Leave empty if delivery is free.
-    </small>
-    {formData.weight_kg && parseFloat(formData.weight_kg) > 0 && (
-      <div style={{
-        marginTop: '12px',
-        padding: '12px 14px',
-        backgroundColor: '#d1fae5',
-        border: '1px solid #10b981',
-        borderRadius: '8px',
-        fontSize: '13px',
-        color: '#065f46',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
-        <CheckCircle size={16} />
-        <span>
-          Packed weight set to <strong>{parseFloat(formData.weight_kg).toFixed(2)} kg</strong>.
-          Combined with other items in the cart, this chooses light, medium, or heavy delivery.
-        </span>
-      </div>
-    )}
-  </div>
-  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
-    <div>
-      <label className="dashboardproductmodalsectionlabel" style={styles.label}>SKU</label>
-      <input name="sku" value={formData.sku} onChange={handleChange} style={styles.input} placeholder="SKU-001" />
-    </div>
-    <div>
-      <label className="dashboardproductmodalsectionlabel" style={styles.label}>Barcode</label>
-      <p style={{ ...styles.helpText, marginTop: 0 }}>
-        Create a shop sticker, or attach the barcode already on the packet.
-      </p>
-      <input
-        name="barcode"
-        value={formData.barcode}
-        onChange={handleChange}
-        style={styles.input}
-        placeholder="Scan or type the existing barcode"
-      />
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-        <button
-          type="button"
-          onClick={() => setBarcodeScanner(true)}
-          style={{ ...styles.input, width: 'auto', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-        >
-          <ScanLine size={14} /> Scan existing
-        </button>
-        <button
-          type="button"
-          onClick={() => setFormData((prev) => ({
-            ...prev,
-            barcode: generateShopBarcode(shopCatalog.flatMap((row) => codesFromProduct(row)).concat([prev.barcode, prev.sku])),
-          }))}
-          style={{ ...styles.input, width: 'auto', cursor: 'pointer' }}
-        >
-          Create shop code
-        </button>
-        {formData.barcode ? (
-          <button type="button" onClick={() => setFormData((prev) => ({ ...prev, barcode: '' }))} style={{ ...styles.input, width: 'auto', cursor: 'pointer' }}>
-            Clear
-          </button>
-        ) : null}
-      </div>
-      {formData.barcode ? (
-        <p style={{ letterSpacing: 2, fontWeight: 700, marginTop: 8 }}>{storedBarcode(formData.barcode)}</p>
-      ) : null}
-      {(() => {
-        const match = findProductByCode(shopCatalog, formData.barcode);
-        if (match && (!product || match.product.id !== product.id)) {
-          return <p style={{ color: '#b91c1c', fontSize: 13 }}>Already on {match.product.name}. Use a different code.</p>;
-        }
-        return null;
-      })()}
-    </div>
-    <div>
-      <label className="dashboardproductmodalsectionlabel" style={styles.label}>Cost price (private)</label>
-      <input type="number" name="cost_price" value={formData.cost_price} onChange={handleChange} style={styles.input} min="0" step="0.01" />
-    </div>
-    <div>
-      <label className="dashboardproductmodalsectionlabel" style={styles.label}>Low-stock alert at</label>
-      <input type="number" name="low_stock_threshold" value={formData.low_stock_threshold} onChange={handleChange} style={styles.input} min="0" />
-    </div>
-    <div>
-      <label className="dashboardproductmodalsectionlabel" style={styles.label}>HSN (optional)</label>
-      <input name="hsn_code" value={formData.hsn_code || ''} onChange={handleChange} style={styles.input} placeholder="For GST invoice" />
-    </div>
-    <div>
-      <label className="dashboardproductmodalsectionlabel" style={styles.label}>GST % (optional)</label>
-      <input type="number" name="gst_rate" value={formData.gst_rate || ''} onChange={handleChange} style={styles.input} min="0" step="0.01" placeholder="18" />
-    </div>
-  </div>
-</div>
-
-
-
 <hr style={styles.hr} />
-
-          <SmartStockInput formData={formData} setFormData={setFormData} />
 
           <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Where Do You Want to Sell ?</h3>
           <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
@@ -2353,27 +2295,141 @@ const handleMainImageUpload = (uploadedImages) => {
             onCategorySelect={setSelectedCategoryId}
             onAttributesChange={setDynamicAttributes}
           />
-          {Object.keys(dynamicAttributes).length > 0 && (
-            <div>
-              <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Category-Specific Details</h3>
-              <div className='dashboardproductmodalsectioncontainer' style={styles.attributesSection}>
-                <div style={styles.attributesGrid}>
-                  {Object.keys(dynamicAttributes).map(name => (
-                    <div key={name} style={styles.formGroup}>
-                      <label className='dashboardproductmodalsectionlabel' style={styles.label}>{name}</label>
-                      <input
-                        type="text"
-                        value={dynamicAttributes[name] || ''}
-                        onChange={e => handleAttributeChange(name, e.target.value)}
-                        style={styles.input}
-                        className='dashboardproductmodalselectinput'
-                        placeholder={`Enter ${name.toLowerCase()}...`}
-                      />
-                    </div>
-                  ))}
-                </div>
+          <div className='dashboardproductmodalsectioncontainer' style={{ ...styles.sectionContainer, marginTop: 12 }}>
+            <label className='dashboardproductmodalsectionlabel' style={styles.label}>Sold by</label>
+            <small style={styles.helpText}>Piece for clothes and counted items. Kg or litre for grocery and liquids.</small>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+              {['Piece', 'Kg', 'Litre'].map((unit) => (
+                <button
+                  key={unit}
+                  type="button"
+                  onClick={() => setSellUnit(unit)}
+                  style={{
+                    ...styles.input,
+                    width: 'auto',
+                    cursor: 'pointer',
+                    background: sellUnit === unit ? '#1a4845' : '#fff',
+                    color: sellUnit === unit ? '#fff' : '#1a4845',
+                  }}
+                >
+                  {unit}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Category details</h3>
+            <div className='dashboardproductmodalsectioncontainer' style={styles.attributesSection}>
+              <small style={styles.helpText}>Fill size, color, length, or any detail this type needs. Add a missing one below.</small>
+              <div style={styles.attributesGrid}>
+                {Object.keys(dynamicAttributes).filter((name) => name.toLowerCase() !== 'unit').map(name => (
+                  <div key={name} style={styles.formGroup}>
+                    <label className='dashboardproductmodalsectionlabel' style={styles.label}>{name}</label>
+                    <input
+                      type="text"
+                      value={dynamicAttributes[name] || ''}
+                      onChange={e => handleAttributeChange(name, e.target.value)}
+                      style={styles.input}
+                      className='dashboardproductmodalselectinput'
+                      placeholder={`Enter ${name.toLowerCase()}...`}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+                <input
+                  value={newAttribute}
+                  onChange={(event) => setNewAttribute(event.target.value)}
+                  placeholder="Length, Material, Flavour…"
+                  style={{ ...styles.input, flex: 1, minWidth: 180 }}
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const label = newAttribute.trim();
+                    if (!label || label.toLowerCase() === 'unit') return;
+                    setDynamicAttributes((prev) => ({ ...prev, [label]: prev[label] || '' }));
+                    setNewAttribute('');
+                    if (selectedCategoryId) {
+                      await apiClient.post(`/api/categories/${selectedCategoryId}/attributes/`, { name: label }).catch(() => undefined);
+                    }
+                  }}
+                  style={{ ...styles.input, width: 'auto', cursor: 'pointer' }}
+                >
+                  Add this detail
+                </button>
               </div>
             </div>
+          </div>
+
+          <h3 className='dashboardproductmodalsectiontitle' style={styles.sectionTitle}>Sizes, colors, or packs</h3>
+          <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
+            <small style={styles.helpText}>
+              Use this when one product has more than one option — Red / XL, 32 waist, 1 kg, 500 ml. Skip if it has one price and stock.
+            </small>
+            {variants.map((row) => (
+              <div key={row.key} style={{ border: '1px solid rgba(26,72,69,0.12)', borderRadius: 8, padding: 12, marginTop: 12 }}>
+                <input
+                  value={row.name}
+                  onChange={(event) => setVariants((current) => current.map((item) => item.key === row.key ? { ...item, name: event.target.value } : item))}
+                  placeholder={sellUnit === 'Kg' ? '1 kg' : sellUnit === 'Litre' ? '500 ml' : 'Red / XL'}
+                  style={styles.input}
+                />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 8 }}>
+                  <input
+                    value={row.price}
+                    onChange={(event) => setVariants((current) => current.map((item) => item.key === row.key ? { ...item, price: event.target.value } : item))}
+                    placeholder="Price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    style={styles.input}
+                  />
+                  <input
+                    value={row.total_stock}
+                    onChange={(event) => setVariants((current) => current.map((item) => item.key === row.key ? { ...item, total_stock: event.target.value } : item))}
+                    placeholder="Shop stock"
+                    type="number"
+                    min="0"
+                    style={styles.input}
+                  />
+                  <input
+                    value={row.online_stock}
+                    onChange={(event) => setVariants((current) => current.map((item) => item.key === row.key ? { ...item, online_stock: event.target.value } : item))}
+                    placeholder="Online"
+                    type="number"
+                    min="0"
+                    style={styles.input}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setVariants((current) => current.filter((item) => item.key !== row.key))}
+                  style={{ ...styles.input, width: 'auto', cursor: 'pointer', marginTop: 8 }}
+                >
+                  Remove option
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setVariants((current) => [...current, {
+                key: `v-${Date.now()}`,
+                name: '',
+                price: formData.price || '',
+                total_stock: '0',
+                online_stock: '0',
+              }])}
+              style={{ ...styles.input, width: 'auto', cursor: 'pointer', marginTop: 12 }}
+            >
+              Add size / pack
+            </button>
+          </div>
+
+          {variants.filter((row) => String(row.name || '').trim()).length === 0 ? (
+            <SmartStockInput formData={formData} setFormData={setFormData} />
+          ) : (
+            <p style={styles.helpText}>Shop and online stock are taken from the sizes or packs above.</p>
           )}
 
           <hr style={styles.hr} />
@@ -2402,6 +2458,102 @@ const handleMainImageUpload = (uploadedImages) => {
               helpText="📷 Add more angles, close-ups, or usage photos (max 4 images)"
             />
           </div>
+
+          <button
+            type="button"
+            onClick={() => setMoreOpen((open) => !open)}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              marginTop: 16,
+              padding: '12px 0',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+          >
+            <span>
+              <strong style={{ display: 'block', color: '#1a4845' }}>More details (optional)</strong>
+              <small style={styles.helpText}>Model, MRP, barcode, weight, GST, and similar fields. Open only if you need them.</small>
+            </span>
+            {moreOpen ? <ChevronUp size={18} color="#1a4845" /> : <ChevronDown size={18} color="#1a4845" />}
+          </button>
+          {moreOpen ? (
+            <div className='dashboardproductmodalsectioncontainer' style={styles.sectionContainer}>
+              <div style={styles.formGroup}>
+                <label className='dashboardproductmodalsectionlabel' style={styles.label}>
+                  Model/Variation
+                  <span style={{ fontSize: 12, color: modelNameError ? '#dc3545' : '#6c757d', marginLeft: 8, fontWeight: 'normal' }}>
+                    ({formData.model_name.length}/100)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  name="model_name"
+                  value={formData.model_name}
+                  onChange={handleChange}
+                  style={styles.input}
+                  placeholder="e.g., Red XL, 128GB Black"
+                  maxLength={100}
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label className='dashboardproductmodalsectionlabel' style={styles.label}>MRP (optional)</label>
+                <input type="number" name="mrp" value={formData.mrp} onChange={handleChange} style={styles.input} min="0" step="0.01" placeholder="399.99" />
+              </div>
+              <div style={styles.formGroup}>
+                <label className='dashboardproductmodalsectionlabel' style={styles.label}>Packed weight (kg)</label>
+                <input type="number" name="weight_kg" value={formData.weight_kg} onChange={handleChange} style={styles.input} min="0" step="0.01" placeholder="0.25" />
+                <small style={styles.helpText}>Used for extra delivery charge. Leave empty if delivery is free.</small>
+              </div>
+              <div style={styles.formGroup}>
+                <label className='dashboardproductmodalsectionlabel' style={styles.label}>Barcode</label>
+                <input name="barcode" value={formData.barcode} onChange={handleChange} style={styles.input} placeholder="Scan or type the existing barcode" />
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                  <button type="button" onClick={() => setBarcodeScanner(true)} style={{ ...styles.input, width: 'auto', cursor: 'pointer' }}>
+                    <ScanLine size={14} /> Scan existing
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData((prev) => ({
+                      ...prev,
+                      barcode: generateShopBarcode(shopCatalog.flatMap((row) => codesFromProduct(row)).concat([prev.barcode, prev.sku])),
+                    }))}
+                    style={{ ...styles.input, width: 'auto', cursor: 'pointer' }}
+                  >
+                    Create shop code
+                  </button>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label className='dashboardproductmodalsectionlabel' style={styles.label}>SKU</label>
+                  <input name="sku" value={formData.sku} onChange={handleChange} style={styles.input} placeholder="Optional" />
+                </div>
+                <div>
+                  <label className='dashboardproductmodalsectionlabel' style={styles.label}>Cost price (private)</label>
+                  <input type="number" name="cost_price" value={formData.cost_price} onChange={handleChange} style={styles.input} min="0" step="0.01" />
+                </div>
+                <div>
+                  <label className='dashboardproductmodalsectionlabel' style={styles.label}>HSN (optional)</label>
+                  <input name="hsn_code" value={formData.hsn_code || ''} onChange={handleChange} style={styles.input} placeholder="For GST invoice" />
+                </div>
+                <div>
+                  <label className='dashboardproductmodalsectionlabel' style={styles.label}>GST % (optional)</label>
+                  <input type="number" name="gst_rate" value={formData.gst_rate || ''} onChange={handleChange} style={styles.input} min="0" step="0.01" placeholder="18" />
+                  <small style={styles.helpText}>Leave blank if this product has no GST. Blank is saved as 0.</small>
+                </div>
+                <div>
+                  <label className='dashboardproductmodalsectionlabel' style={styles.label}>Low-stock alert at</label>
+                  <input type="number" name="low_stock_threshold" value={formData.low_stock_threshold} onChange={handleChange} style={styles.input} min="0" />
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           <div style={styles.buttonContainer}>
             <button
