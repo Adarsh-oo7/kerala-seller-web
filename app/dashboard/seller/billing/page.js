@@ -20,6 +20,8 @@ import {
   Banknote,
   Wallet,
   ScanLine,
+  Download,
+  Printer,
 } from 'lucide-react';
 import BarcodeScanner from '../../../../components/BarcodeScanner';
 import { findProductByCode } from '../../../lib/barcode';
@@ -69,6 +71,7 @@ export default function LocalBillingPage() {
   const [loyaltyBalance, setLoyaltyBalance] = useState(0);
   const [useLoyalty, setUseLoyalty] = useState(false);
   const [lastBillId, setLastBillId] = useState(null);
+  const [lastBillLabel, setLastBillLabel] = useState('');
   const [recentBills, setRecentBills] = useState([]);
   const [editingBillId, setEditingBillId] = useState(null);
   const [editingBillLabel, setEditingBillLabel] = useState('');
@@ -95,6 +98,59 @@ export default function LocalBillingPage() {
 
     return { 'Authorization': `Bearer ${token}` };
   }, []);
+
+  const billEndpoint = useCallback((id, suffix) => [
+    `${API_BASE_URL}/user/orders/local-bills/${id}/${suffix}`,
+    `${API_BASE_URL}/api/orders/local-bills/${id}/${suffix}`,
+  ], []);
+
+  const openHtmlBlob = (data) => {
+    const file = new Blob([data], { type: 'text/html' });
+    window.open(URL.createObjectURL(file), '_blank');
+  };
+
+  const fetchBillFile = useCallback(async (id, suffix, responseType = 'blob') => {
+    const headers = getAuthHeaders();
+    if (!headers) return null;
+    let lastError = null;
+    for (const url of billEndpoint(id, suffix)) {
+      try {
+        return await axios.get(url, { headers, responseType });
+      } catch (err) {
+        lastError = err;
+        if (err.response?.status !== 404) throw err;
+      }
+    }
+    throw lastError;
+  }, [billEndpoint, getAuthHeaders]);
+
+  const printSavedBill = useCallback(async (id) => {
+    const htmlResponse = await fetchBillFile(id, 'print/?size=A4');
+    if (htmlResponse) openHtmlBlob(htmlResponse.data);
+  }, [fetchBillFile]);
+
+  const downloadSavedBillPdf = useCallback(async (id, billLabel) => {
+    try {
+      const pdfResponse = await fetchBillFile(id, 'pdf/?size=A4');
+      if (!pdfResponse) return;
+      const file = new Blob([pdfResponse.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(file);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${billLabel || `bill-${id}`}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      if (err.response?.status === 404) {
+        await printSavedBill(id);
+        setSuccess('PDF is not on this server yet, so the print preview opened. Use the browser Print dialog and choose Save as PDF.');
+        return;
+      }
+      throw err;
+    }
+  }, [fetchBillFile, printSavedBill]);
 
   useEffect(() => {
     const phone = (customer.phone || '').replace(/\D/g, '').slice(-10);
@@ -431,6 +487,7 @@ export default function LocalBillingPage() {
       console.log(' Local bill saved:', billResponse.data);
       const savedBill = billResponse.data;
       setLastBillId(savedBill.id || null);
+      setLastBillLabel(savedBill.bill_id || '');
       setEditingBillId(null);
       setEditingBillLabel('');
       let silentPrinted = false;
@@ -449,33 +506,37 @@ export default function LocalBillingPage() {
         silentPrinted = false;
       }
 
-      // âœ… Step 2: Generate and display bill HTML
+      // Print preview with shop details. Fall back to the older HTML generator if needed.
       const billId = billResponse.data.bill_id;
-      const billHtmlData = {
-        bill_id: billId,
-        store_phone: sellerPhone,
-        customer_name: customer.name || 'Walk-in Customer',
-        customer_phone: customer.phone || '',
-        total_amount: calculateTotal(),
-        items: billItems.map(item => ({
-          name: item.name,
-          model_name: item.model_name || '',
-          quantity: item.quantity,
-          price: parseFloat(item.price),
-          total: parseFloat(item.price) * item.quantity
-        }))
+      const openLegacyHtml = async () => {
+        const htmlResponse = await axios.post(GENERATE_BILL_URL, {
+          bill_id: billId,
+          store_phone: sellerPhone,
+          customer_name: customer.name || 'Walk-in Customer',
+          customer_phone: customer.phone || '',
+          total_amount: calculateTotal(),
+          items: billItems.map(item => ({
+            name: item.name,
+            model_name: item.model_name || '',
+            quantity: item.quantity,
+            price: parseFloat(item.price),
+            total: parseFloat(item.price) * item.quantity
+          }))
+        }, {
+          headers: requestConfig.headers,
+          responseType: 'blob'
+        });
+        openHtmlBlob(htmlResponse.data);
       };
-
-      console.log(' Generating bill HTML...');
-      const htmlResponse = await axios.post(GENERATE_BILL_URL, billHtmlData, {
-        headers: requestConfig.headers,
-        responseType: 'blob'
-      });
-
-      // Create and open bill in new tab
-      const file = new Blob([htmlResponse.data], { type: 'text/html' });
-      const fileURL = URL.createObjectURL(file);
-      window.open(fileURL, '_blank');
+      if (savedBill.id) {
+        try {
+          await printSavedBill(savedBill.id);
+        } catch (_printErr) {
+          await openLegacyHtml();
+        }
+      } else {
+        await openLegacyHtml();
+      }
       // Save seller phone for future use
       localStorage.setItem('sellerPhone', sellerPhone);
       // Reset form
@@ -488,7 +549,7 @@ export default function LocalBillingPage() {
       setLoyaltyBalance(0);
       setSuccess(silentPrinted
         ? `Bill ${billId} saved and sent to the local print bridge.`
-        : `Bill ${billId} saved. Print preview opened — the browser cannot silently print to a USB printer. Run the local print bridge on this computer (http://127.0.0.1:17890) for thermal print.`);
+        : `Bill ${billId} saved. Print preview opened. Download PDF, or use the printer dialog. Silent thermal print needs the local print bridge on this computer (http://127.0.0.1:17890).`);
       setTimeout(() => setSuccess(''), 5000);
       // Refresh products to show updated stock
       fetchProducts();
@@ -546,7 +607,7 @@ export default function LocalBillingPage() {
           {editingBillId ? `Edit ${editingBillLabel || 'bill'}` : 'Direct Local Billing'}
         </h1>
         <p className='dashboardbillingsubtitle' style={styles.pageSubtitle}>
-          Instant walk-in billing. After save, a print preview opens. Silent thermal print needs the local print bridge on this computer (http://127.0.0.1:17890) — the browser cannot send bytes to a USB printer by itself.
+          Instant walk-in billing. After save you can print, download a PDF with shop details, or send to a thermal printer if the local print bridge is running on this computer.
         </p>
       </div>
 
@@ -619,29 +680,51 @@ export default function LocalBillingPage() {
           <CheckCircle size={16} />
           <span>{success}</span>
           {lastBillId ? (
-            <button
-              type="button"
-              onClick={async () => {
-                const headers = getAuthHeaders();
-                if (!headers) return;
-                try {
-                  const htmlResponse = await axios.get(
-                    `${API_BASE_URL}/user/orders/local-bills/${lastBillId}/print/?layout=gst`,
-                    { headers, responseType: 'blob' }
-                  );
-                  const file = new Blob([htmlResponse.data], { type: 'text/html' });
-                  window.open(URL.createObjectURL(file), '_blank');
-                } catch (err) {
-                  const status = err.response?.status;
-                  if (status === 403) setError('GST invoice is not on the current plan.');
-                  else if (status === 400) setError('Add the store GSTIN in Settings before printing a GST invoice.');
-                  else setError('Could not open GST invoice.');
-                }
-              }}
-              style={{ ...styles.closeButton, marginLeft: 8, width: 'auto', padding: '4px 8px' }}
-            >
-              GST invoice
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await printSavedBill(lastBillId);
+                  } catch (_err) {
+                    setError('Could not open the print preview.');
+                  }
+                }}
+                style={{ ...styles.closeButton, marginLeft: 8, width: 'auto', padding: '4px 8px' }}
+              >
+                Print
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await downloadSavedBillPdf(lastBillId, lastBillLabel || 'bill');
+                  } catch (_err) {
+                    setError('Could not download the PDF.');
+                  }
+                }}
+                style={{ ...styles.closeButton, marginLeft: 8, width: 'auto', padding: '4px 8px' }}
+              >
+                Download PDF
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const htmlResponse = await fetchBillFile(lastBillId, 'print/?layout=gst');
+                    if (htmlResponse) openHtmlBlob(htmlResponse.data);
+                  } catch (err) {
+                    const status = err.response?.status;
+                    if (status === 403) setError('GST invoice is not on the current plan.');
+                    else if (status === 400) setError('Add the store GSTIN in Settings before printing a GST invoice.');
+                    else setError('Could not open GST invoice.');
+                  }
+                }}
+                style={{ ...styles.closeButton, marginLeft: 8, width: 'auto', padding: '4px 8px' }}
+              >
+                GST invoice
+              </button>
+            </>
           ) : null}
           <button onClick={() => setSuccess('')} style={styles.closeButton}>
             <X size={14} />
@@ -1035,25 +1118,66 @@ export default function LocalBillingPage() {
       {recentBills.length > 0 ? (
         <div style={{ marginTop: 24 }}>
           <h3>Recent bills</h3>
-          <p style={{ color: '#64748b', fontSize: 13 }}>Tap a bill to edit quantity, price, or items.</p>
+          <p style={{ color: '#64748b', fontSize: 13 }}>Tap a bill to edit. Print or download PDF without changing it.</p>
           {recentBills.slice(0, 8).map((bill) => (
-            <button
+            <div
               key={bill.id || bill.bill_id}
-              type="button"
-              onClick={() => applyBill(bill)}
               style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
                 padding: 12,
-                border: 0,
                 borderBottom: '1px solid #e5e7eb',
                 background: editingBillId === bill.id ? '#ecfdf5' : 'transparent',
-                cursor: 'pointer',
               }}
             >
-              <strong>{bill.bill_id || bill.bill_number}</strong> · ₹{bill.total_amount} · {bill.customer_name || 'Walk-in'}
-            </button>
+              <button
+                type="button"
+                onClick={() => applyBill(bill)}
+                style={{
+                  flex: 1,
+                  textAlign: 'left',
+                  padding: 0,
+                  border: 0,
+                  background: 'transparent',
+                  cursor: 'pointer',
+                }}
+              >
+                <strong>{bill.bill_id || bill.bill_number}</strong> · ₹{bill.total_amount} · {bill.customer_name || 'Walk-in'}
+              </button>
+              {bill.id ? (
+                <>
+                  <button
+                    type="button"
+                    title="Print"
+                    onClick={async () => {
+                      try {
+                        await printSavedBill(bill.id);
+                      } catch (_err) {
+                        setError('Could not open the print preview.');
+                      }
+                    }}
+                    style={{ border: 0, background: 'transparent', cursor: 'pointer', color: '#0f766e' }}
+                  >
+                    <Printer size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    title="Download PDF"
+                    onClick={async () => {
+                      try {
+                        await downloadSavedBillPdf(bill.id, bill.bill_id || bill.bill_number);
+                      } catch (_err) {
+                        setError('Could not download the PDF.');
+                      }
+                    }}
+                    style={{ border: 0, background: 'transparent', cursor: 'pointer', color: '#0f766e' }}
+                  >
+                    <Download size={16} />
+                  </button>
+                </>
+              ) : null}
+            </div>
           ))}
         </div>
       ) : null}
