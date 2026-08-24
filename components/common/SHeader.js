@@ -24,6 +24,7 @@ import {
   Info
 } from 'lucide-react';
 import styles from './SHeader.module.css';
+import { shopCartKey } from '../../app/lib/shop-public';
 
 // Bottom Navigation Component with Shop-Aware Navigation
 function BottomNav({ store, shopSlug, actualStoreId }) {
@@ -35,7 +36,7 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
   const router = useRouter();
 
   // ✅ FIXED: Use actualStoreId for cart and navigation
-  const storePhone = actualStoreId || shopSlug || store?.seller_phone;
+  const storePhone = shopCartKey(store, shopSlug, null) || actualStoreId || shopSlug || store?.seller_phone;
 
   // Store cart count for this specific store
   const storeCartCount = storePhone ? (carts[storePhone] || []).reduce((count, item) => count + item.quantity, 0) : 0;
@@ -85,7 +86,6 @@ function BottomNav({ store, shopSlug, actualStoreId }) {
       finalUrl = `${targetPath}${separator}id=${actualStoreId}`;
     }
 
-    console.log(' Bottom nav navigating to:', finalUrl);
     router.push(finalUrl);
   };
 
@@ -199,17 +199,11 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
   const finalShopSlug = shopSlug || params?.shopSlug || store?.seller_phone;
 
   // ✅ ENHANCED: Better store identification
-  const effectiveStoreId = actualStoreId || (finalShopSlug !== 'new' ? finalShopSlug : null);
+  const routeShopSlug = finalShopSlug !== 'new' ? finalShopSlug : null;
+  const effectiveStoreId = actualStoreId || routeShopSlug;
+  const cartKey = shopCartKey(store, routeShopSlug, searchParams) || effectiveStoreId;
 
-  console.log(' SHeader Debug:');
-  console.log('- shopSlug prop:', shopSlug);
-  console.log('- params?.shopSlug:', params?.shopSlug);
-  console.log('- searchParams id:', actualStoreId);
-  console.log('- effectiveStoreId:', effectiveStoreId);
-  console.log('- store?.seller_phone:', store?.seller_phone);
-
-  // Get cart count for this specific store
-  const cartCount = effectiveStoreId ? (carts[effectiveStoreId] || []).reduce((count, item) => count + item.quantity, 0) : 0;
+  const cartCount = cartKey ? (carts[cartKey] || []).reduce((count, item) => count + item.quantity, 0) : 0;
 
   // ✅ FIXED: URL generation helper that preserves query parameters
   const generateShopUrl = (path = '') => {
@@ -309,13 +303,11 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
   const handleCartClick = (e) => {
     e.preventDefault();
     const cartUrl = generateShopUrl('/cart');
-    console.log(' Cart click navigating to:', cartUrl);
     router.push(cartUrl);
   };
 
   const handlePhoneClick = (e) => {
     e.preventDefault();
-    console.log('Phone number:', effectiveStoreId);
   };
 
   if (!effectiveStoreId) {

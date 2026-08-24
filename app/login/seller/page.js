@@ -24,6 +24,7 @@ import {
   Shield,
   CheckCircle,
 } from 'lucide-react';
+import { requestError } from '../../../lib/requestError';
 
 // âœ… API configuration
 // const getApiBaseUrl = () => {
@@ -157,6 +158,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect');
+  const notice = searchParams.get('message');
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -225,7 +227,7 @@ function LoginForm() {
   };
 
   const validatePassword = (password) => {
-    return password.length >= 6;
+    return password.length >= 8;
   };
 
   const handleFieldChange = (field, value) => {
@@ -260,7 +262,7 @@ function LoginForm() {
     if (!password) {
       newFieldErrors.password = 'Password is required';
     } else if (!validatePassword(password)) {
-      newFieldErrors.password = 'Password must be at least 6 characters long';
+      newFieldErrors.password = 'Password must be at least 8 characters long';
     }
 
     if (Object.keys(newFieldErrors).length > 0) {
@@ -319,35 +321,15 @@ function LoginForm() {
         console.log(' Checking seller onboarding status...');
         
         const statusResponse = await axios.get(
-          `${API_BASE_URL}/users/seller/onboarding/status/`,
+          `${API_BASE_URL}/user/seller/onboarding/status/`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        const { 
-          store_setup_completed,
-          razorpay_connected 
-        } = statusResponse.data;
-
-        console.log(' Onboarding status:', statusResponse.data);
-
-        // âœ… Simplified redirect logic (Login â†’ Settings â†’ Payments)
-        let redirectUrl;
-
-        if (!store_setup_completed) {
-          redirectUrl = '/dashboard/seller/settings';
-          console.log(' Redirecting to: Setup Store (Settings)');
-        } else if (!razorpay_connected) {
-          redirectUrl = '/dashboard/seller/payments';
-          console.log(' Redirecting to: Connect Razorpay (Payments)');
-        } else if (redirect) {
+        let redirectUrl = '/dashboard/seller';
+        if (redirect) {
           redirectUrl = decodeURIComponent(redirect);
-          console.log(' Redirecting to: Custom redirect');
         } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
           redirectUrl = `/store/${currentStoreInfo.storeId}/dashboard`;
-          console.log(' Redirecting to: Store Dashboard');
-        } else {
-          redirectUrl = '/dashboard/seller';
-          console.log(' Redirecting to: Main Dashboard');
         }
 
         setTimeout(() => {
@@ -358,7 +340,7 @@ function LoginForm() {
         console.error(' Failed to check onboarding status:', statusError);
         
         // Fallback - go to settings if onboarding status check fails
-        const fallbackUrl = '/dashboard/seller/settings';
+        const fallbackUrl = redirect ? decodeURIComponent(redirect) : '/dashboard/seller';
         
         setTimeout(() => {
           window.location.href = fallbackUrl;
@@ -366,43 +348,13 @@ function LoginForm() {
       }
 
     } catch (err) {
-      console.error(' Login error:', err);
-      console.error(' Error response:', err.response?.data);
-
-      let errorMessage = 'Login failed. Please check your credentials.';
-
-      if (err.response?.status === 400) {
-        if (err.response.data?.error) {
-          errorMessage = err.response.data.error;
-        } else if (err.response.data?.phone) {
-          errorMessage = Array.isArray(err.response.data.phone)
-            ? err.response.data.phone[0]
-            : err.response.data.phone;
-        } else if (err.response.data?.password) {
-          errorMessage = Array.isArray(err.response.data.password)
-            ? err.response.data.password[0]
-            : err.response.data.password;
-        } else {
-          errorMessage = 'Invalid request. Please check your phone number and password format.';
-        }
-      } else if (err.response?.status === 401) {
-        errorMessage = 'Invalid phone number or password. Please check your credentials.';
-      } else if (err.response?.status === 404) {
-        errorMessage = 'No seller account found with this phone number. Please create an account first.';
-      } else if (err.response?.status === 403) {
-        errorMessage = 'Account is not verified or inactive. Please contact support.';
-      } else if (err.code === 'ECONNABORTED') {
-        errorMessage = 'Request timed out. Please check your connection and try again.';
-      } else if (err.response?.data) {
-        errorMessage = err.response.data.error ||
-          err.response.data.detail ||
-          err.response.data.message ||
-          errorMessage;
-      } else if (!navigator.onLine) {
-        errorMessage = 'No internet connection. Please check your network and try again.';
-      }
-
-      setError(errorMessage);
+      setError(requestError(err, 'Could not sign in. Check your phone number and password, then try again.'));
+      const data = err?.response?.data || {};
+      const next = {};
+      if (Array.isArray(data.phone) && data.phone[0]) next.phone = String(data.phone[0]);
+      if (Array.isArray(data.password) && data.password[0]) next.password = String(data.password[0]);
+      if (err?.response?.status === 401 && !next.password) next.password = 'Wrong phone number or password.';
+      if (Object.keys(next).length) setFieldErrors((prev) => ({ ...prev, ...next }));
     } finally {
       setLoading(false);
     }
@@ -539,6 +491,13 @@ function LoginForm() {
             <span>Keep me signed in</span>
           </label>
         </div>
+
+        {notice ? (
+          <div style={{ ...styles.errorContainer, color: '#175E54', background: '#ecfdf5' }}>
+            <CheckCircle size={16} />
+            <span>{notice}</span>
+          </div>
+        ) : null}
 
         {error && (
           <div style={styles.errorContainer}>

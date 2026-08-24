@@ -50,16 +50,10 @@ function Whatsapp({ sellerPhone, shopSlug }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  
-  useEffect(() => {
-    console.log(" WhatsApp Component Debug:", { sellerPhone, shopSlug, storeData });
-  }, [storeData]);
 
-  // -------------------------------------------------------------------
-  // 🔥 FETCH STORE DATA
-  // -------------------------------------------------------------------
   const fetchStoreData = async () => {
-    if (!sellerPhone) {
+    const shopId = shopSlug || sellerPhone;
+    if (!shopId) {
       setError("Invalid store URL - phone number is missing");
       setIsLoading(false);
       return;
@@ -72,14 +66,14 @@ function Whatsapp({ sellerPhone, shopSlug }) {
       let response;
 
       try {
-        response = await axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/`, { timeout: 15000 });
+        response = await axios.get(`${getApiBaseUrl()}/shop/${encodeURIComponent(shopId)}/`, { timeout: 15000 });
         setStoreData(response.data.store || response.data);
       } catch {
         try {
-          response = await axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/about/`, { timeout: 15000 });
+          response = await axios.get(`${getApiBaseUrl()}/shop/${encodeURIComponent(shopId)}/about/`, { timeout: 15000 });
           setStoreData(response.data);
         } catch {
-          response = await axios.get(`${getApiBaseUrl()}/shop/${sellerPhone}/profile/`, { timeout: 15000 });
+          response = await axios.get(`${getApiBaseUrl()}/shop/${encodeURIComponent(shopId)}/profile/`, { timeout: 15000 });
           setStoreData(response.data);
         }
       }
@@ -94,7 +88,7 @@ function Whatsapp({ sellerPhone, shopSlug }) {
 
   useEffect(() => {
     fetchStoreData();
-  }, [sellerPhone]);
+  }, [sellerPhone, shopSlug]);
 
   // -------------------------------------------------------------------
   // 🔥 CHAT HANDLERS

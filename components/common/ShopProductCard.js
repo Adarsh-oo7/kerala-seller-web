@@ -6,6 +6,8 @@ import axios from 'axios';
 import "../../styles/ShopProductcard.css";
 import {
   firstProductImage,
+  productImageCandidates,
+  nextProductImage,
   PRODUCT_PLACEHOLDER,
 } from '../../app/lib/productImage';
 import { getBuyerAuthHeaders } from '../../app/lib/buyerAuth';
@@ -49,10 +51,12 @@ export default function ShopProductCard({
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   const [imageSrc, setImageSrc] = useState(() => firstProductImage(product));
   const productIdRef = useRef(product?.id);
+  const failedImagesRef = useRef(new Set());
 
   useEffect(() => {
     if (productIdRef.current === product?.id) return;
     productIdRef.current = product?.id;
+    failedImagesRef.current = new Set();
     setImageSrc(firstProductImage(product));
   }, [product, product?.id]);
 
@@ -285,9 +289,14 @@ export default function ShopProductCard({
             style={styles.productImage}
             loading="lazy"
             onError={() => {
-              setImageSrc((current) => (
-                current === PRODUCT_PLACEHOLDER ? current : PRODUCT_PLACEHOLDER
-              ));
+              setImageSrc((current) => {
+                const next = nextProductImage(
+                  productImageCandidates(product),
+                  failedImagesRef.current,
+                  current
+                );
+                return next || PRODUCT_PLACEHOLDER;
+              });
             }}
           />
         </Link>

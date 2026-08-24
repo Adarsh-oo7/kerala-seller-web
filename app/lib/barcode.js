@@ -3,7 +3,20 @@ export function sanitizeBarcode(value) {
 }
 
 export function storedBarcode(value) {
-  return String(value || '').trim();
+  return String(value || '').trim().replace(/^\*+|\*+$/g, '').replace(/\s+/g, '');
+}
+
+export function normalizeBarcode(value) {
+  return storedBarcode(value).toLowerCase();
+}
+
+export function barcodeKeys(raw) {
+  const code = normalizeBarcode(raw);
+  if (!code) return [];
+  const keys = [code];
+  if (/^\d{12}$/.test(code)) keys.push(`0${code}`);
+  if (/^\d{13}$/.test(code) && code.startsWith('0')) keys.push(code.slice(1));
+  return keys;
 }
 
 export function generateShopBarcode(taken = []) {
@@ -24,19 +37,19 @@ export function codesFromProduct(product) {
     ...(product?.variants || []).flatMap((variant) => [variant.barcode, variant.sku]),
   ]
     .filter((value) => Boolean(value && String(value).trim()))
-    .map((value) => String(value).trim().toLowerCase());
+    .map((value) => normalizeBarcode(value));
 }
 
 export function findProductByCode(products, raw) {
-  const code = String(raw || '').trim().toLowerCase();
-  if (!code) return null;
+  const keys = new Set(barcodeKeys(raw));
+  if (!keys.size) return null;
   for (const product of products || []) {
     for (const variant of product.variants || []) {
-      if ((variant.barcode || '').toLowerCase() === code || (variant.sku || '').toLowerCase() === code) {
+      if (keys.has(normalizeBarcode(variant.barcode || '')) || keys.has(normalizeBarcode(variant.sku || ''))) {
         return { product, variant };
       }
     }
-    if ((product.barcode || '').toLowerCase() === code || (product.sku || '').toLowerCase() === code) {
+    if (keys.has(normalizeBarcode(product.barcode || '')) || keys.has(normalizeBarcode(product.sku || ''))) {
       return { product };
     }
   }

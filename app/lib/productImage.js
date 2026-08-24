@@ -1,4 +1,13 @@
-export const PRODUCT_PLACEHOLDER = '/placeholder.svg';
+export const PRODUCT_PLACEHOLDER =
+  'data:image/svg+xml;charset=utf-8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">' +
+      '<rect width="400" height="400" fill="#F3F6F5"/>' +
+      '<rect x="118" y="108" width="164" height="184" rx="18" fill="#175E54" opacity="0.12"/>' +
+      '<circle cx="212" cy="168" r="16" fill="#175E54" opacity="0.28"/>' +
+      '<path d="M152 268h96l-28-84-22 48-14-26z" fill="#175E54" opacity="0.4"/>' +
+      '</svg>'
+  );
 
 function pushUrl(list, value) {
   if (!value || typeof value !== 'string') return;

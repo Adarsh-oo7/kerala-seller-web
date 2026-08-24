@@ -8,6 +8,10 @@ import "../../../../../styles/Shopslugproduct.css";
 import { useCart } from '../../../../context/CartContext';
 import SHeader from '../../../../../components/common/SHeader';
 import { shopListPhone, fetchPublicShop } from '../../../../lib/shop-public';
+import {
+  PRODUCT_PLACEHOLDER,
+  productImageCandidates,
+} from '../../../../lib/productImage';
 import { descriptionLooksLikeHtml, sanitizeDescriptionHtml } from '../../../../lib/productDescription';
 import Footer from '../../../../../components/common/Footer';
 import { toast } from "react-toastify";
@@ -367,58 +371,24 @@ function ProductImageGallery({ product }) {
 
   // Combine main image and sub-images
 const allImages = React.useMemo(() => {
-  const images = [];
-  
-  // ✅ Step 1: Add main image if it exists and is valid
-  const mainImageUrl = getBestImageUrl(product, 'main');
-  if (mainImageUrl && !mainImageUrl.includes('placehold.co') && !mainImageUrl.includes('No+Image')) {
-    images.push({
-      url: mainImageUrl,
-      thumbnail: getBestImageUrl(product, 'thumbnail'),
-      large: getBestImageUrl(product, 'large'),
-      alt: product.name,
-      isMain: true
-    });
-  }
-  
-  // ✅ Step 2: Add sub-images with correct property names and duplicate prevention
-  if (product.sub_images && Array.isArray(product.sub_images)) {
-    product.sub_images.forEach((subImage, index) => {
-      // Use correct backend property names (cloudinary_image_url first)
-      const subImageUrl = subImage.cloudinary_image_url || 
-                          subImage.image_url || 
-                          subImage.thumbnail_url || 
-                          getBestImageUrl({ main_image_url: subImage.image });
-      
-      // ✅ Only add if valid and NOT a duplicate of main image
-      if (subImageUrl && 
-          !subImageUrl.includes('placehold.co') && 
-          !subImageUrl.includes('No+Image') &&
-          subImageUrl !== mainImageUrl) {
-        images.push({
-          url: subImageUrl,
-          thumbnail: subImage.thumbnail_url || subImage.cloudinary_image_url || subImage.image_url || subImageUrl,
-          large: subImage.large_url || subImage.cloudinary_image_url || subImage.image_url || subImageUrl,
-          alt: `${product.name} - Image ${index + 2}`,
-          isMain: false
-        });
-      }
-    });
-  }
-  
-  // ✅ Step 3: Fallback if no valid images exist
-  if (images.length === 0) {
-    images.push({
-      url: 'https://placehold.co/400x400?text=No+Image',
-      thumbnail: 'https://placehold.co/80x80?text=No+Image',
-      large: 'https://placehold.co/600x400?text=No+Image',
+  const urls = productImageCandidates(product);
+  if (!urls.length) {
+    return [{
+      url: PRODUCT_PLACEHOLDER,
+      thumbnail: PRODUCT_PLACEHOLDER,
+      large: PRODUCT_PLACEHOLDER,
       alt: 'No image available',
-      isMain: true
-    });
+      isMain: true,
+    }];
   }
-  
-  return images;
-}, [product?.main_image_url, product?.cloudinary_url, product?.sub_images]);
+  return urls.map((url, index) => ({
+    url,
+    thumbnail: url,
+    large: url,
+    alt: index === 0 ? (product.name || 'Product image') : `${product.name} - Image ${index + 1}`,
+    isMain: index === 0,
+  }));
+}, [product]);
 
   const handlePrevious = () => {
     setSelectedImageIndex((prev) =>
@@ -472,7 +442,12 @@ const allImages = React.useMemo(() => {
             }}
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
-              e.target.src = 'https://placehold.co/600x400?text=No+Image';
+              if (allImages.length > 1 && selectedImageIndex < allImages.length - 1) {
+                setSelectedImageIndex((i) => i + 1);
+                setImageLoaded(false);
+                return;
+              }
+              e.target.src = PRODUCT_PLACEHOLDER;
               setImageLoaded(true);
             }}
           />
@@ -523,7 +498,7 @@ const allImages = React.useMemo(() => {
                     alt={image.alt}
                     style={styles.thumbnailImage}
                     onError={(e) => {
-                      e.target.src = 'https://placehold.co/80x80?text=No+Image';
+                      e.target.src = PRODUCT_PLACEHOLDER;
                     }}
                   />
                 </div>
@@ -1105,7 +1080,7 @@ function RelatedProductCard({ product, shopSlug, sellerPhone }) {
             alt={product.name}
             style={styles.relatedProductImage}
             onError={(e) => {
-              e.target.src = 'https://placehold.co/200x200/e9ecef/6c757d?text=No+Image';
+              e.target.src = PRODUCT_PLACEHOLDER;
             }}
           />
           <button
@@ -1406,7 +1381,7 @@ if (!isLoggedIn) {
 
   return (
     <div style={styles.pageContainer}>
-      <SHeader store={store} isLoggedIn={isLoggedIn} />
+      <SHeader store={store} isLoggedIn={isLoggedIn} shopSlug={shopSlug} />
 
 
 

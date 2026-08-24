@@ -8,6 +8,7 @@ import Link from 'next/link';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
 import "../../../styles/Registerseller.css";
+import { requestError } from '../../../lib/requestError';
 
 // Import Firebase Authentication modules
 import { auth } from '../../../firebase';
@@ -171,6 +172,8 @@ export default function RegisterSellerPage() {
             errors.password = 'Password is required';
         } else if (!validatePassword(formData.password)) {
             errors.password = 'Password must be at least 8 characters';
+        } else if (/^\d+$/.test(formData.password)) {
+            errors.password = 'Password cannot be only numbers. Add letters too.';
         }
 
         if (!formData.confirmPassword) {
@@ -297,8 +300,8 @@ export default function RegisterSellerPage() {
                 if (recaptchaVerifier) recaptchaVerifier.clear();
             } else if (err.code === 'auth/internal-error') {
                 errorMessage = 'Firebase internal error. Please try again.';
-            } else if (err.message) {
-                errorMessage = err.message;
+            } else {
+                errorMessage = requestError(err, 'Failed to send OTP. Check your internet and try again.');
             }
 
             setError(errorMessage);
@@ -356,10 +359,20 @@ export default function RegisterSellerPage() {
 
             console.log(' Registration successful (Django response):', response.data);
 
+            const token = response.data.access_token || response.data.token || response.data.access;
+            if (token) {
+              localStorage.setItem('accessToken', token);
+              localStorage.setItem('access_token', token);
+              if (response.data.seller) {
+                localStorage.setItem('sellerInfo', JSON.stringify(response.data.seller));
+              }
+              setError('');
+              router.push('/dashboard/seller/settings');
+              return;
+            }
+
             setError('');
-            setTimeout(() => {
-                router.push('/login/seller?message=Registration successful! Please log in with your credentials.');
-            }, 1500);
+            router.push('/login/seller?message=Shop created. Sign in with your phone and password.');
 
         } catch (err) {
             console.error(' Firebase OTP or Django registration error:', err);
@@ -379,9 +392,18 @@ export default function RegisterSellerPage() {
                     errorMessage = errorData.error;
                 }
             } else if (err.response?.status === 400) {
-                errorMessage = 'Invalid registration data provided to the server. Please check your inputs.';
+                errorMessage = requestError(err, 'Check the shop details. Password must be 8+ characters and not a common word.');
+                const data = err.response?.data || {};
+                const next = {};
+                ['name', 'shop_name', 'email', 'phone', 'password'].forEach((key) => {
+                  if (Array.isArray(data[key]) && data[key][0]) next[key] = String(data[key][0]);
+                  else if (typeof data[key] === 'string') next[key] = data[key];
+                });
+                if (Object.keys(next).length) setValidationErrors((prev) => ({ ...prev, ...next }));
             } else if (err.code === 'ECONNABORTED') {
                 errorMessage = 'Request timed out. Please check your connection and try again.';
+            } else {
+                errorMessage = requestError(err, 'Registration failed. Check your internet and try again.');
             }
 
             setError(errorMessage);

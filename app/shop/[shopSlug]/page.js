@@ -766,8 +766,6 @@ function EnhancedSellerStorefrontPage() {
 
       if (token) {
         fetchWishlist();
-      } else {
-        console.log('User not logged in - skipping wishlist fetch');
       }
     }, 1500);
 
@@ -878,7 +876,7 @@ function EnhancedSellerStorefrontPage() {
           shopSlug={shopSlug}
           sellerPhone={sellerPhone}
         />
-        <SHeader store={store} isLoggedIn={isLoggedIn} />
+        <SHeader store={store} isLoggedIn={isLoggedIn} shopSlug={shopSlug} />
         <EnhancedStoreBanner store={store} shopSlug={shopSlug} />
         <EnhancedFilterSection
           products={products || []}
@@ -1059,13 +1057,24 @@ const styles = {
   sliderContainer: {
     position: 'relative',
     width: '100%',
+    maxWidth: '1200px',
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    marginTop: '120px',
+    marginBottom: '8px',
     overflow: 'hidden',
-    marginTop: '105px',
+    padding: '0 16px',
+    boxSizing: 'border-box',
   },
   slidesWrapper: {
     position: 'relative',
     width: '100%',
-    aspectRatio: '3 / 1',
+    aspectRatio: '16 / 6',
+    maxHeight: '280px',
+    minHeight: '140px',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    backgroundColor: '#0f172a',
   },
   slide: {
     position: 'absolute',
@@ -1091,6 +1100,7 @@ const styles = {
     width: '100%',
     height: '100%',
     objectFit: 'contain',
+    objectPosition: 'center',
     display: 'block'
   },
   bannerFallback: {

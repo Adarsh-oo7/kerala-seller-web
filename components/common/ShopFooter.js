@@ -1,110 +1,90 @@
 'use client';
 
-import React from "react";
-import { Facebook, Instagram, Youtube } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import React, { useState } from 'react';
+import { Facebook, Instagram, Youtube } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import styles from './ShopFooter.module.css';
+
+function shopSlugFromHost() {
+  if (typeof window === 'undefined') return '';
+  const host = window.location.hostname.toLowerCase();
+  const base = 'keralasellers.in';
+  if (host.endsWith(`.${base}`) && host !== `www.${base}` && host !== `api.${base}`) {
+    return host.slice(0, -(base.length + 1));
+  }
+  return '';
+}
 
 export default function ShopFooter({ store }) {
-    const pathname = usePathname() || '';
-    const facebookUrl = store?.facebook_link || store?.facebook_url;
-    const instagramUrl = store?.instagram_link || store?.instagram_url;
-    const youtubeUrl = store?.youtube_link || store?.youtube_url;
-    const storeName = store?.name || store?.seller_name || 'Kerala Sellers';
-    const logoUrl = store?.logo_url || store?.logo || "https://via.placeholder.com/150x50/1a4845/ffffff?text=KS";
-    const shopMatch = pathname.match(/^\/shop\/([^/]+)/);
-    const shopSlug = shopMatch?.[1] || store?.store_slug || '';
-    const legalBase = shopSlug ? `/shop/${shopSlug}` : '';
+  const pathname = usePathname() || '';
+  const facebookUrl = store?.facebook_link || store?.facebook_url;
+  const instagramUrl = store?.instagram_link || store?.instagram_url;
+  const youtubeUrl = store?.youtube_link || store?.youtube_url;
+  const storeName = store?.name || store?.seller_name || 'Kerala Sellers';
+  const logoUrl = store?.logo_url || store?.cloudinary_logo || store?.logo || '';
+  const [logoFailed, setLogoFailed] = useState(false);
+  const shopMatch = pathname.match(/^\/shop\/([^/]+)/);
+  const shopSlug = shopMatch?.[1] || store?.store_slug || shopSlugFromHost();
+  const legalBase = shopSlug ? `/shop/${shopSlug}` : '';
+  const initial = String(storeName).trim().charAt(0).toUpperCase() || 'S';
+  const hasOwnSocials = Boolean(facebookUrl || instagramUrl || youtubeUrl);
 
-    return (
-        <footer className="Shopfooter">
-            <div className="Shopfooter-left">
-                © {new Date().getFullYear()} {storeName}
-            </div>
-            
-            <div className="Shopfooter-logo">
-                <img 
-                    src={logoUrl} 
-                    alt={storeName}
-                    onError={(e) => { 
-                        e.target.src = 'https://via.placeholder.com/150x50/1a4845/ffffff?text=KS';
-                        e.target.onerror = null;
-                    }}
-                />
-            </div>
-            
-            <nav className="Shopfooter-links">
-                <Link href={legalBase ? `${legalBase}/privacy-policy` : '/privacy-policy'}>Privacy policy</Link>
-                <Link href={legalBase ? `${legalBase}/terms-and-conditions` : '/terms-and-conditions'}>Terms and Conditions</Link>
-                <Link href={legalBase ? `${legalBase}/cancellation-refund` : '/cancellation-refund'}>Cancellation and Refund</Link>
-                <Link href={legalBase ? `${legalBase}/shipping-delivery` : '/shipping-delivery'}>Shipping and Delivery</Link>
-            </nav>
-            
-            <div className="Shopfooter-socials">
-                {/* Show shop's social media if available */}
-                {facebookUrl && (
-                    <a 
-                        href={facebookUrl}
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        aria-label="Facebook"
-                    >
-                        <Facebook className="Shopsocial-icon" />
-                    </a>
-                )}
+  return (
+    <footer className={styles.footer}>
+      <div className={styles.logoWrap}>
+        {logoUrl && !logoFailed ? (
+          <img
+            className={styles.logo}
+            src={logoUrl}
+            alt=""
+            onError={() => setLogoFailed(true)}
+          />
+        ) : (
+          <div className={styles.logoFallback} aria-hidden="true">{initial}</div>
+        )}
+      </div>
 
-                {instagramUrl && (
-                    <a 
-                        href={instagramUrl}
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        aria-label="Instagram"
-                    >
-                        <Instagram className="Shopsocial-icon" />
-                    </a>
-                )}
+      <nav className={styles.links}>
+        <Link href={legalBase ? `${legalBase}/privacy-policy` : '/privacy-policy'}>Privacy policy</Link>
+        <Link href={legalBase ? `${legalBase}/terms-and-conditions` : '/terms-and-conditions'}>Terms and Conditions</Link>
+        <Link href={legalBase ? `${legalBase}/cancellation-refund` : '/cancellation-refund'}>Cancellation and Refund</Link>
+        <Link href={legalBase ? `${legalBase}/shipping-delivery` : '/shipping-delivery'}>Shipping and Delivery</Link>
+      </nav>
 
-                {youtubeUrl && (
-                    <a 
-                        href={youtubeUrl}
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        aria-label="YouTube"
-                    >
-                        <Youtube className="Shopsocial-icon" />
-                    </a>
-                )}
-
-                {/* Fallback: Show Kerala Sellers main social if shop has no links */}
-                {!facebookUrl && !instagramUrl && !youtubeUrl && (
-                    <>
-                        <a 
-                            href="https://www.facebook.com/profile.php?id=61579701681445" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            aria-label="Kerala Sellers Facebook"
-                        >
-                            <Facebook className="Shopsocial-icon" />
-                        </a>
-                        <a 
-                            href="https://www.instagram.com/kerala_sellers/" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            aria-label="Kerala Sellers Instagram"
-                        >
-                            <Instagram className="Shopsocial-icon" />
-                        </a>
-                        <a 
-                            href="https://www.youtube.com/@KeralaSellers" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            aria-label="Kerala Sellers YouTube"
-                        >
-                            <Youtube className="Shopsocial-icon" />
-                        </a>
-                    </>
-                )}
-            </div>
-        </footer>
-    );
+      <div className={styles.bottom}>
+        <div className={styles.copy}>© {new Date().getFullYear()} {storeName}</div>
+        <div className={styles.socials}>
+          {facebookUrl && (
+            <a href={facebookUrl} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+              <Facebook className={styles.icon} />
+            </a>
+          )}
+          {instagramUrl && (
+            <a href={instagramUrl} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <Instagram className={styles.icon} />
+            </a>
+          )}
+          {youtubeUrl && (
+            <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+              <Youtube className={styles.icon} />
+            </a>
+          )}
+          {!hasOwnSocials && (
+            <>
+              <a href="https://www.facebook.com/profile.php?id=61579701681445" target="_blank" rel="noopener noreferrer" aria-label="Kerala Sellers Facebook">
+                <Facebook className={styles.icon} />
+              </a>
+              <a href="https://www.instagram.com/kerala_sellers/" target="_blank" rel="noopener noreferrer" aria-label="Kerala Sellers Instagram">
+                <Instagram className={styles.icon} />
+              </a>
+              <a href="https://www.youtube.com/@KeralaSellers" target="_blank" rel="noopener noreferrer" aria-label="Kerala Sellers YouTube">
+                <Youtube className={styles.icon} />
+              </a>
+            </>
+          )}
+        </div>
+      </div>
+    </footer>
+  );
 }

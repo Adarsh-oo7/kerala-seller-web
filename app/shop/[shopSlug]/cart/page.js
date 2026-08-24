@@ -19,6 +19,7 @@ import "../../../../styles/Shopslugcart.css";
 import SHeader from '../../../../components/common/SHeader';
 import { toast } from "react-toastify";
 import { useCart } from '../../../../app/context/CartContext';
+import { firstProductImage, PRODUCT_PLACEHOLDER } from '../../../lib/productImage';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 
@@ -554,7 +555,7 @@ const handleCheckout = () => {
   if (loading || urlError) {
     return (
       <div className="shopslugcartpagecontainer" style={styles.pageContainer}>
-        <SHeader store={storeData} isLoggedIn={isLoggedIn} />
+        <SHeader store={storeData} isLoggedIn={isLoggedIn} shopSlug={shopSlug} />
         <div style={styles.loadingContainer}>
           {urlError ? (
             <>
@@ -576,7 +577,7 @@ const handleCheckout = () => {
   if (!actualStoreId) {
     return (
       <div className="shopslugcartpagecontainer" style={styles.pageContainer}>
-        <SHeader store={null} isLoggedIn={isLoggedIn} />
+        <SHeader store={null} isLoggedIn={isLoggedIn} shopSlug={shopSlug} />
         <div style={styles.errorContainer}>
           <Store size={48} color="#ef4444" />
           <h2>Store Not Found</h2>
@@ -593,7 +594,7 @@ const handleCheckout = () => {
 
   return (
     <div className="shopslugcartpagecontainer" style={styles.pageContainer}>
-      <SHeader store={storeData} isLoggedIn={isLoggedIn} />
+        <SHeader store={storeData} isLoggedIn={isLoggedIn} shopSlug={shopSlug} />
 
       <div style={styles.container}>
         <div style={styles.header}>
@@ -683,15 +684,11 @@ const handleCheckout = () => {
                         style={styles.imageColumn}
                       >
                         <img
-                          src={
-                            item.main_image_url ||
-                            item.image_url ||
-                            '/placeholder.svg'
-                          }
+                          src={firstProductImage(item)}
                           alt={item.name}
                           style={styles.itemImage}
                           onError={e => {
-                            e.target.src = '/placeholder.svg';
+                            e.target.src = PRODUCT_PLACEHOLDER;
                           }}
                         />
                         <div

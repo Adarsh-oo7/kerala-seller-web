@@ -19,18 +19,38 @@ function storeSlugFromHost(host) {
   return null;
 }
 
+function isShopHostPassthrough(pathname) {
+  if (!pathname || pathname === '/') return false;
+  if (pathname.startsWith('/shop/')) return true;
+  if (pathname.startsWith('/_next')) return true;
+  if (pathname.startsWith('/api/')) return true;
+  if (pathname.startsWith('/assets/')) return true;
+  if (
+    pathname === '/favicon.ico' ||
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml' ||
+    pathname === '/manifest.json' ||
+    pathname === '/placeholder.svg'
+  ) {
+    return true;
+  }
+  // Public files (images, fonts, css) must not be rewritten to /shop/{slug}/...
+  if (/\.[a-zA-Z0-9]{1,8}$/.test(pathname)) return true;
+  return false;
+}
+
 export function middleware(request) {
   const slug = storeSlugFromHost(request.headers.get('host'));
   if (!slug) return NextResponse.next();
 
   const url = request.nextUrl.clone();
-  if (!url.pathname.startsWith('/shop/')) {
-    url.pathname = url.pathname === '/' ? `/shop/${slug}` : `/shop/${slug}${url.pathname}`;
-    return NextResponse.rewrite(url);
+  if (isShopHostPassthrough(url.pathname)) {
+    return NextResponse.next();
   }
-  return NextResponse.next();
+  url.pathname = url.pathname === '/' ? `/shop/${slug}` : `/shop/${slug}${url.pathname}`;
+  return NextResponse.rewrite(url);
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|_next/data|favicon.ico|.*\\..*).*)'],
 };

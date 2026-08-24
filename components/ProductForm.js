@@ -1579,6 +1579,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
   const [subImageUrls, setSubImageUrls] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [dynamicAttributes, setDynamicAttributes] = useState({});
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -1886,10 +1887,19 @@ const handleMainImageUpload = (uploadedImages) => {
     return;
   }
 
-  if (!mainImageUrl && !product) {
-    setError('Please upload a main product image');
+  const fieldErrors = {};
+  if (!formData.name?.trim()) fieldErrors.name = 'Enter the product name.';
+  if (!formData.price || Number(formData.price) <= 0) fieldErrors.price = 'Enter a valid selling price.';
+  if (descriptionIsEmpty(formData.description)) fieldErrors.description = 'Add a product description.';
+  if (!selectedCategoryId) fieldErrors.category = 'Pick a category.';
+  if (!mainImageUrl && !product) fieldErrors.image = 'Add a main photo.';
+  if (Object.keys(fieldErrors).length) {
+    setFieldErrors(fieldErrors);
+    setError('Fix the highlighted fields, then save.');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }
+  setFieldErrors({});
 
   if (uploadingImages) {
     setError('Please wait for image uploads to complete');
@@ -2213,6 +2223,7 @@ const handleMainImageUpload = (uploadedImages) => {
                 className='dashboardproductmodalselectinput'
                 placeholder="eg, Cotton T-Shirt, iPhone 13, Shoes..."
               />
+              {fieldErrors.name ? <small style={{ color: '#b91c1c' }}>{fieldErrors.name}</small> : null}
               <small style={styles.helpText}>Give your product a clear, descriptive name</small>
             </div>
 
@@ -2241,6 +2252,8 @@ const handleMainImageUpload = (uploadedImages) => {
                   value={formData.price}
                   onChange={handleChange}
                   required
+                />
+                {fieldErrors.price ? <small style={{ color: '#b91c1c' }}>{fieldErrors.price}</small> : null}
                   style={styles.input}
                   className='dashboardproductmodalselectinput'
                   step="0.01"

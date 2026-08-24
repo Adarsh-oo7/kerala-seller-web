@@ -24,6 +24,7 @@ import {
   Users,
   Wallet,
   ScanLine,
+  Printer,
   Puzzle,
   Trash2,
 } from 'lucide-react';
@@ -464,6 +465,14 @@ export default function DashboardLayout({ children }) {
             name="Barcodes"
             pathname={pathname}
             icon={<ScanLine size={18} />}
+          />
+          ) : null}
+          {can('billing.access_pos') ? (
+          <NavItem
+            href="/dashboard/seller/printers"
+            name="Printers"
+            pathname={pathname}
+            icon={<Printer size={18} />}
           />
           ) : null}
 

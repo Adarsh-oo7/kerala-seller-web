@@ -172,7 +172,33 @@ export default function AddonsPage() {
       <div style={cardStyle}>
         <div style={{ color: '#64748b', fontSize: 13 }}>{data?.plan_name || 'Current plan'}</div>
         <div style={{ fontSize: 24, color: '#175E54', fontWeight: 700 }}>₹{billing.monthly_total ?? 0}</div>
-        <div style={metaStyle}>Plan ₹{billing.base_plan_price ?? 0} + add-ons ₹{billing.addons_price ?? 0} this month</div>
+        <div style={metaStyle}>Plan ₹{billing.base_plan_price ?? 0} + add-ons ₹{billing.addons_price ?? 0} this month. Pay this one total each month.</div>
+        {data?.official_url || data?.path_url ? (
+          <p style={metaStyle}>Shop URL: {data.official_url || data.path_url}</p>
+        ) : null}
+        {(billing.active_addons || []).map((row) => (
+          <div key={row.purchase_id || row.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 8 }}>
+            <span style={metaStyle}>{row.name} · ₹{row.price}/mo</span>
+            <button
+              type="button"
+              style={ghostStyle}
+              onClick={async () => {
+                if (!window.confirm(`Remove ${row.name} from this month’s total?`)) return;
+                try {
+                  await axios.post(`${API_BASE_URL}/api/subscriptions/addons/cancel/`, {
+                    purchase_id: row.purchase_id,
+                    addon_id: row.id,
+                  }, { headers: headers() });
+                  await load();
+                } catch (err) {
+                  setError(err.response?.data?.error || 'Could not remove this add-on.');
+                }
+              }}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
       </div>
 
       {emptyCatalog ? (
@@ -272,4 +298,11 @@ const warningBadgeStyle = {
   ...badgeStyle,
   background: '#fffbeb',
   color: '#b45309',
+};
+const ghostStyle = {
+  ...buttonStyle,
+  marginTop: 0,
+  background: '#fff',
+  color: '#175E54',
+  border: '1px solid #175E54',
 };

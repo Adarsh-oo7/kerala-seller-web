@@ -24,8 +24,10 @@ import {
   Printer,
 } from 'lucide-react';
 import BarcodeScanner from '../../../../components/BarcodeScanner';
-import { findProductByCode } from '../../../lib/barcode';
+import { findProductByCode, storedBarcode } from '../../../lib/barcode';
 import { asList } from '../../../lib/storeAccess';
+import { requestError } from '../../../lib/requestError';
+import { loadPrinterPref, printEscposViaBluetooth, printEscposViaBridge } from '../../../lib/printers';
 
 // âœ… Using environment variables for API URLs
 // const API_BASE_URL = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL || 'https://api.keralasellers.in';
@@ -76,6 +78,7 @@ export default function LocalBillingPage() {
   const [editingBillId, setEditingBillId] = useState(null);
   const [editingBillLabel, setEditingBillLabel] = useState('');
   const [scanner, setScanner] = useState(false);
+  const [pendingScan, setPendingScan] = useState(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -355,15 +358,67 @@ export default function LocalBillingPage() {
     setBillItems((prev) => prev.filter((item) => item.lineKey !== lineKey));
   };
 
-  const addScanned = (code) => {
-    const match = findProductByCode(products, code);
-    if (!match) {
-      setSearchTerm(code);
-      setError(`${code} is not on a shop product. Create or attach a barcode from Barcodes.`);
+  const previewScan = (product, variant, code) => {
+    const lineKey = variant ? `${product.id}-${variant.id}` : String(product.id);
+    const alreadyOnBill = billItems.some((item) => item.lineKey === lineKey);
+    const price = variant?.selling_price ?? variant?.price ?? product.price;
+    setPendingScan({
+      code,
+      product,
+      variant,
+      lineKey,
+      name: variant ? `${product.name} (${variant.name})` : product.name,
+      price,
+      alreadyOnBill,
+    });
+    setSuccess('');
+    setError('');
+  };
+
+  const confirmPendingScan = () => {
+    if (!pendingScan) return;
+    if (pendingScan.alreadyOnBill) {
+      setError('Already on this bill. Use + on the line to increase quantity. Scan does not add count.');
+      setTimeout(() => setError(''), 4000);
+      setPendingScan(null);
+      return;
+    }
+    addToBill(pendingScan.product, pendingScan.variant || null);
+    setPendingScan(null);
+  };
+
+  const addScanned = async (code) => {
+    const value = storedBarcode(code);
+    const local = findProductByCode(products, value);
+    if (local) {
+      previewScan(local.product, local.variant || null, value);
+      return;
+    }
+    const headers = getAuthHeaders();
+    if (!headers) return;
+    try {
+      const response = await axios.get(PRODUCTS_API_URL, {
+        headers,
+        params: { barcode: value, page_size: 20 },
+      });
+      const remote = findProductByCode(asList(response.data), value);
+      if (remote) {
+        setProducts((prev) => (
+          prev.some((row) => row.id === remote.product.id)
+            ? prev.map((row) => (row.id === remote.product.id ? { ...row, ...remote.product } : row))
+            : [remote.product, ...prev]
+        ));
+        previewScan(remote.product, remote.variant || null, value);
+        return;
+      }
+    } catch (err) {
+      setError(requestError(err, 'Could not check this barcode. Check your internet and try again.'));
       setTimeout(() => setError(''), 4000);
       return;
     }
-    addToBill(match.product, match.variant || null);
+    setSearchTerm(value);
+    setError(`${value} is not saved on a shop product yet. Open Barcodes, tap Save, then scan again.`);
+    setTimeout(() => setError(''), 4000);
   };
 
   const applyBill = (bill) => {
@@ -491,16 +546,28 @@ export default function LocalBillingPage() {
       setEditingBillId(null);
       setEditingBillLabel('');
       let silentPrinted = false;
+      const printer = loadPrinterPref();
       try {
-        const health = await fetch('http://127.0.0.1:17890/', { method: 'GET' });
-        if (health.ok && savedBill.id) {
-          const esc = await axios.get(`${API_BASE_URL}/user/orders/local-bills/${savedBill.id}/escpos/`, { headers });
-          const printed = await fetch('http://127.0.0.1:17890/print', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ escpos_base64: esc.data.escpos_base64 }),
+        if (savedBill.id && printer.method !== 'browser') {
+          const esc = await axios.get(`${API_BASE_URL}/user/orders/local-bills/${savedBill.id}/escpos/`, {
+            headers,
+            params: { size: printer.paperSize || '80mm' },
           });
-          silentPrinted = printed.ok;
+          const payload = esc.data.escpos_base64;
+          if (printer.method === 'thermal') {
+            await printEscposViaBluetooth(payload);
+            silentPrinted = true;
+          } else {
+            await printEscposViaBridge(payload);
+            silentPrinted = true;
+          }
+        } else if (printer.method === 'bridge' || printer.method === 'thermal') {
+          const health = await fetch('http://127.0.0.1:17890/', { method: 'GET' });
+          if (health.ok && savedBill.id) {
+            const esc = await axios.get(`${API_BASE_URL}/user/orders/local-bills/${savedBill.id}/escpos/`, { headers });
+            await printEscposViaBridge(esc.data.escpos_base64);
+            silentPrinted = true;
+          }
         }
       } catch (_bridgeErr) {
         silentPrinted = false;
@@ -765,6 +832,29 @@ export default function LocalBillingPage() {
               <ScanLine size={16} />
             </button>
           </div>
+
+          {pendingScan ? (
+            <div style={{ padding: 12, background: '#F0FDFA', border: '1px solid #175E54', borderRadius: 8, marginBottom: 12 }}>
+              <strong>{pendingScan.name}</strong>
+              <div style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>
+                Scanned {pendingScan.code} · ₹{pendingScan.price}
+                {pendingScan.alreadyOnBill ? ' · already on this bill' : ''}
+              </div>
+              <p style={{ color: '#175E54', fontSize: 13, margin: '6px 0' }}>
+                {pendingScan.alreadyOnBill
+                  ? 'Use + on the line to increase quantity. Scan does not add count.'
+                  : 'Tap Add to put this on the bill. Then scan the next packet.'}
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" onClick={confirmPendingScan} style={styles.autoDetectButton}>
+                  {pendingScan.alreadyOnBill ? 'Got it' : 'Add to bill'}
+                </button>
+                <button type="button" onClick={() => setPendingScan(null)} style={{ ...styles.autoDetectButton, background: '#fff', color: '#175E54' }}>
+                  Skip
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <div className='billingscroll' style={styles.productList}>
             {isLoading ? (
@@ -1184,7 +1274,7 @@ export default function LocalBillingPage() {
 
       <BarcodeScanner
         open={scanner}
-        title="Scan to add to bill"
+        title="Scan a packet, then tap Add"
         continuous
         onClose={() => setScanner(false)}
         onScan={addScanned}

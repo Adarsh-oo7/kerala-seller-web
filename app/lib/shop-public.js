@@ -48,6 +48,14 @@ export function shopListPhone(shop) {
   ).trim();
 }
 
+export function shopCartKey(store, shopSlug, searchParams) {
+  const phone = shopListPhone(store) || queryValue(searchParams, 'id');
+  if (isIndianMobile(phone)) return phone;
+  const slug = String(shopSlug || '').trim();
+  if (isIndianMobile(slug)) return slug;
+  return phone || slug || '';
+}
+
 export async function fetchPublicShop(axios, apiBase, shopSlug, searchParams, signal) {
   const tried = new Set();
 

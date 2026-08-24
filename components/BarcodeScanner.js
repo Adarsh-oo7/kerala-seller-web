@@ -54,7 +54,7 @@ export default function BarcodeScanner({ open, title = 'Scan barcode', continuou
             const codes = await detector.detect(videoRef.current);
             const value = String(codes[0]?.rawValue || '').trim();
             const now = Date.now();
-            if (value && now - lastAt.current > 800) {
+            if (value && now - lastAt.current > 1600) {
               lastAt.current = now;
               setLastCode(value);
               onScanRef.current(value);
@@ -96,7 +96,7 @@ export default function BarcodeScanner({ open, title = 'Scan barcode', continuou
         {lastCode ? <p style={styles.meta}>Last scan {lastCode}</p> : null}
         <p style={styles.hint}>
           {continuous
-            ? 'Keep scanning packets. Close when the bill is ready to edit.'
+            ? 'Scan a packet, then tap Add on the bill. Quantity changes with + / −, not by scanning again.'
             : 'Point the camera at the barcode, or type it if the camera cannot read it.'}
         </p>
         {error ? <p style={styles.error}>{error}</p> : null}

@@ -12,6 +12,7 @@ import {
   storedBarcode,
 } from '../../../lib/barcode';
 import { asList } from '../../../lib/storeAccess';
+import { requestError } from '../../../lib/requestError';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.keralasellers.in';
 const PRODUCTS_URL = `${API_BASE_URL}/user/store/products/`;
@@ -20,9 +21,12 @@ export default function BarcodesPage() {
   const [products, setProducts] = useState([]);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(null);
+  const [draft, setDraft] = useState(null);
   const [scanner, setScanner] = useState(false);
   const [savingId, setSavingId] = useState(null);
+  const [unlockedId, setUnlockedId] = useState(null);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
 
   const headers = useCallback(() => {
@@ -36,9 +40,9 @@ export default function BarcodesPage() {
       const response = await axios.get(PRODUCTS_URL, { headers: headers(), params: { page_size: 200 } });
       const list = asList(response.data);
       setProducts(list);
-      setSelected((current) => current ? list.find((row) => row.id === current.id) || current : null);
+      setSelected((current) => (current ? list.find((row) => row.id === current.id) || current : null));
     } catch (err) {
-      setError(err.response?.data?.error || 'Could not load products.');
+      setError(requestError(err, 'Could not load products. Check your internet and try again.'));
     } finally {
       setLoading(false);
     }
@@ -58,37 +62,97 @@ export default function BarcodesPage() {
     return [...list].sort((a, b) => Number(Boolean(a.barcode)) - Number(Boolean(b.barcode)));
   }, [products, query]);
 
+  const locked = savingId != null;
+
+  const applySaved = (product, code) => {
+    const next = { ...product, barcode: storedBarcode(String(product.barcode || code)) };
+    setProducts((prev) => prev.map((row) => (row.id === next.id ? { ...row, ...next } : row)));
+    setSelected(next);
+    setDraft(null);
+    setUnlockedId(null);
+    setNotice(`Saved ${next.barcode} on ${next.name}. Locked until you unlock it.`);
+    setError('');
+  };
+
   const saveBarcode = async (product, code) => {
+    const value = storedBarcode(code);
+    if (!value) {
+      setError('Enter or create a barcode before saving.');
+      return;
+    }
+    const duplicate = findProductByCode(products, value);
+    if (duplicate && duplicate.product.id !== product.id) {
+      setError(`This barcode is already on ${duplicate.product.name}.`);
+      return;
+    }
     setSavingId(product.id);
+    setError('');
     try {
-      await axios.patch(`${PRODUCTS_URL}${product.id}/`, { barcode: storedBarcode(code) }, { headers: headers() });
-      const next = { ...product, barcode: storedBarcode(code) };
-      setProducts((prev) => prev.map((row) => (row.id === product.id ? next : row)));
-      setSelected(next);
+      await axios.patch(`${PRODUCTS_URL}${product.id}/`, { barcode: value }, { headers: headers() });
+      const confirmed = await axios.get(`${PRODUCTS_URL}${product.id}/`, { headers: headers() });
+      const kept = storedBarcode(String(confirmed.data?.barcode || ''));
+      if (!kept) {
+        throw new Error('The server did not keep this barcode.');
+      }
+      applySaved({ ...product, ...confirmed.data, barcode: kept }, kept);
     } catch (err) {
-      setError(err.response?.data?.error || 'Could not save barcode.');
+      setError(requestError(err, 'The barcode was not saved. Check your internet and tap Save again.'));
     } finally {
       setSavingId(null);
     }
   };
 
-  const onScan = (code) => {
-    const match = findProductByCode(products, code);
-    if (match) {
-      setSelected(match.product);
-      setQuery(code);
-      setScanner(false);
+  const startCreate = (product) => {
+    if (locked) return;
+    if (product.barcode && unlockedId !== product.id) {
+      setError('Unlock this product first to change or replace the barcode.');
       return;
     }
-    if (selected) {
-      saveBarcode(selected, code);
-      setScanner(false);
-      return;
-    }
-    setQuery(code);
-    setError(`${code} is not on a shop product yet. Open Add product and save this packet barcode there.`);
-    setScanner(false);
+    setSelected(product);
+    setNotice('');
+    setDraft({
+      id: product.id,
+      name: product.name,
+      code: generateShopBarcode([...taken, product.sku, product.barcode]),
+    });
   };
+
+  const lookupRemote = async (code) => {
+    const response = await axios.get(PRODUCTS_URL, {
+      headers: headers(),
+      params: { barcode: storedBarcode(code), page_size: 20 },
+    });
+    return findProductByCode(asList(response.data), code);
+  };
+
+  const onScan = async (code) => {
+    const value = storedBarcode(code);
+    setScanner(false);
+    if (!value) return;
+    const local = findProductByCode(products, value);
+    if (local) {
+      setSelected(local.product);
+      setQuery(value);
+      setDraft(null);
+      setError('');
+      return;
+    }
+    try {
+      const remote = await lookupRemote(value);
+      if (remote) {
+        applySaved(remote.product, value);
+        setQuery(value);
+        return;
+      }
+    } catch (err) {
+      setError(requestError(err, 'Could not check this barcode. Check your internet and try again.'));
+      return;
+    }
+    setQuery(value);
+    setError(`${value} is not saved on a shop product yet. Select a product, tap Create or Scan, then tap Save.`);
+  };
+
+  const draftProduct = draft ? products.find((row) => row.id === draft.id) : null;
 
   return (
     <div style={{ maxWidth: 880 }}>
@@ -96,9 +160,10 @@ export default function BarcodesPage() {
         <ScanLine size={22} /> Barcodes
       </h1>
       <p style={{ color: '#64748b' }}>
-        Create a shop sticker, or attach the barcode already printed on the packet. The till uses the same codes.
+        Create or scan a code, tap Save, then lock it. Unlock to change or remove. The till only finds saved codes.
       </p>
       {error ? <p style={{ color: '#b91c1c' }}>{error}</p> : null}
+      {notice ? <p style={{ color: '#175E54' }}>{notice}</p> : null}
       {loading ? <p>Loading products…</p> : null}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '16px 0' }}>
         <input
@@ -110,22 +175,80 @@ export default function BarcodesPage() {
           placeholder="Name, SKU, or scan into this box"
           style={inputStyle}
         />
-        <button type="button" onClick={() => setScanner(true)} style={buttonStyle}>
+        <button type="button" onClick={() => setScanner(true)} style={buttonStyle} disabled={locked}>
           <ScanLine size={16} /> Scan camera
         </button>
         <Link href="/dashboard/seller/products" style={{ ...buttonStyle, textDecoration: 'none' }}>Add product</Link>
       </div>
 
-      {selected?.barcode ? (
+      {draft && draftProduct ? (
+        <div style={cardStyle}>
+          <strong>{draft.name}</strong>
+          <p style={{ color: '#64748b', margin: '6px 0' }}>Not saved yet. Tap Save to attach this code.</p>
+            <input
+              value={draft.code}
+              onChange={(e) => setDraft({ ...draft, code: storedBarcode(e.target.value) })}
+              style={{ ...inputStyle, letterSpacing: 2, fontSize: 18, margin: '8px 0' }}
+            />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              disabled={locked}
+              onClick={() => saveBarcode(draftProduct, draft.code)}
+              style={buttonStyle}
+            >
+              {savingId === draft.id ? 'Saving…' : 'Save'}
+            </button>
+            <button type="button" disabled={locked} onClick={() => setDraft(null)} style={ghostStyle}>Cancel</button>
+          </div>
+        </div>
+      ) : null}
+
+      {selected?.barcode && !draft ? (
         <div style={cardStyle}>
           <strong>{selected.name}</strong>
+          <p style={{ color: '#64748b', margin: '6px 0' }}>
+            {unlockedId === selected.id ? 'Unlocked. Change, scan a new code, or remove, then Save.' : 'Locked. Unlock to change or remove this code.'}
+          </p>
           <p style={{ letterSpacing: 2, fontSize: 20, margin: '8px 0' }}>{selected.barcode}</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {unlockedId === selected.id ? (
+              <>
+                <button type="button" disabled={locked} onClick={() => setUnlockedId(null)} style={ghostStyle}>Lock</button>
+                <button type="button" disabled={locked} onClick={() => startCreate(selected)} style={buttonStyle}>New code</button>
+                <button type="button" disabled={locked} onClick={() => { setSelected(selected); setScanner(true); }} style={ghostStyle}>Scan replace</button>
+                <button
+                  type="button"
+                  disabled={locked}
+                  onClick={async () => {
+                    if (!window.confirm(`Remove ${selected.barcode} from ${selected.name}?`)) return;
+                    setSavingId(selected.id);
+                    try {
+                      await axios.patch(`${PRODUCTS_URL}${selected.id}/`, { barcode: '' }, { headers: headers() });
+                      applySaved({ ...selected, barcode: '' }, '');
+                      setUnlockedId(selected.id);
+                      setNotice('Barcode removed. Create or scan a new one, then Save.');
+                    } catch (err) {
+                      setError(requestError(err, 'Could not remove this barcode.'));
+                    } finally {
+                      setSavingId(null);
+                    }
+                  }}
+                  style={ghostStyle}
+                >
+                  Remove
+                </button>
+              </>
+            ) : (
+              <button type="button" disabled={locked} onClick={() => setUnlockedId(selected.id)} style={buttonStyle}>Unlock</button>
+            )}
+          </div>
         </div>
       ) : null}
 
       {filtered.map((product) => (
         <div key={product.id} style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-          <button type="button" onClick={() => setSelected(product)} style={{ background: 'none', border: 0, textAlign: 'left', cursor: 'pointer', flex: 1 }}>
+          <button type="button" onClick={() => { if (!locked) { setSelected(product); setDraft(null); } }} style={{ background: 'none', border: 0, textAlign: 'left', cursor: 'pointer', flex: 1 }}>
             <strong>{product.name}</strong>
             <div style={{ color: '#64748b', fontSize: 13 }}>
               {product.barcode || 'No barcode yet'}
@@ -133,19 +256,27 @@ export default function BarcodesPage() {
             </div>
           </button>
           {product.barcode ? (
-            <button type="button" onClick={() => setSelected(product)} style={ghostStyle}>Show</button>
+            unlockedId === product.id ? (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" disabled={locked} onClick={() => startCreate(product)} style={buttonStyle}>Change</button>
+                <button type="button" disabled={locked} onClick={() => { setSelected(product); setUnlockedId(null); setDraft(null); }} style={ghostStyle}>Lock</button>
+              </div>
+            ) : (
+              <button type="button" disabled={locked} onClick={() => { setSelected(product); setUnlockedId(product.id); setDraft(null); }} style={ghostStyle}>Unlock</button>
+            )
           ) : (
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 type="button"
-                disabled={savingId != null}
-                onClick={() => saveBarcode(product, generateShopBarcode([...taken, product.sku, product.barcode]))}
+                disabled={locked}
+                onClick={() => startCreate(product)}
                 style={buttonStyle}
               >
-                {savingId === product.id ? 'Saving…' : 'Create'}
+                Create
               </button>
               <button
                 type="button"
+                disabled={locked}
                 onClick={() => { setSelected(product); setScanner(true); }}
                 style={ghostStyle}
               >
@@ -160,7 +291,7 @@ export default function BarcodesPage() {
         open={scanner}
         title="Scan packet barcode"
         onClose={() => setScanner(false)}
-        onScan={onScan}
+        onScan={(code) => { void onScan(code); }}
       />
     </div>
   );
