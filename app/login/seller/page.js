@@ -325,8 +325,17 @@ function LoginForm() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
+        const { 
+          store_setup_completed,
+        } = statusResponse.data;
+
+        console.log(' Onboarding status:', statusResponse.data);
+
         let redirectUrl = '/dashboard/seller';
-        if (redirect) {
+
+        if (!store_setup_completed) {
+          redirectUrl = '/dashboard/seller/settings';
+        } else if (redirect) {
           redirectUrl = decodeURIComponent(redirect);
         } else if (currentStoreInfo.isInStore && currentStoreInfo.storeId) {
           redirectUrl = `/store/${currentStoreInfo.storeId}/dashboard`;

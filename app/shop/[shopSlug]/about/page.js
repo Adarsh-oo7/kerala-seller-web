@@ -301,6 +301,9 @@ function StoreAboutContent() {
   // ✅ Generate SEO-friendly shop URL for navigation
   const getShopUrl = () => {
     if (shopSlug) return `/shop/${shopSlug}`;
+    if (!storeData) return `/shop`;
+    if (storeData.store_slug) return `/shop/${storeData.store_slug}`;
+    if (storeData.name) return `/shop/${generateShopSlug(storeData)}`;
     return `/shop`;
   };
 

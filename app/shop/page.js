@@ -338,8 +338,7 @@ export default function ShopPage() {
                 shop.contact_phone ||
                 shop.whatsapp_number;
 
-              // âœ… Generate SEO-friendly slug
-              const shopSlug = generateShopSlug(shop);
+              const shopSlug = shop.store_slug || generateShopSlug(shop);
 
               return (
                 <div key={shop.id || index} className={`shopCard ${viewMode === 'list' ? 'listCard' : 'gridCard'}`}>
@@ -434,7 +433,7 @@ export default function ShopPage() {
                   <div className="shopActions">
                     {sellerPhone ? (
                       <Link
-                        href={`/shop/${shopSlug}?id=${sellerPhone}`}
+                        href={`/shop/${shopSlug}`}
                         className="ShoplinkButton"
                         title={`Visit ${shop.name} - ${shop.products_count || 0} products available`}
                       >

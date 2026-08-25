@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import "../../../../styles/DashboardSettings.css"
 import { Upload, Check, AlertCircle, Star, Building, Save, Image as ImageIcon, Trash2, X, Settings } from 'lucide-react';
+import StoreModePanel from '../../../../components/seller/StoreModePanel';
 
 // const getApiBaseUrl = () => {
 //   const envUrl = 'https://api.keralasellers.in' || process.env.NEXT_PUBLIC_API_URL;
@@ -317,6 +318,7 @@ export default function SettingsPage() {
           <p className='dashboardsettingspagesubtitle' style={s.st}>Shop name, logo, WhatsApp, and banners</p>
         </div>
       </div>
+      <StoreModePanel variant="settings" />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
         <div style={{ border: '2px solid #175E54', borderRadius: 12, padding: 14, background: '#f0fdf4' }}>

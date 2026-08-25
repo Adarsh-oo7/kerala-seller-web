@@ -10,6 +10,8 @@ import SHeader from '../../../components/common/SHeader';
 import Whatsapp from '../../../components/common/Whatsapp'
 import ShopFooter from '../../../components/common/ShopFooter';
 import ShopProductCard from '../../../components/common/ShopProductCard';
+import { buyerStorefrontMessage } from '../../lib/storefront-status';
+import { canonicalShopHref } from '../../lib/shop-identifier.cjs';
 
 import {
   ShoppingCart,
@@ -196,7 +198,7 @@ function ShopSEOHead({ store, products, shopSlug, sellerPhone }) {
     updateOrCreateMeta('description', metaDescription);
     updateOrCreateMeta('og:title', pageTitle);
     updateOrCreateMeta('og:description', metaDescription);
-    updateOrCreateMeta('og:url', `https://keralasellers.in/shop/${shopSlug}`);
+    updateOrCreateMeta('og:url', canonicalShopHref(store.store_slug, shopSlug));
 
     const structuredData = generateShopStructuredData(store, products, shopSlug);
     if (structuredData) {
@@ -560,6 +562,8 @@ function EnhancedSellerStorefrontPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [error, setError] = useState(null);
+  const [storefrontNotice, setStorefrontNotice] = useState(null);
+  const [canOrder, setCanOrder] = useState(true);
   const [viewMode, setViewMode] = useState('grid');
   const [loadingProducts, setLoadingProducts] = useState({});
   const [filters, setFilters] = useState({
@@ -575,7 +579,11 @@ function EnhancedSellerStorefrontPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { shopSlug } = params;
-  const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams) || shopListPhone(store);
+  const sellerPhone = getSellerPhoneFromSlug(shopSlug, searchParams)
+    || shopListPhone(store)
+    || store?.seller_phone
+    || store?.phone
+    || store?.whatsapp_number;
   const cartContext = useCart();
   const { addToCart, cartItems } = cartContext || { addToCart: null, cartItems: [] };
   const abortControllerRef = useRef(null);
@@ -731,17 +739,21 @@ function EnhancedSellerStorefrontPage() {
           searchParams,
           abortControllerRef.current.signal,
         );
-        if (response?.data) {
-          setStore(response.data.store || null);
-          const productsData = response.data.products || [];
-          const normalizedProducts = productsData.map(product => ({
-            ...product,
-            id: Number(product.id)
-          }));
-          setProducts(normalizedProducts);
-        } else {
+        if (!response?.data) {
           setError('Shop not found.');
+          return;
         }
+        setStore(response.data.store || null);
+        const productsData = response.data.products || [];
+        const normalizedProducts = productsData.map(product => ({
+          ...product,
+          id: Number(product.id)
+        }));
+        setProducts(normalizedProducts);
+        setCanOrder(response.data.can_order !== false);
+        setStorefrontNotice(
+          buyerStorefrontMessage(response.data.reason || response.data.code)
+        );
       } catch (error) {
         if (axios.isCancel(error)) return;
         if (error.response?.status === 404) {
@@ -884,6 +896,11 @@ function EnhancedSellerStorefrontPage() {
           activeFilters={filters}
         />
         <div  style={styles.container}>
+          {storefrontNotice ? (
+            <div role="status" style={{ margin: '16px 0', padding: '12px 16px', borderRadius: 10, backgroundColor: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', fontSize: 14 }}>
+              {store?.store_mode === 'offline_only' ? 'In-store only. ' : ''}{storefrontNotice}
+            </div>
+          ) : null}
           <div className="products-header-enhanced" style={styles.productsHeader}>
             <div className="products-title-enhanced" style={styles.productsTitle}>
               <span className="product-text" style={styles.producttext}>
@@ -908,7 +925,7 @@ function EnhancedSellerStorefrontPage() {
                     store={store}
                     shopSlug={shopSlug}
                     sellerPhone={sellerPhone}
-                    onAddToCart={handleAddToCart}
+                    onAddToCart={canOrder ? handleAddToCart : undefined}
                     isLoading={loadingProducts[product.id] || false}
                     cartItems={cartItems || []}
                     showStoreName={false}

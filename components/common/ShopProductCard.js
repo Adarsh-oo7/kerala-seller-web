@@ -90,13 +90,11 @@ export default function ShopProductCard({
 
   // ✅ Generate the correct shop-specific product URL
   const getProductUrl = () => {
-    if (!product.id || !sellerPhone) return '#';
-
-    if (store && store.name && shopSlug) {
-      return `/shop/${shopSlug}/product/${product.id}?id=${sellerPhone}`;
-    }
-
-    return `/shop/${sellerPhone}/product/${product.id}`;
+    if (!product.id) return '#';
+    const slug = shopSlug || (store && store.store_slug);
+    if (slug) return `/shop/${slug}/product/${product.id}`;
+    if (sellerPhone) return `/shop/${sellerPhone}/product/${product.id}`;
+    return '#';
   };
 
   // ✅ Enhanced image URL function with Cloudinary support

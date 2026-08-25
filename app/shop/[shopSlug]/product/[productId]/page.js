@@ -1219,6 +1219,9 @@ function ShopProductPageContent() {
   // Generate shop URL for navigation
   const getShopUrl = () => {
     if (shopSlug) return `/shop/${shopSlug}`;
+    if (!store) return `/shop`;
+    if (store.store_slug) return `/shop/${store.store_slug}`;
+    if (store.name) return `/shop/${generateShopSlug(store)}`;
     return `/shop`;
   };
 
