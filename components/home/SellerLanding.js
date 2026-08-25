@@ -49,10 +49,9 @@ export default function SellerLanding() {
               <Store className="storeicon" />
               <span>Start Free Store Now</span>
             </Link>
-            <a href="#what-is" className="secondary-button">
-              <Video size={20} />
-              <span>Watch Tutorial</span>
-            </a>
+            <Link href="/products" className="secondary-button">
+              <span>Browse products</span>
+            </Link>
           </div>
         </div>
       </div>
@@ -402,10 +401,9 @@ export default function SellerLanding() {
                 <Store className="storeicon" />
                 <span>Create Your Free Store</span>
               </Link>
-              <a href="#what-is" className="cta-secondary">
-                <Video size={20} />
-                <span>Watch Tutorials</span>
-              </a>
+        <Link href="/products" className="cta-secondary">
+          <span>Browse products</span>
+        </Link>
             </div>
             <p style={{ marginTop: '24px', fontSize: '0.95rem', color: '#64748b' }}>
               No credit card required • 100% free to start • Launch in 10 minutes

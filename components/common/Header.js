@@ -14,7 +14,8 @@ const DesktopNav = () => (
   <div className="navigation desktop-only" style={{ backgroundColor: '#1a4845' }}>
     <nav className="nav-menu">
       <Link href="/" className="nav-item">HOME</Link>
-      <Link href="/shop" className="nav-item">SHOP</Link>
+      <Link href="/products" className="nav-item">PRODUCTS</Link>
+      <Link href="/shop" className="nav-item">SHOPS</Link>
       <Link href="/about" className="nav-item">ABOUT US</Link>
       <Link href="/contact" className="nav-item">CONTACT US</Link>
     </nav>
@@ -52,18 +53,6 @@ const HeaderActions = ({ cartItemCount, isLoggedIn }) => {
 };
 
 const MobileMenu = ({ isOpen, onClose }) => {
-  const [expandedItem, setExpandedItem] = useState(null);
-
-  const toggleExpandItem = (item) => {
-    setExpandedItem(expandedItem === item ? null : item);
-  };
-
-  useEffect(() => {
-    if (!isOpen) {
-      setExpandedItem(null);
-    }
-  }, [isOpen]);
-
   return (
     <>
       <div className={`mobile-menu-overlay ${isOpen ? "open" : ""}`} onClick={onClose}></div>
@@ -83,28 +72,14 @@ const MobileMenu = ({ isOpen, onClose }) => {
             <span className="nav-left">Home</span>
             <ChevronRight size={16} />
           </Link>
-          <Link href="/shop" className="mobile-nav-item" onClick={onClose}>
-            <span className="nav-left">Shop</span>
+          <Link href="/products" className="mobile-nav-item" onClick={onClose}>
+            <span className="nav-left">Products</span>
             <ChevronRight size={16} />
           </Link>
-          <div>
-            <div className="mobile-nav-item" onClick={() => toggleExpandItem("products")}>
-              <span className="nav-left">Products</span>
-              <div className="nav-right">
-                {expandedItem === "products" ? "−" : "+"}
-              </div>
-            </div>
-            <div className={`submenu ${expandedItem === "products" ? "expanded" : ""}`}>
-              <Link href="/category/1" className="submenu-item" onClick={onClose}>
-                <span>Category 1</span>
-                <ChevronRight size={14} />
-              </Link>
-              <Link href="/category/2" className="submenu-item" onClick={onClose}>
-                <span>Category 2</span>
-                <ChevronRight size={14} />
-              </Link>
-            </div>
-          </div>
+          <Link href="/shop" className="mobile-nav-item" onClick={onClose}>
+            <span className="nav-left">Shops</span>
+            <ChevronRight size={16} />
+          </Link>
           <Link href="/about" className="mobile-nav-item" onClick={onClose}>
             <span className="nav-left">About Us</span>
             <ChevronRight size={16} />

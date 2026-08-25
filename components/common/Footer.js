@@ -23,6 +23,8 @@ export default function Footer() {
         <Link href="/terms-and-conditions">Terms and Conditions</Link>
         <Link href="/cancellation-refund">Cancellation and Refund</Link>
         <Link href="/shipping-delivery">Shipping and Delivery</Link>
+        <Link href="/products">Products</Link>
+        <Link href="/shop">Shops</Link>
         <Link href="/about">About</Link>
         <Link href="/contact">Contact</Link>
         <Link href={BRAND.sellerStart}>Register</Link>

@@ -27,9 +27,9 @@ export default function BottomNav() {
       </Link>
 
       <Link
-        href="/shop"
+        href="/products"
         className={`${styles.bottomNavItem} ${
-          pathname === "/shop" ? styles.active : ""
+          pathname === "/products" || pathname.startsWith("/product/") ? styles.active : ""
         }`}
       >
         <ShoppingBag size={20} weight="duotone" className={styles.navIcon} />
