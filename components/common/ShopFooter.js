@@ -5,6 +5,7 @@ import { Facebook, Instagram, Youtube } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import styles from './ShopFooter.module.css';
+import { BRAND } from '../../app/lib/brand';
 
 function shopSlugFromHost() {
   if (typeof window === 'undefined') return '';
@@ -72,13 +73,13 @@ export default function ShopFooter({ store }) {
           )}
           {!hasOwnSocials && (
             <>
-              <a href="https://www.facebook.com/profile.php?id=61579701681445" target="_blank" rel="noopener noreferrer" aria-label="Kerala Sellers Facebook">
+              <a href={BRAND.profiles.facebook} target="_blank" rel="noopener noreferrer me" aria-label="Kerala Sellers Facebook">
                 <Facebook className={styles.icon} />
               </a>
-              <a href="https://www.instagram.com/kerala_sellers/" target="_blank" rel="noopener noreferrer" aria-label="Kerala Sellers Instagram">
+              <a href={BRAND.profiles.instagram} target="_blank" rel="noopener noreferrer me" aria-label="Kerala Sellers Instagram">
                 <Instagram className={styles.icon} />
               </a>
-              <a href="https://www.youtube.com/@KeralaSellers" target="_blank" rel="noopener noreferrer" aria-label="Kerala Sellers YouTube">
+              <a href={BRAND.profiles.youtube} target="_blank" rel="noopener noreferrer me" aria-label="Kerala Sellers YouTube">
                 <Youtube className={styles.icon} />
               </a>
             </>

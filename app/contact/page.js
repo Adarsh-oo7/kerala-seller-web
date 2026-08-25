@@ -273,9 +273,15 @@ export default function ContactPage() {
           <div className="infoCard">
             <h2 className="infoTitle">About Kerala Sellers</h2>
             <p className="infoText">
-              Kerala Sellers is a comprehensive digital platform connecting local businesses
-              with customers across Kerala. We also provide professional web development
-              services through Digital Product Solutions.
+              Kerala Sellers is a store platform for Instagram, WhatsApp, and Facebook sellers in Kerala.
+              It is a product of{' '}
+              <a href="https://www.digitalproductsolutions.in/" target="_blank" rel="noopener noreferrer me">
+                Digital Product Solutions
+              </a>
+              , Trivandrum. Founders: Adarsh B S (Founder &amp; CEO) and Aromal V G (Co-Founder).
+              Email{' '}
+              <a href="mailto:keralasellers.in@gmail.com">keralasellers.in@gmail.com</a>
+              .
             </p>
             <div className='cols'>
               {/* âœ… Service highlights */}
@@ -306,7 +312,12 @@ export default function ContactPage() {
                 </div>
                 <div className="infoItem">
                   <Globe size={18} color="#6b7280" />
-                  <span>Serving businesses across Kerala</span>
+                  <span>
+                    Parent company:{' '}
+                    <a href="https://www.digitalproductsolutions.in/" target="_blank" rel="noopener noreferrer me">
+                      digitalproductsolutions.in
+                    </a>
+                  </span>
                 </div>
               </div>
             </div>

@@ -289,8 +289,9 @@ export default function SettingsPage() {
       }, 1500);
 
     } catch (error) {
-      console.error(' Update error:', error);
-      setErrorMessage(error.response?.data?.error || 'Update failed');
+      const data = error.response?.data || {};
+      const nameError = Array.isArray(data.name) ? data.name[0] : data.name;
+      setErrorMessage(nameError || data.error || 'Update failed');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setIsSaving(false);
@@ -340,7 +341,7 @@ export default function SettingsPage() {
           </p>
           {store.entitlements?.can_use_custom_subdomain && store.entitlements?.subdomain_live ? (
             <p style={{ margin: '8px 0 0', fontSize: 13, color: '#065f46' }}>
-              Custom subdomain is included on your current plan. The path URL redirects here.
+              Custom subdomain is included on your current plan. Renaming the shop updates this host too.
             </p>
           ) : store.entitlements?.can_use_custom_subdomain ? (
             <p style={{ margin: '8px 0 0', fontSize: 13, color: '#4b5563' }}>
@@ -674,9 +675,19 @@ export default function SettingsPage() {
               value={store.name}
               onChange={handleInputChange}
               required
-              style={s.in}
+              disabled={store.shop_name_policy?.can_change === false}
+              style={{ ...s.in, ...(store.shop_name_policy?.can_change === false ? { opacity: 0.7, background: '#f3f4f6' } : {}) }}
               placeholder="My Store"
             />
+            <p style={{ margin: '8px 0 0', fontSize: 13, color: '#4b5563' }}>
+              {store.shop_name_policy?.message
+                || 'You can change the shop name twice every 60 days. The shop URL updates to match the new name.'}
+            </p>
+            {(store.official_url || store.store_slug) && (
+              <p style={{ margin: '8px 0 0', fontSize: 13, wordBreak: 'break-all' }}>
+                Current URL: {store.official_url || `https://www.keralasellers.in/shop/${store.store_slug}/`}
+              </p>
+            )}
           </div>
           <div style={s.fg}>
             <label style={s.l}>Tagline</label>

@@ -1562,6 +1562,9 @@ body {
 .footer-socials {
     display: flex;
     gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 280px;
 }
 
 .social-icon {

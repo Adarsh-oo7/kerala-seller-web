@@ -2252,8 +2252,6 @@ const handleMainImageUpload = (uploadedImages) => {
                   value={formData.price}
                   onChange={handleChange}
                   required
-                />
-                {fieldErrors.price ? <small style={{ color: '#b91c1c' }}>{fieldErrors.price}</small> : null}
                   style={styles.input}
                   className='dashboardproductmodalselectinput'
                   step="0.01"
@@ -2263,6 +2261,7 @@ const handleMainImageUpload = (uploadedImages) => {
                     if (e.key === '-') e.preventDefault();
                   }}
                 />
+                {fieldErrors.price ? <small style={{ color: '#b91c1c' }}>{fieldErrors.price}</small> : null}
                 <small style={styles.helpText}>The price you want to charge customers</small>
               </div>
             </div>

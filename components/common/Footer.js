@@ -1,32 +1,33 @@
 'use client';
 
-import React from "react";
-import { Facebook, Instagram, Youtube } from "lucide-react";
-import Link from "next/link";
-
+import React from 'react';
+import Link from 'next/link';
+import BrandSocialIcons from './BrandSocialIcons';
+import { BRAND } from '../../app/lib/brand';
 
 export default function Footer() {
   return (
     <footer className="footer">
-      <div className="footer-left">© {new Date().getFullYear()} Kerala Sellers</div>
+      <div className="footer-left">
+        © {new Date().getFullYear()} {BRAND.name}
+        <div style={{ marginTop: 6, fontSize: 12 }}>
+          A product of{' '}
+          <a href={BRAND.parent.url} target="_blank" rel="noopener noreferrer me">
+            {BRAND.parent.name}
+          </a>
+        </div>
+      </div>
       <nav className="footer-links">
         <Link href="/privacy-policy">Privacy policy</Link>
         <Link href="/delete-account">Delete account</Link>
         <Link href="/terms-and-conditions">Terms and Conditions</Link>
         <Link href="/cancellation-refund">Cancellation and Refund</Link>
         <Link href="/shipping-delivery">Shipping and Delivery</Link>
+        <Link href="/about">About</Link>
+        <Link href="/contact">Contact</Link>
+        <Link href={BRAND.sellerStart}>Register</Link>
       </nav>
-      <div className="footer-socials">
-        <a href="https://www.facebook.com/profile.php?id=61579701681445" target="blank" aria-label="Facebook">
-          <Facebook className="social-icon" />
-        </a>
-        <a href="https://www.instagram.com/kerala_sellers/#/" target="blank" aria-label="Instagram">
-          <Instagram className="social-icon" />
-        </a>
-        <a href="https://www.youtube.com/@KeralaSellers" target="blank"  aria-label="YouTube">
-          <Youtube className="social-icon" />
-        </a>
-      </div>
+      <BrandSocialIcons />
     </footer>
   );
 }

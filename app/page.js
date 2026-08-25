@@ -4,10 +4,12 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import axios from 'axios';
 import Link from 'next/link';
 import "../styles/Keralasellershomepage.css";
+import "../styles/AboutPage.css";
 import { useCart } from './context/CartContext';
 import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
 import BannerSlider from "../components/home/BannerSlider";
+import SellerLanding from "../components/home/SellerLanding";
 import TopCategory from "../components/home/TopCategory";
 import ProductCard from "../components/common/ProductCard";
 import ProductFilters from "../components/products/ProductFilters";
@@ -578,6 +580,9 @@ export default function Home() {
   return (
     <div style={{ backgroundColor: "#FDFFF0", minHeight: '100vh' }}>
       <Header />
+      <div className="page-container" style={{ backgroundColor: '#FDFFF0' }}>
+        <SellerLanding />
+      </div>
       {/* Top Category Section */}
       <div style={dynamicStyles.topCategorySection}>
         <TopCategory 

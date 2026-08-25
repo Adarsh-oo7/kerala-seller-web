@@ -8,7 +8,7 @@ import Link from 'next/link';
 import Header from '../../../components/common/Header';
 import Footer from '../../../components/common/Footer';
 import "../../../styles/Registerseller.css";
-import { requestError } from '../../../lib/requestError';
+import { requestError } from '../../lib/requestError';
 
 // Import Firebase Authentication modules
 import { auth } from '../../../firebase';

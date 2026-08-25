@@ -24,7 +24,7 @@ import {
   Shield,
   CheckCircle,
 } from 'lucide-react';
-import { requestError } from '../../../lib/requestError';
+import { requestError } from '../../lib/requestError';
 
 // âœ… API configuration
 // const getApiBaseUrl = () => {
