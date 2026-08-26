@@ -68,6 +68,11 @@ export default function SellerLanding() {
             </p>
           </div>
           <SellerStartLinks />
+          <div className="cta-wrapper">
+            <Link href="/sell-online-kerala" className="cta-primary">
+              How to sell products online in Kerala
+            </Link>
+          </div>
           <p className="section-subtitle" style={{ marginTop: 28 }}>
             Official Kerala Sellers pages — follow, then share your store link there
           </p>

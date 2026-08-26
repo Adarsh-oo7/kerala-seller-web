@@ -14,6 +14,7 @@ const DesktopNav = () => (
   <div className="navigation desktop-only" style={{ backgroundColor: '#1a4845' }}>
     <nav className="nav-menu">
       <Link href="/" className="nav-item">HOME</Link>
+      <Link href="/sell-online-kerala" className="nav-item">SELL ONLINE</Link>
       <Link href="/products" className="nav-item">PRODUCTS</Link>
       <Link href="/shop" className="nav-item">SHOPS</Link>
       <Link href="/about" className="nav-item">ABOUT US</Link>
@@ -70,6 +71,10 @@ const MobileMenu = ({ isOpen, onClose }) => {
         <div className="mobile-nav-items">
           <Link href="/" className="mobile-nav-item" onClick={onClose}>
             <span className="nav-left">Home</span>
+            <ChevronRight size={16} />
+          </Link>
+          <Link href="/sell-online-kerala" className="mobile-nav-item" onClick={onClose}>
+            <span className="nav-left">Sell Online</span>
             <ChevronRight size={16} />
           </Link>
           <Link href="/products" className="mobile-nav-item" onClick={onClose}>

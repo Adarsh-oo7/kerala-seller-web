@@ -55,6 +55,7 @@ export function organizationJsonLd() {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': `${BRAND.url}/#organization`,
     name: BRAND.name,
     url: BRAND.url,
     email: BRAND.email,

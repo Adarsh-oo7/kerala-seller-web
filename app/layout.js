@@ -17,6 +17,7 @@ export const viewport = {
 
 // ✅ Metadata configuration
 export const metadata = {
+  metadataBase: new URL('https://www.keralasellers.in'),
   title: "Kerala Sellers | Online store for Instagram and WhatsApp sellers in Kerala",
   description:
     "Already selling on Instagram or WhatsApp? Get your own Kerala store link, take orders in one place, and keep 100% of your sales. Zero commission.",
@@ -34,7 +35,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en-IN">
       <head>
         {/* Existing stylesheets */}
         <link rel="stylesheet" href="/assets/css/style.css" />
