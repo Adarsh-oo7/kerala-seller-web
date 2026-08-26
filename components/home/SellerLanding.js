@@ -188,7 +188,7 @@ export default function SellerLanding() {
             <div className="step-header">
               <div className="step-number">1</div>
               <div className="step-header-text">
-                <h2 className="section-title" style={{ textAlign: 'left', marginBottom: '8px' }}>Create Your Store</h2>
+                <h3 className="section-title" style={{ textAlign: 'left', marginBottom: '8px' }}>Create Your Store</h3>
                 <p className="section-subtitle" style={{ textAlign: 'left', marginBottom: 0 }}>Register and setup your online shop</p>
               </div>
             </div>
@@ -248,7 +248,7 @@ export default function SellerLanding() {
             <div className="step-header">
               <div className="step-number">2</div>
               <div className="step-header-text">
-                <h2 className="section-title" style={{ textAlign: 'left', marginBottom: '8px' }}>Setup Payment Gateway</h2>
+                <h3 className="section-title" style={{ textAlign: 'left', marginBottom: '8px' }}>Setup Payment Gateway</h3>
                 <p className="section-subtitle" style={{ textAlign: 'left', marginBottom: 0 }}>Connect Razorpay to receive payments</p>
               </div>
             </div>
@@ -320,7 +320,7 @@ export default function SellerLanding() {
             <div className="step-header">
               <div className="step-number">3</div>
               <div className="step-header-text">
-                <h2 className="section-title" style={{ textAlign: 'left', marginBottom: '8px' }}>Add Products &amp; Start Selling</h2>
+                <h3 className="section-title" style={{ textAlign: 'left', marginBottom: '8px' }}>Add Products &amp; Start Selling</h3>
                 <p className="section-subtitle" style={{ textAlign: 'left', marginBottom: 0 }}>List your products and grow your business</p>
               </div>
             </div>

@@ -1,0 +1,22 @@
+# Kerala Sellers — robots.txt
+User-agent: *
+Allow: /
+
+# Public pages — always crawlable
+Allow: /products
+Allow: /shop
+Allow: /sell-online-kerala
+Allow: /about
+Allow: /contact
+Allow: /register/seller
+
+# Seller dashboard — private, no indexing
+Disallow: /dashboard/
+Disallow: /login/
+Disallow: /register/buyer
+Disallow: /profile/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /order-confirmation/
+
+Sitemap: https://www.keralasellers.in/sitemap.xml
