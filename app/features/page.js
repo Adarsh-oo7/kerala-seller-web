@@ -20,7 +20,7 @@ const faqs = [
   },
   {
     q: 'How does shipping and delivery work for sellers?',
-    a: 'You can set your own custom delivery zones (district-level or local panchayat). Plus, we are rolling out integrated delivery partner connections so sellers can easily book dispatches, generate shipping labels, and track shipments across Kerala and pan-India according to their preference.',
+    a: 'You can set custom local delivery rules (by district or panchayat). Automated easy shipping partner integrations are Coming Soon! Register today and stay in touch with us to get early access and unlock exclusive premium growth offers for your shop.',
   },
   {
     q: 'What add-ons are available for my shop?',
@@ -52,8 +52,8 @@ const coreFeatures = [
   {
     icon: <Truck size={28} color="#1a4845" />,
     title: 'Easy Shipping & Delivery Partners',
-    desc: 'Set custom delivery fees by district or panchayat. Plus, integrate with delivery partners to handle easy shipping and logistics according to your intent.',
-    tag: 'Growth Logistics',
+    desc: 'Set custom delivery rules today. Automated shipping partner integrations are Coming Soon — keep in touch for early access & premium growth offers.',
+    tag: 'Coming Soon',
   },
   {
     icon: <Store size={28} color="#1a4845" />,
@@ -237,16 +237,20 @@ export default function FeaturesPage() {
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(163, 230, 53, 0.2)', color: '#a3e635', padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
                 <Truck size={16} />
-                <span>SELLER GROWTH & LOGISTICS</span>
+                <span>COMING SOON · EARLY ACCESS</span>
               </div>
               <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginBottom: 10 }}>
-                Easy Shipping &amp; Delivery Partner Integrations
+                Easy Shipping &amp; Delivery Partners (Coming Soon)
               </h3>
               <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.9)', lineHeight: 1.6, marginBottom: 16 }}>
-                Ship according to your intent! Set custom local delivery rules or leverage delivery partner integrations to dispatch orders effortlessly across Kerala and India.
+                Automated shipping partner integrations are coming soon! Set your custom delivery rules today, and stay in touch with us to get early access and unlock exclusive premium growth offers.
               </p>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {['District & local panchayat delivery rules', 'Delivery partner integrations for hassle-free shipping', 'Simplified dispatch labels & order tracking'].map((item) => (
+                {[
+                  'Custom district & local panchayat delivery rules',
+                  'Integrated delivery partners coming soon for easy shipping',
+                  'Stay in touch for early access & premium growth offers',
+                ].map((item) => (
                   <li key={item} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', color: '#f0fdf4' }}>
                     <CheckCircle2 size={16} color="#a3e635" />
                     <span>{item}</span>
@@ -255,7 +259,7 @@ export default function FeaturesPage() {
               </ul>
             </div>
             <Link href="/register/seller" className="seo-btn-primary" style={{ background: '#a3e635', color: '#1a4845', justifyContent: 'center' }}>
-              Explore Delivery Growth →
+              Register &amp; Get Early Access Offers →
             </Link>
           </div>
         </div>
