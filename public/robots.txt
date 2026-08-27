@@ -6,6 +6,12 @@ Allow: /
 Allow: /products
 Allow: /shop
 Allow: /sell-online-kerala
+Allow: /sell-online
+Allow: /solutions
+Allow: /for/
+Allow: /features/
+Allow: /faq
+Allow: /ml/
 Allow: /about
 Allow: /contact
 Allow: /register/seller

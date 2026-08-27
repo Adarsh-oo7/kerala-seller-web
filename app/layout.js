@@ -40,6 +40,7 @@ export default function RootLayout({ children }) {
       <head>
         {/* Existing stylesheets */}
         <link rel="stylesheet" href="/assets/css/style.css" />
+        <link rel="stylesheet" href="/assets/css/seo-pages.css" />
         
         {/* ✅ OPTIMIZED: Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

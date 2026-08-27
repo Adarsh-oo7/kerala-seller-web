@@ -21,12 +21,12 @@ export default function SellerLanding() {
           </div>
 
           <h1 className="hero-title">
-            Turn Your Instagram &amp; WhatsApp Business Into Your Own{' '}
-            <span className="hero-highlight">Online Store</span>
+            Everything Your Business Needs to{' '}
+            <span className="hero-highlight">Sell, Manage &amp; Grow</span>
           </h1>
 
           <p className="hero-subtitle">
-            Already taking orders in DMs? Get a store link you can share, let customers pick products themselves, and sell across Kerala — without building an expensive website.
+            From creating your online store to managing orders, inventory, payments and customers — Kerala Sellers brings your essential business and digital growth tools together in one simple solution. Online aayi business thudangan — ith easy aanu.
           </p>
 
           <div className="hero-stats">
@@ -402,6 +402,59 @@ export default function SellerLanding() {
               No credit card required • 100% free to start • Launch in 10 minutes
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* ── SEO: "Who is this for" internal links section ── */}
+      <div className="container" style={{ paddingBottom: 48 }}>
+        <div className="section" style={{ background: '#f0fdf4', borderRadius: 20, padding: '40px 32px', border: '1px solid #bbf7d0' }}>
+          <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#1a4845', marginBottom: 8 }}>
+            Solutions for your type of selling
+          </p>
+          <h2 style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.7rem)', fontWeight: 800, color: '#1a2b2a', marginBottom: 20 }}>
+            Whatever You Sell, We Have a Solution
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
+            {[
+              { href: '/for/instagram-sellers', emoji: '📸', label: 'Instagram Sellers' },
+              { href: '/for/whatsapp-sellers', emoji: '💬', label: 'WhatsApp Sellers' },
+              { href: '/for/social-media-sellers', emoji: '📱', label: 'Social Media Sellers' },
+              { href: '/for/home-businesses', emoji: '🏠', label: 'Home Businesses' },
+              { href: '/for/small-businesses', emoji: '🏪', label: 'Small Businesses' },
+              { href: '/solutions', emoji: '🚀', label: 'All Solutions' },
+            ].map(item => (
+              <Link key={item.href} href={item.href} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                background: '#fff', border: '1px solid #bbf7d0', borderRadius: 12,
+                padding: '12px 16px', textDecoration: 'none', color: '#1a4845',
+                fontSize: '0.9rem', fontWeight: 600, transition: 'box-shadow 0.15s',
+              }}>
+                <span style={{ fontSize: '1.2rem' }}>{item.emoji}</span>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+            {[
+              { href: '/features/online-store-builder', label: '🔧 Store Builder' },
+              { href: '/features/order-management', label: '📋 Order Management' },
+              { href: '/features/inventory-management', label: '📦 Inventory' },
+              { href: '/faq', label: '❓ FAQ' },
+              { href: '/sell-online-kerala', label: '🌿 Sell Online in Kerala' },
+            ].map(item => (
+              <Link key={item.href} href={item.href} style={{
+                display: 'inline-block', padding: '7px 16px',
+                background: 'transparent', border: '1px solid #1a4845',
+                borderRadius: 20, textDecoration: 'none',
+                color: '#1a4845', fontSize: '0.85rem', fontWeight: 600,
+              }}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+          <p style={{ marginTop: 28, fontSize: '1rem', color: '#374151', lineHeight: 1.65, fontStyle: 'italic', maxWidth: 640 }}>
+            "Whatever a seller is searching for — a store, an order tool, a way to sell on WhatsApp, or a way to grow — Kerala Sellers is the solution."
+          </p>
         </div>
       </div>
 

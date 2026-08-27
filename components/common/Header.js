@@ -14,6 +14,43 @@ const DesktopNav = () => (
   <div className="navigation desktop-only" style={{ backgroundColor: '#1a4845' }}>
     <nav className="nav-menu">
       <Link href="/" className="nav-item">HOME</Link>
+      {/* Solutions dropdown — additive, does not replace existing items */}
+      <div className="nav-dropdown-wrapper">
+        <Link href="/solutions" className="nav-item nav-item-with-arrow">SOLUTIONS</Link>
+        <div className="nav-dropdown-panel">
+          <Link href="/solutions" className="nav-dropdown-item">
+            All Solutions
+            <small>Start → Sell → Manage → Grow</small>
+          </Link>
+          <div className="nav-dropdown-divider" />
+          <Link href="/for/instagram-sellers" className="nav-dropdown-item">
+            📸 Instagram Sellers
+          </Link>
+          <Link href="/for/whatsapp-sellers" className="nav-dropdown-item">
+            💬 WhatsApp Sellers
+          </Link>
+          <Link href="/for/home-businesses" className="nav-dropdown-item">
+            🏠 Home Businesses
+          </Link>
+          <Link href="/for/small-businesses" className="nav-dropdown-item">
+            🏪 Small Businesses
+          </Link>
+          <div className="nav-dropdown-divider" />
+          <Link href="/features/online-store-builder" className="nav-dropdown-item">
+            🔧 Store Builder
+          </Link>
+          <Link href="/features/order-management" className="nav-dropdown-item">
+            📋 Order Management
+          </Link>
+          <Link href="/features/inventory-management" className="nav-dropdown-item">
+            📦 Inventory
+          </Link>
+          <div className="nav-dropdown-divider" />
+          <Link href="/faq" className="nav-dropdown-item">
+            ❓ FAQ
+          </Link>
+        </div>
+      </div>
       <Link href="/sell-online-kerala" className="nav-item">SELL ONLINE</Link>
       <Link href="/products" className="nav-item">PRODUCTS</Link>
       <Link href="/shop" className="nav-item">SHOPS</Link>
@@ -22,6 +59,7 @@ const DesktopNav = () => (
     </nav>
   </div>
 );
+
 
 const HeaderActions = ({ cartItemCount, isLoggedIn }) => {
   return (
@@ -76,6 +114,27 @@ const MobileMenu = ({ isOpen, onClose }) => {
           <Link href="/sell-online-kerala" className="mobile-nav-item" onClick={onClose}>
             <span className="nav-left">Sell Online</span>
             <ChevronRight size={16} />
+          </Link>
+          {/* Solutions group — additive */}
+          <Link href="/solutions" className="mobile-nav-item" onClick={onClose}>
+            <span className="nav-left">Solutions</span>
+            <ChevronRight size={16} />
+          </Link>
+          <Link href="/for/instagram-sellers" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
+            <span className="nav-left">📸 Instagram Sellers</span>
+            <ChevronRight size={14} />
+          </Link>
+          <Link href="/for/whatsapp-sellers" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
+            <span className="nav-left">💬 WhatsApp Sellers</span>
+            <ChevronRight size={14} />
+          </Link>
+          <Link href="/for/home-businesses" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
+            <span className="nav-left">🏠 Home Businesses</span>
+            <ChevronRight size={14} />
+          </Link>
+          <Link href="/faq" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
+            <span className="nav-left">❓ FAQ</span>
+            <ChevronRight size={14} />
           </Link>
           <Link href="/products" className="mobile-nav-item" onClick={onClose}>
             <span className="nav-left">Products</span>
