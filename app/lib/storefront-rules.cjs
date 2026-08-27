@@ -20,6 +20,8 @@ function buyerStorefrontMessage(reason) {
       return 'This shop is temporarily offline.';
     case 'OFFLINE_ONLY_NO_CHECKOUT':
       return 'Visit this shop in person. This is an in-store listing — online checkout is not available.';
+    case 'SUBDOMAIN_NOT_ALLOWED':
+      return 'Custom subdomain access is inactive or not included in this shop plan.';
     default:
       return null;
   }

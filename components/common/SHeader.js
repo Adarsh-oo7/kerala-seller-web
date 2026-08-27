@@ -205,14 +205,19 @@ export default function SHeader({ store, isLoggedIn = false, shopSlug }) {
 
   const cartCount = cartKey ? (carts[cartKey] || []).reduce((count, item) => count + item.quantity, 0) : 0;
 
-  // ✅ FIXED: URL generation helper that preserves query parameters
+  // ✅ FIXED: URL generation helper that supports both subdomain hosts and /shop/ path URLs
   const generateShopUrl = (path = '') => {
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname.toLowerCase();
+      const base = 'keralasellers.in';
+      if (host.endsWith(`.${base}`) && host !== `www.${base}` && host !== `api.${base}`) {
+        return path || '/';
+      }
+    }
     if (actualStoreId && finalShopSlug === 'new') {
-      // Use the /shop/new pattern with ?id= parameter
       const basePath = `/shop/new${path}`;
       return path ? `${basePath}?id=${actualStoreId}` : `${basePath}?id=${actualStoreId}`;
     } else if (effectiveStoreId) {
-      // Use the direct /shop/[storeId] pattern
       return `/shop/${effectiveStoreId}${path}`;
     }
     return `/shop/${finalShopSlug}${path}`;

@@ -25,9 +25,11 @@ export default function ShopFooter({ store }) {
   const storeName = store?.name || store?.seller_name || 'Kerala Sellers';
   const logoUrl = store?.logo_url || store?.cloudinary_logo || store?.logo || '';
   const [logoFailed, setLogoFailed] = useState(false);
+  const hostSubdomain = shopSlugFromHost();
+  const isSubdomainHost = Boolean(hostSubdomain);
   const shopMatch = pathname.match(/^\/shop\/([^/]+)/);
-  const shopSlug = shopMatch?.[1] || store?.store_slug || shopSlugFromHost();
-  const legalBase = shopSlug ? `/shop/${shopSlug}` : '';
+  const shopSlug = shopMatch?.[1] || store?.store_slug || hostSubdomain;
+  const legalBase = isSubdomainHost ? '' : (shopSlug ? `/shop/${shopSlug}` : '');
   const initial = String(storeName).trim().charAt(0).toUpperCase() || 'S';
   const hasOwnSocials = Boolean(facebookUrl || instagramUrl || youtubeUrl);
 

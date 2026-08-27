@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 const RESERVED = new Set([
   'www', 'api', 'admin', 'app', 'dashboard', 'support', 'help', 'mail',
   'static', 'media', 'blog', 'shop', 'store', 'user', 'login', 'prebook',
+  'products', 'sell-online-kerala', 'contact', 'about', 'cancellation-refund',
+  'shipping-delivery', 'privacy-policy', 'terms-and-conditions', 'delete-account',
 ]);
 const BASE = 'keralasellers.in';
 
