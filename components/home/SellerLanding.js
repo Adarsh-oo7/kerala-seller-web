@@ -73,18 +73,6 @@ export default function SellerLanding() {
               How to sell products online in Kerala
             </Link>
           </div>
-          <p className="section-subtitle" style={{ marginTop: 28 }}>
-            Official Kerala Sellers pages — follow, then share your store link there
-          </p>
-          <BrandSocialIcons />
-          <p className="section-subtitle" style={{ marginTop: 16 }}>
-            Parent company:{' '}
-            <a href={BRAND.parent.url} target="_blank" rel="noopener noreferrer me">
-              {BRAND.parent.name}
-            </a>
-            {' · '}
-            <a href={`mailto:${BRAND.email}`}>{BRAND.email}</a>
-          </p>
         </div>
 
         <div className="arrow-connector">
