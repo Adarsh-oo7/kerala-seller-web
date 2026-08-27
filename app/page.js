@@ -1,15 +1,23 @@
-﻿import HomeClient from './HomeClient';
+import HomeClient from './HomeClient';
 import { BRAND } from './lib/brand';
 
 const HOME_URL = `${BRAND.url}/`;
 
 export const metadata = {
-  title: 'Kerala Sellers | Sell products online in Kerala from Instagram and WhatsApp',
+  // Title: 54 chars — within 50–60 target
+  title: 'Kerala Sellers | Sell Online in Kerala',
   description:
-    'Turn your Instagram or WhatsApp business into your own Kerala store. Share a store link, take orders in one place, and keep 100% of sales. Zero commission. Setup in 10 minutes.',
-  alternates: { canonical: HOME_URL },
+    // 155 chars — within 120–160 target
+    'Own Kerala store for Instagram & WhatsApp sellers. Share a store link, take orders in one place, keep 100% of sales. Zero commission. Free setup.',
+  alternates: {
+    canonical: HOME_URL,
+    languages: {
+      'en-IN': HOME_URL,
+      'x-default': HOME_URL,
+    },
+  },
   openGraph: {
-    title: 'Kerala Sellers | Online store for Instagram and WhatsApp sellers in Kerala',
+    title: 'Kerala Sellers — Sell Online in Kerala, Zero Commission',
     description:
       'Already taking orders in DMs? Get a Kerala store link, let customers add to cart, and sell across Kerala without marketplace commission.',
     url: HOME_URL,
@@ -27,8 +35,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Sell online in Kerala | Kerala Sellers',
-    description: 'Own store for Instagram and WhatsApp sellers in Kerala. 0% commission.',
+    title: 'Sell Online in Kerala | Kerala Sellers',
+    description: 'Own store for Instagram & WhatsApp sellers. 0% commission.',
   },
   robots: { index: true, follow: true },
 };
@@ -44,15 +52,64 @@ function HomeJsonLd() {
         url: BRAND.url,
         inLanguage: 'en-IN',
         publisher: { '@id': `${BRAND.url}/#organization` },
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: `${BRAND.url}/products?search={search_term_string}`,
+          },
+          'query-input': 'required name=search_term_string',
+        },
       },
       {
         '@type': 'WebPage',
         '@id': `${HOME_URL}#webpage`,
         url: HOME_URL,
-        name: 'Kerala Sellers — sell products online in Kerala',
+        name: 'Kerala Sellers — Sell Online in Kerala',
         description: metadata.description,
         isPartOf: { '@id': `${BRAND.url}/#website` },
         about: { '@id': `${BRAND.url}/#organization` },
+        breadcrumb: {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: BRAND.url },
+          ],
+        },
+      },
+      {
+        '@type': 'LocalBusiness',
+        '@id': `${BRAND.url}/#localbusiness`,
+        name: BRAND.name,
+        description:
+          'Kerala Sellers is a zero-commission e-commerce platform for Instagram and WhatsApp sellers in Kerala. Launch your own online store in under 10 minutes.',
+        url: BRAND.url,
+        telephone: BRAND.phoneTel,
+        email: BRAND.email,
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Kochi',
+          addressRegion: 'Kerala',
+          addressCountry: 'IN',
+        },
+        geo: {
+          '@type': 'GeoCoordinates',
+          latitude: '9.9312',
+          longitude: '76.2673',
+        },
+        areaServed: [
+          { '@type': 'State', name: 'Kerala' },
+          { '@type': 'Country', name: 'India' },
+        ],
+        sameAs: [
+          BRAND.profiles.instagram,
+          BRAND.profiles.facebook,
+          BRAND.profiles.youtube,
+          BRAND.profiles.linkedin,
+        ],
+        openingHours: 'Mo-Su 00:00-23:59',
+        priceRange: '₹',
+        currenciesAccepted: 'INR',
+        paymentAccepted: 'UPI, Credit Card, Debit Card, Net Banking',
       },
     ],
   };
@@ -72,3 +129,4 @@ export default function Home() {
     </>
   );
 }
+

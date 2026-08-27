@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Header from '../../components/common/Header';
@@ -278,9 +278,9 @@ export default function ContactPage() {
               <a href="https://www.digitalproductsolutions.in/" target="_blank" rel="noopener noreferrer me">
                 Digital Product Solutions
               </a>
-              , Trivandrum. Founders: Adarsh B S (Founder &amp; CEO) and Aromal V G (Co-Founder).
-              Email{' '}
-              <a href="mailto:keralasellers.in@gmail.com">keralasellers.in@gmail.com</a>
+              , Trivandrum. Founders: Adarsh B S (Founder & CEO) and Aromal V G (Co-Founder).
+              Email us via{' '}
+              <a href="mailto:keralasellers.in@gmail.com" aria-label="Email Kerala Sellers support">our support address</a>
               .
             </p>
             <div className='cols'>

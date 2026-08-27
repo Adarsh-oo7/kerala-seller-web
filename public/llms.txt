@@ -1,0 +1,84 @@
+# Kerala Sellers — llms.txt
+
+> Kerala Sellers is a zero-commission e-commerce platform that helps Instagram and WhatsApp sellers in Kerala launch their own online stores in under 10 minutes. Sellers keep 100% of every sale.
+
+## What we do
+
+Kerala Sellers gives small businesses in Kerala — including home bakers, resellers, artisans, fashion boutiques, and grocery stores — their own store link to share on social media and WhatsApp. Buyers can browse products, add to cart, and place orders directly. Sellers manage orders through a simple dashboard.
+
+## Key features
+
+- Own store link (e.g., keralasellers.in/shop/your-shop-name)
+- Custom subdomain (e.g., yourshop.keralasellers.in) — Premium plan
+- Product catalog with images, prices, categories, and stock control
+- WhatsApp order notifications for sellers
+- UPI and Razorpay payment support
+- 0% commission on every sale — sellers pay a flat monthly subscription
+- Works for Instagram sellers, WhatsApp resellers, home bakers, boutiques
+
+## Pricing
+
+Kerala Sellers charges a flat monthly or annual subscription fee. There is zero commission on sales. Pricing plans include Free, Basic, and Premium tiers.
+
+## Who is this for?
+
+- Instagram sellers in Kerala looking to move beyond DM orders
+- WhatsApp resellers who want a cart-based order system
+- Home bakers, tailors, artisans, and craft sellers in Kerala
+- Small retail shops wanting an online presence without marketplace fees
+- Buyers looking for authentic local products from Kerala
+
+## Important links
+
+- Homepage: https://www.keralasellers.in/
+- Product catalog: https://www.keralasellers.in/products
+- Sell online guide: https://www.keralasellers.in/sell-online-kerala
+- Seller registration: https://www.keralasellers.in/register/seller
+- Shops directory: https://www.keralasellers.in/shop
+- About page: https://www.keralasellers.in/about
+- Contact: https://www.keralasellers.in/contact
+
+## Contact
+
+- Email: keralasellers.in@gmail.com
+- Phone: +91 94003 55185
+- Address: Kochi, Kerala, India
+- Instagram: https://www.instagram.com/kerala_sellers/
+- Facebook: https://www.facebook.com/profile.php?id=61586008980027
+- YouTube: https://www.youtube.com/@KeralaSellers
+- LinkedIn: https://www.linkedin.com/showcase/kerala-sellers/
+
+## Founders
+
+- Adarsh B S — Founder & CEO
+- Aromal V G — Co-Founder (Tech & Product)
+
+## Company details
+
+- Founded: 2024
+- Headquarters: Kochi, Kerala, India
+- Parent company: Digital Product Solutions (https://www.digitalproductsolutions.in/)
+- Language support: English, Malayalam
+- Regions served: India (primary), international buyers
+- Technology: Next.js, React, Django REST Framework, PostgreSQL, Razorpay, Vercel
+
+## Frequently asked questions
+
+**Is there a commission on sales?**
+No. Kerala Sellers charges zero commission. Sellers pay only a flat monthly subscription.
+
+**How long does setup take?**
+A seller can go live in under 10 minutes with products, a store link, and payment setup.
+
+**Can I use my own subdomain?**
+Yes. Premium plan sellers get a custom subdomain like yourshop.keralasellers.in.
+
+**Who can sell on Kerala Sellers?**
+Any individual, home business, or registered business in Kerala can sign up and sell.
+
+**What payment methods are supported?**
+UPI, credit/debit cards, and net banking via Razorpay. Sellers receive payouts directly.
+
+## Keywords
+
+sell online Kerala, online store Kerala, Instagram seller Kerala, WhatsApp seller Kerala, zero commission marketplace Kerala, local products Kerala, home baker Kerala, boutique online Kerala, artisan marketplace Kerala, Kerala e-commerce, own store link Kerala, sell without marketplace commission, keralasellers

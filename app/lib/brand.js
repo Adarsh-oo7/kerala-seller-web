@@ -57,9 +57,50 @@ export function organizationJsonLd() {
     '@type': 'Organization',
     '@id': `${BRAND.url}/#organization`,
     name: BRAND.name,
+    alternateName: ['Kerala Sellers', 'KeralaSellers.in', 'KS'],
     url: BRAND.url,
+    logo: {
+      '@type': 'ImageObject',
+      url: `${BRAND.url}/assets/images/logo/KERALA SELLERS transp.png`,
+      width: 400,
+      height: 120,
+    },
     email: BRAND.email,
     telephone: BRAND.phoneTel,
+    foundingDate: '2024',
+    numberOfEmployees: { '@type': 'QuantitativeValue', value: 12 },
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Kochi',
+      addressRegion: 'Kerala',
+      addressCountry: 'IN',
+    },
+    areaServed: [
+      { '@type': 'State', name: 'Kerala' },
+      { '@type': 'Country', name: 'India' },
+    ],
+    knowsAbout: [
+      'E-commerce for small businesses',
+      'Instagram seller tools',
+      'WhatsApp commerce',
+      'Zero commission marketplace',
+      'Kerala local products',
+      'Online store builder',
+    ],
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        telephone: BRAND.phoneTel,
+        contactType: 'customer support',
+        areaServed: 'IN',
+        availableLanguage: ['English', 'Malayalam'],
+      },
+      {
+        '@type': 'ContactPoint',
+        email: BRAND.email,
+        contactType: 'customer support',
+      },
+    ],
     sameAs: BRAND_SAME_AS,
     parentOrganization: {
       '@type': 'Organization',
@@ -73,3 +114,4 @@ export function organizationJsonLd() {
     })),
   };
 }
+

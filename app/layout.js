@@ -18,14 +18,15 @@ export const viewport = {
 // ✅ Metadata configuration
 export const metadata = {
   metadataBase: new URL('https://www.keralasellers.in'),
-  title: "Kerala Sellers | Online store for Instagram and WhatsApp sellers in Kerala",
+  // 38 chars — default fallback title for pages without their own
+  title: 'Kerala Sellers | Sell Online in Kerala',
   description:
-    "Already selling on Instagram or WhatsApp? Get your own Kerala store link, take orders in one place, and keep 100% of your sales. Zero commission.",
+    'Own Kerala store for Instagram & WhatsApp sellers. Share a store link, take orders in one place, keep 100% of sales. Zero commission. Free setup.',
   authors: [{ name: 'Adarsh B S' }, { name: 'Aromal V G' }],
   creator: 'Digital Product Solutions',
   publisher: 'Kerala Sellers',
   
-  // ✅ Favicon - Next.js will automatically look for favicon.ico in app/ folder
+  // ✅ Favicon
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
@@ -40,13 +41,17 @@ export default function RootLayout({ children }) {
         {/* Existing stylesheets */}
         <link rel="stylesheet" href="/assets/css/style.css" />
         
-        {/* ✅ OPTIMIZED: Google Fonts (removed duplicate link) */}
+        {/* ✅ OPTIMIZED: Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link 
           href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&family=Quicksand:wght@300..700&display=swap" 
           rel="stylesheet"
         />
+        {/* LinkedIn social profile association */}
+        <link rel="me" href="https://www.linkedin.com/showcase/kerala-sellers/" />
+        <link rel="me" href="https://www.instagram.com/kerala_sellers/" />
+        <link rel="me" href="https://www.facebook.com/profile.php?id=61586008980027" />
         <OrganizationJsonLd />
       </head>
 
