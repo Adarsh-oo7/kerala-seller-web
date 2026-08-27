@@ -225,8 +225,7 @@ function EnhancedStoreBanner({ store, shopSlug }) {
   const getBannerImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('/media/')) {
-     return `${API_BASE_URL}${url}`;  // Instead of hardcoded URL
-
+      return `${API_BASE_URL}${url}`;
     }
     return url;
   };
@@ -271,15 +270,34 @@ function EnhancedStoreBanner({ store, shopSlug }) {
     }
   };
 
+  const goToPrev = () => {
+    const nextIndex = currentSlide === 0 ? banners.length - 1 : currentSlide - 1;
+    goToSlide(nextIndex);
+  };
+
+  const goToNext = () => {
+    const nextIndex = (currentSlide + 1) % banners.length;
+    goToSlide(nextIndex);
+  };
+
   if (banners.length === 0) {
     return (
       <div style={styles.mainWrapper}>
-        <div className="enhanced-banner-container" style={styles.bannerContainer}>
-          <div className="banner-background" style={styles.bannerBackground}>
-            <div className="banner-fallback" style={styles.bannerFallback}>
-              <div className="fallback-pattern" style={styles.fallbackPattern}></div>
+        <div className="banner-slider-container" style={styles.sliderContainer}>
+          <div className="banner-slides-wrapper" style={{
+            ...styles.slidesWrapper,
+            background: 'linear-gradient(135deg, #1a4845 0%, #0f2e2b 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            textAlign: 'center',
+            color: '#ffffff'
+          }}>
+            <div>
+              <h2 style={{ fontSize: '1.8rem', margin: '0 0 8px 0', fontWeight: 700 }}>{store.name || 'Kerala Seller Store'}</h2>
+              {store.tagline && <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9, fontStyle: 'italic' }}>{store.tagline}</p>}
             </div>
-            <div className="banner-overlay" style={styles.bannerOverlay}></div>
           </div>
         </div>
       </div>
@@ -319,6 +337,93 @@ function EnhancedStoreBanner({ store, shopSlug }) {
               </div>
             </div>
           ))}
+
+          {/* Dots and arrows for multi-banner shops */}
+          {banners.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={goToPrev}
+                aria-label="Previous banner"
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '10px',
+                  transform: 'translateY(-50%)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  zIndex: 3,
+                }}
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                type="button"
+                onClick={goToNext}
+                aria-label="Next banner"
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  right: '10px',
+                  transform: 'translateY(-50%)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  zIndex: 3,
+                }}
+              >
+                <ChevronRight size={20} />
+              </button>
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '10px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  gap: '6px',
+                  zIndex: 3,
+                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  padding: '4px 8px',
+                  borderRadius: '12px',
+                }}
+              >
+                {banners.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => goToSlide(idx)}
+                    aria-label={`Go to slide ${idx + 1}`}
+                    style={{
+                      width: idx === currentSlide ? '18px' : '6px',
+                      height: '6px',
+                      borderRadius: '3px',
+                      backgroundColor: idx === currentSlide ? '#f59e0b' : 'rgba(255,255,255,0.7)',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                    }}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -1077,7 +1182,7 @@ const styles = {
     maxWidth: '1200px',
     marginLeft: 'auto',
     marginRight: 'auto',
-    marginTop: '120px',
+    marginTop: '85px',
     marginBottom: '8px',
     overflow: 'hidden',
     padding: '0 16px',
@@ -1116,7 +1221,7 @@ const styles = {
   bannerImage: {
     width: '100%',
     height: '100%',
-    objectFit: 'contain',
+    objectFit: 'cover',
     objectPosition: 'center',
     display: 'block'
   },
