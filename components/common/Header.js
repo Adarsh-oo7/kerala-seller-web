@@ -36,6 +36,9 @@ const DesktopNav = () => (
             🏪 Small Businesses
           </Link>
           <div className="nav-dropdown-divider" />
+          <Link href="/features" className="nav-dropdown-item" style={{ fontWeight: 700, color: '#059669' }}>
+            ✨ All Features &amp; Add-ons
+          </Link>
           <Link href="/features/online-store-builder" className="nav-dropdown-item">
             🔧 Store Builder
           </Link>
@@ -130,6 +133,10 @@ const MobileMenu = ({ isOpen, onClose }) => {
           </Link>
           <Link href="/for/home-businesses" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
             <span className="nav-left">🏠 Home Businesses</span>
+            <ChevronRight size={14} />
+          </Link>
+          <Link href="/features" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem', fontWeight: 600, color: '#059669' }}>
+            <span className="nav-left">✨ Features &amp; Add-ons</span>
             <ChevronRight size={14} />
           </Link>
           <Link href="/faq" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>

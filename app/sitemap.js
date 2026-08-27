@@ -10,8 +10,9 @@ export default function sitemap() {
     { url: `${BRAND.url}/sell-online`,                   lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },  // redirects to /sell-online-kerala
     { url: `${BRAND.url}/register/seller`,               lastModified: now, changeFrequency: 'monthly', priority: 0.85 },
 
-    // ── Solutions hub ──
+    // ── Solutions & Features hub ──
     { url: `${BRAND.url}/solutions`,                     lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
+    { url: `${BRAND.url}/features`,                      lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
 
     // ── Seller persona pages ──
     { url: `${BRAND.url}/for/instagram-sellers`,         lastModified: now, changeFrequency: 'weekly',  priority: 0.85 },
