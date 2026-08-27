@@ -57,4 +57,4 @@ export default function OrderManagementLayout({ children }) {
   return <><JsonLd />{children}</>;
 }
 
-export { faqs as orderManagementFaqs };
+

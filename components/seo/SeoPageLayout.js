@@ -1,6 +1,9 @@
+'use client';
+
 import Header from '../common/Header';
 import Footer from '../common/Footer';
 import Link from 'next/link';
+
 
 /**
  * Shared layout shell for all SEO marketing pages.

@@ -73,4 +73,4 @@ export default function OnlineStoreBuilderLayout({ children }) {
   return <><JsonLd />{children}</>;
 }
 
-export { features as storeBuilderFeatures, faqs as storeBuilderFaqs };
+

@@ -98,4 +98,4 @@ export default function SolutionsLayout({ children }) {
   );
 }
 
-export { faqs as solutionsFaqs };
+

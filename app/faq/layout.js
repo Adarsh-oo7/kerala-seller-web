@@ -74,4 +74,4 @@ export default function FaqLayout({ children }) {
   return <><FaqJsonLd />{children}</>;
 }
 
-export { allFaqs };
+
