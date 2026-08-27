@@ -38,6 +38,7 @@ import {
   Users,
   Package,
   TrendingUp,
+  ChevronLeft,
   ChevronRight,
   Eye,
   Bookmark,
