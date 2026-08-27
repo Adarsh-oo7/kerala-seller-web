@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import SeoPageLayout from '../../../components/seo/SeoPageLayout';
-import FaqAccordion from '../../../components/seo/FaqAccordion';
+import SeoPageLayout from './SeoPageLayout';
+import FaqAccordion from './FaqAccordion';
 
 /**
  * Shared template for all /for/[segment] seller persona pages.
