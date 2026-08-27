@@ -6,7 +6,7 @@ import FaqAccordion from '../../components/seo/FaqAccordion';
 import {
   Smartphone, Store, ShoppingBag, Package, CreditCard, Share2,
   TrendingUp, Users, Receipt, Globe, ShieldCheck, Printer, Barcode,
-  Sparkles, CheckCircle2, ArrowRight, DollarSign, Zap
+  Sparkles, CheckCircle2, ArrowRight, DollarSign, Zap, Truck
 } from 'lucide-react';
 
 const faqs = [
@@ -15,8 +15,16 @@ const faqs = [
     a: 'Yes! The seller dashboard is 100% mobile-friendly. You can upload products, manage stock, view orders, update delivery status, and track payments from any smartphone without needing a computer.',
   },
   {
+    q: 'Do you provide a custom subdomain for my store?',
+    a: 'Yes! Kerala Sellers provides custom subdomains (e.g. yourshop.keralasellers.in) so you get your own official, branded web address. It builds instant customer trust and looks highly professional on Instagram, WhatsApp, and business cards.',
+  },
+  {
+    q: 'How does shipping and delivery work for sellers?',
+    a: 'You can set your own custom delivery zones (district-level or local panchayat). Plus, we are rolling out integrated delivery partner connections so sellers can easily book dispatches, generate shipping labels, and track shipments across Kerala and pan-India according to their preference.',
+  },
+  {
     q: 'What add-ons are available for my shop?',
-    a: 'We offer flexible add-ons so you only pay for what your shop needs. Add-ons include: POS & Billing for offline receipts, Custom Subdomain (yourshop.keralasellers.in), Multi-Staff Logins, Multi-Location management, Barcode scanner & Thermal printer support, and Extra Product Capacity.',
+    a: 'We offer flexible add-ons so you only pay for what your shop needs. Add-ons include: Custom Subdomain (yourshop.keralasellers.in), POS & Billing for offline receipts, Multi-Staff Logins, Multi-Location management, Barcode scanner & Thermal printer support, and Extra Product Capacity.',
   },
   {
     q: 'Is there really 0% commission on sales?',
@@ -25,10 +33,6 @@ const faqs = [
   {
     q: 'How affordable is Kerala Sellers compared to building a website?',
     a: 'Building a custom website costs ₹20,000 to ₹1,00,000+ with recurring hosting fees. Kerala Sellers gives you a live online store in 10 minutes with free setup and low flat monthly plans starting at budget-friendly rates for small businesses.',
-  },
-  {
-    q: 'How does WhatsApp and Instagram selling work with Kerala Sellers?',
-    a: 'You get a branded store link (keralasellers.in/shop/yourname). Place this link in your Instagram Bio or WhatsApp Status. Customers browse your products, add to cart, and checkout online. All orders land directly in your mobile dashboard automatically.',
   },
 ];
 
@@ -40,9 +44,21 @@ const coreFeatures = [
     tag: 'Mobile Ready',
   },
   {
+    icon: <Globe size={28} color="#1a4845" />,
+    title: 'Custom Subdomain (yourshop.keralasellers.in)',
+    desc: 'Get your own branded subdomain address (yourshop.keralasellers.in). Give your business an official online identity that customers trust instantly.',
+    tag: 'Branded Link',
+  },
+  {
+    icon: <Truck size={28} color="#1a4845" />,
+    title: 'Easy Shipping & Delivery Partners',
+    desc: 'Set custom delivery fees by district or panchayat. Plus, integrate with delivery partners to handle easy shipping and logistics according to your intent.',
+    tag: 'Growth Logistics',
+  },
+  {
     icon: <Store size={28} color="#1a4845" />,
     title: 'Branded Online Store Builder',
-    desc: 'Get your unique store link (keralasellers.in/shop/yourname). Upload logo, custom banner, shop bio, and showcase products in 10 minutes.',
+    desc: 'Upload your shop logo, custom banner, store bio, and list products in 10 minutes. Share your store URL anywhere.',
     tag: 'No Coding',
   },
   {
@@ -69,21 +85,15 @@ const coreFeatures = [
     desc: 'One-click store links for Instagram Bio, WhatsApp Status, Facebook posts, and broadcast groups. Turn DMs into completed orders.',
     tag: 'Social Commerce',
   },
-  {
-    icon: <TrendingUp size={28} color="#1a4845" />,
-    title: 'Sales & Business Analytics',
-    desc: 'View top-selling items, monthly revenue trends, customer growth, and order counts to make smart inventory and pricing choices.',
-    tag: 'Insights',
-  },
-  {
-    icon: <Users size={28} color="#1a4845" />,
-    title: 'Customer Order History',
-    desc: 'Keep customer contact details, delivery addresses, and purchase history in one place to drive repeat local sales effortlessly.',
-    tag: 'Retention',
-  },
 ];
 
 const addonFeatures = [
+  {
+    icon: <Globe size={28} color="#059669" />,
+    title: 'Custom Subdomain Add-on (yourshop.keralasellers.in)',
+    desc: 'Upgrade your store link to a custom subdomain (e.g. fashion.keralasellers.in) for higher brand authority, trust, and memorability.',
+    price: 'Branding Extra',
+  },
   {
     icon: <Receipt size={28} color="#059669" />,
     title: 'POS & Billing Add-on',
@@ -91,10 +101,10 @@ const addonFeatures = [
     price: 'Affordable Add-on',
   },
   {
-    icon: <Globe size={28} color="#059669" />,
-    title: 'Custom Subdomain Add-on',
-    desc: 'Get your own branded subdomain (yourshop.keralasellers.in) for higher brand authority, trust, and professional appearance.',
-    price: 'Branding Extra',
+    icon: <Truck size={28} color="#059669" />,
+    title: 'Delivery Partner Integrations',
+    desc: 'Automated shipping partner integrations to generate dispatch labels, book pickups, and ship orders across Kerala and India with ease.',
+    price: 'Seller Growth',
   },
   {
     icon: <Users size={28} color="#059669" />,
@@ -114,12 +124,6 @@ const addonFeatures = [
     desc: 'Scale your product catalogue anytime. Buy extra listing capacity as your inventory grows without changing your core plan.',
     price: 'Scalable',
   },
-  {
-    icon: <ShieldCheck size={28} color="#059669" />,
-    title: 'Multi-Branch & Custom Delivery Zones',
-    desc: 'Configure multiple branch locations or set district-level delivery fees and panchayat rules tailored for Kerala.',
-    price: 'Local Logistics',
-  },
 ];
 
 export default function FeaturesPage() {
@@ -135,23 +139,23 @@ export default function FeaturesPage() {
         <div className="seo-hero__inner">
           <div className="seo-hero__badge">
             <Sparkles size={16} color="#a3e635" />
-            <span>Complete Business & Growth Tools for Kerala Sellers</span>
+            <span>The All-in-One Digital Growth Platform for Kerala Sellers</span>
           </div>
 
           <h1 className="seo-hero__h1" id="features-h1">
-            All Features &amp; Add-ons to <em>Sell, Manage &amp; Grow Anywhere</em>
+            All Features &amp; Add-ons to <em>Sell, Manage &amp; Scale Anywhere</em>
           </h1>
 
           <p className="seo-hero__sub">
-            Run your entire business from your mobile phone or computer. From your online store link to order tracking, stock sync, 0% commission payments, and POS billing add-ons — everything you need is built in.
+            Run your entire business from your mobile phone. Get your own custom subdomain (yourshop.keralasellers.in), store link, order tracking, stock sync, 0% commission payments, POS billing, and easy shipping partner integrations.
           </p>
 
           <div className="seo-hero__pills">
+            <span className="seo-hero__pill">✓ Custom Subdomains</span>
+            <span className="seo-hero__pill">✓ Easy Shipping Partners</span>
             <span className="seo-hero__pill">✓ 100% Mobile Ready</span>
             <span className="seo-hero__pill">✓ 0% Commission Forever</span>
             <span className="seo-hero__pill">✓ POS Billing Add-on</span>
-            <span className="seo-hero__pill">✓ Custom Subdomains</span>
-            <span className="seo-hero__pill">✓ Extremely Affordable</span>
           </div>
 
           <div className="seo-hero__cta">
@@ -171,8 +175,8 @@ export default function FeaturesPage() {
         {[
           { n: '1000+', l: 'Active Sellers' },
           { n: '0%', l: 'Commission Cut' },
-          { n: '100%', l: 'Mobile Ready' },
-          { n: '10 min', l: 'Store Setup' },
+          { n: 'yourshop.', l: 'Custom Subdomains' },
+          { n: 'Kerala', l: 'Shipping Partners' },
         ].map((s) => (
           <div key={s.l} className="seo-stat">
             <span className="seo-stat__number">{s.n}</span>
@@ -181,12 +185,88 @@ export default function FeaturesPage() {
         ))}
       </div>
 
-      {/* MOBILE EASY TO USE ANYWHERE HIGHLIGHT */}
+      {/* CUSTOM SUBDOMAIN & SHIPPING HIGHLIGHT */}
       <section className="seo-section seo-section--alt">
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
+          {/* CUSTOM SUBDOMAIN CARD */}
+          <div style={{
+            background: '#fff',
+            border: '2px solid #1a4845',
+            borderRadius: 20,
+            padding: '32px 28px',
+            display: 'flex',
+            flexDirection: 'column',
+            justify: 'space-between',
+          }}>
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0fdf4', color: '#166534', padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
+                <Globe size={16} />
+                <span>CUSTOM SUBDOMAIN SUPPORT</span>
+              </div>
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1a2b2a', marginBottom: 10 }}>
+                Get Your Own Branded Address:<br />
+                <span style={{ color: '#1a4845' }}>yourshop.keralasellers.in</span>
+              </h3>
+              <p style={{ fontSize: '0.95rem', color: '#4b5563', lineHeight: 1.6, marginBottom: 16 }}>
+                Stand out with a clean, official web link for your business. Custom subdomains build instant trust with Instagram buyers, WhatsApp contacts, and local customers.
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {['Official yourshop.keralasellers.in link', 'Build brand authority & trust', 'Easy to share on Instagram bio & WhatsApp'].map((item) => (
+                  <li key={item} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', color: '#374151' }}>
+                    <CheckCircle2 size={16} color="#10b981" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Link href="/register/seller" className="seo-btn-primary" style={{ justifyContent: 'center' }}>
+              Claim Your Subdomain →
+            </Link>
+          </div>
+
+          {/* SHIPPING & DELIVERY PARTNERS CARD */}
           <div style={{
             background: 'linear-gradient(135deg, #1a4845 0%, #2d6b5e 100%)',
             color: '#fff',
+            borderRadius: 20,
+            padding: '32px 28px',
+            display: 'flex',
+            flexDirection: 'column',
+            justify: 'space-between',
+          }}>
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(163, 230, 53, 0.2)', color: '#a3e635', padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
+                <Truck size={16} />
+                <span>SELLER GROWTH & LOGISTICS</span>
+              </div>
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginBottom: 10 }}>
+                Easy Shipping &amp; Delivery Partner Integrations
+              </h3>
+              <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.9)', lineHeight: 1.6, marginBottom: 16 }}>
+                Ship according to your intent! Set custom local delivery rules or leverage delivery partner integrations to dispatch orders effortlessly across Kerala and India.
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {['District & local panchayat delivery rules', 'Delivery partner integrations for hassle-free shipping', 'Simplified dispatch labels & order tracking'].map((item) => (
+                  <li key={item} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', color: '#f0fdf4' }}>
+                    <CheckCircle2 size={16} color="#a3e635" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Link href="/register/seller" className="seo-btn-primary" style={{ background: '#a3e635', color: '#1a4845', justifyContent: 'center' }}>
+              Explore Delivery Growth →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* MOBILE EASY TO USE ANYWHERE HIGHLIGHT */}
+      <section className="seo-section">
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{
+            background: '#fff',
+            border: '1px solid #e5e7eb',
             borderRadius: 20,
             padding: '40px 32px',
             display: 'grid',
@@ -196,8 +276,8 @@ export default function FeaturesPage() {
           }}>
             <div>
               <span style={{
-                background: 'rgba(163, 230, 53, 0.2)',
-                color: '#a3e635',
+                background: '#f0fdf4',
+                color: '#166534',
                 padding: '6px 14px',
                 borderRadius: 20,
                 fontSize: 13,
@@ -206,10 +286,10 @@ export default function FeaturesPage() {
               }}>
                 📱 MOBILE APP &amp; SMARTPHONE ACCESS
               </span>
-              <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 800, margin: '16px 0 12px', color: '#fff' }}>
+              <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 800, margin: '16px 0 12px', color: '#1a2b2a' }}>
                 Easy to Use Anywhere from Your Phone
               </h2>
-              <p style={{ fontSize: '1.02rem', lineHeight: 1.6, color: 'rgba(255, 255, 255, 0.9)', marginBottom: 20 }}>
+              <p style={{ fontSize: '1.02rem', lineHeight: 1.6, color: '#4b5563', marginBottom: 20 }}>
                 No computer required! Managing orders, adding products, updating inventory, and sending bill receipts can all be done directly from your mobile smartphone in seconds. Perfect for busy sellers on the move.
               </p>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -219,25 +299,25 @@ export default function FeaturesPage() {
                   'Update stock immediately after restocking',
                   'Share store link straight to WhatsApp Status & Instagram Bio',
                 ].map((item) => (
-                  <li key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.95rem', color: '#f0fdf4' }}>
-                    <CheckCircle2 size={18} color="#a3e635" />
+                  <li key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.95rem', color: '#374151' }}>
+                    <CheckCircle2 size={18} color="#10b981" />
                     <span>{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
             <div style={{
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.18)',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
               borderRadius: 16,
               padding: 28,
               textAlign: 'center',
             }}>
-              <Smartphone size={54} color="#a3e635" style={{ margin: '0 auto 16px' }} />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginBottom: 8 }}>
+              <Smartphone size={54} color="#1a4845" style={{ margin: '0 auto 16px' }} />
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1a2b2a', marginBottom: 8 }}>
                 100% Smartphone Optimised
               </h3>
-              <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5, marginBottom: 20 }}>
+              <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5, marginBottom: 20 }}>
                 Works smoothly on Android and iPhone with zero app installation needed.
               </p>
               <Link href="/register/seller" className="seo-btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
@@ -249,46 +329,48 @@ export default function FeaturesPage() {
       </section>
 
       {/* CORE FEATURES GRID */}
-      <section className="seo-section">
-        <p className="seo-section__eyebrow">Core Platform Capabilities</p>
-        <h2 className="seo-section__h2">Everything Included in Your Online Store</h2>
-        <p className="seo-section__lead">
-          Built specifically for Instagram resellers, WhatsApp sellers, home businesses, and small shops in Kerala.
-        </p>
+      <section className="seo-section seo-section--alt">
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <p className="seo-section__eyebrow">Core Platform Capabilities</p>
+          <h2 className="seo-section__h2">Everything Included in Your Online Store</h2>
+          <p className="seo-section__lead">
+            Built specifically for Instagram resellers, WhatsApp sellers, home businesses, and small shops in Kerala.
+          </p>
 
-        <div className="seo-features">
-          {coreFeatures.map((f) => (
-            <div key={f.title} className="seo-feature-card">
-              <div className="seo-feature-card__icon">{f.icon}</div>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                  <div className="seo-feature-card__title">{f.title}</div>
-                  <span style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    background: '#f0fdf4',
-                    color: '#166534',
-                    padding: '2px 8px',
-                    borderRadius: 10,
-                    border: '1px solid #bbf7d0',
-                  }}>
-                    {f.tag}
-                  </span>
+          <div className="seo-features">
+            {coreFeatures.map((f) => (
+              <div key={f.title} className="seo-feature-card">
+                <div className="seo-feature-card__icon">{f.icon}</div>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <div className="seo-feature-card__title">{f.title}</div>
+                    <span style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      background: '#f0fdf4',
+                      color: '#166534',
+                      padding: '2px 8px',
+                      borderRadius: 10,
+                      border: '1px solid #bbf7d0',
+                    }}>
+                      {f.tag}
+                    </span>
+                  </div>
+                  <p className="seo-feature-card__desc">{f.desc}</p>
                 </div>
-                <p className="seo-feature-card__desc">{f.desc}</p>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ADD-ONS SECTION */}
-      <section className="seo-section seo-section--alt">
+      <section className="seo-section">
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <p className="seo-section__eyebrow">Flexible Add-ons</p>
           <h2 className="seo-section__h2">Add-ons Section — Buy Only What Your Shop Needs</h2>
           <p className="seo-section__lead">
-            Keep your monthly plan low and add powerful extras only when your business expands. No forced expensive tiers.
+            Keep your monthly plan low and add powerful extras (like Custom Subdomains &amp; POS Billing) only when your business expands. No forced expensive tiers.
           </p>
 
           <div className="seo-features">
@@ -319,7 +401,7 @@ export default function FeaturesPage() {
       </section>
 
       {/* AFFORDABILITY & PRICING GUARANTEE */}
-      <section className="seo-section">
+      <section className="seo-section seo-section--alt">
         <div style={{
           background: '#FDFFF0',
           border: '2px dashed #1a4845',
@@ -367,7 +449,7 @@ export default function FeaturesPage() {
       {/* BRAND CLOSER */}
       <section className="seo-closer">
         <p className="seo-closer__quote">
-          "Whatever a seller is searching for — a store, an order tool, a way to sell on WhatsApp, or a way to grow — Kerala Sellers is the solution."
+          "Whatever a seller is searching for — a store, an order tool, a way to sell on WhatsApp, a custom subdomain, or shipping partners — Kerala Sellers is the solution."
         </p>
         <Link href="/register/seller" className="seo-closer__cta" id="features-bottom-cta">
           Create Your Free Online Store →

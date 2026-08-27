@@ -436,9 +436,12 @@ export default function SellerLanding() {
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
             {[
+              { href: '/features', label: '✨ All Features & Add-ons' },
               { href: '/features/online-store-builder', label: '🔧 Store Builder' },
               { href: '/features/order-management', label: '📋 Order Management' },
               { href: '/features/inventory-management', label: '📦 Inventory' },
+              { href: '/features', label: '🌐 Custom Subdomains' },
+              { href: '/features', label: '🚚 Shipping & Delivery Partners' },
               { href: '/faq', label: '❓ FAQ' },
               { href: '/sell-online-kerala', label: '🌿 Sell Online in Kerala' },
             ].map(item => (
