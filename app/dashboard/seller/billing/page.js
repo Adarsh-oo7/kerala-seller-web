@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import '../../../../styles/DashboardBilling.css'
@@ -79,6 +79,7 @@ export default function LocalBillingPage() {
   const [editingBillLabel, setEditingBillLabel] = useState('');
   const [scanner, setScanner] = useState(false);
   const [pendingScan, setPendingScan] = useState(null);
+  const [storeSlug, setStoreSlug] = useState('');
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -195,6 +196,10 @@ export default function LocalBillingPage() {
         const phone = response.data.seller_phone ||
           response.data.phone ||
           response.data.seller?.phone;
+
+        // Also capture store slug for receipt footer
+        const slug = response.data.store_slug || response.data.slug || '';
+        if (slug) setStoreSlug(slug);
 
         if (phone) {
           setSellerPhone(phone);
@@ -575,6 +580,7 @@ export default function LocalBillingPage() {
 
       // Print preview with shop details. Fall back to the older HTML generator if needed.
       const billId = billResponse.data.bill_id;
+      const shopUrl = storeSlug ? `https://keralasellers.in/shop/${storeSlug}` : '';
       const openLegacyHtml = async () => {
         const htmlResponse = await axios.post(GENERATE_BILL_URL, {
           bill_id: billId,
@@ -588,12 +594,21 @@ export default function LocalBillingPage() {
             quantity: item.quantity,
             price: parseFloat(item.price),
             total: parseFloat(item.price) * item.quantity
-          }))
+          })),
+          shop_url: shopUrl,
         }, {
           headers: requestConfig.headers,
           responseType: 'blob'
         });
-        openHtmlBlob(htmlResponse.data);
+        // Inject shop link + branding into the blob HTML before opening
+        const rawText = await htmlResponse.data.text();
+        const branded = rawText.replace(
+          /(<\/body>)/i,
+          `${shopUrl ? `<p style="text-align:center;font-size:12px;color:#1a4845;margin-top:8px;">🛒 Shop online: <a href="${shopUrl}">${shopUrl}</a></p>` : ''}
+<p style="text-align:center;font-size:10px;color:#9ca3af;border-top:1px dashed #e5e7eb;padding-top:8px;margin-top:10px;">Powered by Kerala Sellers &middot; keralasellers.in</p>
+$1`
+        );
+        openHtmlBlob(new Blob([branded], { type: 'text/html' }));
       };
       if (savedBill.id) {
         try {
