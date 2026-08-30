@@ -612,13 +612,17 @@ export default function LocalBillingPage() {
           headers: requestConfig.headers,
           responseType: 'blob'
         });
-        // Inject shop link + branding into the blob HTML before opening
+        // Inject shop QR code + branding into the blob HTML before opening
         const rawText = await htmlResponse.data.text();
+        const qrHtml = shopUrl ? `
+          <div style="text-align:center;margin-top:12px;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(shopUrl)}" alt="Shop QR Code" style="width:110px;height:110px;margin:0 auto 4px;display:block;">
+            <p style="text-align:center;font-size:12px;color:#1a4845;margin:2px 0;">🛒 Scan to shop online: <a href="${shopUrl}">${shopUrl}</a></p>
+          </div>
+        ` : '';
         const branded = rawText.replace(
           /(<\/body>)/i,
-          `${shopUrl ? `<p style="text-align:center;font-size:12px;color:#1a4845;margin-top:8px;">🛒 Shop online: <a href="${shopUrl}">${shopUrl}</a></p>` : ''}
-<p style="text-align:center;font-size:10px;color:#9ca3af;border-top:1px dashed #e5e7eb;padding-top:8px;margin-top:10px;">Powered by Kerala Sellers &middot; keralasellers.in</p>
-$1`
+          `${qrHtml}<p style="text-align:center;font-size:11px;color:#64748b;border-top:1px dashed #e5e7eb;padding-top:8px;margin-top:10px;font-weight:600;">Software by Kerala Sellers &middot; keralasellers.in</p>$1`
         );
         openHtmlBlob(new Blob([branded], { type: 'text/html' }));
       };
@@ -2311,18 +2315,25 @@ function LiveReceiptCard({
         </div>
       </div>
 
-      {/* Receipt Footer */}
+      {/* Receipt Footer with QR Code */}
       <div style={{ textAlign: 'center', borderTop: '1px dashed #cbd5e1', paddingTop: 10, marginTop: 10 }}>
         <p style={{ margin: '0 0 6px', fontSize: '0.8rem', color: '#334155', fontWeight: 600 }}>
           Thank you for shopping with us! Visit again.
         </p>
         {shopUrl && (
-          <p style={{ margin: '0 0 6px', fontSize: '0.78rem', color: '#175E54', fontWeight: 600, wordBreak: 'break-all' }}>
-            🛒 Shop online: {shopUrl}
-          </p>
+          <div style={{ margin: '8px 0', textAlign: 'center' }}>
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(shopUrl)}`}
+              alt="Shop QR Code"
+              style={{ width: 100, height: 100, margin: '0 auto 4px', display: 'block', border: '1px solid #e2e8f0', padding: 2, borderRadius: 6, background: '#fff' }}
+            />
+            <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#175E54', fontWeight: 600, wordBreak: 'break-all' }}>
+              🛒 Scan to Shop Online: {shopUrl}
+            </p>
+          </div>
         )}
-        <p style={{ margin: '6px 0 0', fontSize: '0.7rem', color: '#94a3b8', borderTop: '1px dashed #e2e8f0', paddingTop: 6 }}>
-          Powered by Kerala Sellers · keralasellers.in
+        <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: '#64748b', borderTop: '1px dashed #e2e8f0', paddingTop: 6, fontWeight: 600 }}>
+          Software by Kerala Sellers · keralasellers.in
         </p>
       </div>
 
