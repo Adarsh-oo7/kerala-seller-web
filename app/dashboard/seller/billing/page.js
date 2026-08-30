@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import '../../../../styles/DashboardBilling.css'
 import {
@@ -22,6 +22,9 @@ import {
   ScanLine,
   Download,
   Printer,
+  Eye,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 import BarcodeScanner from '../../../../components/BarcodeScanner';
 import { findProductByCode, storedBarcode } from '../../../lib/barcode';
@@ -80,6 +83,9 @@ export default function LocalBillingPage() {
   const [scanner, setScanner] = useState(false);
   const [pendingScan, setPendingScan] = useState(null);
   const [storeSlug, setStoreSlug] = useState('');
+  const [billViewMode, setBillViewMode] = useState('form'); // 'form' | 'preview'
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [storeProfile, setStoreProfile] = useState({ name: '', address: '', phone: '', gst: '' });
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -197,9 +203,15 @@ export default function LocalBillingPage() {
           response.data.phone ||
           response.data.seller?.phone;
 
-        // Also capture store slug for receipt footer
+        // Also capture store profile details for receipt preview
         const slug = response.data.store_slug || response.data.slug || '';
         if (slug) setStoreSlug(slug);
+        setStoreProfile({
+          name: response.data.name || response.data.shop_name || response.data.business_name || '',
+          address: response.data.business_address || response.data.address || '',
+          phone: phone || '',
+          gst: response.data.gst_number || response.data.gstin || '',
+        });
 
         if (phone) {
           setSellerPhone(phone);
@@ -926,18 +938,106 @@ $1`
         {/* Current Bill */}
         <div style={styles.currentBill}>
           <div style={styles.sectionHeader}>
-            <h3 className='dashboardbillingsectiontitle' style={styles.sectionTitle}>
-              <Banknote className='dashboardbillingsectionicon' size={20} />
-              Cash Bill
-            </h3>
-            {billItems.length > 0 && (
-              <button className='dashboardbillingclearbtn' onClick={clearBill} style={styles.clearButton}>
-                Clear All
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 className='dashboardbillingsectiontitle' style={{ ...styles.sectionTitle, margin: 0 }}>
+                <Banknote className='dashboardbillingsectionicon' size={20} />
+                Cash Bill
+              </h3>
+              {/* View mode toggle tabs */}
+              <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 8, padding: 2, marginLeft: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setBillViewMode('form')}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    border: 0,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    background: billViewMode === 'form' ? '#fff' : 'transparent',
+                    color: billViewMode === 'form' ? '#175E54' : '#64748b',
+                    boxShadow: billViewMode === 'form' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  }}
+                >
+                  Form
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillViewMode('preview')}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    border: 0,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    background: billViewMode === 'preview' ? '#fff' : 'transparent',
+                    color: billViewMode === 'preview' ? '#175E54' : '#64748b',
+                    boxShadow: billViewMode === 'preview' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  }}
+                >
+                  <Eye size={13} /> Live Preview
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <button
+                type="button"
+                onClick={() => setShowPreviewModal(true)}
+                style={{
+                  ...styles.clearButton,
+                  background: '#f0fdf4',
+                  color: '#175E54',
+                  border: '1px solid #bbf7d0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+                title="Open full receipt preview modal"
+              >
+                <Eye size={14} /> Preview
               </button>
-            )}
+              {billItems.length > 0 && (
+                <button className='dashboardbillingclearbtn' onClick={clearBill} style={styles.clearButton}>
+                  Clear All
+                </button>
+              )}
+            </div>
           </div>
 
-          <div style={styles.customerDetails}>
+          {billViewMode === 'preview' ? (
+            /* ── Live Editable Receipt Preview Tab View ── */
+            <LiveReceiptCard
+              storeProfile={storeProfile}
+              storeSlug={storeSlug}
+              customer={customer}
+              setCustomer={setCustomer}
+              paymentMethod={paymentMethod}
+              setPaymentMethod={setPaymentMethod}
+              billItems={billItems}
+              updateQuantity={updateQuantity}
+              updatePrice={updatePrice}
+              removeFromBill={removeFromBill}
+              calculateTotal={calculateTotal}
+              editingBillLabel={editingBillLabel}
+              couponCode={couponCode}
+              setCouponCode={setCouponCode}
+              useLoyalty={useLoyalty}
+              setUseLoyalty={setUseLoyalty}
+              loyaltyBalance={loyaltyBalance}
+              isProcessing={isProcessing}
+              handleGenerateBill={handleGenerateBill}
+              sellerPhone={sellerPhone}
+              isAutoDetecting={isAutoDetecting}
+            />
+          ) : (
+            <div style={{ width: '100%' }}>
+              <div style={styles.customerDetails}>
             <div style={styles.inputGroup}>
               <User size={16} style={styles.inputIcon} />
               <input
@@ -1169,7 +1269,7 @@ $1`
           </div>
 
           {billItems.length > 0 && (
-            <>
+            <div style={{ marginTop: 16 }}>
               <div style={styles.billSummary}>
                 <div className='dashboardbillingtotalcash' style={styles.billTotal}>
                   <span>Total Cash Amount: </span>
@@ -1180,7 +1280,7 @@ $1`
                 </div>
                 <div style={styles.billType}>
                   <Banknote size={12} style={{ marginRight: '4px' }} />
-                  <small>Direct Cash Payment â€¢ No Order Tracking</small>
+                  <small>Direct Cash Payment • No Order Tracking</small>
                 </div>
               </div>
 
@@ -1215,9 +1315,11 @@ $1`
                   </span>
                 )}
               </button>
-            </>
+            </div>
           )}
         </div>
+      )}
+      </div>
       </div>
 
       {recentBills.length > 0 ? (
@@ -1294,6 +1396,55 @@ $1`
         onClose={() => setScanner(false)}
         onScan={addScanned}
       />
+
+      {/* ── Live Receipt Preview Modal Overlay ── */}
+      {showPreviewModal && (
+        <div style={previewModalOverlay}>
+          <div style={previewModalContainer}>
+            <div style={previewModalHeader}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Eye size={20} color="#175E54" />
+                <strong style={{ fontSize: '1.1rem', color: '#175E54' }}>Live Editable Receipt Preview</strong>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPreviewModal(false)}
+                style={{ border: 0, background: 'transparent', cursor: 'pointer', color: '#64748b', padding: 4 }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ padding: 16, overflowY: 'auto', maxHeight: 'calc(85vh - 120px)' }}>
+              <LiveReceiptCard
+                storeProfile={storeProfile}
+                storeSlug={storeSlug}
+                customer={customer}
+                setCustomer={setCustomer}
+                paymentMethod={paymentMethod}
+                setPaymentMethod={setPaymentMethod}
+                billItems={billItems}
+                updateQuantity={updateQuantity}
+                updatePrice={updatePrice}
+                removeFromBill={removeFromBill}
+                calculateTotal={calculateTotal}
+                editingBillLabel={editingBillLabel}
+                couponCode={couponCode}
+                setCouponCode={setCouponCode}
+                useLoyalty={useLoyalty}
+                setUseLoyalty={setUseLoyalty}
+                loyaltyBalance={loyaltyBalance}
+                isProcessing={isProcessing}
+                handleGenerateBill={async () => {
+                  setShowPreviewModal(false);
+                  await handleGenerateBill();
+                }}
+                sellerPhone={sellerPhone}
+                isAutoDetecting={isAutoDetecting}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         @keyframes spin {
@@ -1978,5 +2129,318 @@ const styles = {
     marginTop: '2px',
   },
 };
+
+// ── Live Editable Receipt Card Component ───────────────────────────
+function LiveReceiptCard({
+  storeProfile,
+  storeSlug,
+  customer,
+  setCustomer,
+  paymentMethod,
+  setPaymentMethod,
+  billItems,
+  updateQuantity,
+  updatePrice,
+  removeFromBill,
+  calculateTotal,
+  editingBillLabel,
+  couponCode,
+  setCouponCode,
+  useLoyalty,
+  setUseLoyalty,
+  loyaltyBalance,
+  isProcessing,
+  handleGenerateBill,
+  sellerPhone,
+  isAutoDetecting,
+}) {
+  const shopName = storeProfile?.name || 'Kerala Sellers Shop';
+  const shopAddress = storeProfile?.address || '';
+  const shopGst = storeProfile?.gst || '';
+  const shopUrl = storeSlug ? `https://keralasellers.in/shop/${storeSlug}` : '';
+  const total = calculateTotal();
+
+  return (
+    <div style={receiptCardPaperStyle}>
+      {/* Receipt Watermark / Live Badge */}
+      <div style={liveBadgeStyle}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }}></span>
+        LIVE RECEIPT PREVIEW (EDITABLE)
+      </div>
+
+      {/* Shop Header */}
+      <div style={{ textAlign: 'center', marginBottom: 12, borderBottom: '1px dashed #cbd5e1', paddingBottom: 12 }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '1.2rem', color: '#0f172a', fontWeight: 700 }}>
+          {shopName}
+        </h2>
+        {shopAddress && <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>{shopAddress}</p>}
+        {sellerPhone && <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>Ph: {sellerPhone}</p>}
+        {shopGst && <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#64748b' }}>GSTIN: {shopGst}</p>}
+      </div>
+
+      {/* Bill Meta */}
+      <div style={{ fontSize: '0.8rem', color: '#475569', marginBottom: 12, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <span><strong>Bill:</strong> {editingBillLabel || '#DRAFT'}</span>
+        <span>{new Date().toLocaleDateString('en-IN')} {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+      </div>
+
+      {/* Editable Customer & Payment Inputs right on the preview */}
+      <div style={{ background: '#f8fafc', padding: 10, borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 12 }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#175E54', textTransform: 'uppercase', marginBottom: 6 }}>
+          ✏️ Customer & Payment (Editable Inline)
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div>
+            <label style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Customer Name</label>
+            <input
+              type="text"
+              placeholder="Walk-in Customer"
+              value={customer.name}
+              onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
+              style={receiptInlineInput}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Customer Phone</label>
+            <input
+              type="tel"
+              placeholder="Phone number"
+              value={customer.phone}
+              onChange={(e) => setCustomer({ ...customer, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+              style={receiptInlineInput}
+            />
+          </div>
+        </div>
+        <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11, color: '#64748b' }}>Payment Method:</span>
+          <select
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value)}
+            style={{ ...receiptInlineInput, width: 'auto', padding: '2px 6px', fontWeight: 600, color: '#175E54' }}
+          >
+            <option value="CASH">CASH</option>
+            <option value="UPI">UPI</option>
+            <option value="CARD">CARD</option>
+            <option value="OTHER">OTHER</option>
+            <option value="SPLIT">SPLIT (Cash+UPI)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Items Table */}
+      {billItems.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '24px 12px', color: '#94a3b8', fontSize: '0.875rem' }}>
+          No items added yet. Click on local products to add them to this receipt preview.
+        </div>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', marginBottom: 12 }}>
+          <thead>
+            <tr style={{ borderBottom: '1.5px solid #0f172a', textAlign: 'left' }}>
+              <th style={{ padding: '6px 0', color: '#334155' }}>Item</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', color: '#334155', width: 64 }}>Qty</th>
+              <th style={{ padding: '6px 4px', textAlign: 'right', color: '#334155', width: 70 }}>Price</th>
+              <th style={{ padding: '6px 0', textAlign: 'right', color: '#334155', width: 70 }}>Total</th>
+              <th style={{ width: 24 }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {billItems.map((item) => (
+              <tr key={item.lineKey} style={{ borderBottom: '1px dashed #e2e8f0' }}>
+                <td style={{ padding: '6px 0', verticalAlign: 'middle' }}>
+                  <div style={{ fontWeight: 600, color: '#0f172a' }}>{item.name}</div>
+                  {item.model_name && <div style={{ fontSize: 10, color: '#64748b' }}>{item.model_name}</div>}
+                </td>
+                <td style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(item.lineKey, item.quantity - 1)}
+                      disabled={item.quantity <= 1}
+                      style={miniQtyBtn}
+                    >-</button>
+                    <span style={{ fontSize: 12, fontWeight: 700, minWidth: 16, textAlign: 'center' }}>{item.quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(item.lineKey, item.quantity + 1)}
+                      disabled={item.quantity >= item.total_stock}
+                      style={miniQtyBtn}
+                    >+</button>
+                  </div>
+                </td>
+                <td style={{ padding: '4px', textAlign: 'right', verticalAlign: 'middle' }}>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={item.price}
+                    onChange={(e) => updatePrice(item.lineKey, e.target.value)}
+                    style={{ width: 54, textAlign: 'right', fontSize: 11, padding: 2, border: '1px solid #cbd5e1', borderRadius: 4 }}
+                  />
+                </td>
+                <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: 700, color: '#0f172a', verticalAlign: 'middle' }}>
+                  ₹{(parseFloat(item.price) * item.quantity).toFixed(2)}
+                </td>
+                <td style={{ textAlign: 'right', verticalAlign: 'middle' }}>
+                  <button
+                    type="button"
+                    onClick={() => removeFromBill(item.lineKey)}
+                    style={{ border: 0, background: 'transparent', color: '#ef4444', cursor: 'pointer', padding: 2 }}
+                    title="Remove item"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {/* Totals Section */}
+      <div style={{ borderTop: '2px solid #0f172a', paddingTop: 8, marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#475569', marginBottom: 4 }}>
+          <span>Subtotal:</span>
+          <span>₹{total.toFixed(2)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: 4 }}>
+          <span>GRAND TOTAL:</span>
+          <span style={{ color: '#175E54' }}>₹{total.toFixed(2)}</span>
+        </div>
+        <div style={{ fontSize: '0.75rem', color: '#64748b', textAlign: 'right', marginTop: 2 }}>
+          Payment: <strong>{paymentMethod}</strong>
+        </div>
+      </div>
+
+      {/* Receipt Footer */}
+      <div style={{ textAlign: 'center', borderTop: '1px dashed #cbd5e1', paddingTop: 10, marginTop: 10 }}>
+        <p style={{ margin: '0 0 6px', fontSize: '0.8rem', color: '#334155', fontWeight: 600 }}>
+          Thank you for shopping with us! Visit again.
+        </p>
+        {shopUrl && (
+          <p style={{ margin: '0 0 6px', fontSize: '0.78rem', color: '#175E54', fontWeight: 600, wordBreak: 'break-all' }}>
+            🛒 Shop online: {shopUrl}
+          </p>
+        )}
+        <p style={{ margin: '6px 0 0', fontSize: '0.7rem', color: '#94a3b8', borderTop: '1px dashed #e2e8f0', paddingTop: 6 }}>
+          Powered by Kerala Sellers · keralasellers.in
+        </p>
+      </div>
+
+      {/* Save / Print Action Button in Preview */}
+      <div style={{ marginTop: 14 }}>
+        <button
+          type="button"
+          onClick={handleGenerateBill}
+          disabled={isProcessing || billItems.length === 0 || !sellerPhone || sellerPhone.length !== 10 || isAutoDetecting}
+          style={{
+            width: '100%',
+            padding: '12px',
+            borderRadius: 8,
+            border: 'none',
+            background: '#175E54',
+            color: '#fff',
+            fontWeight: 700,
+            fontSize: '0.95rem',
+            cursor: billItems.length === 0 ? 'not-allowed' : 'pointer',
+            opacity: billItems.length === 0 || isProcessing ? 0.6 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+          }}
+        >
+          <Printer size={18} />
+          {isProcessing ? 'Processing…' : editingBillLabel ? 'Save Changes & Print' : 'Generate & Print Bill'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Preview Card & Modal Styles ──────────────────────────────────
+const receiptCardPaperStyle = {
+  background: '#ffffff',
+  border: '1px solid #cbd5e1',
+  borderRadius: 12,
+  padding: 16,
+  boxShadow: '0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.01)',
+  maxWidth: 420,
+  margin: '0 auto',
+  position: 'relative',
+};
+
+const liveBadgeStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  background: '#f0fdf4',
+  border: '1px solid #bbf7d0',
+  color: '#15803d',
+  fontSize: '0.7rem',
+  fontWeight: 700,
+  padding: '3px 8px',
+  borderRadius: 12,
+  marginBottom: 10,
+};
+
+const receiptInlineInput = {
+  width: '100%',
+  border: '1px solid #cbd5e1',
+  borderRadius: 6,
+  padding: '4px 6px',
+  fontSize: '0.8rem',
+  background: '#ffffff',
+  color: '#0f172a',
+};
+
+const miniQtyBtn = {
+  width: 18,
+  height: 18,
+  borderRadius: 4,
+  border: '1px solid #cbd5e1',
+  background: '#f8fafc',
+  cursor: 'pointer',
+  fontSize: 11,
+  lineHeight: 1,
+  padding: 0,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+const previewModalOverlay = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  background: 'rgba(15, 23, 42, 0.6)',
+  backdropFilter: 'blur(4px)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 9999,
+  padding: 16,
+};
+
+const previewModalContainer = {
+  background: '#ffffff',
+  borderRadius: 16,
+  maxWidth: 480,
+  width: '100%',
+  maxHeight: '90vh',
+  boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+  overflow: 'hidden',
+};
+
+const previewModalHeader = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '14px 18px',
+  borderBottom: '1px solid #e2e8f0',
+  background: '#f8fafc',
+};
+
 
           
