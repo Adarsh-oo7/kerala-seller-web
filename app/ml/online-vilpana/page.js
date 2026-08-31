@@ -6,9 +6,6 @@ import SeoPageLayout from '../../../components/seo/SeoPageLayout';
 export default function MlPage() {
   return (
     <SeoPageLayout breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'ML', href: '/ml' }, { label: 'ഓൺലൈൻ വിൽപന' }]}>
-      <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', padding: '12px 24px', fontSize: 13, color: '#92400e', textAlign: 'center' }}>
-        ⚠️ DRAFT — Pending native Malayalam review. This page is noindex until approved.
-      </div>
       <section className="seo-hero" aria-labelledby="ml-online-vilpana-h1">
         <div className="seo-hero__inner">
           <div className="seo-hero__badge">🌿 Malayalam | മലയാളം</div>

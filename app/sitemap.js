@@ -7,7 +7,6 @@ export default function sitemap() {
     // ── Core seller-facing pages ──
     { url: `${BRAND.url}/`,                              lastModified: now, changeFrequency: 'weekly',  priority: 1.0 },
     { url: `${BRAND.url}/sell-online-kerala`,            lastModified: now, changeFrequency: 'weekly',  priority: 0.95 },
-    { url: `${BRAND.url}/sell-online`,                   lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },  // redirects to /sell-online-kerala
     { url: `${BRAND.url}/register/seller`,               lastModified: now, changeFrequency: 'monthly', priority: 0.85 },
 
     // ── Solutions & Features hub ──
@@ -44,7 +43,11 @@ export default function sitemap() {
     { url: `${BRAND.url}/cancellation-refund`,           lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
     { url: `${BRAND.url}/shipping-delivery`,             lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
 
-    // ── Malayalam pages (Phase 2 — noindex drafts, not in sitemap until approved) ──
-    // Excluded until native review complete. Add back when noindex removed.
+    // ── Malayalam pages (മലയാളം SEO) ──
+    { url: `${BRAND.url}/ml`,                            lastModified: now, changeFrequency: 'weekly',  priority: 0.85 },
+    { url: `${BRAND.url}/ml/online-vilpana`,             lastModified: now, changeFrequency: 'weekly',  priority: 0.85 },
+    { url: `${BRAND.url}/ml/instagram-vilpanakkar`,      lastModified: now, changeFrequency: 'weekly',  priority: 0.85 },
+    { url: `${BRAND.url}/ml/whatsapp-vilpanakkar`,       lastModified: now, changeFrequency: 'weekly',  priority: 0.85 },
+    { url: `${BRAND.url}/ml/veetu-business`,             lastModified: now, changeFrequency: 'weekly',  priority: 0.85 },
   ];
 }

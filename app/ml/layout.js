@@ -16,8 +16,7 @@ export const metadata = {
     },
   },
   robots: {
-    // ⚠️ NOINDEX until native review approved
-    index: false,
+    index: true,
     follow: true,
   },
 };
