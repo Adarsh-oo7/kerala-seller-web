@@ -37,6 +37,7 @@ const sellerTypes = [
 
 const tools = [
   { href: '/features/online-store-builder', emoji: '🏪', label: 'Online Store Builder', desc: 'Your own store link in 10 minutes' },
+  { href: '/features/pos-billing-software', emoji: '🖨️', label: 'POS Billing Software', desc: 'Turn your phone into a POS billing machine' },
   { href: '/features/order-management', emoji: '📋', label: 'Order Management', desc: 'All orders in one dashboard' },
   { href: '/features/inventory-management', emoji: '📦', label: 'Inventory Management', desc: 'Never oversell again' },
   { href: '/sell-online-kerala', emoji: '🚀', label: 'Sell Online in Kerala', desc: 'Full platform overview' },

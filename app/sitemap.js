@@ -23,6 +23,7 @@ export default function sitemap() {
 
     // ── Feature pages ──
     { url: `${BRAND.url}/features/online-store-builder`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BRAND.url}/features/pos-billing-software`, lastModified: now, changeFrequency: 'monthly', priority: 0.85 },
     { url: `${BRAND.url}/features/order-management`,     lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
     { url: `${BRAND.url}/features/inventory-management`, lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
 

@@ -42,6 +42,9 @@ const DesktopNav = () => (
           <Link href="/features/online-store-builder" className="nav-dropdown-item">
             🔧 Store Builder
           </Link>
+          <Link href="/features/pos-billing-software" className="nav-dropdown-item">
+            🖨️ POS Billing Software
+          </Link>
           <Link href="/features/order-management" className="nav-dropdown-item">
             📋 Order Management
           </Link>
@@ -137,6 +140,10 @@ const MobileMenu = ({ isOpen, onClose }) => {
           </Link>
           <Link href="/features" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem', fontWeight: 600, color: '#059669' }}>
             <span className="nav-left">✨ Features &amp; Add-ons</span>
+            <ChevronRight size={14} />
+          </Link>
+          <Link href="/features/pos-billing-software" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
+            <span className="nav-left">🖨️ POS Billing Software</span>
             <ChevronRight size={14} />
           </Link>
           <Link href="/faq" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
