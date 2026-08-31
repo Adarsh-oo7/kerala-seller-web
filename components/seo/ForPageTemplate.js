@@ -3,14 +3,29 @@
 import Link from 'next/link';
 import SeoPageLayout from './SeoPageLayout';
 import FaqAccordion from './FaqAccordion';
+import DemoVideoSection from './DemoVideoSection';
+import ProblemSolutionSection from './ProblemSolutionSection';
+import HowItWorksSteps from './HowItWorksSteps';
+import TrustStatsBar from './TrustStatsBar';
+import TestimonialsGrid from './TestimonialsGrid';
+import { Store, ArrowRight, CheckCircle2, ShieldCheck, Zap, Package, Sparkles } from 'lucide-react';
+
+const videoTitles = {
+  'instagram-sellers': 'Turn Your Instagram Followers Into Customers',
+  'whatsapp-sellers': 'Manage WhatsApp Orders Without the Chaos',
+  'home-businesses': 'Start Selling From Home in Kerala',
+  'small-businesses': 'Manage Your Shop & Orders From Your Phone',
+  'social-media-sellers': 'Manage Orders From All Social Media Channels in One Place',
+};
 
 /**
  * Shared template for all /for/[segment] seller persona pages.
  * Accepts a `data` object from for-pages-data.js.
  */
 export default function ForPageTemplate({ data, breadcrumbLabel }) {
-  const { hero, stats, problems, features, faqs, links } = data;
+  const { hero, stats, problems, features, faqs, links, slug } = data;
   const [firstWord, ...rest] = hero.h1;
+  const videoTitle = videoTitles[slug] || `How KeralaSellers Helps ${breadcrumbLabel}`;
 
   return (
     <SeoPageLayout
@@ -23,9 +38,12 @@ export default function ForPageTemplate({ data, breadcrumbLabel }) {
       {/* HERO */}
       <section className="seo-hero" aria-labelledby="for-page-h1">
         <div className="seo-hero__inner">
-          <div className="seo-hero__badge">{hero.badge}</div>
+          <div className="seo-hero__badge">
+            <Sparkles size={14} color="#a3e635" />
+            <span>{hero.badge.replace(/^[^\w]+/, '')}</span>
+          </div>
           <h1 className="seo-hero__h1" id="for-page-h1">
-            {firstWord}<em>{rest.join('')}</em>
+            {firstWord} <em>{rest.join(' ')}</em>
           </h1>
           <p className="seo-hero__sub">{hero.sub}</p>
           <div className="seo-hero__pills">
@@ -34,8 +52,9 @@ export default function ForPageTemplate({ data, breadcrumbLabel }) {
             ))}
           </div>
           <div className="seo-hero__cta">
-            <Link href="/register/seller" className="seo-btn-primary" id={`for-${data.slug}-start-btn`}>
-              🏪 Create Your Free Store →
+            <Link href="/register/seller" className="seo-btn-primary" id={`for-${slug}-start-btn`}>
+              <Store size={18} />
+              <span>Create Your Free Store →</span>
             </Link>
             <Link href="/sell-online-kerala" className="seo-btn-secondary">
               See How It Works
@@ -44,45 +63,48 @@ export default function ForPageTemplate({ data, breadcrumbLabel }) {
         </div>
       </section>
 
-      {/* STATS */}
-      <div className="seo-stats" role="region" aria-label="Platform stats">
-        {stats.map((s) => (
-          <div key={s.l} className="seo-stat">
-            <span className="seo-stat__number">{s.n}</span>
-            <span className="seo-stat__label">{s.l}</span>
-          </div>
-        ))}
-      </div>
+      {/* TRUST / STATS BAR */}
+      <TrustStatsBar stats={stats} />
 
-      {/* PROBLEMS → SOLUTIONS */}
-      <section className="seo-section">
-        <p className="seo-section__eyebrow">The problem</p>
-        <h2 className="seo-section__h2">Sound Familiar?</h2>
-        <p className="seo-section__lead">
-          These are the exact challenges sellers like you face every day. Here is how Kerala Sellers solves each one.
-        </p>
-        <div className="seo-problems">
-          {problems.map((p) => (
-            <div key={p.problem} className="seo-problem-card">
-              <div className="seo-problem-card__emoji">{p.emoji}</div>
-              <div className="seo-problem-card__problem">❌ {p.problem}</div>
-              <div className="seo-problem-card__solution">✓ {p.solution}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* DEMO VIDEO SECTION */}
+      <DemoVideoSection
+        title={`See How KeralaSellers Helps ${breadcrumbLabel}`}
+        subtitle="Watch how easily you can list products, manage customer orders, and accept payments from your mobile phone."
+        videoTitle={videoTitle}
+      />
 
-      {/* FEATURES */}
+      {/* PROBLEMS → SOLUTIONS (No emojis, line icons contrast) */}
+      <ProblemSolutionSection
+        title="Sound Familiar? Here is How KeralaSellers Solves It"
+        subtitle="These are the exact challenges small sellers in Kerala face every day. Here is how our platform eliminates them."
+        items={problems}
+      />
+
+      {/* HOW IT WORKS STEPS */}
+      <HowItWorksSteps
+        title={`How ${breadcrumbLabel} Start & Grow with KeralaSellers`}
+        subtitle="No developer needed. No complicated software. Easy to manage 100% from your phone."
+      />
+
+      {/* FEATURES / CAPABILITIES */}
       <section className="seo-section seo-section--alt">
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <p className="seo-section__eyebrow">How it helps</p>
-          <h2 className="seo-section__h2">Everything You Need in One Place</h2>
-          <div className="seo-features">
+          <div className="seo-section__header">
+            <p className="seo-section__eyebrow">BUILT FOR YOUR BUSINESS</p>
+            <h2 className="seo-section__h2">Everything You Need in One Mobile App</h2>
+            <p className="seo-section__lead">
+              Designed specifically for Kerala sellers — simple, fast, and 0% commission.
+            </p>
+          </div>
+
+          <div className="seo-features-grid">
             {features.map((f) => (
               <div key={f.title} className="seo-feature-card">
-                <div className="seo-feature-card__icon">{f.emoji}</div>
+                <div className="seo-feature-card__icon-box">
+                  <Package size={24} />
+                </div>
                 <div>
-                  <div className="seo-feature-card__title">{f.title}</div>
+                  <h3 className="seo-feature-card__title">{f.title}</h3>
                   <p className="seo-feature-card__desc">{f.desc}</p>
                 </div>
               </div>
@@ -91,25 +113,33 @@ export default function ForPageTemplate({ data, breadcrumbLabel }) {
         </div>
       </section>
 
+      {/* SOCIAL PROOF TESTIMONIALS */}
+      <TestimonialsGrid />
+
       {/* BRAND CLOSER */}
       <section className="seo-closer">
         <p className="seo-closer__quote">
-          "Whatever a seller is searching for — a store, an order tool, a way to sell on WhatsApp, or a way to grow — Kerala Sellers is the solution."
+          "Whatever a seller is searching for — a store, an order tool, a way to sell on WhatsApp, or a way to grow — KeralaSellers is the solution."
         </p>
-        <Link href="/register/seller" className="seo-closer__cta" id={`for-${data.slug}-bottom-cta`}>
-          Create Your Free Online Store →
+        <Link href="/register/seller" className="seo-btn-primary" id={`for-${slug}-bottom-cta`} style={{ background: '#a3e635', color: '#1a4845' }}>
+          <Store size={18} />
+          <span>Create Your Free Online Store →</span>
         </Link>
       </section>
 
       {/* INTERNAL LINKS */}
       <section className="seo-section" style={{ paddingTop: 32, paddingBottom: 32 }}>
         <div className="seo-links-box">
-          <p className="seo-links-box__title">Related Pages</p>
+          <p className="seo-links-box__title">Related Solutions &amp; Guides</p>
           <ul className="seo-links-box__list">
             {links.map((l) => (
               <li key={l.href}><Link href={l.href}>{l.label}</Link></li>
             ))}
-            <li><Link href="/products">Browse Products</Link></li>
+            <li><Link href="/features/online-store-builder">Store Builder</Link></li>
+            <li><Link href="/features/pos-billing-software">POS Billing Software</Link></li>
+            <li><Link href="/features/order-management">Order Management</Link></li>
+            <li><Link href="/features/inventory-management">Inventory Sync</Link></li>
+            <li><Link href="/faq">FAQ</Link></li>
           </ul>
         </div>
       </section>
