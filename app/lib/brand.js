@@ -36,8 +36,7 @@ export const BRAND = {
     prebook: 'https://prebook.keralasellers.in/',
   },
   sellerStart: '/register/seller',
-  sellerLoginPlans:
-    '/login/seller?redirect=' + encodeURIComponent('/dashboard/seller/subscription'),
+  sellerLoginPlans: '/login/seller',
 };
 
 export const BRAND_SAME_AS = [

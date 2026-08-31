@@ -416,38 +416,36 @@ export default function SellerLanding() {
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
             {[
-              { href: '/for/instagram-sellers', emoji: '📸', label: 'Instagram Sellers' },
-              { href: '/for/whatsapp-sellers', emoji: '💬', label: 'WhatsApp Sellers' },
-              { href: '/for/social-media-sellers', emoji: '📱', label: 'Social Media Sellers' },
-              { href: '/for/home-businesses', emoji: '🏠', label: 'Home Businesses' },
-              { href: '/for/small-businesses', emoji: '🏪', label: 'Small Businesses' },
-              { href: '/solutions', emoji: '🚀', label: 'All Solutions' },
+              { href: '/for/instagram-sellers', label: 'Instagram Sellers' },
+              { href: '/for/whatsapp-sellers', label: 'WhatsApp Sellers' },
+              { href: '/for/social-media-sellers', label: 'Social Media Sellers' },
+              { href: '/for/home-businesses', label: 'Home Businesses' },
+              { href: '/for/small-businesses', label: 'Small Businesses' },
+              { href: '/solutions', label: 'All Solutions' },
             ].map(item => (
               <Link key={item.href} href={item.href} style={{
-                display: 'flex', alignItems: 'center', gap: 10,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: '#fff', border: '1px solid #bbf7d0', borderRadius: 12,
                 padding: '12px 16px', textDecoration: 'none', color: '#1a4845',
                 fontSize: '0.9rem', fontWeight: 600, transition: 'box-shadow 0.15s',
               }}>
-                <span style={{ fontSize: '1.2rem' }}>{item.emoji}</span>
                 {item.label}
               </Link>
             ))}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
             {[
-              { href: '/features', label: '✨ All Features & Add-ons' },
-              { href: '/features/online-store-builder', label: '🔧 Store Builder' },
-              { href: '/features/order-management', label: '📋 Order Management' },
-              { href: '/features/inventory-management', label: '📦 Inventory' },
-              { href: '/features', label: '🌐 Custom Subdomains' },
-              { href: '/features', label: '🚚 Shipping & Delivery Partners' },
-              { href: '/faq', label: '❓ FAQ' },
-              { href: '/sell-online-kerala', label: '🌿 Sell Online in Kerala' },
+              { href: '/features', label: 'All Features & Add-ons' },
+              { href: '/features/online-store-builder', label: 'Store Builder' },
+              { href: '/features/pos-billing-software', label: 'POS Billing Software' },
+              { href: '/features/order-management', label: 'Order Management' },
+              { href: '/features/inventory-management', label: 'Inventory Management' },
+              { href: '/faq', label: 'FAQ' },
+              { href: '/sell-online-kerala', label: 'Sell Online in Kerala' },
             ].map(item => (
               <Link key={item.href} href={item.href} style={{
                 display: 'inline-block', padding: '7px 16px',
-                background: 'transparent', border: '1px solid #1a4845',
+                background: '#ffffff', border: '1px solid #1a4845',
                 borderRadius: 20, textDecoration: 'none',
                 color: '#1a4845', fontSize: '0.85rem', fontWeight: 600,
               }}>
