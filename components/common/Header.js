@@ -16,44 +16,44 @@ const DesktopNav = () => (
       <Link href="/" className="nav-item">HOME</Link>
       {/* Solutions dropdown — additive, does not replace existing items */}
       <div className="nav-dropdown-wrapper">
-        <Link href="/solutions" className="nav-item nav-item-with-arrow">SOLUTIONS</Link>
+        <Link href="/solutions" className="nav-item nav-item-with-arrow">SOLUTIONS ▾</Link>
         <div className="nav-dropdown-panel">
-          <Link href="/solutions" className="nav-dropdown-item">
+          <Link href="/solutions" className="nav-dropdown-item nav-dropdown-item--primary">
             All Solutions
             <small>Start → Sell → Manage → Grow</small>
           </Link>
           <div className="nav-dropdown-divider" />
           <Link href="/for/instagram-sellers" className="nav-dropdown-item">
-            📸 Instagram Sellers
+            Instagram Sellers
           </Link>
           <Link href="/for/whatsapp-sellers" className="nav-dropdown-item">
-            💬 WhatsApp Sellers
+            WhatsApp Sellers
           </Link>
           <Link href="/for/home-businesses" className="nav-dropdown-item">
-            🏠 Home Businesses
+            Home Businesses
           </Link>
           <Link href="/for/small-businesses" className="nav-dropdown-item">
-            🏪 Small Businesses
+            Small Businesses
           </Link>
           <div className="nav-dropdown-divider" />
-          <Link href="/features" className="nav-dropdown-item" style={{ fontWeight: 700, color: '#059669' }}>
-            ✨ All Features &amp; Add-ons
+          <Link href="/features" className="nav-dropdown-item nav-dropdown-item--featured">
+            All Features &amp; Add-ons
           </Link>
           <Link href="/features/online-store-builder" className="nav-dropdown-item">
-            🔧 Store Builder
+            Store Builder
           </Link>
           <Link href="/features/pos-billing-software" className="nav-dropdown-item">
-            🖨️ POS Billing Software
+            POS Billing Software
           </Link>
           <Link href="/features/order-management" className="nav-dropdown-item">
-            📋 Order Management
+            Order Management
           </Link>
           <Link href="/features/inventory-management" className="nav-dropdown-item">
-            📦 Inventory
+            Inventory Sync
           </Link>
           <div className="nav-dropdown-divider" />
           <Link href="/faq" className="nav-dropdown-item">
-            ❓ FAQ
+            FAQ &amp; Help Center
           </Link>
         </div>
       </div>
