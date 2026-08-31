@@ -3,6 +3,10 @@
 import Link from 'next/link';
 import SeoPageLayout from '../../components/seo/SeoPageLayout';
 import FaqAccordion from '../../components/seo/FaqAccordion';
+import TrustStatsBar from '../../components/seo/TrustStatsBar';
+import DemoVideoSection from '../../components/seo/DemoVideoSection';
+import TestimonialsGrid from '../../components/seo/TestimonialsGrid';
+import { Store, Camera, MessageSquare, Home, ShoppingBag, Printer, Package, CheckCircle2 } from 'lucide-react';
 
 const faqs = [
   {
@@ -27,105 +31,110 @@ const faqs = [
   },
 ];
 
+const solutionsStats = [
+  { n: '1000+', l: 'Active Sellers' },
+  { n: '0%', l: 'Commission Cut' },
+  { n: '10 min', l: 'Live Setup Time' },
+  { n: '14+', l: 'Districts Covered' },
+];
+
 const sellerTypes = [
-  { href: '/for/instagram-sellers', emoji: '📸', label: 'Instagram Sellers', desc: 'Turn DMs into tracked orders' },
-  { href: '/for/whatsapp-sellers', emoji: '💬', label: 'WhatsApp Sellers', desc: 'Manage every order from WhatsApp' },
-  { href: '/for/social-media-sellers', emoji: '📱', label: 'Social Media Sellers', desc: 'One platform for all your channels' },
-  { href: '/for/home-businesses', emoji: '🏠', label: 'Home Businesses', desc: 'Sell from home, deliver locally' },
-  { href: '/for/small-businesses', emoji: '🏪', label: 'Small Businesses', desc: 'Store, billing, inventory in one' },
+  { href: '/for/instagram-sellers', icon: <Camera size={24} color="#1a4845" />, label: 'Instagram Sellers', desc: 'Turn DMs into tracked orders with a single bio link' },
+  { href: '/for/whatsapp-sellers', icon: <MessageSquare size={24} color="#1a4845" />, label: 'WhatsApp Sellers', desc: 'Manage every order from WhatsApp status & groups' },
+  { href: '/for/home-businesses', icon: <Home size={24} color="#1a4845" />, label: 'Home Businesses', desc: 'Sell from home, deliver locally with 0% commission' },
+  { href: '/for/small-businesses', icon: <ShoppingBag size={24} color="#1a4845" />, label: 'Small Businesses', desc: 'Storefront, POS counter billing, and stock in one app' },
 ];
 
 const tools = [
-  { href: '/features/online-store-builder', emoji: '🏪', label: 'Online Store Builder', desc: 'Your own store link in 10 minutes' },
-  { href: '/features/pos-billing-software', emoji: '🖨️', label: 'POS Billing Software', desc: 'Turn your phone into a POS billing machine' },
-  { href: '/features/order-management', emoji: '📋', label: 'Order Management', desc: 'All orders in one dashboard' },
-  { href: '/features/inventory-management', emoji: '📦', label: 'Inventory Management', desc: 'Never oversell again' },
-  { href: '/sell-online-kerala', emoji: '🚀', label: 'Sell Online in Kerala', desc: 'Full platform overview' },
+  { href: '/features/online-store-builder', icon: <Store size={24} color="#1a4845" />, label: 'Online Store Builder', desc: 'Your own store link in 10 minutes (keralasellers.in/shop/name)' },
+  { href: '/features/pos-billing-software', icon: <Printer size={24} color="#1a4845" />, label: 'POS Billing Software', desc: 'Turn your phone into a Bluetooth thermal billing machine' },
+  { href: '/features/order-management', icon: <CheckCircle2 size={24} color="#1a4845" />, label: 'Order Management', desc: 'All Instagram, WhatsApp & counter orders in one dashboard' },
+  { href: '/features/inventory-management', icon: <Package size={24} color="#1a4845" />, label: 'Inventory Sync', desc: 'Counter sales automatically update online stock in real time' },
 ];
 
 const journey = [
-  { step: 'START', icon: '🚀', desc: 'Create your free online store in 10 minutes. No coding. No website cost.' },
-  { step: 'SELL', icon: '💰', desc: 'Share your store link on Instagram, WhatsApp, and Facebook. Customers order themselves.' },
-  { step: 'MANAGE', icon: '📊', desc: 'View orders, update stock, and track payments — all from one mobile-friendly dashboard.' },
-  { step: 'GROW', icon: '📈', desc: 'See your top products, revenue trends, and customer data. Make smarter decisions.' },
+  { step: 'START', desc: 'Create your free online store in 10 minutes. No coding. No website cost.' },
+  { step: 'SELL', desc: 'Share your store link on Instagram, WhatsApp, and Facebook. Customers order themselves.' },
+  { step: 'MANAGE', desc: 'View orders, update stock, and track payments — all from one mobile-friendly dashboard.' },
+  { step: 'GROW', desc: 'See your top products, revenue trends, and customer data. Make smarter decisions.' },
 ];
 
 export default function SolutionsPage() {
   return (
     <SeoPageLayout breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Solutions' }]}>
-
       {/* HERO */}
       <section className="seo-hero" aria-labelledby="solutions-h1">
         <div className="seo-hero__inner">
-          <div className="seo-hero__badge">🌿 All-in-One Digital Growth Solution</div>
+          <div className="seo-hero__badge">
+            <Store size={16} color="#a3e635" />
+            <span>All-in-One Digital Growth Solution</span>
+          </div>
           <h1 className="seo-hero__h1" id="solutions-h1">
             One Complete Solution <em>for Your Business</em>
           </h1>
           <p className="seo-hero__sub">
             From creating your online store to managing orders, inventory, payments and customers —
             Kerala Sellers brings your essential business and digital growth tools together in one simple solution.
-            <br /><em style={{ fontStyle: 'normal', opacity: 0.75, fontSize: '0.9em' }}>Ella business needum onnu chernu — one platform.</em>
+            <br /><em style={{ fontStyle: 'normal', opacity: 0.8, fontSize: '0.9em' }}>Ella business needum onnu chernu — one platform.</em>
           </p>
           <div className="seo-hero__cta">
             <Link href="/register/seller" className="seo-btn-primary" id="solutions-start-btn">
-              🏪 Start Your Free Store →
+              <Store size={20} />
+              <span>Start Your Free Store →</span>
             </Link>
             <Link href="/sell-online-kerala" className="seo-btn-secondary">
-              See How It Works
+              <span>See How It Works</span>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* STATS */}
-      <div className="seo-stats" role="region" aria-label="Key stats">
-        {[
-          { n: '1000+', l: 'Active Sellers' },
-          { n: '0%', l: 'Commission Forever' },
-          { n: '10 min', l: 'Setup Time' },
-          { n: '14+', l: 'Districts Covered' },
-        ].map((s) => (
-          <div key={s.l} className="seo-stat">
-            <span className="seo-stat__number">{s.n}</span>
-            <span className="seo-stat__label">{s.l}</span>
-          </div>
-        ))}
-      </div>
+      {/* STATS BAR */}
+      <TrustStatsBar stats={solutionsStats} />
 
-      {/* START → SELL → MANAGE → GROW */}
+      {/* DEMO VIDEO */}
+      <DemoVideoSection
+        title="Everything Your Business Needs in One Platform"
+        subtitle="Watch how a small seller in Kerala can launch a store, manage WhatsApp orders, and print POS bills from one phone."
+        videoTitle="What is KeralaSellers — Platform Overview"
+        youtubeId="ggkqC6ALK_c"
+      />
+
+      {/* START -> SELL -> MANAGE -> GROW */}
       <section className="seo-section">
-        <p className="seo-section__eyebrow">Your journey</p>
-        <h2 className="seo-section__h2">Start → Sell → Manage → Grow</h2>
-        <p className="seo-section__lead">
-          Kerala Sellers is designed around one simple idea: every seller, wherever they are in their business journey, should have exactly what they need in one place.
-        </p>
-        <div className="seo-features">
-          {journey.map((j) => (
-            <div key={j.step} className="seo-feature-card" style={{ borderLeft: '4px solid #1a4845' }}>
-              <div className="seo-feature-card__icon">{j.icon}</div>
-              <div>
-                <div className="seo-feature-card__title">{j.step}</div>
-                <p className="seo-feature-card__desc">{j.desc}</p>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <p className="seo-section__eyebrow">YOUR DIGITAL GROWTH JOURNEY</p>
+          <h2 className="seo-section__h2">Start ➔ Sell ➔ Manage ➔ Grow</h2>
+          <p className="seo-section__lead">
+            Kerala Sellers is designed around one simple idea: every seller, wherever they are in their business journey, should have exactly what they need in one place.
+          </p>
+          <div className="seo-features-grid">
+            {journey.map((j) => (
+              <div key={j.step} className="seo-feature-card" style={{ borderLeft: '4px solid #1a4845' }}>
+                <div>
+                  <h3 className="seo-feature-card__title">{j.step}</h3>
+                  <p className="seo-feature-card__desc">{j.desc}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* FOR YOUR SELLER TYPE */}
       <section className="seo-section seo-section--alt">
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <p className="seo-section__eyebrow">Solutions by seller type</p>
+          <p className="seo-section__eyebrow">SOLUTIONS BY SELLER TYPE</p>
           <h2 className="seo-section__h2">Built for How You Actually Sell</h2>
           <p className="seo-section__lead">
             Whether you take orders on Instagram, run a home bakery on WhatsApp, or own a small retail shop — we have a specific solution for your exact situation.
           </p>
-          <div className="seo-features">
+          <div className="seo-features-grid">
             {sellerTypes.map((t) => (
               <Link key={t.href} href={t.href} className="seo-feature-card" style={{ textDecoration: 'none' }}>
-                <div className="seo-feature-card__icon">{t.emoji}</div>
+                <div className="seo-feature-card__icon-box">{t.icon}</div>
                 <div>
-                  <div className="seo-feature-card__title">{t.label}</div>
+                  <h3 className="seo-feature-card__title">{t.label}</h3>
                   <p className="seo-feature-card__desc">{t.desc}</p>
                 </div>
               </Link>
@@ -134,42 +143,50 @@ export default function SolutionsPage() {
         </div>
       </section>
 
-      {/* TOOLS */}
+      {/* PLATFORM TOOLS */}
       <section className="seo-section">
-        <p className="seo-section__eyebrow">Platform tools</p>
-        <h2 className="seo-section__h2">Everything You Need in One Place</h2>
-        <div className="seo-features">
-          {tools.map((t) => (
-            <Link key={t.href} href={t.href} className="seo-feature-card" style={{ textDecoration: 'none' }}>
-              <div className="seo-feature-card__icon">{t.emoji}</div>
-              <div>
-                <div className="seo-feature-card__title">{t.label}</div>
-                <p className="seo-feature-card__desc">{t.desc}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <p className="seo-section__eyebrow">MODULAR PLATFORM TOOLS</p>
+          <h2 className="seo-section__h2">Everything You Need in One Place</h2>
+          <div className="seo-features-grid">
+            {tools.map((t) => (
+              <Link key={t.href} href={t.href} className="seo-feature-card" style={{ textDecoration: 'none' }}>
+                <div className="seo-feature-card__icon-box">{t.icon}</div>
+                <div>
+                  <h3 className="seo-feature-card__title">{t.label}</h3>
+                  <p className="seo-feature-card__desc">{t.desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
 
-        <div className="seo-links-box">
-          <p className="seo-links-box__title">Explore More</p>
-          <ul className="seo-links-box__list">
-            <li><Link href="/sell-online-kerala">Sell Online in Kerala</Link></li>
-            <li><Link href="/products">Browse Products</Link></li>
-            <li><Link href="/shop">See Kerala Shops</Link></li>
-            <li><Link href="/register/seller">Register as Seller</Link></li>
-            <li><Link href="/about">About Us</Link></li>
-            <li><Link href="/contact">Contact</Link></li>
-          </ul>
+          <div className="seo-links-box" style={{ marginTop: 40 }}>
+            <p className="seo-links-box__title">Explore More Guides &amp; Solutions</p>
+            <ul className="seo-links-box__list">
+              <li><Link href="/sell-online-kerala">Sell Online in Kerala</Link></li>
+              <li><Link href="/features/pos-billing-software">POS Billing Software</Link></li>
+              <li><Link href="/for/instagram-sellers">Instagram Sellers</Link></li>
+              <li><Link href="/for/whatsapp-sellers">WhatsApp Sellers</Link></li>
+              <li><Link href="/products">Browse Products</Link></li>
+              <li><Link href="/shop">See Kerala Shops</Link></li>
+              <li><Link href="/register/seller">Register as Seller</Link></li>
+              <li><Link href="/faq">FAQ</Link></li>
+            </ul>
+          </div>
         </div>
       </section>
+
+      {/* TESTIMONIALS */}
+      <TestimonialsGrid />
 
       {/* BRAND CLOSING */}
       <section className="seo-closer">
         <p className="seo-closer__quote">
-          "Whatever a seller is searching for — a store, an order tool, a way to sell on WhatsApp, or a way to grow — Kerala Sellers is the solution."
+          &ldquo;Whatever a seller is searching for — a store, an order tool, a way to sell on WhatsApp, or a way to grow — Kerala Sellers is the solution.&rdquo;
         </p>
-        <Link href="/register/seller" className="seo-closer__cta" id="solutions-bottom-cta">
-          Create Your Free Online Store →
+        <Link href="/register/seller" className="seo-btn-primary" id="solutions-bottom-cta" style={{ background: '#a3e635', color: '#1a4845' }}>
+          <Store size={18} />
+          <span>Create Your Free Online Store →</span>
         </Link>
       </section>
 
