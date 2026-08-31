@@ -3,6 +3,11 @@
 import Link from 'next/link';
 import SeoPageLayout from '../../../components/seo/SeoPageLayout';
 import FaqAccordion from '../../../components/seo/FaqAccordion';
+import DemoVideoSection from '../../../components/seo/DemoVideoSection';
+import ProblemSolutionSection from '../../../components/seo/ProblemSolutionSection';
+import HowItWorksSteps from '../../../components/seo/HowItWorksSteps';
+import TrustStatsBar from '../../../components/seo/TrustStatsBar';
+import TestimonialsGrid from '../../../components/seo/TestimonialsGrid';
 import {
   Printer, Smartphone, Receipt, Barcode, ShieldCheck, Zap,
   CheckCircle2, Store, ShoppingBag, Truck, DollarSign, Sparkles, Package, Users
@@ -31,34 +36,56 @@ const faqs = [
   },
 ];
 
+const posStats = [
+  { n: '2 sec', l: 'Thermal Bill Print' },
+  { n: '₹3,499', l: 'Complete Billing Kit' },
+  { n: '1 Stock', l: 'Offline & Online Synced' },
+  { n: '0%', l: 'Commission Cut' },
+];
+
+const posProblems = [
+  {
+    problem: 'Buying heavy POS billing hardware costs ₹25,000–₹60,000 and requires computers',
+    solution: 'Turn your Android phone into a POS billing machine. Connect a ₹3,499 Bluetooth printer and start.',
+  },
+  {
+    problem: 'Managing physical counter sales and online orders separately causes stock errors',
+    solution: 'Counter billing automatically deducts from your online stock in real time. Zero double sales.',
+  },
+  {
+    problem: 'Manual paper receipts are easy to lose and hard to account for tax compliance',
+    solution: 'Generate instant GST tax invoices or Non-GST bills with digital WhatsApp PDF receipt sharing.',
+  },
+];
+
 const posFeatures = [
   {
-    icon: <Printer size={28} color="#1a4845" />,
+    icon: <Printer size={26} color="#1a4845" />,
     title: 'Instant Bluetooth Thermal Printing',
     desc: 'Connect any 58mm or 80mm wireless Bluetooth printer. Print receipts in 2 seconds directly from your phone over the counter.',
   },
   {
-    icon: <Receipt size={28} color="#1a4845" />,
+    icon: <Receipt size={26} color="#1a4845" />,
     title: 'GST & Non-GST Billing',
     desc: 'Generate professional tax invoices with CGST/SGST and HSN codes or instant simplified retail receipts for walk-in customers.',
   },
   {
-    icon: <Barcode size={28} color="#1a4845" />,
+    icon: <Barcode size={26} color="#1a4845" />,
     title: 'Mobile Camera Barcode Scanner',
     desc: 'Scan barcodes instantly using your smartphone camera or connect external USB/Bluetooth barcode scanners for fast checkout.',
   },
   {
-    icon: <Zap size={28} color="#1a4845" />,
+    icon: <Zap size={26} color="#1a4845" />,
     title: 'WhatsApp Digital Bill Sharing',
     desc: 'Send digital PDF receipts directly to your customer’s WhatsApp number with one tap. Save paper and build customer contact list.',
   },
   {
-    icon: <Package size={28} color="#1a4845" />,
+    icon: <Package size={26} color="#1a4845" />,
     title: 'Unified Inventory Auto-Deduction',
     desc: 'Every item sold at your physical billing counter instantly updates inventory across your online store and WhatsApp store. No double entries.',
   },
   {
-    icon: <Users size={28} color="#1a4845" />,
+    icon: <Users size={26} color="#1a4845" />,
     title: 'Customer History & Loyalty',
     desc: 'Track repeat customer purchases, total spend, phone numbers, and credit balances across offline counter sales and online orders.',
   },
@@ -102,205 +129,165 @@ export default function PosBillingSoftwarePage() {
               <Store size={20} />
               <span>Start Mobile Billing Free →</span>
             </Link>
-            <Link href="/sell-online-kerala" className="seo-btn-secondary">
+            <Link href="#how-it-works" className="seo-btn-secondary">
               <span>How It Works</span>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* STATS BAR */}
-      <div className="seo-stats" role="region" aria-label="POS stats">
-        {[
-          { n: '2 sec', l: 'Thermal Bill Printing' },
-          { n: '₹3,499', l: 'Complete Billing Kit' },
-          { n: '1 Stock', l: 'Offline & Online Synced' },
-          { n: '0%', l: 'Commission' },
-        ].map((s) => (
-          <div key={s.l} className="seo-stat">
-            <span className="seo-stat__number">{s.n}</span>
-            <span className="seo-stat__label">{s.l}</span>
-          </div>
-        ))}
-      </div>
+      {/* STATS BAR (Styled Trust Bar) */}
+      <TrustStatsBar stats={posStats} />
 
-      {/* THE UNIFIED MOAT SECTION */}
+      {/* DEMO VIDEO SECTION */}
+      <DemoVideoSection
+        title="Create &amp; Print a Bill From Your Phone (POS)"
+        subtitle="Watch how easily a retail shop owner in Kerala can select items, tap print, and share bills via WhatsApp."
+        videoTitle="Create &amp; Print a Bill From Your Phone (POS)"
+        youtubeId="ETjJ4BHp06o"
+      />
+
+      {/* VISUAL POS BILLING FLOW */}
       <section className="seo-section seo-section--alt">
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textStyle: 'center', marginBottom: 36, textAlign: 'center' }}>
-            <span style={{
-              background: '#f0fdf4',
-              color: '#166534',
-              padding: '6px 16px',
-              borderRadius: 20,
-              fontSize: 13,
-              fontWeight: 700,
-              letterSpacing: 0.5,
-            }}>
-              🔗 THE UNIFIED BUSINESS MOAT
-            </span>
-            <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 800, margin: '14px 0 10px', color: '#1a2b2a' }}>
-              One Seller Account → One Stock → All Selling Channels
-            </h2>
-            <p style={{ fontSize: '1.05rem', color: '#4b5563', maxWidth: 720, margin: '0 auto', lineHeight: 1.6 }}>
-              Most systems force you to manage offline billing and online orders separately. Kerala Sellers connects physical counter billing with your online store, Instagram DMs, and WhatsApp sales seamlessly.
-            </p>
+        <div style={{ maxWidth: 1000, margin: '0 auto', textAlign: 'center' }}>
+          <span style={{ background: '#f0fdf4', color: '#166534', padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>
+            📱 MOBILE BILLING IN 3 SECONDS
+          </span>
+          <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 800, margin: '16px 0 12px', color: '#1a4845' }}>
+            Smartphone ➔ Select Items ➔ Print Thermal Receipt
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginTop: 28 }}>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: 20 }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>📱</div>
+              <h4 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#1a4845' }}>1. Select Products</h4>
+              <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>Tap items or scan camera barcode</p>
+            </div>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: 20 }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>🧾</div>
+              <h4 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#1a4845' }}>2. Create Bill</h4>
+              <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>Select GST or Non-GST retail invoice</p>
+            </div>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: 20 }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>🔗</div>
+              <h4 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#1a4845' }}>3. Connect Printer</h4>
+              <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>Wireless Bluetooth 58mm printer</p>
+            </div>
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 16, padding: 20 }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>🖨️</div>
+              <h4 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#166534' }}>4. Print Receipt</h4>
+              <p style={{ margin: 0, fontSize: 13, color: '#14532d' }}>Thermal paper print in 2 seconds</p>
+            </div>
           </div>
+        </div>
+      </section>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: 20,
-          }}>
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: 24 }}>
-              <div style={{ fontSize: 24, marginBottom: 10 }}>📦</div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#1a2b2a', marginBottom: 8 }}>One Master Inventory</h3>
-              <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.55 }}>
-                1 item sold at your physical counter? Online stock decreases instantly. 1 item ordered on WhatsApp? Counter stock updates automatically.
-              </p>
-            </div>
+      {/* PROBLEMS -> SOLUTIONS */}
+      <ProblemSolutionSection
+        title="Why Kerala Shops Are Switching to Mobile POS"
+        subtitle="Stop paying ₹40,000 for bulky billing hardware. Operate your counter and online store from one smartphone."
+        items={posProblems}
+      />
 
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: 24 }}>
-              <div style={{ fontSize: 24, marginBottom: 10 }}>🏪</div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#1a2b2a', marginBottom: 8 }}>One Product Catalogue</h3>
-              <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.55 }}>
-                Add a product once with photo, price, and barcode. Use it immediately for physical POS billing, online store, and WhatsApp catalogue.
-              </p>
-            </div>
-
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: 24 }}>
-              <div style={{ fontSize: 24, marginBottom: 10 }}>👥</div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#1a2b2a', marginBottom: 8 }}>One Customer Database</h3>
-              <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.55 }}>
-                Walk-in counter buyers and online customers are merged into one customer directory. Build loyalty and send marketing updates easily.
-              </p>
-            </div>
+      {/* PRINTER KIT PROMO BLOCK */}
+      <section className="seo-section">
+        <div style={{
+          background: 'linear-gradient(135deg, #1a4845 0%, #2d6b5e 100%)',
+          borderRadius: 20,
+          padding: '40px 32px',
+          color: '#ffffff',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: 32,
+          alignItems: 'center',
+        }}>
+          <div>
+            <span style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', padding: '4px 14px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>
+              🖨️ STARTER HARDWARE KIT
+            </span>
+            <h3 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.3rem)', fontWeight: 800, margin: '14px 0 10px', color: '#ffffff' }}>
+              ₹3,499 Bluetooth POS Billing Kit
+            </h3>
+            <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.9)', lineHeight: 1.6, margin: '0 0 20px' }}>
+              Includes 58mm wireless Bluetooth thermal printer, starter thermal paper rolls, setup guide, and full mobile billing software access.
+            </p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14 }}>
+              <li>✓ 30% Pre-book reservation (₹1,049.70)</li>
+              <li>✓ Works with all Android smartphones</li>
+              <li>✓ Instant WhatsApp PDF bill sharing</li>
+              <li>✓ Auto stock sync with online store</li>
+            </ul>
+            <Link href="/register/seller" className="seo-btn-primary" style={{ background: '#a3e635', color: '#1a4845' }}>
+              <Printer size={18} />
+              <span>Order Billing Kit Free Setup →</span>
+            </Link>
+          </div>
+          <div style={{ textStyle: 'center', textAlign: 'center', background: 'rgba(255,255,255,0.08)', borderRadius: 16, padding: 24, border: '1px solid rgba(255,255,255,0.15)' }}>
+            <Printer size={80} color="#a3e635" style={{ margin: '0 auto 16px' }} />
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#ffffff' }}>₹3,499 One-Time</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>No monthly hardware rental</div>
           </div>
         </div>
       </section>
 
       {/* POS FEATURES GRID */}
-      <section className="seo-section">
-        <p className="seo-section__eyebrow">Mobile Billing Features</p>
-        <h2 className="seo-section__h2">Everything You Need to Run Counter Billing from Your Phone</h2>
-        <p className="seo-section__lead">
-          Designed for grocery stores, bakeries, clothing boutiques, mobile shops, stationery, hardware, and retail shops across Kerala.
-        </p>
-
-        <div className="seo-features">
-          {posFeatures.map((f) => (
-            <div key={f.title} className="seo-feature-card">
-              <div className="seo-feature-card__icon">{f.icon}</div>
-              <div>
-                <div className="seo-feature-card__title">{f.title}</div>
-                <p className="seo-feature-card__desc">{f.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ₹3,499 BILLING KIT SECTION */}
       <section className="seo-section seo-section--alt">
-        <div style={{
-          background: 'linear-gradient(135deg, #1a4845 0%, #2d6b5e 100%)',
-          color: '#fff',
-          borderRadius: 20,
-          padding: '40px 32px',
-          maxWidth: 1000,
-          margin: '0 auto',
-        }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: 32,
-            alignItems: 'center',
-          }}>
-            <div>
-              <span style={{
-                background: 'rgba(163, 230, 53, 0.2)',
-                color: '#a3e635',
-                padding: '6px 14px',
-                borderRadius: 20,
-                fontSize: 13,
-                fontWeight: 700,
-              }}>
-                🖨️ COMPLETE HARDWARE + SOFTWARE KIT
-              </span>
-              <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 800, margin: '16px 0 12px', color: '#fff' }}>
-                ₹3,499 Complete Mobile POS Billing Kit
-              </h2>
-              <p style={{ fontSize: '1.02rem', lineHeight: 1.6, color: 'rgba(255, 255, 255, 0.9)', marginBottom: 20 }}>
-                Turn your Android smartphone into a high-speed POS billing machine! Everything you need to bill walk-in customers professionally.
-              </p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[
-                  'Wireless 58mm Bluetooth Thermal Receipt Printer',
-                  'Kerala Sellers Mobile POS Billing Software access',
-                  'Starter thermal paper rolls + printer charger',
-                  'GST & Non-GST bill creation with WhatsApp sharing',
-                  'Reserve today with 30% pre-book offer (₹1,049.70 now)',
-                ].map((item) => (
-                  <li key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.95rem', color: '#f0fdf4' }}>
-                    <CheckCircle2 size={18} color="#a3e635" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div style={{
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.18)',
-              borderRadius: 16,
-              padding: 28,
-              textAlign: 'center',
-            }}>
-              <div style={{ fontSize: '0.9rem', color: '#a3e635', fontWeight: 700, textTransform: 'uppercase' }}>Special Pre-Order Offer</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#fff', margin: '8px 0 4px' }}>₹3,499</div>
-              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', marginBottom: 16 }}>Complete Kit (Printer + App + Paper)</div>
-              <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 10, padding: 12, marginBottom: 20 }}>
-                <span style={{ fontSize: '0.85rem', display: 'block', color: 'rgba(255,255,255,0.9)' }}>Reserve Today with 30% Pre-Book:</span>
-                <strong style={{ fontSize: '1.2rem', color: '#a3e635' }}>₹1,049.70</strong>
-                <span style={{ fontSize: '0.78rem', display: 'block', color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>Balance ₹2,449.30 on delivery</span>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div className="seo-section__header">
+            <p className="seo-section__eyebrow">COMPLETE POS SYSTEM</p>
+            <h2 className="seo-section__h2">Everything Needed for Physical Counter Billing</h2>
+          </div>
+          <div className="seo-features-grid">
+            {posFeatures.map((f, idx) => (
+              <div key={idx} className="seo-feature-card">
+                <div className="seo-feature-card__icon-box">{f.icon}</div>
+                <div>
+                  <h3 className="seo-feature-card__title">{f.title}</h3>
+                  <p className="seo-feature-card__desc">{f.desc}</p>
+                </div>
               </div>
-              <Link href="/register/seller" className="seo-btn-primary" style={{ width: '100%', justifyContent: 'center', background: '#a3e635', color: '#1a4845' }}>
-                Pre-Book Billing Kit Now →
-              </Link>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* BRAND CLOSER */}
+      {/* HOW IT WORKS */}
+      <div id="how-it-works">
+        <HowItWorksSteps
+          title="Start Mobile POS Billing in 4 Steps"
+          subtitle="Simple Bluetooth printer pairing and 2-second bill printing."
+        />
+      </div>
+
+      {/* TESTIMONIALS */}
+      <TestimonialsGrid />
+
+      {/* CLOSER / CTA */}
       <section className="seo-closer">
         <p className="seo-closer__quote">
-          "Turn your phone into a POS machine with Kerala Sellers — ₹3,499 complete billing kit, 0% commission, and connected online store."
+          &ldquo;Turn your smartphone into a complete POS billing machine and accept counter sales with 0% commission.&rdquo;
         </p>
-        <Link href="/register/seller" className="seo-closer__cta" id="pos-bottom-cta">
-          Start Your Free Store &amp; Billing →
+        <Link href="/register/seller" className="seo-btn-primary" id="pos-bottom-cta" style={{ background: '#a3e635', color: '#1a4845' }}>
+          <Store size={18} />
+          <span>Start Mobile Billing Free →</span>
         </Link>
       </section>
 
-      {/* INTERNAL LINKS BOX */}
+      {/* INTERNAL LINKS */}
       <section className="seo-section" style={{ paddingTop: 32, paddingBottom: 32 }}>
         <div className="seo-links-box">
-          <p className="seo-links-box__title">Explore Platform Features &amp; Solutions</p>
+          <p className="seo-links-box__title">Related Solutions &amp; Guides</p>
           <ul className="seo-links-box__list">
-            <li><Link href="/features">All Features &amp; Add-ons</Link></li>
             <li><Link href="/features/online-store-builder">Store Builder</Link></li>
-            <li><Link href="/features/order-management">Order Management</Link></li>
             <li><Link href="/features/inventory-management">Inventory Management</Link></li>
+            <li><Link href="/features/order-management">Order Management</Link></li>
             <li><Link href="/for/small-businesses">Small Businesses</Link></li>
-            <li><Link href="/for/home-businesses">Home Businesses</Link></li>
-            <li><Link href="/solutions">All Solutions</Link></li>
-            <li><Link href="/faq">FAQ</Link></li>
             <li><Link href="/sell-online-kerala">Sell Online in Kerala</Link></li>
+            <li><Link href="/faq">FAQ</Link></li>
           </ul>
         </div>
       </section>
 
-      {/* FAQ SECTION */}
+      {/* FAQ */}
       <section className="seo-faq">
         <h2 className="seo-faq__h2">Frequently Asked Questions</h2>
         <FaqAccordion faqs={faqs} />

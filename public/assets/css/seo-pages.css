@@ -139,7 +139,7 @@
 .seo-hero {
   background: linear-gradient(135deg, var(--ks-primary) 0%, var(--ks-primary-light) 60%, #3a7d6e 100%);
   color: #ffffff;
-  padding: 64px 24px 56px;
+  padding: 80px 24px 64px;
   text-align: center;
   position: relative;
   overflow: hidden;
