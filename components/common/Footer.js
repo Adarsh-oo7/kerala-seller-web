@@ -53,7 +53,33 @@ export default function Footer() {
           </ul>
         </nav>
 
-        {/* Column 3 – Seller actions */}
+        {/* Column 3 – Solutions & Features */}
+        <nav className="site-footer__nav" aria-label="Solutions and Features">
+          <h3 className="site-footer__nav-heading">Solutions &amp; POS</h3>
+          <ul className="site-footer__nav-list">
+            <li><Link href="/solutions">All Solutions</Link></li>
+            <li><Link href="/for/instagram-sellers">Instagram Sellers</Link></li>
+            <li><Link href="/for/whatsapp-sellers">WhatsApp Sellers</Link></li>
+            <li><Link href="/features/pos-billing-software">POS Billing Software</Link></li>
+            <li><Link href="/features/online-store-builder">Store Builder</Link></li>
+            <li><Link href="/features/order-management">Order Management</Link></li>
+            <li><Link href="/faq">FAQ &amp; Help Center</Link></li>
+          </ul>
+        </nav>
+
+        {/* Column 4 – Malayalam Pages */}
+        <nav className="site-footer__nav" aria-label="Malayalam pages">
+          <h3 className="site-footer__nav-heading">മലയാളം</h3>
+          <ul className="site-footer__nav-list">
+            <li><Link href="/ml">മലയാളം പ്രധാനം</Link></li>
+            <li><Link href="/ml/online-vilpana">ഓൺലൈൻ വിൽപന</Link></li>
+            <li><Link href="/ml/instagram-vilpanakkar">ഇൻസ്റ്റാഗ്രാം കച്ചവടം</Link></li>
+            <li><Link href="/ml/whatsapp-vilpanakkar">വാട്സ്ആപ്പ് ഓർഡർ</Link></li>
+            <li><Link href="/ml/veetu-business">വീട്ടു ബിസിനസ്സ്</Link></li>
+          </ul>
+        </nav>
+
+        {/* Column 4 – Seller actions */}
         <nav className="site-footer__nav" aria-label="Seller actions">
           <h3 className="site-footer__nav-heading">Sell with Us</h3>
           <ul className="site-footer__nav-list">

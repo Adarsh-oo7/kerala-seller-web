@@ -58,6 +58,34 @@ const DesktopNav = () => (
         </div>
       </div>
       <Link href="/sell-online-kerala" className="nav-item">SELL ONLINE</Link>
+
+      {/* 🌿 Malayalam Navigation Dropdown */}
+      <div className="nav-dropdown-wrapper">
+        <Link href="/ml" className="nav-item nav-item--dropdown">
+          <span>മലയാളം</span>
+          <span className="nav-dropdown-arrow">▼</span>
+        </Link>
+        <div className="nav-dropdown-panel">
+          <Link href="/ml" className="nav-dropdown-item nav-dropdown-item--primary">
+            മലയാളം പ്രധാനം (ML Home)
+            <small>കമ്മീഷൻ 0% — വിൽപന വഴികൾ</small>
+          </Link>
+          <div className="nav-dropdown-divider" />
+          <Link href="/ml/online-vilpana" className="nav-dropdown-item">
+            ഓൺലൈൻ വിൽപന കേരള
+          </Link>
+          <Link href="/ml/instagram-vilpanakkar" className="nav-dropdown-item">
+            ഇൻസ്റ്റാഗ്രാം കച്ചവടം
+          </Link>
+          <Link href="/ml/whatsapp-vilpanakkar" className="nav-dropdown-item">
+            വാട്സ്ആപ്പ് ഓർഡർ സിസ്റ്റം
+          </Link>
+          <Link href="/ml/veetu-business" className="nav-dropdown-item">
+            വീട്ടു ബിസിനസ്സ് (Home Business)
+          </Link>
+        </div>
+      </div>
+
       <Link href="/products" className="nav-item">PRODUCTS</Link>
       <Link href="/shop" className="nav-item">SHOPS</Link>
       <Link href="/about" className="nav-item">ABOUT US</Link>
@@ -148,6 +176,28 @@ const MobileMenu = ({ isOpen, onClose }) => {
           </Link>
           <Link href="/faq" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
             <span className="nav-left">❓ FAQ</span>
+            <ChevronRight size={14} />
+          </Link>
+
+          {/* 🌿 Malayalam pages group */}
+          <Link href="/ml" className="mobile-nav-item" onClick={onClose} style={{ fontWeight: 700, color: '#166534', background: '#f0fdf4' }}>
+            <span className="nav-left">🌿 മലയാളം (Malayalam)</span>
+            <ChevronRight size={16} />
+          </Link>
+          <Link href="/ml/online-vilpana" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
+            <span className="nav-left">🛒 ഓൺലൈൻ വിൽപന</span>
+            <ChevronRight size={14} />
+          </Link>
+          <Link href="/ml/instagram-vilpanakkar" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
+            <span className="nav-left">📸 ഇൻസ്റ്റാഗ്രാം കച്ചവടം</span>
+            <ChevronRight size={14} />
+          </Link>
+          <Link href="/ml/whatsapp-vilpanakkar" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
+            <span className="nav-left">💬 വാട്സ്ആപ്പ് ഓർഡർ</span>
+            <ChevronRight size={14} />
+          </Link>
+          <Link href="/ml/veetu-business" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
+            <span className="nav-left">🏠 വീട്ടു ബിസിനസ്സ്</span>
             <ChevronRight size={14} />
           </Link>
           <Link href="/products" className="mobile-nav-item" onClick={onClose}>
