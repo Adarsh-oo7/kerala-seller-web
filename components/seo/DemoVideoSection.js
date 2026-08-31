@@ -18,8 +18,34 @@ export default function DemoVideoSection({
 }) {
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const videoSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: videoTitle,
+    description: subtitle,
+    thumbnailUrl: [
+      `https://i.ytimg.com/vi/${youtubeId}/maxresdefault.jpg`,
+      `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`,
+    ],
+    uploadDate: '2026-08-30T00:00:00+05:30',
+    embedUrl: `https://www.youtube-nocookie.com/embed/${youtubeId}`,
+    contentUrl: `https://www.youtube.com/watch?v=${youtubeId}`,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Kerala Sellers',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://www.keralasellers.in/assets/images/logo.png',
+      },
+    },
+  };
+
   return (
     <section className="seo-video-section" aria-labelledby="video-section-title">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(videoSchema) }}
+      />
       <div className="seo-video-section__inner">
         <div className="seo-video-section__header">
           <span className="seo-video-section__badge">
