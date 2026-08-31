@@ -70,6 +70,7 @@ export default function InventoryManagementPage() {
         title="Track Your Stock Automatically"
         subtitle="Watch how real-time inventory deduction prevents double sales and keeps your online store accurate."
         videoTitle="Track Your Stock Automatically"
+        youtubeId="ggkqC6ALK_c"
       />
 
       {/* INVENTORY VISUAL FLOW */}

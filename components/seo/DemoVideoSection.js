@@ -13,7 +13,7 @@ export default function DemoVideoSection({
   subtitle = 'Watch how a seller can manage their entire business from a mobile phone.',
   videoTitle = 'How KeralaSellers Works — 60 Second Overview',
   badge = 'SEE HOW IT WORKS',
-  youtubeId = 'dQw4w9WgXcQ', // Default or placeholder video ID
+  youtubeId = 'ggkqC6ALK_c', // Official @KeralaSellers channel video ID
   videoUrl, // Direct video URL if provided
 }) {
   const [isPlaying, setIsPlaying] = useState(false);

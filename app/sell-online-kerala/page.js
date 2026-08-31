@@ -153,6 +153,7 @@ export default function SellOnlineKeralaPage() {
         title="See How to Start Selling Online in Kerala"
         subtitle="Watch how easily a Kerala seller can launch a store, share links on WhatsApp/Instagram, and manage orders."
         videoTitle="How to Start Selling Online in Kerala"
+        youtubeId="ggkqC6ALK_c"
       />
 
       {/* PROBLEMS → SOLUTIONS */}

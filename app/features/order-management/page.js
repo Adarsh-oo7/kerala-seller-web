@@ -67,6 +67,7 @@ export default function OrderManagementPage() {
         title="Manage All Orders in One Dashboard"
         subtitle="Watch how orders from your store, Instagram, and WhatsApp flow into one clean mobile dashboard."
         videoTitle="Manage All Orders in One Dashboard"
+        youtubeId="ETjJ4BHp06o"
       />
 
       {/* MULTI-CHANNEL VISUAL & STATUS CHIPS */}

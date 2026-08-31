@@ -75,6 +75,7 @@ export default function OnlineStoreBuilderPage() {
         title="Build Your Online Store in 10 Minutes"
         subtitle="Watch how easily you can customize your store link, upload products, and start receiving orders."
         videoTitle="Build Your Online Store in 10 Minutes"
+        youtubeId="GTeeLBSYkjw"
       />
 
       {/* PROBLEMS -> SOLUTIONS */}

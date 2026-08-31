@@ -91,6 +91,7 @@ export default function FaqPage() {
         title="How KeralaSellers Works — Quick 60-Sec Demo"
         subtitle="Watch how sellers launch their online store and manage counter sales from their phone."
         videoTitle="How KeralaSellers Works — Quick Demo"
+        youtubeId="ggkqC6ALK_c"
       />
 
       {/* CATEGORY TABS & ACCORDION */}

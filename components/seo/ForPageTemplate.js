@@ -18,6 +18,14 @@ const videoTitles = {
   'social-media-sellers': 'Manage Orders From All Social Media Channels in One Place',
 };
 
+const videoIds = {
+  'instagram-sellers': 'GTeeLBSYkjw',
+  'whatsapp-sellers': 'ETjJ4BHp06o',
+  'home-businesses': 'GTeeLBSYkjw',
+  'small-businesses': 'ggkqC6ALK_c',
+  'social-media-sellers': 'ggkqC6ALK_c',
+};
+
 /**
  * Shared template for all /for/[segment] seller persona pages.
  * Accepts a `data` object from for-pages-data.js.
@@ -26,6 +34,7 @@ export default function ForPageTemplate({ data, breadcrumbLabel }) {
   const { hero, stats, problems, features, faqs, links, slug } = data;
   const [firstWord, ...rest] = hero.h1;
   const videoTitle = videoTitles[slug] || `How KeralaSellers Helps ${breadcrumbLabel}`;
+  const youtubeId = videoIds[slug] || 'ggkqC6ALK_c';
 
   return (
     <SeoPageLayout
@@ -71,6 +80,7 @@ export default function ForPageTemplate({ data, breadcrumbLabel }) {
         title={`See How KeralaSellers Helps ${breadcrumbLabel}`}
         subtitle="Watch how easily you can list products, manage customer orders, and accept payments from your mobile phone."
         videoTitle={videoTitle}
+        youtubeId={youtubeId}
       />
 
       {/* PROBLEMS → SOLUTIONS (No emojis, line icons contrast) */}
