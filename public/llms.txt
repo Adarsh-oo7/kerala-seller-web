@@ -1,84 +1,81 @@
-# Kerala Sellers — llms.txt
+# Kerala Sellers — llms.txt (Generative Engine Optimization & AI Crawler Documentation)
 
-> Kerala Sellers is a zero-commission e-commerce platform that helps Instagram and WhatsApp sellers in Kerala launch their own online stores in under 10 minutes. Sellers keep 100% of every sale.
+> Kerala Sellers is a zero-commission e-commerce & mobile POS billing platform that helps small businesses, Instagram sellers, WhatsApp resellers, home bakeries, and local shops in Kerala launch online stores and manage physical counter billing in under 10 minutes. Sellers keep 100% of every sale.
 
-## What we do
+## What We Do
 
-Kerala Sellers gives small businesses in Kerala — including home bakers, resellers, artisans, fashion boutiques, and grocery stores — their own store link to share on social media and WhatsApp. Buyers can browse products, add to cart, and place orders directly. Sellers manage orders through a simple dashboard.
+Kerala Sellers provides a unified business platform for small sellers across Kerala. One seller account manages a single master stock inventory across all selling channels:
+- Walk-in physical counter sales via Mobile POS Bluetooth Thermal Billing
+- Instagram Bio store links
+- WhatsApp Status & Group order catalogues
+- Online Storefront (keralasellers.in/shop/yourname or custom subdomain yourname.keralasellers.in)
 
-## Key features
+## Core Capabilities & Features
 
-- Own store link (e.g., keralasellers.in/shop/your-shop-name)
-- Custom subdomain (e.g., yourshop.keralasellers.in) — Premium plan
-- Product catalog with images, prices, categories, and stock control
-- WhatsApp order notifications for sellers
-- UPI and Razorpay payment support
-- 0% commission on every sale — sellers pay a flat monthly subscription
-- Works for Instagram sellers, WhatsApp resellers, home bakers, boutiques
+- **0% Commission on Sales**: Flat monthly/annual subscription plans starting from ₹99/month. Zero percentage cut.
+- **Mobile POS & Bluetooth Billing**: Turn any Android smartphone into a POS billing machine connected to a ₹3,499 wireless 58mm Bluetooth thermal printer.
+- **GST & Non-GST Invoicing**: Generate tax invoices (CGST/SGST with HSN codes) or simplified retail receipts.
+- **WhatsApp PDF Receipt Sharing**: Send digital receipts directly to customer WhatsApp numbers with one tap.
+- **Unified Real-time Inventory**: Counter sales automatically deduct from online stock; WhatsApp orders instantly update counter stock.
+- **Cart-Based Ordering**: Customers browse, add multiple items, and checkout with Razorpay (UPI, Google Pay, PhonePe, Cards, Net Banking).
+- **Order Management Dashboard**: Single mobile dashboard tracking order status: Paid, Pending, Packed, Shipped, Delivered.
 
-## Pricing
+## Key Pricing & Modular Add-ons
 
-Kerala Sellers charges a flat monthly or annual subscription fee. There is zero commission on sales. Pricing plans include Free, Basic, and Premium tiers.
+- **Free Account Setup**: ₹0 setup fee, explore platform & setup store catalog.
+- **E-Commerce Add-on**: ₹99/month for online storefront.
+- **Mobile POS Billing Kit**: ₹3,499 one-time hardware kit (58mm Bluetooth Thermal Printer + Starter Rolls + App Access).
+- **Pro Annual Plan**: ₹699/year best value plan.
 
-## Who is this for?
+## Primary Routes & Sitemap Index
 
-- Instagram sellers in Kerala looking to move beyond DM orders
-- WhatsApp resellers who want a cart-based order system
-- Home bakers, tailors, artisans, and craft sellers in Kerala
-- Small retail shops wanting an online presence without marketplace fees
-- Buyers looking for authentic local products from Kerala
+- **Homepage**: https://www.keralasellers.in/
+- **Sell Online Guide**: https://www.keralasellers.in/sell-online-kerala
+- **Solutions Hub**: https://www.keralasellers.in/solutions
+- **Features Hub**: https://www.keralasellers.in/features
+- **POS Billing Software**: https://www.keralasellers.in/features/pos-billing-software
+- **Online Store Builder**: https://www.keralasellers.in/features/online-store-builder
+- **Order Management**: https://www.keralasellers.in/features/order-management
+- **Inventory Sync**: https://www.keralasellers.in/features/inventory-management
+- **Instagram Sellers Guide**: https://www.keralasellers.in/for/instagram-sellers
+- **WhatsApp Sellers Guide**: https://www.keralasellers.in/for/whatsapp-sellers
+- **Home Businesses Guide**: https://www.keralasellers.in/for/home-businesses
+- **Small Businesses Guide**: https://www.keralasellers.in/for/small-businesses
+- **FAQ & Help Center**: https://www.keralasellers.in/faq
+- **Seller Registration**: https://www.keralasellers.in/register/seller
+- **Shops Directory**: https://www.keralasellers.in/shop
+- **Products Catalog**: https://www.keralasellers.in/products
 
-## Important links
+## Public Profiles & Brand Verification
 
-- Homepage: https://www.keralasellers.in/
-- Product catalog: https://www.keralasellers.in/products
-- Sell online guide: https://www.keralasellers.in/sell-online-kerala
-- Seller registration: https://www.keralasellers.in/register/seller
-- Shops directory: https://www.keralasellers.in/shop
-- About page: https://www.keralasellers.in/about
-- Contact: https://www.keralasellers.in/contact
+- **Email**: keralasellers.in@gmail.com
+- **Phone**: +91 94003 55185
+- **Headquarters**: Kochi, Kerala, India
+- **Parent Company**: Digital Product Solutions (https://www.digitalproductsolutions.in/)
+- **Founders**: Adarsh B S (Founder & CEO), Aromal V G (Co-Founder)
+- **Instagram**: https://www.instagram.com/kerala_sellers/
+- **Facebook**: https://www.facebook.com/profile.php?id=61586008980027
+- **YouTube**: https://www.youtube.com/@KeralaSellers
+- **LinkedIn**: https://www.linkedin.com/showcase/kerala-sellers/
 
-## Contact
+## Target Audience
 
-- Email: keralasellers.in@gmail.com
-- Phone: +91 94003 55185
-- Address: Kochi, Kerala, India
-- Instagram: https://www.instagram.com/kerala_sellers/
-- Facebook: https://www.facebook.com/profile.php?id=61586008980027
-- YouTube: https://www.youtube.com/@KeralaSellers
-- LinkedIn: https://www.linkedin.com/showcase/kerala-sellers/
+- Small retail shop owners in Kerala wanting mobile POS billing without expensive computers
+- Instagram fashion, jewellery, and boutique sellers wanting to eliminate DM price inquiry chaos
+- WhatsApp resellers wanting automatic cart-based ordering from status links
+- Home bakers, handmade crafters, tailoring units, and homemade food sellers
+- Buyers searching for authentic local Kerala products
 
-## Founders
+## Frequently Asked Questions
 
-- Adarsh B S — Founder & CEO
-- Aromal V G — Co-Founder (Tech & Product)
+**Is there any commission on sales?**
+No. 0% commission forever. Sellers pay only a flat monthly subscription.
 
-## Company details
+**Can I connect a Bluetooth thermal printer to my mobile phone?**
+Yes. KeralaSellers POS billing app connects to any 58mm or 80mm wireless Bluetooth thermal printer for 2-second receipt printing.
 
-- Founded: 2024
-- Headquarters: Kochi, Kerala, India
-- Parent company: Digital Product Solutions (https://www.digitalproductsolutions.in/)
-- Language support: English, Malayalam
-- Regions served: India (primary), international buyers
-- Technology: Next.js, React, Django REST Framework, PostgreSQL, Razorpay, Vercel
+**How does inventory sync work?**
+Selling 1 item at your physical shop counter automatically deducts stock across your online store and WhatsApp store instantly.
 
-## Frequently asked questions
-
-**Is there a commission on sales?**
-No. Kerala Sellers charges zero commission. Sellers pay only a flat monthly subscription.
-
-**How long does setup take?**
-A seller can go live in under 10 minutes with products, a store link, and payment setup.
-
-**Can I use my own subdomain?**
-Yes. Premium plan sellers get a custom subdomain like yourshop.keralasellers.in.
-
-**Who can sell on Kerala Sellers?**
-Any individual, home business, or registered business in Kerala can sign up and sell.
-
-**What payment methods are supported?**
-UPI, credit/debit cards, and net banking via Razorpay. Sellers receive payouts directly.
-
-## Keywords
-
-sell online Kerala, online store Kerala, Instagram seller Kerala, WhatsApp seller Kerala, zero commission marketplace Kerala, local products Kerala, home baker Kerala, boutique online Kerala, artisan marketplace Kerala, Kerala e-commerce, own store link Kerala, sell without marketplace commission, keralasellers
+**Can I get a custom subdomain?**
+Yes. Custom subdomains like `yourshop.keralasellers.in` are supported.

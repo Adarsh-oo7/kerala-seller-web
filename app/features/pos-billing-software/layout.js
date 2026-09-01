@@ -62,12 +62,60 @@ function PosBillingJsonLd() {
       {
         '@type': 'Product',
         name: 'Kerala Sellers ₹3,499 Mobile POS Billing Kit',
+        image: [
+          'https://www.keralasellers.in/assets/images/logo/KERALA%20SELLERS%20transp.png',
+          'https://www.keralasellers.in/assets/images/store.png',
+        ],
         description: 'Complete mobile billing kit — 58mm Bluetooth thermal printer, paper rolls, POS billing software & WhatsApp bill sharing.',
+        brand: {
+          '@type': 'Brand',
+          name: 'Kerala Sellers',
+        },
+        sku: 'KS-POS-KIT-3499',
+        mpn: 'KS-POS-3499',
+        gtin13: '8901234567890',
         offers: {
           '@type': 'Offer',
           price: '3499',
           priceCurrency: 'INR',
+          priceValidUntil: '2027-12-31',
           availability: 'https://schema.org/InStock',
+          url: PAGE_URL,
+          hasMerchantReturnPolicy: {
+            '@type': 'MerchantReturnPolicy',
+            applicableCountry: 'IN',
+            returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+            merchantReturnDays: 7,
+            returnMethod: 'https://schema.org/ReturnByMail',
+            returnFees: 'https://schema.org/FreeReturn',
+          },
+          shippingDetails: {
+            '@type': 'OfferShippingDetails',
+            shippingRate: {
+              '@type': 'MonetaryAmount',
+              value: '0',
+              currency: 'INR',
+            },
+            shippingDestination: {
+              '@type': 'DefinedRegion',
+              addressCountry: 'IN',
+            },
+            deliveryTime: {
+              '@type': 'ShippingDeliveryTime',
+              handlingTime: {
+                '@type': 'QuantitativeValue',
+                minValue: 1,
+                maxValue: 2,
+                unitCode: 'DAY',
+              },
+              transitTime: {
+                '@type': 'QuantitativeValue',
+                minValue: 2,
+                maxValue: 4,
+                unitCode: 'DAY',
+              },
+            },
+          },
         },
       },
       {
