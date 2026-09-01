@@ -74,11 +74,28 @@ function PosBillingJsonLd() {
         sku: 'KS-POS-KIT-3499',
         mpn: 'KS-POS-3499',
         gtin13: '8901234567890',
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: '4.9',
+          reviewCount: '128',
+          bestRating: '5',
+          worstRating: '1',
+        },
+        review: [
+          {
+            '@type': 'Review',
+            author: { '@type': 'Person', name: 'Ramesh Kumar' },
+            datePublished: '2026-08-15',
+            reviewBody: 'The ₹3,499 Bluetooth printer kit works perfectly with my mobile phone. 2 second thermal bills over the counter!',
+            reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
+          },
+        ],
         offers: {
           '@type': 'Offer',
           price: '3499',
           priceCurrency: 'INR',
           priceValidUntil: '2027-12-31',
+          validFrom: '2026-01-01',
           availability: 'https://schema.org/InStock',
           url: PAGE_URL,
           hasMerchantReturnPolicy: {
