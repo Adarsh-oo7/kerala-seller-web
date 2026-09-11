@@ -141,7 +141,7 @@ export default function SellOnlineKeralaPage() {
       {/* TRUST STATS BAR */}
       <TrustStatsBar
         stats={[
-          { n: '1000+', l: 'Active Kerala Sellers' },
+          { n: '1,000+', l: 'Registered Kerala Sellers' },
           { n: '0%', l: 'Commission Cut' },
           { n: '10 min', l: 'Store Setup' },
           { n: '100%', l: 'Mobile Ready' },

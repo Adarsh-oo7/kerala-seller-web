@@ -7,7 +7,7 @@ import { ShieldCheck, Smartphone, Zap, MapPin, Award } from 'lucide-react';
  */
 export default function TrustStatsBar({
   stats = [
-    { n: '1000+', l: 'Active Sellers' },
+    { n: '1,000+', l: 'Registered Sellers' },
     { n: '0%', l: 'Commission Cut' },
     { n: '10 min', l: 'Store Setup' },
     { n: '14+', l: 'Kerala Districts' },

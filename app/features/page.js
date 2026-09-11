@@ -1,12 +1,13 @@
     'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
 import SeoPageLayout from '../../components/seo/SeoPageLayout';
 import FaqAccordion from '../../components/seo/FaqAccordion';
 import {
   Smartphone, Store, ShoppingBag, Package, CreditCard, Share2,
   TrendingUp, Users, Receipt, Globe, ShieldCheck, Printer, Barcode,
-  Sparkles, CheckCircle2, ArrowRight, DollarSign, Zap, Truck
+  Sparkles, CheckCircle2, ArrowRight, DollarSign, Zap, Truck, Info
 } from 'lucide-react';
 
 const faqs = [
@@ -173,7 +174,7 @@ export default function FeaturesPage() {
       {/* STATS BAR */}
       <div className="seo-stats" role="region" aria-label="Key features summary">
         {[
-          { n: '1000+', l: 'Active Sellers' },
+          { n: '1,000+', l: 'Registered Sellers' },
           { n: '0%', l: 'Commission Cut' },
           { n: 'yourshop.', l: 'Custom Subdomains' },
           { n: 'Kerala', l: 'Shipping Partners' },
@@ -405,50 +406,138 @@ export default function FeaturesPage() {
       </section>
 
       {/* AFFORDABILITY & PRICING GUARANTEE */}
-      <section className="seo-section seo-section--alt">
-        <div style={{
-          background: '#FDFFF0',
-          border: '2px dashed #1a4845',
-          borderRadius: 20,
-          padding: '36px 28px',
-          textAlign: 'center',
-          maxWidth: 900,
-          margin: '0 auto',
-        }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0fdf4', padding: '6px 16px', borderRadius: 20, marginBottom: 14 }}>
-            <DollarSign size={18} color="#166534" />
-            <span style={{ fontWeight: 700, color: '#166534', fontSize: 13 }}>UNBEATABLE AFFORDABILITY</span>
+      <section className="seo-section seo-section--alt" id="pricing" aria-labelledby="pricing-h2">
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 36 }}>
+            <span style={{ background: '#f0fdf4', color: '#166534', padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 700, letterSpacing: 0.5 }}>
+              💰 TRANSPARENT PRICING — NO HIDDEN CHARGES
+            </span>
+            <h2 id="pricing-h2" style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 800, margin: '16px 0 8px', color: '#1a2b2a' }}>
+              0% Commission. Flat Monthly Plans.
+            </h2>
+            <p style={{ fontSize: '1rem', color: '#4b5563', maxWidth: 680, margin: '0 auto 12px' }}>
+              Pay only a fixed monthly plan for your store. Keep 100% of every sale. No revenue share, no hidden fees.
+            </p>
+            <p style={{ fontSize: '0.88rem', color: '#64748b', maxWidth: 720, margin: '0 auto 32px', lineHeight: 1.6 }}>
+              ⚠️ Note: Razorpay payment gateway fees (typically ~2% + GST per transaction) apply when your customer pays online. These are charged by Razorpay, not Kerala Sellers. You can also collect cash on delivery at 0% fee.
+            </p>
           </div>
 
-          <h2 style={{ fontSize: 'clamp(1.4rem, 2.5vw, 2rem)', fontWeight: 800, color: '#1a2b2a', marginBottom: 12 }}>
-            0% Commission &amp; Extremely Affordable Monthly Plans
-          </h2>
+          {/* PLAN COMPARISON TABLE */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginBottom: 32 }}>
 
-          <p style={{ fontSize: '1rem', color: '#4b5563', lineHeight: 1.6, maxWidth: 700, margin: '0 auto 24px' }}>
-            Why pay 15% to 40% commission on Amazon or Swiggy? Or ₹30,000 for a website you cannot update yourself?
-            With Kerala Sellers, you get your own store, keep 100% of your profits, and pay only a small budget-friendly flat monthly subscription.
-          </p>
+            {/* FREE PLAN */}
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 20, padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <span style={{ background: '#f8fafc', color: '#475569', padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 700 }}>FREE</span>
+                <div style={{ fontSize: '2rem', fontWeight: 900, color: '#1a4845', margin: '12px 0 2px' }}>₹0</div>
+                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>to create an account</div>
+                <p style={{ fontSize: '0.9rem', color: '#374151', marginTop: 10, lineHeight: 1.5 }}>
+                  Register your shop and explore the dashboard. Activate your store with a monthly plan.
+                </p>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.88rem', color: '#374151' }}>
+                {['Create seller account', 'Set up shop profile', 'Browse dashboard', 'Upload products (plan needed to go live)'].map(f => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}><CheckCircle2 size={15} color="#10b981" style={{ marginTop: 2, flexShrink: 0 }} />{f}</li>
+                ))}
+              </ul>
+              <Link href="/register/seller" id="pricing-free-cta"
+                onClick={() => typeof window !== 'undefined' && typeof window.ksTrack === 'function' && window.ksTrack('seller_registration_start', { source: 'pricing_free_cta' })}
+                style={{ display: 'block', textAlign: 'center', background: '#f1f5f9', color: '#1a4845', fontWeight: 700, padding: '12px', borderRadius: 12, textDecoration: 'none', fontSize: '0.95rem' }}>
+                Create Free Account
+              </Link>
+            </div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', marginBottom: 28 }}>
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '14px 20px', textStyle: 'center' }}>
-              <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1a4845', display: 'block' }}>0%</span>
-              <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Commission Cut</span>
+            {/* STARTER PLAN */}
+            <div style={{ background: '#fff', border: '2px solid #1a4845', borderRadius: 20, padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 16, position: 'relative' }}>
+              <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: '#1a4845', color: '#a3e635', padding: '4px 16px', borderRadius: 20, fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap' }}>
+                ⭐ Most Popular
+              </div>
+              <div>
+                <span style={{ background: '#f0fdf4', color: '#166534', padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 700 }}>STARTER</span>
+                <div style={{ fontSize: '2rem', fontWeight: 900, color: '#1a4845', margin: '12px 0 2px' }}>₹99<span style={{ fontSize: '1rem', fontWeight: 400, color: '#64748b' }}>/month</span></div>
+                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>billed monthly · cancel anytime</div>
+                <p style={{ fontSize: '0.9rem', color: '#374151', marginTop: 10, lineHeight: 1.5 }}>
+                  Your live online store with ordering, payments, and stock management.
+                </p>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.88rem', color: '#374151' }}>
+                {[
+                  'Live online store link',
+                  'Up to 50 products',
+                  'Order management dashboard',
+                  'Real-time inventory sync',
+                  'Razorpay UPI/card checkout',
+                  '0% commission on all sales',
+                  'WhatsApp & Instagram sharing',
+                  'Cancel anytime — no lock-in',
+                ].map(f => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}><CheckCircle2 size={15} color="#1a4845" style={{ marginTop: 2, flexShrink: 0 }} />{f}</li>
+                ))}
+              </ul>
+              <Link href="/register/seller" id="pricing-starter-cta"
+                onClick={() => typeof window !== 'undefined' && typeof window.ksTrack === 'function' && window.ksTrack('start_99_store_click', { source: 'pricing_starter_cta' })}
+                style={{ display: 'block', textAlign: 'center', background: '#1a4845', color: '#a3e635', fontWeight: 800, padding: '13px', borderRadius: 12, textDecoration: 'none', fontSize: '1rem' }}>
+                Start Your ₹99 Store →
+              </Link>
             </div>
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '14px 20px', textStyle: 'center' }}>
-              <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1a4845', display: 'block' }}>₹0</span>
-              <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Setup Fee</span>
-            </div>
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '14px 20px', textStyle: 'center' }}>
-              <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1a4845', display: 'block' }}>100%</span>
-              <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Profit Kept</span>
+
+            {/* ADD-ONS */}
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 20, padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <span style={{ background: '#ecfdf5', color: '#047857', padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 700 }}>ADD-ONS</span>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1a4845', margin: '12px 0 2px' }}>Flexible extras</div>
+                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>add only what you need</div>
+                <p style={{ fontSize: '0.9rem', color: '#374151', marginTop: 10, lineHeight: 1.5 }}>
+                  Extend your plan with powerful add-ons without upgrading to a forced expensive tier.
+                </p>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.88rem', color: '#374151' }}>
+                {[
+                  'Custom subdomain (yourshop.keralasellers.in)',
+                  'POS & Billing (counter billing)',
+                  'Multi-staff logins',
+                  'Extra product capacity',
+                  'Barcode & thermal printer support',
+                  'Delivery partner integrations (coming soon)',
+                ].map(f => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}><CheckCircle2 size={15} color="#059669" style={{ marginTop: 2, flexShrink: 0 }} />{f}</li>
+                ))}
+              </ul>
+              <Link href="/register/seller" id="pricing-addons-cta"
+                onClick={() => typeof window !== 'undefined' && typeof window.ksTrack === 'function' && window.ksTrack('pricing_view', { source: 'pricing_addons_cta' })}
+                style={{ display: 'block', textAlign: 'center', background: '#f0fdf4', color: '#166534', fontWeight: 700, padding: '12px', borderRadius: 12, textDecoration: 'none', fontSize: '0.95rem', border: '1px solid #bbf7d0' }}>
+                Register & Choose Add-ons
+              </Link>
             </div>
           </div>
 
-          <Link href="/register/seller" className="seo-btn-primary" id="features-affordability-cta">
-            Start Free Store Now — Free Setup →
-          </Link>
+          {/* HARDWARE */}
+          <div style={{ background: 'linear-gradient(135deg, #1a4845 0%, #2d6b5e 100%)', borderRadius: 16, padding: '24px 28px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 20 }}>
+            <div>
+              <div style={{ color: '#a3e635', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, marginBottom: 6 }}>🖨️ HARDWARE — ONE-TIME PURCHASE</div>
+              <div style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 800 }}>₹3,499 — Bluetooth POS Billing Kit</div>
+              <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.88rem', marginTop: 4 }}>58mm wireless thermal printer · paper rolls · setup guide · one-time, no monthly rental</div>
+            </div>
+            <Link href="/features/pos-billing-software" id="pricing-pos-kit-cta"
+              onClick={() => typeof window !== 'undefined' && typeof window.ksTrack === 'function' && window.ksTrack('pos_kit_view', { source: 'pricing_section' })}
+              style={{ display: 'inline-block', background: '#a3e635', color: '#1a4845', fontWeight: 800, padding: '12px 24px', borderRadius: 12, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+              View POS Kit Details →
+            </Link>
+          </div>
+
+          {/* FINE PRINT / TERMS */}
+          <div style={{ marginTop: 24, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, fontSize: '0.82rem', color: '#64748b', lineHeight: 1.7 }}>
+            <p style={{ margin: 0 }}>
+              <strong>Plan terms:</strong> Monthly plans are charged at the start of each billing period. Cancel any time from your dashboard before the next billing date to avoid renewal. No refund for the current period (see <Link href="/cancellation-refund" style={{ color: '#1a4845' }}>cancellation policy</Link>).
+              Payment gateway fees of ~2% + 18% GST per transaction are charged by Razorpay and are separate from Kerala Sellers subscription charges.
+              ₹99/month price is the current Starter plan rate and may change for new subscriptions with prior notice.
+              The ₹3,499 hardware kit is a one-time purchase. Warranty and compatibility details: <Link href="/features/pos-billing-software" style={{ color: '#1a4845' }}>view POS page</Link>.
+            </p>
+          </div>
         </div>
       </section>
+
 
       {/* BRAND CLOSER */}
       <section className="seo-closer">

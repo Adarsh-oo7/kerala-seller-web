@@ -360,7 +360,7 @@ export default function SellerLanding() {
 
         <div className="section" data-animate id="success">
           <div className="section-header">
-            <h2 className="section-title">Join 1000+ Successful Sellers</h2>
+            <h2 className="section-title">Join 1,000+ Registered Sellers in Kerala</h2>
             <p className="section-subtitle">
               Real stories from Kerala entrepreneurs
             </p>

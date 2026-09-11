@@ -288,7 +288,7 @@ export default function ContactPage() {
               <div className="serviceHighlights">
                 <div className="serviceItem">
                   <Users size={18} color="#059669" />
-                  <span>1000+ Active Sellers</span>
+                  <span>1,000+ Registered Sellers</span>
                 </div>
                 <div className="serviceItem">
                   <Award size={18} color="#059669" />

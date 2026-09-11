@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
@@ -336,6 +336,9 @@ export default function ProductsPage() {
   };
 
   const handleFormSubmit = () => {
+    if (!editingProduct && typeof window !== 'undefined' && typeof window.ksTrack === 'function') {
+      window.ksTrack('first_product_added', { product_count: (products?.length || 0) + 1 });
+    }
     handleCloseModal();
     fetchProducts();
   };

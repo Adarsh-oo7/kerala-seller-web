@@ -6,6 +6,7 @@ import Script from 'next/script';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import OrganizationJsonLd from '../components/seo/OrganizationJsonLd';
+import GoogleAnalytics from '../components/seo/GoogleAnalytics';
 
 // ✅ ADD: Viewport configuration (fixes themeColor warning)
 export const viewport = {
@@ -70,6 +71,7 @@ export default function RootLayout({ children }) {
             pauseOnHover
             theme="colored"
           />
+          <GoogleAnalytics />
           <main>
             {children}
           </main>

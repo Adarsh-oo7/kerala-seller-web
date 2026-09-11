@@ -89,7 +89,12 @@ export default function RegisterSellerPage() {
 
     // Initialize reCAPTCHA Verifier
     useEffect(() => {
+        // ── GA4: seller entered registration funnel ──
+        if (typeof window !== 'undefined' && typeof window.ksTrack === 'function') {
+          window.ksTrack('seller_registration_start');
+        }
         if (typeof window !== 'undefined' && !recaptchaVerifier) {
+
             try {
                 // Check if container exists and is empty
                 const container = document.getElementById('recaptcha-container');
@@ -359,10 +364,16 @@ export default function RegisterSellerPage() {
 
             console.log(' Registration successful (Django response):', response.data);
 
+            // ── GA4: fire seller funnel event ──
+            if (typeof window !== 'undefined' && typeof window.ksTrack === 'function') {
+              window.ksTrack('seller_registration_complete', { method: 'phone_otp' });
+            }
+
             const token = response.data.access_token || response.data.token || response.data.access;
             if (token) {
               localStorage.setItem('accessToken', token);
               localStorage.setItem('access_token', token);
+
               if (response.data.seller) {
                 localStorage.setItem('sellerInfo', JSON.stringify(response.data.seller));
               }

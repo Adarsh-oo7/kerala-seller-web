@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
@@ -614,6 +614,15 @@ export default function SubscriptionPage() {
                         console.log(' Payment verified:', verifyResponse.data);
 
                         setError('');
+
+                        // ── GA4: seller purchased a paid plan ──
+                        if (typeof window !== 'undefined' && typeof window.ksTrack === 'function') {
+                          window.ksTrack('paid_plan_started', {
+                            plan_name: verifyResponse.data?.plan_name || '',
+                            value: verifyResponse.data?.amount || 0,
+                            currency: 'INR',
+                          });
+                        }
                         
                         // âœ… REPLACED: alert with toast
                         toast.success('ðŸŽ‰ Payment Successful! Your subscription is now active!', {

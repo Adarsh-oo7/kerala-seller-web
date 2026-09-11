@@ -27,8 +27,16 @@ const faqs = [
     a: 'Kerala Sellers uses a Unified Inventory system. When a product is sold over the counter via POS billing, stock automatically decreases on your online store and WhatsApp store instantly. Zero overselling.',
   },
   {
+    q: 'What warranty and replacement guarantee comes with the ₹3,499 POS Kit?',
+    a: 'The ₹3,499 kit includes a 1-Year Manufacturer Replacement Warranty covering any hardware defects. In addition, we provide a 7-day free replacement guarantee if the package arrives damaged in transit or has initial pairing issues.',
+  },
+  {
+    q: 'Which smartphones and Android versions are compatible?',
+    a: '100% compatible with all Android smartphones and tablets running Android 8.0 (Oreo) up to Android 15+. Connects effortlessly with Samsung, Xiaomi, Vivo, Oppo, Realme, OnePlus, Motorola, etc., via standard Bluetooth 4.0/5.0. No drivers or rooting required.',
+  },
+  {
     q: 'What is included in the ₹3,499 POS Billing Kit?',
-    a: 'The ₹3,499 kit includes a 58mm Wireless Bluetooth Thermal Printer, starter thermal paper rolls, printer setup guide, full Kerala Sellers mobile billing access, and instant digital bill sharing via WhatsApp.',
+    a: 'The ₹3,499 kit includes a 58mm Wireless Bluetooth Thermal Printer, starter thermal paper rolls, USB charging cable, printer setup guide, full Kerala Sellers mobile billing access, and instant digital bill sharing via WhatsApp.',
   },
   {
     q: 'Can I generate both GST and Non-GST bills?',
@@ -39,8 +47,8 @@ const faqs = [
 const posStats = [
   { n: '2 sec', l: 'Thermal Bill Print' },
   { n: '₹3,499', l: 'Complete Billing Kit' },
-  { n: '1 Stock', l: 'Offline & Online Synced' },
-  { n: '0%', l: 'Commission Cut' },
+  { n: '1-Year', l: 'Hardware Warranty' },
+  { n: 'Android', l: '8.0+ Fully Supported' },
 ];
 
 const posProblems = [
@@ -125,7 +133,8 @@ export default function PosBillingSoftwarePage() {
           </div>
 
           <div className="seo-hero__cta">
-            <Link href="/register/seller" className="seo-btn-primary" id="pos-hero-start-btn">
+            <Link href="/register/seller" className="seo-btn-primary" id="pos-hero-start-btn"
+              onClick={() => typeof window !== 'undefined' && typeof window.ksTrack === 'function' && window.ksTrack('pos_kit_view', { source: 'pos_hero_start_btn' })}>
               <Store size={20} />
               <span>Start Mobile Billing Free →</span>
             </Link>
@@ -211,12 +220,16 @@ export default function PosBillingSoftwarePage() {
               Includes 58mm wireless Bluetooth thermal printer, starter thermal paper rolls, setup guide, and full mobile billing software access.
             </p>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14 }}>
-              <li>✓ 30% Pre-book reservation (₹1,049.70)</li>
-              <li>✓ Works with all Android smartphones</li>
-              <li>✓ Instant WhatsApp PDF bill sharing</li>
-              <li>✓ Auto stock sync with online store</li>
+              <li>✓ <strong>1-Year Replacement Warranty:</strong> Manufacturer replacement coverage on printer hardware</li>
+              <li>✓ <strong>Android 8.0+ Compatibility:</strong> Tested on Samsung, Xiaomi, Vivo, Oppo, OnePlus &amp; all Android phones</li>
+              <li>✓ <strong>30% Pre-book reservation:</strong> Pay only ₹1,049.70 to book your printer kit</li>
+              <li>✓ <strong>58mm Bluetooth Printer:</strong> Includes starter thermal paper rolls &amp; USB charging cable</li>
+              <li>✓ <strong>7-Day Replacement:</strong> Free replacement guarantee for transit damage or pairing issues</li>
+              <li>✓ <strong>Instant Digital Bills:</strong> 1-tap WhatsApp PDF receipt sharing + auto stock sync</li>
             </ul>
-            <Link href="/register/seller" className="seo-btn-primary" style={{ background: '#a3e635', color: '#1a4845' }}>
+            <Link href="/register/seller" className="seo-btn-primary" id="pos-order-kit-cta"
+              onClick={() => typeof window !== 'undefined' && typeof window.ksTrack === 'function' && window.ksTrack('pos_prebook_start', { source: 'pos_hardware_block' })}
+              style={{ background: '#a3e635', color: '#1a4845' }}>
               <Printer size={18} />
               <span>Order Billing Kit Free Setup →</span>
             </Link>
@@ -266,7 +279,9 @@ export default function PosBillingSoftwarePage() {
         <p className="seo-closer__quote">
           &ldquo;Turn your smartphone into a complete POS billing machine and accept counter sales with 0% commission.&rdquo;
         </p>
-        <Link href="/register/seller" className="seo-btn-primary" id="pos-bottom-cta" style={{ background: '#a3e635', color: '#1a4845' }}>
+        <Link href="/register/seller" className="seo-btn-primary" id="pos-bottom-cta"
+          onClick={() => typeof window !== 'undefined' && typeof window.ksTrack === 'function' && window.ksTrack('pos_kit_view', { source: 'pos_bottom_cta' })}
+          style={{ background: '#a3e635', color: '#1a4845' }}>
           <Store size={18} />
           <span>Start Mobile Billing Free →</span>
         </Link>
