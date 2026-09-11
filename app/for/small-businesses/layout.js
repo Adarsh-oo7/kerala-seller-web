@@ -43,7 +43,7 @@ function ForPageJsonLd() {
           '@type': 'BreadcrumbList',
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: BRAND.url },
-            { '@type': 'ListItem', position: 2, name: 'Solutions', item: `${BRAND.url}/solutions` },
+            { '@type': 'ListItem', position: 2, name: 'Features', item: `${BRAND.url}/features` },
             { '@type': 'ListItem', position: 3, name: 'Small Businesses', item: PAGE_URL },
           ],
         },

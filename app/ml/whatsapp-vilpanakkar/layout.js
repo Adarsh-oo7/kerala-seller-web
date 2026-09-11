@@ -7,12 +7,12 @@ export const metadata = {
   alternates: {
     canonical: `${BRAND.url}/ml/whatsapp-vilpanakkar`,
     languages: {
-      'ml': `${BRAND.url}/ml/whatsapp-vilpanakkar`,
-      'en': `${BRAND.url}/for/whatsapp-sellers`,
+      'en-IN': `${BRAND.url}/for/whatsapp-sellers`,
+      'ml-IN': `${BRAND.url}/ml/whatsapp-vilpanakkar`,
       'x-default': `${BRAND.url}/for/whatsapp-sellers`,
     },
   },
-  robots: { index: false, follow: true },
+  robots: { index: true, follow: true },
 };
 
 export default function Layout({ children }) { return children; }

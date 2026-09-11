@@ -10,7 +10,6 @@ export default function sitemap() {
     { url: `${BRAND.url}/register/seller`,               lastModified: now, changeFrequency: 'monthly', priority: 0.85 },
 
     // ── Solutions & Features hub ──
-    { url: `${BRAND.url}/solutions`,                     lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
     { url: `${BRAND.url}/features`,                      lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
 
     // ── Seller persona pages ──

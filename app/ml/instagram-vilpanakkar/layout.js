@@ -7,12 +7,12 @@ export const metadata = {
   alternates: {
     canonical: `${BRAND.url}/ml/instagram-vilpanakkar`,
     languages: {
-      'ml': `${BRAND.url}/ml/instagram-vilpanakkar`,
-      'en': `${BRAND.url}/for/instagram-sellers`,
+      'en-IN': `${BRAND.url}/for/instagram-sellers`,
+      'ml-IN': `${BRAND.url}/ml/instagram-vilpanakkar`,
       'x-default': `${BRAND.url}/for/instagram-sellers`,
     },
   },
-  robots: { index: false, follow: true },
+  robots: { index: true, follow: true },
 };
 
 export default function Layout({ children }) { return children; }

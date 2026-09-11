@@ -4,15 +4,14 @@ import { BRAND } from './lib/brand';
 const HOME_URL = `${BRAND.url}/`;
 
 export const metadata = {
-  // Title: 51 chars — within 50–60 target
-  title: 'Kerala Sellers | Sell, Manage & Grow Your Business',
+  title: 'Own Online Store in Kerala from ₹99/month | Kerala Sellers',
   description:
-    // 154 chars — within 120–160 target
-    'All-in-one business platform for Kerala sellers. Online store from ₹99/mo, WhatsApp & Instagram selling, POS billing & inventory. Zero commission.',
+    'Launch your own online store from ₹99/month. Sell on Instagram and WhatsApp with 0% marketplace commission, online payments, orders, inventory, and mobile POS billing.',
   alternates: {
     canonical: HOME_URL,
     languages: {
       'en-IN': HOME_URL,
+      'ml-IN': `${BRAND.url}/ml`,
       'x-default': HOME_URL,
     },
   },

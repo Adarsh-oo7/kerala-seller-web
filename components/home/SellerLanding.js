@@ -17,22 +17,22 @@ export default function SellerLanding() {
         <div className="hero-content">
           <div className="hero-badge">
             <Star className="staricon" color="#f59e0b" />
-            <span>0% Commission Forever</span>
+            <span>Store from ₹99/mo • 0% Marketplace Commission</span>
           </div>
 
           <h1 className="hero-title">
-            Everything Your Business Needs to{' '}
-            <span className="hero-highlight">Sell, Manage &amp; Grow</span>
+            Own Online Store for Kerala Sellers{' '}
+            <span className="hero-highlight">from ₹99/month</span>
           </h1>
 
           <p className="hero-subtitle">
-            From creating your online store to managing orders, inventory, payments and customers — Kerala Sellers brings your essential business and digital growth tools together in one simple solution. Online aayi business thudangan — ith easy aanu.
+            Sell from Instagram, WhatsApp, and your physical shop with 0% marketplace commission. Accept UPI &amp; card payments, manage orders, track inventory, and print bills from your phone.
           </p>
 
           <div className="hero-stats">
             <div className="stat-item">
-              <span className="stat-number">1000+</span>
-              <span className="stat-label">Active Sellers</span>
+              <span className="stat-number">₹99/mo</span>
+              <span className="stat-label">Starting Plan</span>
             </div>
             <div className="stat-item">
               <span className="stat-number">0%</span>
@@ -47,12 +47,15 @@ export default function SellerLanding() {
           <div className="hero-cta">
             <Link href="/register/seller" className="primary-button">
               <Store className="storeicon" />
-              <span>Start Free Store Now</span>
+              <span>Start Your ₹99 Store</span>
             </Link>
-            <Link href="/products" className="secondary-button">
-              <span>Browse products</span>
+            <Link href="/features" className="secondary-button">
+              <span>See Plans &amp; Features</span>
             </Link>
           </div>
+          <p style={{ marginTop: '14px', fontSize: '0.85rem', color: '#64748b' }}>
+            Entry plan: ₹99/month • 0% marketplace commission • Simple setup
+          </p>
         </div>
       </div>
 

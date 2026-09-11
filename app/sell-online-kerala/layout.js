@@ -46,9 +46,9 @@ const faqs = [
 ];
 
 export const metadata = {
-  title: 'Sell products online in Kerala | Free store, 0% commission | Kerala Sellers',
+  title: 'Sell Online in Kerala from ₹99/month | Kerala Sellers',
   description:
-    'Start selling online in Kerala with your own store link. Built for Instagram and WhatsApp sellers. 0% commission. Sell clothes, food, jewellery, and homemade products across Kerala. Setup in 10 minutes.',
+    'Start selling online in Kerala with your own store link from ₹99/month. Built for Instagram and WhatsApp sellers. 0% commission. Sell clothes, food, jewellery, and homemade products across Kerala.',
   keywords: [
     'sell products online Kerala',
     'online store Kerala',
@@ -61,7 +61,14 @@ export const metadata = {
     'online shop Kerala',
     'zero commission online store Kerala',
   ],
-  alternates: { canonical: PAGE_URL },
+  alternates: {
+    canonical: PAGE_URL,
+    languages: {
+      'en-IN': PAGE_URL,
+      'ml-IN': `${BRAND.url}/ml/online-vilpana`,
+      'x-default': PAGE_URL,
+    },
+  },
   openGraph: {
     title: 'Sell products online in Kerala | 0% commission',
     description:

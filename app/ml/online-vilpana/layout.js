@@ -7,12 +7,12 @@ export const metadata = {
   alternates: {
     canonical: `${BRAND.url}/ml/online-vilpana`,
     languages: {
-      'ml': `${BRAND.url}/ml/online-vilpana`,
-      'en': `${BRAND.url}/sell-online-kerala`,
+      'en-IN': `${BRAND.url}/sell-online-kerala`,
+      'ml-IN': `${BRAND.url}/ml/online-vilpana`,
       'x-default': `${BRAND.url}/sell-online-kerala`,
     },
   },
-  robots: { index: false, follow: true },
+  robots: { index: true, follow: true },
 };
 
 export default function Layout({ children }) { return children; }

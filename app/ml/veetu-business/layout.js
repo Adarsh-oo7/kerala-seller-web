@@ -7,12 +7,12 @@ export const metadata = {
   alternates: {
     canonical: `${BRAND.url}/ml/veetu-business`,
     languages: {
-      'ml': `${BRAND.url}/ml/veetu-business`,
-      'en': `${BRAND.url}/for/home-businesses`,
+      'en-IN': `${BRAND.url}/for/home-businesses`,
+      'ml-IN': `${BRAND.url}/ml/veetu-business`,
       'x-default': `${BRAND.url}/for/home-businesses`,
     },
   },
-  robots: { index: false, follow: true },
+  robots: { index: true, follow: true },
 };
 
 export default function Layout({ children }) { return children; }
