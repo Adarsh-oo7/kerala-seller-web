@@ -7,10 +7,10 @@ import { ShieldCheck, Smartphone, Zap, MapPin, Award } from 'lucide-react';
  */
 export default function TrustStatsBar({
   stats = [
-    { n: '1,000+', l: 'Registered Sellers' },
+    { n: 'Trusted', l: 'By Kerala Sellers' },
     { n: '0%', l: 'Commission Cut' },
     { n: '10 min', l: 'Store Setup' },
-    { n: '14+', l: 'Kerala Districts' },
+    { n: '14', l: 'Kerala Districts' },
   ],
 }) {
   return (

@@ -32,14 +32,46 @@ const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || '';
 export default function GoogleAnalytics() {
   const pathname = usePathname();
 
+  useEffect(() => {
+    // Ensure window.ksTrack exists immediately to prevent race conditions
+    if (typeof window !== 'undefined') {
+      window.dataLayer = window.dataLayer || [];
+      if (!window.gtag) {
+        window.gtag = function () {
+          window.dataLayer.push(arguments);
+        };
+      }
+      if (!window.ksTrack) {
+        window.ksTrack = function (eventName, params) {
+          const isDebug =
+            window.location.search.includes('debug_ga=true') ||
+            process.env.NODE_ENV !== 'production';
+          if (isDebug) {
+            console.log('[GA4 DebugEvent]', eventName, params);
+          }
+          if (typeof window.gtag === 'function' && GA4_ID) {
+            try {
+              window.gtag('event', eventName, {
+                ...params,
+                debug_mode: isDebug ? true : undefined,
+              });
+            } catch (e) {
+              console.error('[GA4 Track Error]', e);
+            }
+          }
+        };
+      }
+    }
+  }, []);
+
   // Fire page_view on every client-side route change
   useEffect(() => {
-    if (typeof window.gtag === 'function' && GA4_ID) {
+    if (typeof window !== 'undefined' && typeof window.gtag === 'function' && GA4_ID) {
       window.gtag('config', GA4_ID, { page_path: pathname });
     }
   }, [pathname]);
 
-  if (!GA4_ID || process.env.NODE_ENV !== 'production') return null;
+  if (!GA4_ID) return null;
 
   return (
     <>
@@ -55,13 +87,18 @@ export default function GoogleAnalytics() {
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
+            var isDebug = window.location.search.indexOf('debug_ga=true') !== -1;
             gtag('config', '${GA4_ID}', {
               page_path: window.location.pathname,
               anonymize_ip: true,
-              cookie_flags: 'SameSite=None;Secure'
+              cookie_flags: 'SameSite=None;Secure',
+              debug_mode: isDebug
             });
             window.ksTrack = function(eventName, params) {
-              try { gtag('event', eventName, Object.assign({ send_to: '${GA4_ID}' }, params || {})); } catch(e) {}
+              try {
+                if (isDebug) console.log('[GA4 Event]', eventName, params);
+                gtag('event', eventName, Object.assign({}, params || {}, isDebug ? { debug_mode: true } : {}));
+              } catch(e) {}
             };
           `,
         }}

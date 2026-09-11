@@ -32,7 +32,7 @@ const faqs = [
 ];
 
 const solutionsStats = [
-  { n: '1,000+', l: 'Registered Sellers' },
+  { n: 'Trusted', l: 'By Kerala Sellers' },
   { n: '0%', l: 'Commission Cut' },
   { n: '10 min', l: 'Live Setup Time' },
   { n: '14+', l: 'Districts Covered' },

@@ -54,7 +54,7 @@ export default function SellerLanding() {
             </Link>
           </div>
           <p style={{ marginTop: '14px', fontSize: '0.85rem', color: '#64748b' }}>
-            Entry plan: ₹99/month • 0% marketplace commission • Simple setup
+            Starter plan: ₹99/month, excluding applicable payment-gateway charges &amp; taxes • Up to 50 products • 0% platform commission
           </p>
         </div>
       </div>
@@ -360,7 +360,7 @@ export default function SellerLanding() {
 
         <div className="section" data-animate id="success">
           <div className="section-header">
-            <h2 className="section-title">Join 1,000+ Registered Sellers in Kerala</h2>
+            <h2 className="section-title">Join Kerala's Growing Community of Online Sellers</h2>
             <p className="section-subtitle">
               Real stories from Kerala entrepreneurs
             </p>

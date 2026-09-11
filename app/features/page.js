@@ -174,7 +174,7 @@ export default function FeaturesPage() {
       {/* STATS BAR */}
       <div className="seo-stats" role="region" aria-label="Key features summary">
         {[
-          { n: '1,000+', l: 'Registered Sellers' },
+          { n: 'Trusted', l: 'Across Kerala' },
           { n: '0%', l: 'Commission Cut' },
           { n: 'yourshop.', l: 'Custom Subdomains' },
           { n: 'Kerala', l: 'Shipping Partners' },
@@ -457,20 +457,20 @@ export default function FeaturesPage() {
                 <span style={{ background: '#f0fdf4', color: '#166534', padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 700 }}>STARTER</span>
                 <div style={{ fontSize: '2rem', fontWeight: 900, color: '#1a4845', margin: '12px 0 2px' }}>₹99<span style={{ fontSize: '1rem', fontWeight: 400, color: '#64748b' }}>/month</span></div>
                 <div style={{ fontSize: '0.85rem', color: '#64748b' }}>billed monthly · cancel anytime</div>
-                <p style={{ fontSize: '0.9rem', color: '#374151', marginTop: 10, lineHeight: 1.5 }}>
-                  Your live online store with ordering, payments, and stock management.
+                <p style={{ fontSize: '0.88rem', color: '#374151', marginTop: 10, lineHeight: 1.5 }}>
+                  Starter plan: ₹99/month, excluding applicable payment-gateway charges and taxes. Includes up to 50 products. POS hardware and selected add-ons are charged separately.
                 </p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.88rem', color: '#374151' }}>
                 {[
                   'Live online store link',
-                  'Up to 50 products',
+                  'Up to 50 products catalogue',
                   'Order management dashboard',
                   'Real-time inventory sync',
-                  'Razorpay UPI/card checkout',
-                  '0% commission on all sales',
+                  'Razorpay UPI/card checkout support',
+                  '0% platform commission on sales',
                   'WhatsApp & Instagram sharing',
-                  'Cancel anytime — no lock-in',
+                  'Cancel anytime before renewal date',
                 ].map(f => (
                   <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}><CheckCircle2 size={15} color="#1a4845" style={{ marginTop: 2, flexShrink: 0 }} />{f}</li>
                 ))}
@@ -489,13 +489,13 @@ export default function FeaturesPage() {
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1a4845', margin: '12px 0 2px' }}>Flexible extras</div>
                 <div style={{ fontSize: '0.85rem', color: '#64748b' }}>add only what you need</div>
                 <p style={{ fontSize: '0.9rem', color: '#374151', marginTop: 10, lineHeight: 1.5 }}>
-                  Extend your plan with powerful add-ons without upgrading to a forced expensive tier.
+                  Extend your plan with modular add-ons without upgrading to a forced expensive tier.
                 </p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.88rem', color: '#374151' }}>
                 {[
                   'Custom subdomain (yourshop.keralasellers.in)',
-                  'POS & Billing (counter billing)',
+                  'POS & Billing (counter billing module)',
                   'Multi-staff logins',
                   'Extra product capacity',
                   'Barcode & thermal printer support',
@@ -507,7 +507,7 @@ export default function FeaturesPage() {
               <Link href="/register/seller" id="pricing-addons-cta"
                 onClick={() => typeof window !== 'undefined' && typeof window.ksTrack === 'function' && window.ksTrack('pricing_view', { source: 'pricing_addons_cta' })}
                 style={{ display: 'block', textAlign: 'center', background: '#f0fdf4', color: '#166534', fontWeight: 700, padding: '12px', borderRadius: 12, textDecoration: 'none', fontSize: '0.95rem', border: '1px solid #bbf7d0' }}>
-                Register & Choose Add-ons
+                Register &amp; Choose Add-ons
               </Link>
             </div>
           </div>
@@ -517,7 +517,7 @@ export default function FeaturesPage() {
             <div>
               <div style={{ color: '#a3e635', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, marginBottom: 6 }}>🖨️ HARDWARE — ONE-TIME PURCHASE</div>
               <div style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 800 }}>₹3,499 — Bluetooth POS Billing Kit</div>
-              <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.88rem', marginTop: 4 }}>58mm wireless thermal printer · paper rolls · setup guide · one-time, no monthly rental</div>
+              <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.88rem', marginTop: 4 }}>58mm wireless thermal printer · paper rolls · setup guide · one-time purchase, no monthly rental</div>
             </div>
             <Link href="/features/pos-billing-software" id="pricing-pos-kit-cta"
               onClick={() => typeof window !== 'undefined' && typeof window.ksTrack === 'function' && window.ksTrack('pos_kit_view', { source: 'pricing_section' })}
@@ -527,13 +527,21 @@ export default function FeaturesPage() {
           </div>
 
           {/* FINE PRINT / TERMS */}
-          <div style={{ marginTop: 24, padding: '16px 20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, fontSize: '0.82rem', color: '#64748b', lineHeight: 1.7 }}>
-            <p style={{ margin: 0 }}>
-              <strong>Plan terms:</strong> Monthly plans are charged at the start of each billing period. Cancel any time from your dashboard before the next billing date to avoid renewal. No refund for the current period (see <Link href="/cancellation-refund" style={{ color: '#1a4845' }}>cancellation policy</Link>).
-              Payment gateway fees of ~2% + 18% GST per transaction are charged by Razorpay and are separate from Kerala Sellers subscription charges.
-              ₹99/month price is the current Starter plan rate and may change for new subscriptions with prior notice.
-              The ₹3,499 hardware kit is a one-time purchase. Warranty and compatibility details: <Link href="/features/pos-billing-software" style={{ color: '#1a4845' }}>view POS page</Link>.
+          <div style={{ marginTop: 24, padding: '20px 24px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, fontSize: '0.82rem', color: '#64748b', lineHeight: 1.8 }}>
+            <p style={{ margin: '0 0 12px' }}>
+              <strong>Starter plan terms:</strong> Starter plan: ₹99/month, excluding applicable payment-gateway charges and taxes. Includes up to 50 products. POS hardware and selected add-ons are charged separately. Plans renew automatically each month; you can cancel anytime from your seller dashboard before your next billing date to avoid renewal. Unused subscription time is non-refundable.
             </p>
+            <p style={{ margin: '0 0 12px' }}>
+              <strong>Payment Gateway:</strong> Payment-gateway charges may apply according to the payment provider’s current pricing and applicable taxes. Please review the provider’s current terms before accepting payments. Kerala Sellers charges 0% marketplace commission on your sales.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', paddingTop: 8, borderTop: '1px solid #e2e8f0' }}>
+              <Link href="/terms-and-conditions" style={{ color: '#1a4845', textDecoration: 'underline' }}>Terms &amp; Conditions</Link>
+              <Link href="/privacy-policy" style={{ color: '#1a4845', textDecoration: 'underline' }}>Privacy Policy</Link>
+              <Link href="/cancellation-refund" style={{ color: '#1a4845', textDecoration: 'underline' }}>Cancellation &amp; Refund Policy</Link>
+              <Link href="/shipping-delivery" style={{ color: '#1a4845', textDecoration: 'underline' }}>Shipping &amp; Delivery Policy</Link>
+              <Link href="/contact" style={{ color: '#1a4845', textDecoration: 'underline' }}>Contact &amp; Support</Link>
+              <Link href="/delete-account" style={{ color: '#1a4845', textDecoration: 'underline' }}>Account Deletion Policy</Link>
+            </div>
           </div>
         </div>
       </section>

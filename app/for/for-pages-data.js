@@ -18,7 +18,7 @@ export const FOR_PAGES = {
       pills: ['✓ One store link', '✓ All orders in one place', '✓ 0% commission', '✓ Ready in 10 minutes'],
     },
     stats: [
-      { n: '1000+', l: 'Social Sellers' },
+      { n: 'Trusted', l: 'By Social Sellers' },
       { n: '0%', l: 'Commission' },
       { n: '10 min', l: 'Setup' },
       { n: '3+', l: 'Platforms Covered' },
@@ -67,7 +67,7 @@ export const FOR_PAGES = {
       pills: ['✓ Link in bio store', '✓ No DM order chaos', '✓ 0% commission', '✓ Works on mobile'],
     },
     stats: [
-      { n: '1000+', l: 'Instagram Sellers' },
+      { n: 'Trusted', l: 'By IG Sellers' },
       { n: '0%', l: 'Commission' },
       { n: '10 min', l: 'Setup' },
       { n: '1 link', l: 'Runs Everything' },
@@ -165,9 +165,9 @@ export const FOR_PAGES = {
       pills: ['✓ Billing + inventory', '✓ Online store', '✓ 0% commission', '✓ Mobile-friendly'],
     },
     stats: [
-      { n: '1000+', l: 'Businesses' },
+      { n: 'Trusted', l: 'By Local Shops' },
       { n: '0%', l: 'Commission' },
-      { n: '14+', l: 'Districts' },
+      { n: '14', l: 'Districts' },
       { n: '₹', l: 'Affordable Plans' },
     ],
     problems: [

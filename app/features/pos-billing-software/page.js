@@ -32,7 +32,7 @@ const faqs = [
   },
   {
     q: 'Which smartphones and Android versions are compatible?',
-    a: '100% compatible with all Android smartphones and tablets running Android 8.0 (Oreo) up to Android 15+. Connects effortlessly with Samsung, Xiaomi, Vivo, Oppo, Realme, OnePlus, Motorola, etc., via standard Bluetooth 4.0/5.0. No drivers or rooting required.',
+    a: 'Tested with Android devices running Android 8.0 and later, subject to device and Bluetooth compatibility. Connects wirelessly via Bluetooth 4.0/5.0. Paper width is standard 58mm thermal receipt rolls.',
   },
   {
     q: 'What is included in the ₹3,499 POS Billing Kit?',
@@ -220,11 +220,11 @@ export default function PosBillingSoftwarePage() {
               Includes 58mm wireless Bluetooth thermal printer, starter thermal paper rolls, setup guide, and full mobile billing software access.
             </p>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14 }}>
-              <li>✓ <strong>1-Year Replacement Warranty:</strong> Manufacturer replacement coverage on printer hardware</li>
-              <li>✓ <strong>Android 8.0+ Compatibility:</strong> Tested on Samsung, Xiaomi, Vivo, Oppo, OnePlus &amp; all Android phones</li>
-              <li>✓ <strong>30% Pre-book reservation:</strong> Pay only ₹1,049.70 to book your printer kit</li>
-              <li>✓ <strong>58mm Bluetooth Printer:</strong> Includes starter thermal paper rolls &amp; USB charging cable</li>
-              <li>✓ <strong>7-Day Replacement:</strong> Free replacement guarantee for transit damage or pairing issues</li>
+              <li>✓ <strong>1-Year Manufacturer Warranty:</strong> Covered under manufacturer terms against hardware defects</li>
+              <li>✓ <strong>Tested Android Compatibility:</strong> Tested with Android devices running Android 8.0 and later, subject to device &amp; Bluetooth compatibility</li>
+              <li>✓ <strong>58mm Thermal Printer:</strong> 58mm wireless Bluetooth thermal printer + starter paper rolls + charging cable</li>
+              <li>✓ <strong>Transit Guarantee:</strong> 7-day replacement guarantee in case of verified transit damage</li>
+              <li>✓ <strong>30% Pre-book reservation:</strong> Pay ₹1,049.70 to book your printer kit with doorstep delivery</li>
               <li>✓ <strong>Instant Digital Bills:</strong> 1-tap WhatsApp PDF receipt sharing + auto stock sync</li>
             </ul>
             <Link href="/register/seller" className="seo-btn-primary" id="pos-order-kit-cta"
