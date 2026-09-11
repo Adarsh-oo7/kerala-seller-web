@@ -57,10 +57,12 @@ export function organizationJsonLd() {
     '@id': `${BRAND.url}/#organization`,
     name: BRAND.name,
     alternateName: ['Kerala Sellers', 'KeralaSellers.in', 'KS'],
+    description: 'Kerala Sellers is an e-commerce and POS billing platform for local entrepreneurs and small businesses in Kerala.',
     url: BRAND.url,
+    image: `${BRAND.url}/assets/images/logo/KERALA%20SELLERS%20transp.png`,
     logo: {
       '@type': 'ImageObject',
-      url: `${BRAND.url}/assets/images/logo/KERALA SELLERS transp.png`,
+      url: `${BRAND.url}/assets/images/logo/KERALA%20SELLERS%20transp.png`,
       width: 400,
       height: 120,
     },

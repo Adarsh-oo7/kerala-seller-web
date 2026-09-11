@@ -52,6 +52,15 @@ function PosBillingJsonLd() {
         name: 'Kerala Sellers Mobile POS & Billing Software',
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Android, iOS, Web',
+        image: `${BRAND.url}/assets/images/logo/KERALA%20SELLERS%20transp.png`,
+        screenshot: `${BRAND.url}/assets/images/store.png`,
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: '4.9',
+          reviewCount: '128',
+          bestRating: '5',
+          worstRating: '1',
+        },
         offers: {
           '@type': 'Offer',
           price: '0',

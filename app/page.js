@@ -79,6 +79,7 @@ function HomeJsonLd() {
         '@type': 'LocalBusiness',
         '@id': `${BRAND.url}/#localbusiness`,
         name: BRAND.name,
+        image: `${BRAND.url}/assets/images/logo/KERALA%20SELLERS%20transp.png`,
         description:
           'Kerala Sellers is a zero-commission e-commerce platform for Instagram and WhatsApp sellers in Kerala. Launch your own online store in under 10 minutes.',
         url: BRAND.url,
