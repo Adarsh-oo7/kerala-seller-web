@@ -77,7 +77,7 @@ export default function MlHomePage() {
           <div className="seo-hero__pills">
             <span className="seo-hero__pill" lang="ml">✓ 0% വിൽപ്പന കമ്മീഷൻ</span>
             <span className="seo-hero__pill" lang="ml">✓ സ്വന്തം സ്റ്റോർ ലിങ്ക്</span>
-            <span className="seo-hero__pill" lang="ml">✓ ഫോൺ വഴി തെർമൽ ബില്ലിംഗ്</span>
+            <span className="seo-hero__pill" lang="ml">✓ മൊബൈൽ ആപ്പ് വഴി മുഴുവൻ കടയും മാനേജ് ചെയ്യാം</span>
             <span className="seo-hero__pill" lang="ml">✓ യുപിഐ പേയ്‌മെന്റ് ചെക്ക്ഔട്ട്</span>
           </div>
 
@@ -180,6 +180,9 @@ export default function MlHomePage() {
           </Link>
           <Link href="/ml/veetu-business" style={{ background: '#fff', border: '1px solid #bbf7d0', borderRadius: 12, padding: '14px 18px', textDecoration: 'none', color: '#1a4845', fontWeight: 700, fontSize: 14 }}>
             🏠 വീട്ടു ബിസിനസ്സ് (Home Business)
+          </Link>
+          <Link href="/mobile-app" style={{ background: '#fff', border: '1px solid #bbf7d0', borderRadius: 12, padding: '14px 18px', textDecoration: 'none', color: '#1a4845', fontWeight: 700, fontSize: 14 }}>
+            📱 മൊബൈൽ ആപ്പ് (Mobile App)
           </Link>
           <Link href="/features/pos-billing-software" style={{ background: '#fff', border: '1px solid #bbf7d0', borderRadius: 12, padding: '14px 18px', textDecoration: 'none', color: '#1a4845', fontWeight: 700, fontSize: 14 }}>
             🖨️ പോസ് ബില്ലിംഗ് മെഷീൻ

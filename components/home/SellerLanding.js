@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import {
   Store, CheckCircle, ArrowRight, Star, ArrowDown,
-  CreditCard, Package, Award, Video, TrendingUp, Globe
+  CreditCard, Package, Award, Video, TrendingUp, Globe,
+  Smartphone, Printer, Bell
 } from 'lucide-react';
 import SellerStartLinks from '../common/SellerStartLinks';
 import BrandSocialIcons from '../common/BrandSocialIcons';
@@ -56,6 +57,33 @@ export default function SellerLanding() {
           <p style={{ marginTop: '14px', fontSize: '0.85rem', color: '#64748b' }}>
             Starter plan: ₹99/month, excluding applicable payment-gateway charges &amp; taxes • Up to 50 products • 0% platform commission
           </p>
+
+          {/* MOBILE APP QUICK HIGHLIGHT */}
+          <div style={{
+            marginTop: 22,
+            background: 'rgba(255, 255, 255, 0.95)',
+            borderRadius: 16,
+            padding: '14px 20px',
+            display: 'inline-flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+            border: '1px solid rgba(26, 72, 69, 0.15)',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.04)',
+            maxWidth: 720
+          }}>
+            <Smartphone size={20} color="#1a4845" />
+            <span style={{ fontSize: '0.9rem', color: '#1a4845', fontWeight: 700 }}>
+              Manage your store from your phone:
+            </span>
+            <span style={{ fontSize: '0.86rem', color: '#4b5563' }}>
+              Add products, receive orders, update stock, and track payments using the Kerala Sellers mobile app.
+            </span>
+            <Link href="/mobile-app" style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1a4845', textDecoration: 'underline' }}>
+              Explore App →
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -354,6 +382,68 @@ export default function SellerLanding() {
               <Store size={24} />
               <span>Launch Your Store Now</span>
               <ArrowRight size={20} />
+            </Link>
+          </div>
+        </div>
+
+        {/* MANAGE YOUR STORE FROM ANYWHERE (MOBILE APP FEATURE BLOCK) */}
+        <div className="section flow-step" data-animate id="mobile-store-management">
+          <div className="section-header">
+            <div className="icon-wrapper">
+              <Smartphone className="overviewicon" color="#83aa4a" size={40} />
+            </div>
+            <h2 className="section-title">Manage Your Store from Anywhere</h2>
+            <p className="section-subtitle">
+              Your complete store management system in your hand — run your online and offline business directly from your smartphone.
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: 18,
+            marginTop: 28,
+            textAlign: 'left'
+          }}>
+            {[
+              { icon: <Package size={22} color="#1a4845" />, title: 'Add & Edit Products', text: 'Snap photos with your phone camera, set pricing, and add stock in 30 seconds.' },
+              { icon: <CheckCircle size={22} color="#1a4845" />, title: 'Receive & Manage Orders', text: 'Get instant notifications when customers buy from your Instagram, WhatsApp, or website link.' },
+              { icon: <TrendingUp size={22} color="#1a4845" />, title: 'Real-Time Stock Updates', text: 'Unified inventory updates automatically when an item is sold online or at the counter.' },
+              { icon: <CreditCard size={22} color="#1a4845" />, title: 'Track Payments & Status', text: 'Monitor UPI, card payments, and COD settlements with live analytics.' },
+              { icon: <Globe size={22} color="#1a4845" />, title: 'Share Store Link Instantly', text: '1-tap store link sharing to your Instagram bio, WhatsApp status, and direct messages.' },
+              { icon: <Printer size={22} color="#1a4845" />, title: 'Mobile POS & Thermal Billing', text: 'Connect 58mm Bluetooth thermal printers for fast 2-second walk-in receipts.' },
+              { icon: <Bell size={22} color="#1a4845" />, title: 'Instant Seller Notifications', text: 'Real-time order alerts pushed directly to your phone lock screen.' },
+              { icon: <Award size={22} color="#1a4845" />, title: 'Customer Details & History', text: 'View buyer contact details, delivery addresses, and WhatsApp chats in one place.' },
+            ].map((f, i) => (
+              <div key={i} style={{
+                background: '#fff',
+                border: '1px solid #e2e8f0',
+                borderRadius: 16,
+                padding: '20px 22px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ background: '#f0fdf4', padding: 8, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {f.icon}
+                  </div>
+                  <h4 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 700, color: '#1a4845' }}>{f.title}</h4>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.86rem', color: '#64748b', lineHeight: 1.5 }}>{f.text}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="cta-wrapper" style={{ marginTop: 32, display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/mobile-app" className="cta-primary">
+              <Smartphone size={20} />
+              <span>Download the Mobile App</span>
+            </Link>
+            <Link href="/register/seller" className="cta-primary" style={{ background: '#1a4845', color: '#a3e635' }}>
+              <Store size={20} />
+              <span>Start Your Mobile Store (₹99/mo)</span>
             </Link>
           </div>
         </div>

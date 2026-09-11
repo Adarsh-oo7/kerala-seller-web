@@ -61,6 +61,7 @@ export default function Footer() {
             <li><Link href="/for/instagram-sellers">Instagram Sellers</Link></li>
             <li><Link href="/for/whatsapp-sellers">WhatsApp Sellers</Link></li>
             <li><Link href="/features/pos-billing-software">POS Billing Software</Link></li>
+            <li><Link href="/mobile-app">Mobile App (Manage on Phone)</Link></li>
             <li><Link href="/features/online-store-builder">Store Builder</Link></li>
             <li><Link href="/features/order-management">Order Management</Link></li>
             <li><Link href="/faq">FAQ &amp; Help Center</Link></li>

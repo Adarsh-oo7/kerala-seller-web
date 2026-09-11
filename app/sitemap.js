@@ -11,6 +11,7 @@ export default function sitemap() {
 
     // ── Solutions & Features hub ──
     { url: `${BRAND.url}/features`,                      lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
+    { url: `${BRAND.url}/mobile-app`,                    lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
 
     // ── Seller persona pages ──
     { url: `${BRAND.url}/for/instagram-sellers`,         lastModified: now, changeFrequency: 'weekly',  priority: 0.85 },

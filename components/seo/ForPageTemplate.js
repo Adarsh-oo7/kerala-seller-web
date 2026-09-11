@@ -145,6 +145,7 @@ export default function ForPageTemplate({ data, breadcrumbLabel }) {
             {links.map((l) => (
               <li key={l.href}><Link href={l.href}>{l.label}</Link></li>
             ))}
+            <li><Link href="/mobile-app" style={{ fontWeight: 700, color: '#1a4845' }}>Kerala Sellers Mobile App</Link></li>
             <li><Link href="/features/online-store-builder">Store Builder</Link></li>
             <li><Link href="/features/pos-billing-software">POS Billing Software</Link></li>
             <li><Link href="/features/order-management">Order Management</Link></li>

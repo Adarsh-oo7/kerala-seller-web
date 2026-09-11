@@ -31,7 +31,7 @@ const features = [
   { icon: <Slash size={24} color="#1a4845" />, title: 'Auto Out-of-Stock Badges', desc: 'When stock hits zero, the product automatically shows as unavailable. Customers cannot order what you do not have.' },
   { icon: <Layers size={24} color="#1a4845" />, title: 'Variant Stock Management', desc: 'Track stock for each size, colour, or variant independently. Sell small/medium/large separately.' },
   { icon: <BarChart3 size={24} color="#1a4845" />, title: 'Stock Overview Dashboard', desc: 'See all products and their current stock levels at a glance. Spot what needs restocking immediately.' },
-  { icon: <Smartphone size={24} color="#1a4845" />, title: 'Update Stock from Your Phone', desc: 'Restock after a supply run? Update quantities directly from your mobile in seconds.' },
+  { icon: <Smartphone size={24} color="#1a4845" />, title: 'Update Stock on Mobile App', desc: 'Restock after a supply run or counter sale? Update product quantities in real time directly from the Kerala Sellers mobile app.' },
 ];
 
 export default function InventoryManagementPage() {

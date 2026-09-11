@@ -292,6 +292,7 @@ export default function PosBillingSoftwarePage() {
         <div className="seo-links-box">
           <p className="seo-links-box__title">Related Solutions &amp; Guides</p>
           <ul className="seo-links-box__list">
+            <li><Link href="/mobile-app" style={{ fontWeight: 700, color: '#1a4845' }}>Kerala Sellers Mobile App</Link></li>
             <li><Link href="/features/online-store-builder">Store Builder</Link></li>
             <li><Link href="/features/inventory-management">Inventory Management</Link></li>
             <li><Link href="/features/order-management">Order Management</Link></li>

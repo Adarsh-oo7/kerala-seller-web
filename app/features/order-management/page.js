@@ -28,7 +28,7 @@ const problems = [
 const features = [
   { icon: <ClipboardList size={24} color="#1a4845" />, title: 'Unified Order Dashboard', desc: 'Every order — from every channel — lands in one clean view with customer name, items, amount, and payment status.' },
   { icon: <Bell size={24} color="#1a4845" />, title: 'Instant Order Notifications', desc: 'Get alerted the moment a customer places an order. Never miss a sale again.' },
-  { icon: <Smartphone size={24} color="#1a4845" />, title: 'Manage From Your Phone', desc: 'Fully mobile-ready. View, accept, pack, and mark orders delivered — right from your smartphone.' },
+  { icon: <Smartphone size={24} color="#1a4845" />, title: 'Manage From Mobile App', desc: 'Full mobile app support. View, accept, pack, and mark orders delivered with live push alerts on your phone.' },
   { icon: <BarChart3 size={24} color="#1a4845" />, title: 'Order Status Tracking', desc: 'Mark orders as confirmed → packed → shipped → delivered. Customers get status updates automatically.' },
   { icon: <Search size={24} color="#1a4845" />, title: 'Search & Filter Orders', desc: 'Filter by date, payment status, or delivery status. Find any order in seconds.' },
   { icon: <CreditCard size={24} color="#1a4845" />, title: 'Payment Status at a Glance', desc: 'See instantly which orders are paid, pending, or refunded — no manual reconciliation.' },

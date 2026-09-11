@@ -38,7 +38,7 @@ const features = [
   { icon: <Smartphone size={24} color="#1a4845" />, title: 'Beautiful Mobile Product Catalogue', desc: 'Upload photos, set prices, add descriptions, create categories. Looks professional on every phone.' },
   { icon: <ShoppingCart size={24} color="#1a4845" />, title: 'Full Checkout & Cart', desc: 'Customers add to cart and checkout with UPI, card, or net banking. Smooth, familiar purchase flow.' },
   { icon: <Package size={24} color="#1a4845" />, title: 'Stock & Variant Management', desc: 'Set quantities, product variants (size, colour), and availability. No overselling, ever.' },
-  { icon: <Smartphone size={24} color="#1a4845" />, title: 'Mobile-First by Design', desc: 'Your store looks and works perfectly on every smartphone — no app download needed for customers.' },
+  { icon: <Smartphone size={24} color="#1a4845" />, title: 'Manage on Mobile App', desc: 'Add items, adjust prices, take orders, and run your store directly from the Kerala Sellers mobile app on your smartphone.' },
   { icon: <Share2 size={24} color="#1a4845" />, title: 'Share Anywhere', desc: 'Instagram bio, WhatsApp Status, Facebook, email, SMS — your store link works on every platform.' },
 ];
 

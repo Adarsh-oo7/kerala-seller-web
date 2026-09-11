@@ -81,6 +81,12 @@ const coreFeatures = [
     tag: '0% Cut',
   },
   {
+    icon: <Smartphone size={28} color="#1a4845" />,
+    title: 'Mobile App Store Management',
+    desc: 'Manage your entire shop from your smartphone. Add products, view orders, update stock, and print bills from anywhere with the Kerala Sellers mobile app.',
+    tag: 'Store in Hand',
+  },
+  {
     icon: <Share2 size={28} color="#1a4845" />,
     title: 'Instagram & WhatsApp Sharing',
     desc: 'One-click store links for Instagram Bio, WhatsApp Status, Facebook posts, and broadcast groups. Turn DMs into completed orders.',
@@ -562,6 +568,7 @@ export default function FeaturesPage() {
         <div className="seo-links-box">
           <p className="seo-links-box__title">Deep-Dive Feature Pages &amp; Persona Guides</p>
           <ul className="seo-links-box__list">
+            <li><Link href="/mobile-app" style={{ fontWeight: 700, color: '#1a4845' }}>Kerala Sellers Mobile App</Link></li>
             <li><Link href="/features/online-store-builder">Store Builder</Link></li>
             <li><Link href="/features/order-management">Order Management</Link></li>
             <li><Link href="/features/inventory-management">Inventory Sync</Link></li>
