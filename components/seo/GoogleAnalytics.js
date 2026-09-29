@@ -27,7 +27,7 @@ import Script from 'next/script';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
-const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || '';
+const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || 'G-NQZ0NQEP71';
 
 export default function GoogleAnalytics() {
   const pathname = usePathname();
