@@ -56,9 +56,9 @@ export const FOR_PAGES = {
   'instagram-sellers': {
     slug: 'instagram-sellers',
     meta: {
-      title: 'Online Store for Instagram Sellers | Kerala Sellers',
+      title: 'Online Store for Instagram Sellers & Instagram Shop Builder | Kerala Sellers',
       description:
-        'Turn your Instagram DMs into a proper online store. Share a link in bio, let customers browse and order — no more price reply chaos. Instagram DM order track cheyyan — Kerala Sellers.',
+        'Turn your Instagram DMs into a proper online store. Share a link in bio, let customers browse and order with 0% commission. Instagram store builder & DM order management in Kerala.',
     },
     hero: {
       badge: '📸 For Instagram Sellers',
@@ -105,9 +105,9 @@ export const FOR_PAGES = {
   'whatsapp-sellers': {
     slug: 'whatsapp-sellers',
     meta: {
-      title: 'WhatsApp Order Management for Kerala Sellers | Kerala Sellers',
+      title: 'WhatsApp Order Management & WhatsApp Selling Platform | Kerala Sellers',
       description:
-        'Stop managing orders manually on WhatsApp. Get a store link for WhatsApp status, accept orders automatically, and track them in one dashboard. WhatsApp il order engane manage cheyyam.',
+        'Stop managing orders manually on WhatsApp. Get a store link for WhatsApp status, accept online orders automatically, and track them in one dashboard with 0% commission. WhatsApp il order engane manage cheyyam.',
     },
     hero: {
       badge: '💬 For WhatsApp Sellers',
@@ -116,7 +116,7 @@ export const FOR_PAGES = {
       pills: ['✓ WhatsApp Status link', '✓ Auto order tracking', '✓ UPI checkout', '✓ 0% commission'],
     },
     stats: [
-      { n: '500+', l: 'WhatsApp Sellers' },
+      { n: 'Trusted', l: 'By WA Sellers' },
       { n: '0%', l: 'Commission' },
       { n: '10 min', l: 'Setup' },
       { n: '24/7', l: 'Orders Accepted' },

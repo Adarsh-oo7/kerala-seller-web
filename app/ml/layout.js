@@ -4,9 +4,9 @@ import { BRAND } from '../lib/brand';
 // DO NOT publish without review. Contact team for reviewer.
 
 export const metadata = {
-  title: 'Kerala Sellers — ഓൺലൈനിൽ വിൽക്കാനും, മാനേജ് ചെയ്യാനും, വളർത്താനും',
+  title: 'ഓൺലൈൻ ഷോപ്പ് തുടങ്ങാൻ | ഓൺലൈൻ ബിസിനസ് കേരളം | Kerala Sellers',
   description:
-    'ഇൻസ്റ്റാഗ്രാമിലും വാട്സ്ആപ്പിലും ബിസിനസ് ചെയ്യുന്നവർക്ക് സ്വന്തം ഓൺലൈൻ കട. കമ്മീഷൻ 0%. 10 മിനിറ്റ് കൊണ്ട് തുടങ്ങാം.',
+    'കേരളത്തിൽ സ്വന്തമായി ഓൺലൈൻ ഷോപ്പ് തുടങ്ങാൻ Kerala Sellers. കടയുടെ ബില്ലിംഗ് സോഫ്റ്റ്വെയർ, ഇൻവെന്ററി, 0% കമ്മീഷൻ. Online shop thudangan — Kerala Sellers.',
   alternates: {
     canonical: `${BRAND.url}/ml`,
     languages: {

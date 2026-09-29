@@ -11,19 +11,19 @@ const faqs = [
 ];
 
 export const metadata = {
-  title: 'Order Management Software for Small Sellers | Kerala Sellers',
+  title: 'Order Management Software & WhatsApp Order Tracking | Kerala Sellers',
   description:
-    'Track all your orders in one simple dashboard. See customer details, payment status, and delivery info. Order engane track cheyyam — Kerala Sellers makes it easy.',
+    'Online order management software for Kerala sellers. Track orders from WhatsApp, Instagram, and web store in one mobile dashboard. Order engane track cheyyam — Kerala Sellers.',
   alternates: {
     canonical: PAGE_URL,
     languages: { 'en-IN': PAGE_URL, 'x-default': PAGE_URL },
   },
   openGraph: {
-    title: 'Order Management for Kerala Sellers',
-    description: 'All your orders in one clean dashboard. Mobile-ready. 0% commission.',
+    title: 'Order Management Software & WhatsApp Order Tracking | Kerala Sellers',
+    description: 'All your orders from WhatsApp, Instagram and web store in one clean dashboard. Mobile-ready. 0% commission.',
     url: PAGE_URL, siteName: BRAND.name, locale: 'en_IN', type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'Order Management | Kerala Sellers', description: 'Simple order tracking for Kerala sellers.' },
+  twitter: { card: 'summary_large_image', title: 'Order Management Software | Kerala Sellers', description: 'Simple online order management and WhatsApp order tracking for Kerala sellers.' },
   robots: { index: true, follow: true },
 };
 
@@ -39,7 +39,7 @@ function JsonLd() {
           '@type': 'BreadcrumbList',
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: BRAND.url },
-            { '@type': 'ListItem', position: 2, name: 'Features', item: `${BRAND.url}/solutions` },
+            { '@type': 'ListItem', position: 2, name: 'Features', item: `${BRAND.url}/features` },
             { '@type': 'ListItem', position: 3, name: 'Order Management', item: PAGE_URL },
           ],
         },

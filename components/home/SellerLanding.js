@@ -22,12 +22,12 @@ export default function SellerLanding() {
           </div>
 
           <h1 className="hero-title">
-            Own Online Store for Kerala Sellers{' '}
+            Ecommerce Platform for Small Business in Kerala{' '}
             <span className="hero-highlight">from ₹99/month</span>
           </h1>
 
           <p className="hero-subtitle">
-            Sell from Instagram, WhatsApp, and your physical shop with 0% marketplace commission. Accept UPI &amp; card payments, manage orders, track inventory, and print bills from your phone.
+            The #1 online store builder and shop management platform for Kerala sellers. Sell from Instagram, WhatsApp, and your physical shop with 0% marketplace commission. Accept UPI &amp; card payments, manage inventory, and print bills from your phone.
           </p>
 
           <div className="hero-stats">

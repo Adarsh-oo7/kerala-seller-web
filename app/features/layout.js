@@ -77,9 +77,9 @@ function FeaturesJsonLd() {
 }
 
 export const metadata = {
-  title: 'All Features & Add-ons | Kerala Sellers — Mobile Store & Business Tools',
+  title: 'Features & Pricing | Affordable Ecommerce Platform in Kerala | Kerala Sellers',
   description:
-    'Complete list of features & add-ons: mobile store builder, order management, inventory sync, 0% commission payments, POS billing, custom subdomains, and staff logins. Affordable for all Kerala sellers.',
+    'Explore features & transparent pricing from ₹99/month. Affordable ecommerce platform for Kerala sellers with 0% commission, mobile POS billing, and inventory management.',
   alternates: {
     canonical: PAGE_URL,
     languages: { 'en-IN': PAGE_URL, 'x-default': PAGE_URL },
