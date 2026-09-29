@@ -154,9 +154,9 @@ export const FOR_PAGES = {
   'small-businesses': {
     slug: 'small-businesses',
     meta: {
-      title: 'Online Store & Tools for Small Businesses | Kerala Sellers',
+      title: 'Ecommerce Platform & Online Store for Small Business | Kerala Sellers',
       description:
-        'Billing, inventory, online store, and order management for small businesses in Kerala. One platform. 0% commission. Cheriya businessinu online tool — Kerala Sellers.',
+        'Ecommerce platform, POS billing, and inventory software for small businesses in Kerala. Launch your online store from ₹99/mo with 0% commission. Cheriya businessinu online tool — Kerala Sellers.',
     },
     hero: {
       badge: '🏪 For Small Businesses',
@@ -203,18 +203,18 @@ export const FOR_PAGES = {
   'home-businesses': {
     slug: 'home-businesses',
     meta: {
-      title: 'Online Selling Platform for Home Businesses | Kerala Sellers',
+      title: 'Home Based Business in Kerala & Online Reselling Platform | Kerala Sellers',
       description:
-        'Sell from home with your own store link. Perfect for home bakers, resellers, handicraft makers, and anyone running a business from home in Kerala. Veetil ninnu business online aakkan — Kerala Sellers.',
+        'Start a home based business in Kerala with your own store link. The #1 online platform for home bakers, resellers in Kerala, direct selling beginners, and handmade crafts. 0% commission.',
     },
     hero: {
-      badge: '🏠 For Home Businesses',
-      h1: ['Online Selling Platform ', 'for Home Businesses'],
-      sub: 'Running a home bakery, selling handmade products, or reselling from home? Kerala Sellers gives you a professional online store without renting a space, building a website, or paying platform commission.',
-      pills: ['✓ Sell from home', '✓ Your own store link', '✓ 0% commission', '✓ Local delivery zones'],
+      badge: '🏠 For Home Businesses & Resellers',
+      h1: ['Home Based Business in Kerala & ', 'Online Store for Resellers'],
+      sub: 'Running a home bakery, reselling products, or selling handmade goods? Kerala Sellers gives you a professional online store without renting a shop, building a website, or paying platform commission.',
+      pills: ['✓ Home based business Kerala', '✓ Resellers in Kerala', '✓ 0% commission', '✓ Local delivery zones'],
     },
     stats: [
-      { n: '500+', l: 'Home Sellers' },
+      { n: 'Trusted', l: 'By Home Sellers' },
       { n: '0%', l: 'Commission' },
       { n: '10 min', l: 'Setup' },
       { n: 'Kerala', l: 'Focused Delivery' },
@@ -228,13 +228,14 @@ export const FOR_PAGES = {
     ],
     features: [
       { emoji: '🎂', title: 'Perfect for Home Bakeries', desc: 'Set daily available quantities, add-ons, and custom order notes. Customers pre-order and pay — no follow-up chasing.' },
+      { emoji: '🛍️', title: 'Direct Selling & Reselling in Kerala', desc: 'Upload your supplier catalogue, share your store link in WhatsApp groups and Instagram, and collect payments directly.' },
       { emoji: '🧵', title: 'Handmade & Craft Products', desc: 'Showcase your handmade jewellery, textiles, or art with beautiful product photos and descriptions.' },
       { emoji: '📍', title: 'Local Delivery Zones', desc: 'Set your delivery areas — panchayat, district, or all-Kerala. Customers see delivery options based on their location.' },
       { emoji: '📱', title: 'Manage Everything from Your Phone', desc: 'Accept orders, update stock, and mark deliveries — all from your smartphone while you work.' },
-      { emoji: '🤝', title: 'Kerala Home Seller Community', desc: 'Join 500+ home businesses across Kerala already using Kerala Sellers to grow their income.' },
     ],
     faqs: [
       { q: 'Veetil ninnu business online aakkan enthu cheyyanam?', a: 'Register on Kerala Sellers with your phone number, add your shop name and logo, upload your products with photos and prices, and share your store link on Instagram and WhatsApp. That is all. Setup takes 10 minutes.' },
+      { q: 'Can direct sellers and resellers in Kerala use Kerala Sellers?', a: 'Yes. Kerala Sellers is built for direct sellers, resellers, and home entrepreneurs across Kerala. You can upload products, share your store link in WhatsApp groups and Instagram, and take online payments with zero marketplace commission.' },
       { q: 'I am a home baker — can I take pre-orders and limit quantities?', a: 'Yes. You can set available quantities per product, disable ordering when you are fully booked, and accept custom order notes from customers.' },
       { q: 'Do I need a FSSAI license or any registration to sell food online?', a: 'Kerala Sellers does not require any business registration to sign up. However, for selling food commercially, FSSAI registration is advisable under Indian food safety law. Please check local compliance requirements.' },
       { q: 'Can I set different prices for different customer groups?', a: 'Currently each product has one price. You can create multiple product listings for different variants or package sizes at different price points.' },

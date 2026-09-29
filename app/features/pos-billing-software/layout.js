@@ -163,27 +163,28 @@ function PosBillingJsonLd() {
 }
 
 export const metadata = {
-  title: 'POS Billing Software & Mobile Machine Kerala | Kerala Sellers',
+  title: 'Billing Software for Shops & POS Machine in Kerala | Kerala Sellers',
   description:
-    'Turn your phone into a POS billing machine. GST & non-GST billing, Bluetooth thermal printing, stock sync & online store in one app. ₹3,499 billing kit.',
+    'Turn your phone into a POS billing machine. GST & non-GST billing software for retail shops in Kerala with Bluetooth thermal printer support. ₹3,499 billing kit.',
   keywords: [
     'billing software Kerala',
+    'billing software for shops',
+    'POS software Kerala',
+    'retail shop billing software',
     'billing app Kerala',
     'billing machine for shop',
     'GST billing software Kerala',
     'mobile billing app',
-    'POS billing software',
     'thermal printer for billing',
     'turn phone into POS machine',
-    'retail shop billing Kerala',
-    'grocery billing app Kerala',
+    'hotel billing machine in kerala',
   ],
   alternates: {
     canonical: PAGE_URL,
     languages: { 'en-IN': PAGE_URL, 'x-default': PAGE_URL },
   },
   openGraph: {
-    title: 'POS Billing Software & Mobile POS Machine | Kerala Sellers',
+    title: 'Billing Software for Shops & Mobile POS Machine | Kerala Sellers',
     description:
       'Turn your smartphone into a complete POS billing machine. Print thermal receipts, track shop stock, share bills on WhatsApp & manage online store.',
     url: PAGE_URL,
@@ -193,7 +194,7 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'POS Billing Software & Mobile POS Machine | Kerala Sellers',
+    title: 'Billing Software for Shops & Mobile POS Machine | Kerala Sellers',
     description: 'Turn your phone into a POS machine with Kerala Sellers — ₹3,499 complete kit.',
   },
   robots: { index: true, follow: true },

@@ -20,19 +20,19 @@ const features = [
 ];
 
 export const metadata = {
-  title: 'Online Store Builder for Kerala Sellers | Kerala Sellers',
+  title: 'Online Store Builder & Ecommerce Website Maker Kerala | Kerala Sellers',
   description:
-    'Build your free online store in 10 minutes. No coding, no hosting, no website costs. Get your own store link to share on Instagram and WhatsApp. Online kada undakkan — Kerala Sellers.',
+    'Create an online store in Kerala in 10 minutes from ₹99/month. Easy ecommerce website builder for small businesses, Instagram & WhatsApp sellers. 0% commission. Online kada undakkan — Kerala Sellers.',
   alternates: {
     canonical: PAGE_URL,
     languages: { 'en-IN': PAGE_URL, 'x-default': PAGE_URL },
   },
   openGraph: {
-    title: 'Online Store Builder — Build Your Kerala Store in 10 Minutes',
+    title: 'Online Store Builder & Ecommerce Website Maker | Kerala Sellers',
     description: 'No-code online store builder for Kerala sellers. Share a link, accept orders, get paid. 0% commission.',
     url: PAGE_URL, siteName: BRAND.name, locale: 'en_IN', type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'Online Store Builder | Kerala Sellers', description: 'Build a free online store in 10 minutes. No code, no website cost.' },
+  twitter: { card: 'summary_large_image', title: 'Online Store Builder & Ecommerce Website Maker | Kerala Sellers', description: 'Build your online store in Kerala in 10 minutes. No code, 0% commission.' },
   robots: { index: true, follow: true },
 };
 

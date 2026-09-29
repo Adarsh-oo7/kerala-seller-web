@@ -46,11 +46,15 @@ const faqs = [
 ];
 
 export const metadata = {
-  title: 'Sell Online in Kerala from ₹99/month | Kerala Sellers',
+  title: 'Sell Products Online in Kerala | Direct Selling for Beginners | Kerala Sellers',
   description:
-    'Start selling online in Kerala with your own store link from ₹99/month. Built for Instagram and WhatsApp sellers. 0% commission. Sell clothes, food, jewellery, and homemade products across Kerala.',
+    'Start selling products online in Kerala with your own store link from ₹99/month. Perfect for direct selling beginners, WhatsApp & Instagram sellers, and local shops. 0% commission.',
   keywords: [
     'sell products online Kerala',
+    'direct selling for beginners in kerala',
+    'online business in kerala',
+    'kerala online business',
+    'resellers in kerala',
     'online store Kerala',
     'sell online Kerala',
     'how to sell online in Kerala',

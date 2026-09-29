@@ -11,19 +11,19 @@ const faqs = [
 ];
 
 export const metadata = {
-  title: 'Inventory Management for Small Sellers | Kerala Sellers',
+  title: 'Inventory & Stock Management Software for Shops | Kerala Sellers',
   description:
-    'Track stock, set low-stock alerts, and never oversell again. Simple inventory management built for Kerala sellers. Stock engane manage cheyyam — Kerala Sellers.',
+    'Track shop stock in real time, set low-stock alerts, and auto-sync online & offline sales. Simple inventory management software built for shops in Kerala. Stock engane manage cheyyam.',
   alternates: {
     canonical: PAGE_URL,
     languages: { 'en-IN': PAGE_URL, 'x-default': PAGE_URL },
   },
   openGraph: {
-    title: 'Inventory Management for Kerala Sellers',
+    title: 'Inventory & Stock Management Software for Shops | Kerala Sellers',
     description: 'Real-time stock tracking, low-stock alerts, variant management. Never oversell again.',
     url: PAGE_URL, siteName: BRAND.name, locale: 'en_IN', type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'Inventory Management | Kerala Sellers', description: 'Simple stock tracking for Kerala sellers. Never oversell.' },
+  twitter: { card: 'summary_large_image', title: 'Inventory Management Software | Kerala Sellers', description: 'Simple stock tracking for Kerala sellers. Never oversell.' },
   robots: { index: true, follow: true },
 };
 
@@ -33,13 +33,13 @@ function JsonLd() {
     '@graph': [
       {
         '@type': 'WebPage', '@id': `${PAGE_URL}#webpage`, url: PAGE_URL,
-        name: 'Inventory Management for Kerala Sellers', description: metadata.description,
+        name: 'Inventory & Stock Management Software for Shops | Kerala Sellers', description: metadata.description,
         inLanguage: 'en-IN', isPartOf: { '@id': `${BRAND.url}/#website` },
         breadcrumb: {
           '@type': 'BreadcrumbList',
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: BRAND.url },
-            { '@type': 'ListItem', position: 2, name: 'Features', item: `${BRAND.url}/solutions` },
+            { '@type': 'ListItem', position: 2, name: 'Features', item: `${BRAND.url}/features` },
             { '@type': 'ListItem', position: 3, name: 'Inventory Management', item: PAGE_URL },
           ],
         },
