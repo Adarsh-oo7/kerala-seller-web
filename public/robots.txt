@@ -24,12 +24,16 @@ Disallow: /profile/
 Disallow: /cart/
 Disallow: /checkout/
 Disallow: /order-confirmation/
+Disallow: /api/
 
 # AI crawlers — explicitly allowed for GEO / LLM indexing
 User-agent: GPTBot
 Allow: /
 
 User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
 Allow: /
 
 User-agent: Google-Extended
@@ -44,8 +48,15 @@ Allow: /
 User-agent: anthropic-ai
 Allow: /
 
+User-agent: Applebot-Extended
+Allow: /
+
 User-agent: Bytespider
+Allow: /
+
+User-agent: cohere-ai
 Allow: /
 
 Sitemap: https://www.keralasellers.in/sitemap.xml
 LLMs: https://www.keralasellers.in/llms.txt
+LLMs-Full: https://www.keralasellers.in/llms-full.txt

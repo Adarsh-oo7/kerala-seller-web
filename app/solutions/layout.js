@@ -54,6 +54,30 @@ function SolutionsJsonLd() {
           acceptedAnswer: { '@type': 'Answer', text: f.a },
         })),
       },
+      {
+        '@type': 'SoftwareApplication',
+        '@id': `${BRAND.url}/solutions#software`,
+        name: 'Kerala Sellers All-in-One Business Software',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Web, Android, iOS',
+        description:
+          'Unified business software for small shops and sellers in Kerala: online store builder, POS billing software, live inventory sync, and WhatsApp order management starting at ₹99/month with 0% commission.',
+        url: PAGE_URL,
+        offers: {
+          '@type': 'Offer',
+          price: '99',
+          priceCurrency: 'INR',
+          billingDuration: 'P1M',
+        },
+        featureList: [
+          'Online Store Builder for Small Businesses',
+          'Mobile POS Bluetooth 58mm Thermal Billing',
+          'Live Unified Multi-Channel Inventory Sync',
+          'WhatsApp & Instagram Order Management Link',
+          'Mobile Business Management App',
+          '0% Platform Marketplace Commission',
+        ],
+      },
     ],
   };
   return (
