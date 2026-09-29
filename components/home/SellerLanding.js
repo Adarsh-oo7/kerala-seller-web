@@ -4,7 +4,8 @@ import Link from 'next/link';
 import {
   Store, CheckCircle, ArrowRight, Star, ArrowDown,
   CreditCard, Package, Award, Video, TrendingUp, Globe,
-  Smartphone, Printer, Bell
+  Smartphone, Printer, Bell, Check, MessageCircle, Receipt,
+  ShieldCheck, ShoppingBag, Sparkles, XCircle, Zap
 } from 'lucide-react';
 import SellerStartLinks from '../common/SellerStartLinks';
 import BrandSocialIcons from '../common/BrandSocialIcons';
@@ -17,18 +18,56 @@ export default function SellerLanding() {
       <div className="hero" data-animate id="hero">
         <div className="hero-content">
           <div className="hero-badge">
-            <Star className="staricon" color="#f59e0b" />
-            <span>Store from ₹99/mo • 0% Marketplace Commission</span>
+            <Sparkles size={16} color="#f59e0b" />
+            <span>All-In-One Solution • From ₹99/mo • 0% Commission</span>
           </div>
 
           <h1 className="hero-title">
-            Ecommerce Platform for Small Business in Kerala{' '}
-            <span className="hero-highlight">from ₹99/month</span>
+            Your Own Online Store and{' '}
+            <span className="hero-highlight">Business Management Platform</span>
           </h1>
 
-          <p className="hero-subtitle">
-            The #1 online store builder and shop management platform for Kerala sellers. Sell from Instagram, WhatsApp, and your physical shop with 0% marketplace commission. Accept UPI &amp; card payments, manage inventory, and print bills from your phone.
+          <p className="hero-subtitle" style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1a4845', marginBottom: '8px' }}>
+            Your Own Online Store. All Your Business Tools. Starting at ₹99/Month.
           </p>
+
+          <p className="hero-subtitle" style={{ marginTop: 0 }}>
+            Create your own ecommerce store, manage products and inventory, handle billing, and connect with customers through one affordable platform built for small businesses in Kerala.
+          </p>
+
+          {/* 5 CORE PILLARS PILLS */}
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            gap: 10,
+            margin: '20px 0 24px'
+          }}>
+            {[
+              { icon: <ShoppingBag size={16} />, label: 'Online Store' },
+              { icon: <Receipt size={16} />, label: 'Billing & POS' },
+              { icon: <Package size={16} />, label: 'Inventory Management' },
+              { icon: <Smartphone size={16} />, label: 'Mobile App' },
+              { icon: <MessageCircle size={16} />, label: 'WhatsApp Sharing' },
+            ].map((p, i) => (
+              <span key={i} style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                background: '#ffffff',
+                border: '1.5px solid #bbf7d0',
+                borderRadius: 30,
+                padding: '7px 15px',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                color: '#1a4845',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
+              }}>
+                <span style={{ color: '#10b981' }}>{p.icon}</span>
+                {p.label}
+              </span>
+            ))}
+          </div>
 
           <div className="hero-stats">
             <div className="stat-item">
@@ -43,19 +82,23 @@ export default function SellerLanding() {
               <span className="stat-number">10min</span>
               <span className="stat-label">Setup Time</span>
             </div>
+            <div className="stat-item">
+              <span className="stat-number">₹0</span>
+              <span className="stat-label">Custom Site Cost</span>
+            </div>
           </div>
 
           <div className="hero-cta">
             <Link href="/register/seller" className="primary-button">
               <Store className="storeicon" />
-              <span>Start Your ₹99 Store</span>
+              <span>Start Your ₹99 Store Now</span>
             </Link>
             <Link href="/features" className="secondary-button">
-              <span>See Plans &amp; Features</span>
+              <span>View Plans &amp; Features</span>
             </Link>
           </div>
           <p style={{ marginTop: '14px', fontSize: '0.85rem', color: '#64748b' }}>
-            Starter plan: ₹99/month, excluding applicable payment-gateway charges &amp; taxes • Up to 50 products • 0% platform commission
+            Starter plan: ₹99/month, excluding applicable payment-gateway charges &amp; taxes • Up to 50 products • 0% platform commission • No technical skills required
           </p>
 
           {/* MOBILE APP QUICK HIGHLIGHT */}
@@ -88,7 +131,478 @@ export default function SellerLanding() {
       </div>
 
       <div className="container">
-        <div className="section flow-step" data-animate id="start-selling">
+        {/* ── CORE CUSTOMER BENEFITS: WHAT WE PROVIDE & HOW IT SOLVES YOUR PROBLEMS ── */}
+        <div className="section flow-step" data-animate id="customer-benefits" style={{ marginTop: '40px' }}>
+          <div className="section-header">
+            <span style={{
+              display: 'inline-block',
+              background: '#ecfdf5',
+              color: '#065f46',
+              padding: '6px 14px',
+              borderRadius: 20,
+              fontSize: '0.82rem',
+              fontWeight: 800,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              marginBottom: 10
+            }}>
+              Real Customer Benefits
+            </span>
+            <h2 className="section-title">Everything Your Business Needs in One Affordable Place</h2>
+            <p className="section-subtitle" style={{ maxWidth: 760 }}>
+              Not just another website builder. Kerala Sellers gives shop owners, makers, and social sellers a unified system to sell online, manage counter sales, and stay in control.
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: 24,
+            marginTop: 32,
+            textAlign: 'left'
+          }}>
+            {/* 1. Ecommerce Store */}
+            <div style={{
+              background: '#ffffff',
+              border: '1.5px solid #e2e8f0',
+              borderRadius: 20,
+              padding: '28px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                  <div style={{ background: '#ecfdf5', color: '#059669', padding: 10, borderRadius: 14 }}>
+                    <ShoppingBag size={24} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase' }}>Pillar 1</span>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#1a4845' }}>Get Your Own Ecommerce Store</h3>
+                  </div>
+                </div>
+                <p style={{ fontSize: '0.94rem', color: '#475569', lineHeight: 1.6, marginBottom: 16 }}>
+                  Give your business its own branded storefront (<strong>keralasellers.in/shop/yourname</strong>). Customers browse your products, choose options, and place orders directly without waiting for DM replies.
+                </p>
+                <div style={{ background: '#f8fafc', borderRadius: 12, padding: '12px 14px', borderLeft: '4px solid #10b981' }}>
+                  <p style={{ margin: 0, fontSize: '0.86rem', color: '#1e293b', fontWeight: 600 }}>
+                    💡 How it solves your problem: Avoid paying ₹35,000–₹1,00,000 to web design agencies. Get a professional store live in 10 minutes from ₹99/mo.
+                  </p>
+                </div>
+              </div>
+              <div style={{ marginTop: 20 }}>
+                <Link href="/features/online-store-builder" style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a4845', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  Explore Store Builder <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+
+            {/* 2. Billing & POS */}
+            <div style={{
+              background: '#ffffff',
+              border: '1.5px solid #e2e8f0',
+              borderRadius: 20,
+              padding: '28px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                  <div style={{ background: '#eff6ff', color: '#2563eb', padding: 10, borderRadius: 14 }}>
+                    <Receipt size={24} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase' }}>Pillar 2</span>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#1a4845' }}>Affordable Billing &amp; POS</h3>
+                  </div>
+                </div>
+                <p style={{ fontSize: '0.94rem', color: '#475569', lineHeight: 1.6, marginBottom: 16 }}>
+                  Manage walk-in counter sales with fast digital billing. Connect 58mm Bluetooth thermal printers to issue paper receipts in 2 seconds, with barcode scanning and cash/UPI tracking.
+                </p>
+                <div style={{ background: '#f8fafc', borderRadius: 12, padding: '12px 14px', borderLeft: '4px solid #3b82f6' }}>
+                  <p style={{ margin: 0, fontSize: '0.86rem', color: '#1e293b', fontWeight: 600 }}>
+                    💡 How it solves your problem: Replaces expensive ₹15,000/yr legacy billing desktop systems with simple mobile and cloud-based POS tools.
+                  </p>
+                </div>
+              </div>
+              <div style={{ marginTop: 20 }}>
+                <Link href="/features/pos-billing-software" style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a4845', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  Explore Billing &amp; POS <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+
+            {/* 3. Manage Business in One Place */}
+            <div style={{
+              background: '#ffffff',
+              border: '1.5px solid #e2e8f0',
+              borderRadius: 20,
+              padding: '28px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                  <div style={{ background: '#fdf4ff', color: '#c026d3', padding: 10, borderRadius: 14 }}>
+                    <Package size={24} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#c026d3', textTransform: 'uppercase' }}>Pillar 3</span>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#1a4845' }}>Manage Business in One Place</h3>
+                  </div>
+                </div>
+                <p style={{ fontSize: '0.94rem', color: '#475569', lineHeight: 1.6, marginBottom: 16 }}>
+                  Unified inventory, online orders, and in-store sales in one dashboard. When an item is sold over the counter or online, stock auto-deducts everywhere in real time.
+                </p>
+                <div style={{ background: '#f8fafc', borderRadius: 12, padding: '12px 14px', borderLeft: '4px solid #c026d3' }}>
+                  <p style={{ margin: 0, fontSize: '0.86rem', color: '#1e293b', fontWeight: 600 }}>
+                    💡 How it solves your problem: Eliminates manual handwritten registers, Excel sheets, and embarrassing double-selling to customers.
+                  </p>
+                </div>
+              </div>
+              <div style={{ marginTop: 20 }}>
+                <Link href="/features/inventory-management" style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a4845', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  Explore Inventory Sync <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+
+            {/* 4. Mobile App Management */}
+            <div style={{
+              background: '#ffffff',
+              border: '1.5px solid #e2e8f0',
+              borderRadius: 20,
+              padding: '28px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                  <div style={{ background: '#fffbeb', color: '#d97706', padding: 10, borderRadius: 14 }}>
+                    <Smartphone size={24} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#d97706', textTransform: 'uppercase' }}>Pillar 4</span>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#1a4845' }}>Manage Store on Mobile</h3>
+                  </div>
+                </div>
+                <p style={{ fontSize: '0.94rem', color: '#475569', lineHeight: 1.6, marginBottom: 16 }}>
+                  Take product photos from your phone camera, upload listings, adjust prices, get real-time order alerts, and track daily revenue on the go with the Kerala Sellers mobile app.
+                </p>
+                <div style={{ background: '#f8fafc', borderRadius: 12, padding: '12px 14px', borderLeft: '4px solid #f59e0b' }}>
+                  <p style={{ margin: 0, fontSize: '0.86rem', color: '#1e293b', fontWeight: 600 }}>
+                    💡 How it solves your problem: No computer or laptop required. You can operate your entire shop directly from your pocket.
+                  </p>
+                </div>
+              </div>
+              <div style={{ marginTop: 20 }}>
+                <Link href="/mobile-app" style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a4845', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  Explore Mobile App <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+
+            {/* 5. WhatsApp & Social Selling */}
+            <div style={{
+              background: '#ffffff',
+              border: '1.5px solid #e2e8f0',
+              borderRadius: 20,
+              padding: '28px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                  <div style={{ background: '#f0fdf4', color: '#16a34a', padding: 10, borderRadius: 14 }}>
+                    <MessageCircle size={24} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#16a34a', textTransform: 'uppercase' }}>Pillar 5</span>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#1a4845' }}>Share Store on WhatsApp &amp; Bio</h3>
+                  </div>
+                </div>
+                <p style={{ fontSize: '0.94rem', color: '#475569', lineHeight: 1.6, marginBottom: 16 }}>
+                  Put your store link in your WhatsApp status, broadcast lists, and Instagram bio. Customers tap, browse your entire product catalogue, and pay online with instant Razorpay checkout.
+                </p>
+                <div style={{ background: '#f8fafc', borderRadius: 12, padding: '12px 14px', borderLeft: '4px solid #22c55e' }}>
+                  <p style={{ margin: 0, fontSize: '0.86rem', color: '#1e293b', fontWeight: 600 }}>
+                    💡 How it solves your problem: Stop typing "rate?", "size?", and sending manual UPI QR codes in 100 different DMs every single day.
+                  </p>
+                </div>
+              </div>
+              <div style={{ marginTop: 20 }}>
+                <Link href="/for/whatsapp-sellers" style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a4845', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  Explore WhatsApp Selling <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+
+            {/* 6. Zero Commission Banner */}
+            <div style={{
+              background: 'linear-gradient(135deg, #1a4845 0%, #133331 100%)',
+              color: '#ffffff',
+              borderRadius: 20,
+              padding: '28px',
+              boxShadow: '0 8px 24px rgba(26, 72, 69, 0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                  <div style={{ background: 'rgba(255,255,255,0.15)', color: '#a3e635', padding: 10, borderRadius: 14 }}>
+                    <ShieldCheck size={24} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#a3e635', textTransform: 'uppercase' }}>Guarantee</span>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#ffffff' }}>0% Platform Commission</h3>
+                  </div>
+                </div>
+                <p style={{ fontSize: '0.94rem', color: '#e2e8f0', lineHeight: 1.6, marginBottom: 16 }}>
+                  Unlike food or marketplace aggregators that take 15% to 30% of your earnings, Kerala Sellers charges <strong>0% commission</strong> on your sales.
+                </p>
+                <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 14px', borderLeft: '4px solid #a3e635' }}>
+                  <p style={{ margin: 0, fontSize: '0.86rem', color: '#ffffff', fontWeight: 600 }}>
+                    💡 Flat monthly subscription of ₹99. Every single rupee of customer profit goes straight into your bank account.
+                  </p>
+                </div>
+              </div>
+              <div style={{ marginTop: 20 }}>
+                <Link href="/register/seller" style={{ fontSize: '0.9rem', fontWeight: 700, color: '#a3e635', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  Start Free Registration <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── PROBLEM VS SOLUTION: THE OLD WAY VS THE KERALA SELLERS WAY ── */}
+        <div className="section flow-step" data-animate id="comparison-section" style={{ marginTop: '60px' }}>
+          <div className="section-header">
+            <span style={{
+              display: 'inline-block',
+              background: '#fef3c7',
+              color: '#b45309',
+              padding: '6px 14px',
+              borderRadius: 20,
+              fontSize: '0.82rem',
+              fontWeight: 800,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              marginBottom: 10
+            }}>
+              Clear Comparison
+            </span>
+            <h2 className="section-title">The Old Way vs The Kerala Sellers Way</h2>
+            <p className="section-subtitle">
+              See why hundreds of Kerala retail shops, home bakers, and social sellers are making the switch.
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: 24,
+            marginTop: 30
+          }}>
+            {/* Old Way */}
+            <div style={{
+              background: '#fff1f2',
+              border: '2px solid #fecdd3',
+              borderRadius: 20,
+              padding: '28px',
+              textAlign: 'left'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                <XCircle size={26} color="#e11d48" />
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#9f1239' }}>The Old Way (Without Kerala Sellers)</h3>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {[
+                  'Spending ₹35,000–₹1,00,000 upfront on custom web agencies + hosting fees',
+                  'Losing 15% to 30% of every sale to third-party delivery aggregators',
+                  'Hours lost replying to "Price please?", "Available?", and "Size?" in messy WhatsApp DMs',
+                  'Chasing customers for UPI payment screenshots and manual bank cross-checking',
+                  'Handwritten registers and notebooks causing stock mix-ups and double-selling',
+                  'Separate expensive POS software (₹15,000/yr) for the physical shop counter'
+                ].map((item, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: '0.92rem', color: '#881337', lineHeight: 1.5 }}>
+                    <span style={{ color: '#e11d48', fontWeight: 800, marginTop: 1 }}>✕</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Kerala Sellers Way */}
+            <div style={{
+              background: '#f0fdf4',
+              border: '2px solid #86efac',
+              borderRadius: 20,
+              padding: '28px',
+              textAlign: 'left',
+              boxShadow: '0 8px 30px rgba(16, 185, 129, 0.12)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                <CheckCircle size={26} color="#16a34a" />
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#166534' }}>The Kerala Sellers Way (All-in-One)</h3>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {[
+                  'Starting at just ₹99/month. Zero upfront investment, no developer needed',
+                  '0% marketplace commission — 100% of your earnings go straight to your bank account',
+                  '1 branded store link in your bio and status: customers self-browse & order 24/7',
+                  'Instant Razorpay UPI, card, and net banking checkout with automated verification',
+                  'Unified real-time inventory: counter sales and online orders auto-sync live',
+                  'Built-in mobile POS billing with 2-second thermal printing included from phone'
+                ].map((item, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: '0.92rem', color: '#14532d', fontWeight: 600, lineHeight: 1.5 }}>
+                    <span style={{ color: '#16a34a', fontWeight: 900, marginTop: 1 }}>✓</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 3-STEP QUICK SETUP GUIDE & REGISTRATION URGENCY ── */}
+        <div className="section flow-step" data-animate id="quick-store-guide" style={{ marginTop: '60px' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #f8fafc 0%, #edf7f5 100%)',
+            border: '2px solid #bbf7d0',
+            borderRadius: 24,
+            padding: '36px 30px',
+            boxShadow: '0 12px 35px rgba(0,0,0,0.05)',
+            textAlign: 'center'
+          }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a4845', color: '#a3e635', padding: '6px 16px', borderRadius: 30, fontSize: '0.84rem', fontWeight: 800, marginBottom: 16 }}>
+              <Zap size={16} /> 10-Minute Launch Guide
+            </div>
+            <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 800, color: '#1a4845', margin: '0 0 10px 0' }}>
+              Create Your Online Store in 3 Simple Steps
+            </h2>
+            <p style={{ fontSize: '1rem', color: '#475569', maxWidth: 640, margin: '0 auto 30px auto', lineHeight: 1.6 }}>
+              No coding, no website developer, and no credit card required. Anyone in Kerala can set up their business today.
+            </p>
+
+            {/* Stepper Cards */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: 20,
+              textAlign: 'left',
+              marginBottom: 32
+            }}>
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 16, padding: '22px', position: 'relative' }}>
+                <div style={{
+                  position: 'absolute', top: -14, left: 20,
+                  background: '#1a4845', color: '#ffffff',
+                  width: 30, height: 30, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 800, fontSize: '0.9rem'
+                }}>1</div>
+                <h3 style={{ margin: '10px 0 6px 0', fontSize: '1.1rem', fontWeight: 700, color: '#1a4845' }}>
+                  Register with Mobile (60s)
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.88rem', color: '#64748b', lineHeight: 1.5 }}>
+                  Enter your phone number and verify with instant OTP. Choose your shop URL (e.g. keralasellers.in/shop/yourbrand).
+                </p>
+              </div>
+
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 16, padding: '22px', position: 'relative' }}>
+                <div style={{
+                  position: 'absolute', top: -14, left: 20,
+                  background: '#1a4845', color: '#ffffff',
+                  width: 30, height: 30, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 800, fontSize: '0.9rem'
+                }}>2</div>
+                <h3 style={{ margin: '10px 0 6px 0', fontSize: '1.1rem', fontWeight: 700, color: '#1a4845' }}>
+                  Add Products from Phone
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.88rem', color: '#64748b', lineHeight: 1.5 }}>
+                  Snap photos with your phone camera, set your prices, and add available stock quantities in 30 seconds.
+                </p>
+              </div>
+
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 16, padding: '22px', position: 'relative' }}>
+                <div style={{
+                  position: 'absolute', top: -14, left: 20,
+                  background: '#1a4845', color: '#ffffff',
+                  width: 30, height: 30, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 800, fontSize: '0.9rem'
+                }}>3</div>
+                <h3 style={{ margin: '10px 0 6px 0', fontSize: '1.1rem', fontWeight: 700, color: '#1a4845' }}>
+                  Share Link &amp; Start Selling
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.88rem', color: '#64748b', lineHeight: 1.5 }}>
+                  Share your store link on WhatsApp Status, Instagram bio, and Facebook. Accept orders with direct UPI payments!
+                </p>
+              </div>
+            </div>
+
+            {/* Registration Urgency CTA Box */}
+            <div style={{
+              background: '#ffffff',
+              borderRadius: 18,
+              padding: '24px',
+              border: '2px solid #10b981',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 14,
+              maxWidth: 580,
+              margin: '0 auto'
+            }}>
+              <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1a4845' }}>
+                Ready to take your business online today?
+              </span>
+              <Link
+                href="/register/seller"
+                style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: '#ffffff',
+                  textDecoration: 'none',
+                  padding: '16px 36px',
+                  borderRadius: 14,
+                  fontSize: '1.15rem',
+                  fontWeight: 800,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  boxShadow: '0 8px 24px rgba(16, 185, 129, 0.35)',
+                  transition: 'transform 0.2s',
+                  width: '100%',
+                  maxWidth: 380,
+                  justifyContent: 'center'
+                }}
+              >
+                <Store size={22} />
+                <span>Register Now — Start at ₹99/mo</span>
+                <ArrowRight size={20} />
+              </Link>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 14, fontSize: '0.82rem', color: '#64748b' }}>
+                <span>✓ 10-Minute Setup</span>
+                <span>✓ 0% Platform Commission</span>
+                <span>✓ Direct UPI Settlements</span>
+                <span>✓ Mobile App Included</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="section flow-step" data-animate id="start-selling" style={{ marginTop: '50px' }}>
           <div className="section-header">
             <div className="icon-wrapper">
               <Store className="overviewicon" color="#83aa4a" size={40} />

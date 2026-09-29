@@ -485,6 +485,23 @@ export default function RegisterSellerPage() {
                         </p>
                     </div>
 
+                    {/* Small Create Guide & Trust Pills */}
+                    <div style={{
+                        background: '#f0fdf4',
+                        border: '1px solid #bbf7d0',
+                        borderRadius: '12px',
+                        padding: '12px 16px',
+                        marginBottom: '20px',
+                        textAlign: 'left'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800, color: '#166534', fontSize: '0.88rem', marginBottom: 4 }}>
+                            <span>⚡ Launch Your Store in 10 Minutes</span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.82rem', color: '#334155', lineHeight: 1.45 }}>
+                            Starter plan at <strong>₹99/month</strong> • <strong>0% marketplace commission</strong> • No GST required • Direct UPI payouts
+                        </p>
+                    </div>
+
                     {/* Progress Indicator */}
                     <div style={styles.progressContainer}>
                         <div style={styles.progressBar}>

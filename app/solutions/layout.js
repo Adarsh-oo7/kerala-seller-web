@@ -65,9 +65,18 @@ function SolutionsJsonLd() {
 }
 
 export const metadata = {
-  title: 'Business Solutions for Every Seller | Kerala Sellers',
+  title: 'All-in-One Business Management Software for Shops in Kerala | Kerala Sellers',
   description:
-    'One complete platform to start, sell, manage and grow your business in Kerala. Online store, order management, inventory, payments — all in one. Zero commission.',
+    'Manage your online store, inventory, POS billing, and sales in one place. The all-in-one business software for small shops and sellers in Kerala from ₹99/mo. 0% commission.',
+  keywords: [
+    'all in one business management software',
+    'small business management software',
+    'shop management software',
+    'business management software Kerala',
+    'ecommerce and inventory software',
+    'online and offline store management',
+    'retail management software',
+  ],
   alternates: {
     canonical: PAGE_URL,
     languages: { 'en-IN': PAGE_URL, 'x-default': PAGE_URL },
