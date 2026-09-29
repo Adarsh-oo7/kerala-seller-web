@@ -5,7 +5,7 @@ export default function robots() {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/dashboard/', '/profile/', '/checkout', '/cart'],
+      disallow: ['/dashboard/', '/profile/', '/checkout', '/cart', '/api/'],
     },
     sitemap: `${BRAND.url}/sitemap.xml`,
     host: BRAND.url,
