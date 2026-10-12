@@ -6,6 +6,10 @@ export const BRAND = {
   email: 'keralasellers.in@gmail.com',
   phoneDisplay: '+91 94003 55185',
   phoneTel: '+919400355185',
+  developer: {
+    name: 'Adarsh B S',
+    portfolio: 'https://adarsh.digitalproductsolutions.in/',
+  },
   parent: {
     name: 'Digital Product Solutions',
     url: 'https://www.digitalproductsolutions.in/',
@@ -14,7 +18,8 @@ export const BRAND = {
     {
       name: 'Adarsh B S',
       role: 'Founder & CEO',
-      focus: 'Strategy and growth',
+      focus: 'Strategy, architecture and development',
+      portfolio: 'https://adarsh.digitalproductsolutions.in/',
       quote:
         'I am building KeralaSellers.in to make it easy for small businesses in our state to grow online without middlemen or commission cuts.',
     },
@@ -48,6 +53,7 @@ export const BRAND_SAME_AS = [
   BRAND.profiles.youtube,
   BRAND.profiles.prebook,
   BRAND.parent.url,
+  BRAND.developer.portfolio,
 ];
 
 export function organizationJsonLd() {
@@ -112,6 +118,7 @@ export function organizationJsonLd() {
       '@type': 'Person',
       name: person.name,
       jobTitle: person.role,
+      ...(person.portfolio ? { url: person.portfolio, sameAs: person.portfolio } : {}),
     })),
   };
 }

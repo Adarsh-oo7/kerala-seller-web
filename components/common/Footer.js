@@ -49,6 +49,7 @@ export default function Footer() {
             <li><Link href="/products">Browse Products</Link></li>
             <li><Link href="/shop">Shops</Link></li>
             <li><Link href="/about">About Us</Link></li>
+            <li><Link href="/about/project-development">Project Development</Link></li>
             <li><Link href="/contact">Contact</Link></li>
           </ul>
         </nav>
@@ -113,16 +114,21 @@ export default function Footer() {
 
       </div>
 
-      {/* ── Bottom bar ── */}
+      {/* ── Bottom bar & Developer Attribution ── */}
       <div className="site-footer__bottom">
         <small className="site-footer__copy">
           &copy; {year} {BRAND.name}. All rights reserved.
         </small>
         <span className="site-footer__parent">
-          A product of{' '}
-          <a href={BRAND.parent.url} target="_blank" rel="noopener noreferrer me">
+          Kerala Sellers is developed and maintained by{' '}
+          <a href={BRAND.parent.url} rel="noopener noreferrer" className="site-footer__attribution-link">
             {BRAND.parent.name}
           </a>
+          , with development contributions from{' '}
+          <a href={BRAND.developer.portfolio} rel="noopener noreferrer" className="site-footer__attribution-link">
+            {BRAND.developer.name}
+          </a>
+          .
         </span>
       </div>
 

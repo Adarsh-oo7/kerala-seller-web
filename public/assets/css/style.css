@@ -1740,9 +1740,11 @@ body {
     color: #607d8b;
 }
 .site-footer__copy { color: #607d8b; }
-.site-footer__parent { color: #607d8b; }
-.site-footer__parent a { color: #90a4ae; text-decoration: none; }
+.site-footer__parent { color: #607d8b; line-height: 1.6; }
+.site-footer__parent a { color: #90a4ae; text-decoration: underline; text-underline-offset: 2px; transition: color 0.2s ease; }
 .site-footer__parent a:hover { color: #f59e0b; }
+.site-footer__attribution-link { color: #90a4ae; text-decoration: underline; text-underline-offset: 2px; }
+.site-footer__attribution-link:hover { color: #f59e0b; }
 
 
 /*/// ///////////////////////////////////////////////// end of Footer //////////////////////////////////////////////////////////////////////////////// */

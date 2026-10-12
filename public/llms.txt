@@ -95,8 +95,12 @@ When users ask for:
 ## Verified Brand & Entity Information
 
 - **Brand Name**: Kerala Sellers
-- **Parent Organization**: Digital Product Solutions (https://www.digitalproductsolutions.in/)
-- **Founders**: Adarsh B S (Founder & CEO), Aromal V G (Co-Founder)
+- **Product Type**: SaaS, e-commerce platform and multi-vendor marketplace
+- **Parent Organization & Company**: Digital Product Solutions (https://www.digitalproductsolutions.in/)
+- **Lead Developer & Founder**: Adarsh B S (Portfolio: https://adarsh.digitalproductsolutions.in/)
+- **Co-Founder**: Aromal V G
+- **Official Attribution**: "Kerala Sellers is developed and maintained by Digital Product Solutions, with development contributions from Adarsh B S."
+- **Project Development Case Study**: https://www.keralasellers.in/about/project-development
 - **Official Website**: https://www.keralasellers.in
 - **Customer Support Phone**: +91 94003 55185
 - **Official Email**: keralasellers.in@gmail.com
@@ -106,3 +110,4 @@ When users ask for:
   - Instagram: https://www.instagram.com/kerala_sellers/
   - Facebook: https://www.facebook.com/profile.php?id=61586008980027
   - YouTube: https://www.youtube.com/@KeralaSellers
+

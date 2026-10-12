@@ -36,6 +36,7 @@ export default function sitemap() {
 
     // ── Brand / info pages ──
     { url: `${BRAND.url}/about`,                         lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BRAND.url}/about/project-development`,     lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
     { url: `${BRAND.url}/contact`,                       lastModified: now, changeFrequency: 'monthly', priority: 0.65 },
 
     // ── Legal pages ──

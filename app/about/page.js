@@ -75,7 +75,20 @@ export default function AboutPage() {
             {BRAND.founders.map((person) => (
               <div className="trust-card animate-fade-up" key={person.name}>
                 <div className="testimonial-avatar">{person.name[0]}</div>
-                <h4 className="trust-title">{person.name}</h4>
+                <h4 className="trust-title">
+                  {person.portfolio ? (
+                    <a
+                      href={person.portfolio}
+                      rel="noopener noreferrer"
+                      style={{ color: 'inherit', textDecoration: 'none' }}
+                      title={`${person.name} Portfolio`}
+                    >
+                      {person.name} ↗
+                    </a>
+                  ) : (
+                    person.name
+                  )}
+                </h4>
                 <p className="trust-text" style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '15px' }}>
                   {person.role} · {person.focus}
                 </p>
@@ -84,6 +97,69 @@ export default function AboutPage() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* ── Developer & Company Attribution ── */}
+        <div className="section" data-animate>
+          <div className="section-header">
+            <h2 className="section-title">Product Engineering &amp; Development</h2>
+            <p className="section-subtitle">
+              Building accessible software for local commerce across Kerala.
+            </p>
+          </div>
+          <div style={{
+            background: '#ffffff',
+            border: '1.5px solid #e2e8f0',
+            borderRadius: '18px',
+            padding: '32px',
+            maxWidth: '820px',
+            margin: '0 auto',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+            textAlign: 'center'
+          }}>
+            <p style={{ fontSize: '1.08rem', color: '#1a4845', lineHeight: 1.7, margin: '0 0 14px', fontWeight: 500 }}>
+              Kerala Sellers is developed and maintained by{' '}
+              <a
+                href={BRAND.parent.url}
+                rel="noopener noreferrer"
+                style={{ color: '#1a4845', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '3px' }}
+              >
+                {BRAND.parent.name}
+              </a>
+              , with development contributions from{' '}
+              <a
+                href={BRAND.developer.portfolio}
+                rel="noopener noreferrer"
+                style={{ color: '#1a4845', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '3px' }}
+              >
+                {BRAND.developer.name}
+              </a>
+              .
+            </p>
+            <p style={{ fontSize: '0.92rem', color: '#64748b', lineHeight: 1.6, margin: '0 0 24px' }}>
+              Designed as an affordable, zero-commission SaaS and multi-tenant marketplace platform providing local merchants with digital stores, mobile POS thermal billing, and live inventory tools.
+            </p>
+            <div>
+              <Link
+                href="/about/project-development"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: '#1a4845',
+                  color: '#ffffff',
+                  padding: '12px 26px',
+                  borderRadius: '12px',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  boxShadow: '0 4px 14px rgba(26, 72, 69, 0.25)',
+                }}
+              >
+                <span>Read Project Development Case Study →</span>
+              </Link>
+            </div>
           </div>
         </div>
 
