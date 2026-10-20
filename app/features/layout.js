@@ -77,9 +77,9 @@ function FeaturesJsonLd() {
 }
 
 export const metadata = {
-  title: 'Features & Pricing | Affordable Ecommerce Platform in Kerala | Kerala Sellers',
+  title: 'Kerala Sellers Features & Pricing: Store, POS, Inventory',
   description:
-    'Explore features & transparent pricing from ₹99/month. Affordable ecommerce platform for Kerala sellers with 0% commission, mobile POS billing, and inventory management.',
+    'Every Kerala Sellers feature and add-on with transparent pricing from ₹99/month: online store, mobile POS billing, inventory and orders. 0% commission.',
   alternates: {
     canonical: PAGE_URL,
     languages: { 'en-IN': PAGE_URL, 'x-default': PAGE_URL },

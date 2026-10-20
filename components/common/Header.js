@@ -16,9 +16,9 @@ const DesktopNav = () => (
       <Link href="/" className="nav-item">HOME</Link>
       {/* Solutions dropdown — additive, does not replace existing items */}
       <div className="nav-dropdown-wrapper">
-        <Link href="/solutions" className="nav-item nav-item-with-arrow">SOLUTIONS ▾</Link>
+        <Link href="/features" className="nav-item nav-item-with-arrow">SOLUTIONS ▾</Link>
         <div className="nav-dropdown-panel">
-          <Link href="/solutions" className="nav-dropdown-item nav-dropdown-item--primary">
+          <Link href="/features" className="nav-dropdown-item nav-dropdown-item--primary">
             All Solutions
             <small>Start → Sell → Manage → Grow</small>
           </Link>
@@ -34,6 +34,9 @@ const DesktopNav = () => (
           </Link>
           <Link href="/for/small-businesses" className="nav-dropdown-item">
             Small Businesses
+          </Link>
+          <Link href="/for/resellers" className="nav-dropdown-item">
+            Resellers
           </Link>
           <div className="nav-dropdown-divider" />
           <Link href="/features" className="nav-dropdown-item nav-dropdown-item--primary">
@@ -153,7 +156,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
             <ChevronRight size={16} />
           </Link>
           {/* Solutions group — additive */}
-          <Link href="/solutions" className="mobile-nav-item" onClick={onClose}>
+          <Link href="/features" className="mobile-nav-item" onClick={onClose}>
             <span className="nav-left">Solutions</span>
             <ChevronRight size={16} />
           </Link>
@@ -167,6 +170,10 @@ const MobileMenu = ({ isOpen, onClose }) => {
           </Link>
           <Link href="/for/home-businesses" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
             <span className="nav-left">🏠 Home Businesses</span>
+            <ChevronRight size={14} />
+          </Link>
+          <Link href="/for/resellers" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem' }}>
+            <span className="nav-left">🔁 Resellers</span>
             <ChevronRight size={14} />
           </Link>
           <Link href="/features" className="mobile-nav-item" onClick={onClose} style={{ paddingLeft: 32, fontSize: '0.9rem', fontWeight: 600, color: '#059669' }}>

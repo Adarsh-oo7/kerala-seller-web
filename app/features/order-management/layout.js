@@ -11,9 +11,9 @@ const faqs = [
 ];
 
 export const metadata = {
-  title: 'Order Management Software & WhatsApp Order Tracking | Kerala Sellers',
+  title: 'Order Management & WhatsApp Order Tracking | Kerala Sellers',
   description:
-    'Online order management software for Kerala sellers. Track orders from WhatsApp, Instagram, and web store in one mobile dashboard. Order engane track cheyyam — Kerala Sellers.',
+    'Track every WhatsApp, Instagram and web-store order in one dashboard. Payment status, delivery updates and alerts on mobile. 0% commission.',
   alternates: {
     canonical: PAGE_URL,
     languages: { 'en-IN': PAGE_URL, 'x-default': PAGE_URL },

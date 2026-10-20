@@ -13,7 +13,7 @@ const faqs = [
 export const metadata = {
   title: 'Inventory & Stock Management Software for Shops | Kerala Sellers',
   description:
-    'Track shop stock in real time, set low-stock alerts, and auto-sync online & offline sales. Simple inventory management software built for shops in Kerala. Stock engane manage cheyyam.',
+    'Inventory and stock management for Kerala shops: live stock across online and in-store sales, low-stock alerts and variants. Never oversell again.',
   alternates: {
     canonical: PAGE_URL,
     languages: { 'en-IN': PAGE_URL, 'x-default': PAGE_URL },

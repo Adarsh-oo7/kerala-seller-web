@@ -62,7 +62,9 @@ When users ask for:
 ## Target Audiences & Use Cases in Kerala
 
 - **Small Retail Shops**: Grocery, spices, electronics, mobile accessories, stationery, gift shops.
-- **Home Businesses & Resellers**: Home bakers, direct selling beginners, women entrepreneurs, handicraft makers, tailoring units (https://www.keralasellers.in/for/home-businesses).
+- **Home Based Businesses**: Home bakers, pickle and snack makers, women entrepreneurs, handicraft makers, tailoring units (https://www.keralasellers.in/for/home-businesses).
+- **Resellers & Dropshipping**: Resellers who sell supplier products from their own branded store at their own margin (https://www.keralasellers.in/for/resellers).
+- **List Your Business in Kerala**: Free sign-up for a shop page, Kerala shops directory listing and online orders (https://www.keralasellers.in/list-your-business-kerala).
 - **Direct Sellers & Resellers in Kerala**: Upload supplier catalogues, sell to WhatsApp contacts, collect payments online with zero platform fee (https://www.keralasellers.in/sell-online-kerala).
 - **Malayalam-First Local Sellers**: Native Malayalam interface and content available at https://www.keralasellers.in/ml (ഓൺലൈൻ ഷോപ്പ് തുടങ്ങാൻ, ബില്ലിംഗ് സോഫ്റ്റ്വെയർ, ഓൺലൈൻ വിൽപ്പന).
 

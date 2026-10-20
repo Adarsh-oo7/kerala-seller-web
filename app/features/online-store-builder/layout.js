@@ -20,9 +20,9 @@ const features = [
 ];
 
 export const metadata = {
-  title: 'Online Store Builder & Ecommerce Website Maker Kerala | Kerala Sellers',
+  title: 'Online Store Builder in Kerala, No Code | Kerala Sellers',
   description:
-    'Create an online store in Kerala in 10 minutes from ₹99/month. Easy ecommerce website builder for small businesses, Instagram & WhatsApp sellers. 0% commission. Online kada undakkan — Kerala Sellers.',
+    'Build your own online store in 10 minutes, no coding. Share one link, take orders and UPI payments with 0% commission. From ₹99/month.',
   alternates: {
     canonical: PAGE_URL,
     languages: { 'en-IN': PAGE_URL, 'x-default': PAGE_URL },

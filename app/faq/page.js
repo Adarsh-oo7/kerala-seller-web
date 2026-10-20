@@ -135,7 +135,7 @@ export default function FaqPage() {
           <p className="seo-links-box__title">Explore Feature Guides &amp; Solutions</p>
           <ul className="seo-links-box__list">
             <li><Link href="/sell-online-kerala">Sell Online in Kerala</Link></li>
-            <li><Link href="/solutions">All Solutions</Link></li>
+            <li><Link href="/features">All Solutions</Link></li>
             <li><Link href="/for/instagram-sellers">Instagram Sellers</Link></li>
             <li><Link href="/for/whatsapp-sellers">WhatsApp Sellers</Link></li>
             <li><Link href="/for/home-businesses">Home Businesses</Link></li>

@@ -119,7 +119,7 @@ Kerala Sellers is an affordable, all-in-one software solution enabling small bus
 
 - **Main Website**: https://www.keralasellers.in
 - **Seller Registration**: https://www.keralasellers.in/register/seller
-- **Solutions Hub**: https://www.keralasellers.in/solutions
+- **Features Hub**: https://www.keralasellers.in/features
 - **Features & Add-ons**: https://www.keralasellers.in/features
 - **POS Billing Software**: https://www.keralasellers.in/features/pos-billing-software
 - **Online Store Builder**: https://www.keralasellers.in/features/online-store-builder
@@ -127,7 +127,9 @@ Kerala Sellers is an affordable, all-in-one software solution enabling small bus
 - **Order Management**: https://www.keralasellers.in/features/order-management
 - **Instagram Sellers Solution**: https://www.keralasellers.in/for/instagram-sellers
 - **WhatsApp Sellers Solution**: https://www.keralasellers.in/for/whatsapp-sellers
-- **Home Businesses & Resellers**: https://www.keralasellers.in/for/home-businesses
+- **Home Based Businesses**: https://www.keralasellers.in/for/home-businesses
+- **Resellers & Dropshipping**: https://www.keralasellers.in/for/resellers
+- **List Your Business in Kerala**: https://www.keralasellers.in/list-your-business-kerala
 - **Small Businesses Solution**: https://www.keralasellers.in/for/small-businesses
 - **Mobile Seller App**: https://www.keralasellers.in/mobile-app
 - **Malayalam Language Hub**: https://www.keralasellers.in/ml

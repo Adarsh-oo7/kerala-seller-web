@@ -48,6 +48,7 @@ export default function Footer() {
             <li><Link href="/sell-online-kerala">Sell Online in Kerala</Link></li>
             <li><Link href="/products">Browse Products</Link></li>
             <li><Link href="/shop">Shops</Link></li>
+            <li><Link href="/list-your-business-kerala">List Your Business</Link></li>
             <li><Link href="/about">About Us</Link></li>
             <li><Link href="/about/project-development">Project Development</Link></li>
             <li><Link href="/contact">Contact</Link></li>
@@ -58,9 +59,11 @@ export default function Footer() {
         <nav className="site-footer__nav" aria-label="Solutions and Features">
           <h3 className="site-footer__nav-heading">Solutions &amp; POS</h3>
           <ul className="site-footer__nav-list">
-            <li><Link href="/solutions">All Solutions</Link></li>
+            <li><Link href="/features">All Solutions</Link></li>
             <li><Link href="/for/instagram-sellers">Instagram Sellers</Link></li>
             <li><Link href="/for/whatsapp-sellers">WhatsApp Sellers</Link></li>
+            <li><Link href="/for/home-businesses">Home Based Business</Link></li>
+            <li><Link href="/for/resellers">Resellers</Link></li>
             <li><Link href="/features/pos-billing-software">POS Billing Software</Link></li>
             <li><Link href="/mobile-app">Mobile App (Manage on Phone)</Link></li>
             <li><Link href="/features/online-store-builder">Store Builder</Link></li>

@@ -16,6 +16,8 @@ const videoTitles = {
   'home-businesses': 'Start Selling From Home in Kerala',
   'small-businesses': 'Manage Your Shop & Orders From Your Phone',
   'social-media-sellers': 'Manage Orders From All Social Media Channels in One Place',
+  resellers: 'Run Your Reselling Business From One Store Link',
+  'list-your-business-kerala': 'Put Your Kerala Business Online in 10 Minutes',
 };
 
 const videoIds = {
@@ -24,6 +26,8 @@ const videoIds = {
   'home-businesses': 'GTeeLBSYkjw',
   'small-businesses': 'ggkqC6ALK_c',
   'social-media-sellers': 'ggkqC6ALK_c',
+  resellers: 'ETjJ4BHp06o',
+  'list-your-business-kerala': 'ggkqC6ALK_c',
 };
 
 /**
@@ -31,7 +35,7 @@ const videoIds = {
  * Accepts a `data` object from for-pages-data.js.
  */
 export default function ForPageTemplate({ data, breadcrumbLabel }) {
-  const { hero, stats, problems, features, faqs, links, slug } = data;
+  const { hero, stats, problems, features, guide, faqs, links, slug } = data;
   const [firstWord, ...rest] = hero.h1;
   const videoTitle = videoTitles[slug] || `How KeralaSellers Helps ${breadcrumbLabel}`;
   const youtubeId = videoIds[slug] || 'ggkqC6ALK_c';
@@ -40,7 +44,7 @@ export default function ForPageTemplate({ data, breadcrumbLabel }) {
     <SeoPageLayout
       breadcrumbs={[
         { label: 'Home', href: '/' },
-        { label: 'Solutions', href: '/solutions' },
+        { label: 'Features', href: '/features' },
         { label: breadcrumbLabel },
       ]}
     >
@@ -122,6 +126,31 @@ export default function ForPageTemplate({ data, breadcrumbLabel }) {
           </div>
         </div>
       </section>
+
+      {guide && (
+        <section className="seo-section">
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div className="seo-section__header">
+              <p className="seo-section__eyebrow">{guide.eyebrow}</p>
+              <h2 className="seo-section__h2">{guide.title}</h2>
+              <p className="seo-section__lead">{guide.lead}</p>
+            </div>
+            <div className="seo-features-grid">
+              {guide.items.map((item) => (
+                <div key={item.title} className="seo-feature-card">
+                  <div className="seo-feature-card__icon-box">
+                    <CheckCircle2 size={24} />
+                  </div>
+                  <div>
+                    <h3 className="seo-feature-card__title">{item.title}</h3>
+                    <p className="seo-feature-card__desc">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* SOCIAL PROOF TESTIMONIALS */}
       <TestimonialsGrid />

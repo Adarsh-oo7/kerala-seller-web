@@ -157,7 +157,7 @@ export default function InventoryManagementPage() {
             <li><Link href="/features/order-management">Order Management</Link></li>
             <li><Link href="/for/home-businesses">Home Businesses</Link></li>
             <li><Link href="/for/small-businesses">Small Businesses</Link></li>
-            <li><Link href="/solutions">All Solutions</Link></li>
+            <li><Link href="/features">All Solutions</Link></li>
           </ul>
         </div>
       </section>
