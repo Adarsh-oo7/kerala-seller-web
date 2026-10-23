@@ -49,7 +49,7 @@ export default function PurchasesPage() {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 880 }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', width: '100%', paddingBottom: 40 }}>
       <h1>Purchases</h1>
       <p style={{ color: '#64748b' }}>Receive stock into the same product rows used by POS and online orders.</p>
       {error ? <p style={{ color: '#b91c1c' }}>{error}</p> : null}

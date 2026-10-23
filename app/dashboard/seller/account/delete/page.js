@@ -44,7 +44,7 @@ export default function DeleteAccountPage() {
 
   if (done) {
     return (
-      <div style={{ maxWidth: 640 }}>
+      <div style={{ maxWidth: 720, margin: '0 auto', width: '100%', paddingBottom: 40 }}>
         <h1>Account deleted</h1>
         <p>This seller account is closed. Shop login will no longer work.</p>
         <a href="/login/seller">Back to seller login</a>
@@ -53,7 +53,7 @@ export default function DeleteAccountPage() {
   }
 
   return (
-    <div style={{ maxWidth: 640 }}>
+    <div style={{ maxWidth: 720, margin: '0 auto', width: '100%', paddingBottom: 40 }}>
       <h1 style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#b91c1c' }}>
         <Trash2 size={22} /> Delete account
       </h1>

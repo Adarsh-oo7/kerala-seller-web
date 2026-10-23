@@ -155,7 +155,7 @@ export default function AddonsPage() {
   const canPurchase = Boolean(data?.commercially_active);
 
   return (
-    <div style={{ maxWidth: 880 }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', width: '100%', paddingBottom: 40 }}>
       <h1 style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#175E54' }}>
         <Puzzle size={22} /> Add-ons
       </h1>

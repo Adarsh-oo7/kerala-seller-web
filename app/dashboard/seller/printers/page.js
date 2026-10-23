@@ -252,39 +252,50 @@ function MethodBtn({ icon, label, sub, active, onClick, badge, badgeColor }) {
       type="button"
       onClick={onClick}
       style={{
-        flex: '1 1 160px',
-        padding: '12px 14px',
-        borderRadius: 10,
+        flex: '1 1 220px',
+        minWidth: '200px',
+        padding: '14px 16px',
+        borderRadius: 12,
         border: active ? '2px solid #175E54' : '1px solid #e5e7eb',
         background: active ? '#f0fdf4' : '#fff',
         cursor: 'pointer',
         textAlign: 'left',
         position: 'relative',
+        transition: 'all 0.15s ease',
+        boxShadow: active ? '0 2px 6px rgba(23, 94, 84, 0.08)' : 'none',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#175E54', fontWeight: 700, fontSize: '0.875rem' }}>
         {icon}{label}
         {badge && (
-          <span style={{ marginLeft: 4, fontSize: 10, fontWeight: 700, background: badgeColor || '#64748b', color: '#fff', borderRadius: 6, padding: '1px 6px' }}>
+          <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, background: badgeColor || '#64748b', color: '#fff', borderRadius: 6, padding: '2px 7px' }}>
             {badge}
           </span>
         )}
       </div>
-      <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#64748b' }}>{sub}</p>
-      {active && <CheckCircle2 size={14} color="#175E54" style={{ position: 'absolute', top: 10, right: 10 }} />}
+      <p style={{ margin: '6px 0 0', fontSize: '0.78rem', color: '#64748b', lineHeight: 1.4 }}>{sub}</p>
+      {active && <CheckCircle2 size={16} color="#175E54" style={{ position: 'absolute', top: 12, right: 12 }} />}
     </button>
   );
 }
 
 // ── Styles ──────────────────────────────────────────────────────────────────
-const pageStyle = { maxWidth: 720, display: 'flex', flexDirection: 'column', gap: 16 };
-const headerStyle = { display: 'flex', alignItems: 'center', gap: 12 };
-const cardStyle = { padding: 20, border: '1px solid #e5e7eb', borderRadius: 14, background: '#fff' };
+const pageStyle = {
+  maxWidth: 960,
+  margin: '0 auto',
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 20,
+  paddingBottom: 40,
+};
+const headerStyle = { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 };
+const cardStyle = { padding: 24, border: '1px solid #e5e7eb', borderRadius: 14, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' };
 const labelStyle = { margin: '0 0 12px', fontWeight: 700, color: '#1e293b', fontSize: '0.95rem' };
 const btnPrimary = { padding: '10px 18px', borderRadius: 8, border: 'none', background: '#175E54', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' };
 const btnSecondary = { padding: '10px 18px', borderRadius: 8, border: '1px solid #175E54', background: '#fff', color: '#175E54', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' };
-const chipActive = { padding: '8px 16px', borderRadius: 8, border: '2px solid #175E54', background: '#175E54', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.875rem' };
-const chipGhost = { padding: '8px 16px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#374151', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' };
+const chipActive = { padding: '10px 20px', borderRadius: 8, border: '2px solid #175E54', background: '#175E54', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.875rem', transition: 'all 0.15s ease' };
+const chipGhost = { padding: '10px 20px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#374151', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', transition: 'all 0.15s ease' };
 const alertStyle = (bg, text, border) => ({
   display: 'flex', alignItems: 'flex-start', gap: 8,
   background: bg, color: text, border: `1px solid ${border}`,

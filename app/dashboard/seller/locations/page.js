@@ -41,7 +41,7 @@ export default function LocationsPage() {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 880 }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', width: '100%', paddingBottom: 40 }}>
       <h1>Locations</h1>
       <p style={{ color: '#64748b' }}>Extra counters on this seller account. Stock stays on the existing product inventory.</p>
       {error ? <p style={{ color: '#b91c1c' }}>{error}</p> : null}

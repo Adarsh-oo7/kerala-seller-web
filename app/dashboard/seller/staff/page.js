@@ -63,7 +63,7 @@ export default function StaffPage() {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 920 }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', width: '100%', paddingBottom: 40 }}>
       <h1 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 24 }}>
         <Users size={22} /> Staff
       </h1>

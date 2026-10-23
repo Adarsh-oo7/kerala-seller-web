@@ -38,11 +38,11 @@ export default function ReportsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (error) return <div style={{ padding: 24 }}><h1>Reports</h1><p>{error}</p></div>;
-  if (!data) return <div style={{ padding: 24 }}>Loading…</div>;
+  if (error) return <div style={{ maxWidth: 960, margin: '0 auto', width: '100%' }}><h1>Reports</h1><p>{error}</p></div>;
+  if (!data) return <div style={{ maxWidth: 960, margin: '0 auto', width: '100%' }}>Loading…</div>;
 
   return (
-    <div style={{ padding: 24, maxWidth: 880 }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', width: '100%', paddingBottom: 40 }}>
       <h1>Reports</h1>
       <p>Today bills ₹{data.today.bill_sales} ({data.today.bills}) · online ₹{data.today.online_sales} ({data.today.online_orders})</p>
       <p>This month bill sales ₹{data.month.bill_sales} · pending orders {data.pending_orders}</p>

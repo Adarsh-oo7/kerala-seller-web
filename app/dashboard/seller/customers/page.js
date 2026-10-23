@@ -38,7 +38,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 880 }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', width: '100%', paddingBottom: 40 }}>
       <h1>Customers</h1>
       <p>Rolled up from walk-in bills and online orders. Not a second CRM.</p>
       {error ? <p>{error}</p> : null}

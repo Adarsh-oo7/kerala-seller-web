@@ -648,7 +648,8 @@ export default function DashboardLayout({ children }) {
               border: '1px solid #fecaca',
               borderRadius: '8px',
               padding: '10px 16px',
-              marginBottom: '16px',
+              maxWidth: '1200px',
+              margin: '0 auto 16px auto',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -818,7 +819,7 @@ const styles = {
   },
 
   sidebar: {
-    width: '250px',
+    width: '230px',
     background: '#175E54',
     padding: '0',
     borderRight: '1px solid #e5e7eb',

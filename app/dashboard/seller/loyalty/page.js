@@ -46,7 +46,7 @@ export default function LoyaltyPage() {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 880 }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', width: '100%', paddingBottom: 40 }}>
       <h1>Loyalty</h1>
       <p style={{ color: '#64748b' }}>Points on the customer phone already used in bills and orders. Not a second CRM.</p>
       {error ? <p style={{ color: '#b91c1c' }}>{error}</p> : null}
