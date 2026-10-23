@@ -1069,7 +1069,7 @@ function EnhancedSellerStorefrontPage() {
             </div>
           )}
         </div>
-        <Whatsapp sellerPhone={sellerPhone} shopSlug={shopSlug} />
+        <Whatsapp sellerPhone={sellerPhone} shopSlug={shopSlug} store={store} />
        <ShopFooter store={store} />
 
       </div>
@@ -1189,7 +1189,7 @@ const styles = {
     maxWidth: '1200px',
     marginLeft: 'auto',
     marginRight: 'auto',
-    marginTop: '160px',
+    marginTop: '98px',
     marginBottom: '8px',
     overflow: 'hidden',
     padding: '0 16px',
@@ -1200,7 +1200,7 @@ const styles = {
     position: 'relative',
     width: '100%',
     aspectRatio: '16 / 6',
-    maxHeight: '340px',
+    maxHeight: '440px',
     minHeight: '140px',
     borderRadius: '12px',
     overflow: 'hidden',
@@ -1232,7 +1232,7 @@ const styles = {
   bannerImage: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
+    objectFit: 'contain',
     objectPosition: 'center',
     display: 'block'
   },

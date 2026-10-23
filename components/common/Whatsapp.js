@@ -43,15 +43,19 @@ const getStoreName = (data) => {
   return data.store_name || data.business_name || data.name || data.seller_name || "Store Support";
 };
 
-function Whatsapp({ sellerPhone, shopSlug }) {
+function Whatsapp({ sellerPhone, shopSlug, store }) {
   const [isChatVisible, setChatVisible] = useState(false);
-  const [storeData, setStoreData] = useState(null);
+  const [storeData, setStoreData] = useState(store || null);
   const [showInput, setShowInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
   const fetchStoreData = async () => {
+    if (store) {
+      setStoreData(store);
+      return;
+    }
     const shopId = shopSlug || sellerPhone;
     if (!shopId) {
       setError("Invalid store URL - phone number is missing");
@@ -87,14 +91,18 @@ function Whatsapp({ sellerPhone, shopSlug }) {
   };
 
   useEffect(() => {
-    fetchStoreData();
-  }, [sellerPhone, shopSlug]);
+    if (store) {
+      setStoreData(store);
+    } else {
+      fetchStoreData();
+    }
+  }, [sellerPhone, shopSlug, store]);
 
   // -------------------------------------------------------------------
   // 🔥 CHAT HANDLERS
   // -------------------------------------------------------------------
   const handleChatToggle = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setChatVisible(!isChatVisible);
   };
 
@@ -111,11 +119,6 @@ function Whatsapp({ sellerPhone, shopSlug }) {
 
     window.open(waUrl, "_blank");
   };
-
-
-
-
-
 
   return (
     <div>
@@ -170,7 +173,6 @@ function Whatsapp({ sellerPhone, shopSlug }) {
               }}
             ></textarea>
 
-
             <button
               id="send-it"
               onClick={handleChatSend}
@@ -191,16 +193,31 @@ function Whatsapp({ sellerPhone, shopSlug }) {
           </div>
         )}
 
-
-        <a className="close-chat" href="#" onClick={handleChatToggle}>
+        <button
+          className="close-chat"
+          type="button"
+          onClick={handleChatToggle}
+          aria-label="Close chat"
+          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+        >
           ×
-        </a>
+        </button>
       </div>
 
-      {/* FLOATING BUTTON */}
-      <a className="blantershow-chat" href="#" onClick={handleChatToggle}>
-        Need Help?
-      </a>
+      {/* FLOATING BUTTON FOR BUYERS */}
+      <button
+        type="button"
+        className="blantershow-chat"
+        onClick={handleChatToggle}
+        aria-label="Need Help? Contact store on WhatsApp"
+      >
+        <span
+          className="wa-btn-icon"
+          dangerouslySetInnerHTML={{ __html: siWhatsapp.svg }}
+          aria-hidden="true"
+        />
+        <span>Need Help?</span>
+      </button>
     </div>
   );
 }

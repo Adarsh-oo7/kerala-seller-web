@@ -4,17 +4,36 @@ import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { BRAND } from '../../app/lib/brand';
 
+function isStoreSubdomain() {
+  if (typeof window === 'undefined') return false;
+  const host = window.location.hostname.toLowerCase();
+  const base = 'keralasellers.in';
+  return (
+    (host.endsWith(`.${base}`) && host !== `www.${base}` && host !== `api.${base}`) ||
+    (host.endsWith('.localhost') && host !== 'localhost')
+  );
+}
+
 export default function GlobalWhatsAppButton() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('How do I start my online store?');
+  const [isStoreHost, setIsStoreHost] = useState(isStoreSubdomain);
 
-  // Do not show global platform support on individual seller storefronts or seller dashboard
+  useEffect(() => {
+    setIsStoreHost(isStoreSubdomain());
+  }, []);
+
+  // Do not show global platform support on individual seller storefronts, seller subdomains, or seller dashboard
   const isExcludedPath =
-    pathname?.startsWith('/shop/') ||
-    pathname?.startsWith('/product/') ||
-    pathname?.startsWith('/dashboard/');
+    isStoreHost ||
+    isStoreSubdomain() ||
+    pathname?.startsWith('/shop') ||
+    pathname?.startsWith('/product') ||
+    pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/cart') ||
+    pathname?.startsWith('/checkout');
 
   useEffect(() => {
     // Set default prompt based on current route
