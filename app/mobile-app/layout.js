@@ -89,9 +89,9 @@ function MobileAppJsonLd() {
 }
 
 export const metadata = {
-  title: 'Kerala Sellers Mobile App | Manage Your Online Store from Your Phone',
+  title: 'Kerala Sellers Mobile App: Manage Your Store on Phone',
   description:
-    'Manage your products, orders, inventory, payments, and Bluetooth POS billing from anywhere with the Kerala Sellers mobile app. Complete store management in your hand.',
+    'Manage products, orders, stock, payments and Bluetooth POS billing from your phone with the Kerala Sellers app for Android and iOS.',
   alternates: {
     canonical: PAGE_URL,
   },

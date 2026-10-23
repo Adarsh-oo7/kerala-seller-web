@@ -135,7 +135,7 @@ export default function OnlineStoreBuilderPage() {
             <li><Link href="/for/instagram-sellers">Instagram Sellers</Link></li>
             <li><Link href="/for/whatsapp-sellers">WhatsApp Sellers</Link></li>
             <li><Link href="/sell-online-kerala">Sell Online in Kerala</Link></li>
-            <li><Link href="/solutions">All Solutions</Link></li>
+            <li><Link href="/features">All Solutions</Link></li>
           </ul>
         </div>
       </section>

@@ -1028,7 +1028,7 @@ export default function SellerLanding() {
               { href: '/for/social-media-sellers', label: 'Social Media Sellers' },
               { href: '/for/home-businesses', label: 'Home Businesses' },
               { href: '/for/small-businesses', label: 'Small Businesses' },
-              { href: '/solutions', label: 'All Solutions' },
+              { href: '/features', label: 'All Solutions' },
             ].map(item => (
               <Link key={item.href} href={item.href} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',

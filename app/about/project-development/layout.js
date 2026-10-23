@@ -3,9 +3,9 @@ import { BRAND } from '../../lib/brand';
 const PAGE_URL = `${BRAND.url}/about/project-development`;
 
 export const metadata = {
-  title: 'Kerala Sellers Project Development & Technical Case Study | Digital Product Solutions',
+  title: 'Kerala Sellers Case Study | Digital Product Solutions',
   description:
-    'An inside look at how Kerala Sellers was engineered: architectural overview, Next.js frontend, Python/Django API, mobile POS Bluetooth thermal printing, and developer attribution to Adarsh B S and Digital Product Solutions.',
+    'How Kerala Sellers was built: Next.js storefront, Django API, mobile POS Bluetooth printing and the team at Digital Product Solutions.',
   alternates: {
     canonical: PAGE_URL,
     languages: { 'en-IN': PAGE_URL, 'x-default': PAGE_URL },

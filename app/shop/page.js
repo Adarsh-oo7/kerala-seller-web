@@ -78,6 +78,20 @@ const generateShopSlug = (shop) => {
   return slug.length >= 3 ? slug : `shop-${shop.seller_phone || shop.id}`;
 };
 
+const SR_ONLY = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+};
+
+const PAGE_HEADING = 'Kerala Shops Directory: Local Online Stores';
+
 function useMediaQuery(query) {
   const [matches, setMatches] = useState(false);
 
@@ -197,6 +211,7 @@ export default function ShopPage() {
     return (
       <div className="ShoppageContainer">
         <Header />
+        <h1 style={SR_ONLY}>{PAGE_HEADING}</h1>
         <div className="ShoploadingContainer">
           <div className="Shopspinner"></div>
           <p>Loading amazing shops for you...</p>
@@ -227,6 +242,7 @@ export default function ShopPage() {
     <div className="ShoppageContainer">
       <Header />
 
+      <h1 style={SR_ONLY}>{PAGE_HEADING}</h1>
       {/* Hero Banner */}
       <img
         src="/assets/images/Shoppagebanner.jpg"

@@ -170,7 +170,7 @@ export default function FeaturesPage() {
               <Store size={20} />
               <span>Start Your Free Store Now →</span>
             </Link>
-            <Link href="/solutions" className="seo-btn-secondary">
+            <Link href="/sell-online-kerala" className="seo-btn-secondary">
               <span>View Business Solutions</span>
             </Link>
           </div>
@@ -576,7 +576,7 @@ export default function FeaturesPage() {
             <li><Link href="/for/whatsapp-sellers">WhatsApp Sellers</Link></li>
             <li><Link href="/for/small-businesses">Small Businesses</Link></li>
             <li><Link href="/for/home-businesses">Home Businesses</Link></li>
-            <li><Link href="/solutions">All Solutions</Link></li>
+            <li><Link href="/features">All Solutions</Link></li>
             <li><Link href="/faq">FAQ</Link></li>
             <li><Link href="/sell-online-kerala">Sell Online in Kerala</Link></li>
           </ul>

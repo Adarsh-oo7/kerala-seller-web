@@ -9,7 +9,7 @@ export const FOR_PAGES = {
     meta: {
       title: 'Platform for Social Media Sellers | Kerala Sellers',
       description:
-        'Sell on Instagram, WhatsApp & Facebook without juggling DMs. One dashboard for all your social media orders. 0% commission. Social media order engane manage cheyyam — Kerala Sellers.',
+        'Sell on Instagram, WhatsApp and Facebook without juggling DMs. One store link and one order dashboard for every channel. 0% commission.',
     },
     hero: {
       badge: '📱 For Social Media Sellers',
@@ -48,7 +48,7 @@ export const FOR_PAGES = {
       { href: '/for/instagram-sellers', label: 'Instagram Sellers' },
       { href: '/for/whatsapp-sellers', label: 'WhatsApp Sellers' },
       { href: '/features/order-management', label: 'Order Management' },
-      { href: '/solutions', label: 'All Solutions' },
+      { href: '/features', label: 'All Solutions' },
       { href: '/register/seller', label: 'Start Free' },
     ],
   },
@@ -56,9 +56,9 @@ export const FOR_PAGES = {
   'instagram-sellers': {
     slug: 'instagram-sellers',
     meta: {
-      title: 'Online Store for Instagram Sellers & Instagram Shop Builder | Kerala Sellers',
+      title: 'Online Store for Instagram Sellers | Kerala Sellers',
       description:
-        'Turn your Instagram DMs into a proper online store. Share a link in bio, let customers browse and order with 0% commission. Instagram store builder & DM order management in Kerala.',
+        'Turn Instagram DMs into a real online store. One link in bio, customers browse, add to cart and pay by UPI. 0% commission for Kerala sellers.',
     },
     hero: {
       badge: '📸 For Instagram Sellers',
@@ -105,9 +105,9 @@ export const FOR_PAGES = {
   'whatsapp-sellers': {
     slug: 'whatsapp-sellers',
     meta: {
-      title: 'WhatsApp Order Management & WhatsApp Selling Platform | Kerala Sellers',
+      title: 'WhatsApp Order Management for Sellers | Kerala Sellers',
       description:
-        'Stop managing orders manually on WhatsApp. Get a store link for WhatsApp status, accept online orders automatically, and track them in one dashboard with 0% commission. WhatsApp il order engane manage cheyyam.',
+        'Stop tracking WhatsApp orders by hand. Put a store link in your Status, take paid orders automatically and track them in one dashboard. 0% commission.',
     },
     hero: {
       badge: '💬 For WhatsApp Sellers',
@@ -146,7 +146,7 @@ export const FOR_PAGES = {
       { href: '/for/instagram-sellers', label: 'Instagram Sellers' },
       { href: '/for/home-businesses', label: 'Home Businesses' },
       { href: '/features/order-management', label: 'Order Management' },
-      { href: '/solutions', label: 'All Solutions' },
+      { href: '/features', label: 'All Solutions' },
       { href: '/register/seller', label: 'Start Free' },
     ],
   },
@@ -154,9 +154,9 @@ export const FOR_PAGES = {
   'small-businesses': {
     slug: 'small-businesses',
     meta: {
-      title: 'Ecommerce Platform & Online Store for Small Business | Kerala Sellers',
+      title: 'Online Store & Billing for Small Business | Kerala Sellers',
       description:
-        'Ecommerce platform, POS billing, and inventory software for small businesses in Kerala. Launch your online store from ₹99/mo with 0% commission. Cheriya businessinu online tool — Kerala Sellers.',
+        'Online store, POS billing and inventory for small businesses in Kerala. Go live from ₹99/month with 0% commission. No website or developer needed.',
     },
     hero: {
       badge: '🏪 For Small Businesses',
@@ -195,7 +195,7 @@ export const FOR_PAGES = {
       { href: '/for/home-businesses', label: 'Home Businesses' },
       { href: '/features/online-store-builder', label: 'Store Builder' },
       { href: '/features/inventory-management', label: 'Inventory Management' },
-      { href: '/solutions', label: 'All Solutions' },
+      { href: '/features', label: 'All Solutions' },
       { href: '/register/seller', label: 'Start Free' },
     ],
   },
@@ -203,15 +203,15 @@ export const FOR_PAGES = {
   'home-businesses': {
     slug: 'home-businesses',
     meta: {
-      title: 'Home Based Business in Kerala & Online Reselling Platform | Kerala Sellers',
+      title: 'Home Based Business in Kerala: Start Selling from Home',
       description:
-        'Start a home based business in Kerala with your own store link. The #1 online platform for home bakers, resellers in Kerala, direct selling beginners, and handmade crafts. 0% commission.',
+        'Start a home based business in Kerala with your own store link: home bakery, pickles, boutique or crafts. Take UPI orders from ₹99/month, 0% commission.',
     },
     hero: {
-      badge: '🏠 For Home Businesses & Resellers',
-      h1: ['Home Based Business in Kerala & ', 'Online Store for Resellers'],
-      sub: 'Running a home bakery, reselling products, or selling handmade goods? Kerala Sellers gives you a professional online store without renting a shop, building a website, or paying platform commission.',
-      pills: ['✓ Home based business Kerala', '✓ Resellers in Kerala', '✓ 0% commission', '✓ Local delivery zones'],
+      badge: '🏠 For Home Businesses',
+      h1: ['Start a Home Based Business ', 'in Kerala'],
+      sub: 'Running a home bakery, making pickles, stitching clothes, or selling handmade goods? Kerala Sellers gives your home business a professional online store without renting a shop, building a website, or paying platform commission.',
+      pills: ['✓ Sell from home', '✓ UPI payments', '✓ 0% commission', '✓ Local delivery zones'],
     },
     stats: [
       { n: 'Trusted', l: 'By Home Sellers' },
@@ -233,7 +233,21 @@ export const FOR_PAGES = {
       { emoji: '📍', title: 'Local Delivery Zones', desc: 'Set your delivery areas — panchayat, district, or all-Kerala. Customers see delivery options based on their location.' },
       { emoji: '📱', title: 'Manage Everything from Your Phone', desc: 'Accept orders, update stock, and mark deliveries — all from your smartphone while you work.' },
     ],
+    guide: {
+      eyebrow: 'HOME BUSINESS IDEAS IN KERALA',
+      title: 'Home Based Business Ideas That Sell Well in Kerala',
+      lead: 'Popular low-investment businesses Kerala sellers already run from home. Each one works with a store link shared on WhatsApp and Instagram.',
+      items: [
+        { title: 'Home Bakery & Cakes', desc: 'Birthday cakes, brownies, and plum cakes for Christmas. Set daily quantities so you never take more orders than your oven can handle. Get FSSAI registration before selling food.' },
+        { title: 'Pickles, Masala & Snacks', desc: 'Homemade achar, chammanthi podi, banana chips, and halwa sell all year to Keralites in Kerala and the Gulf. List each pack size as its own product.' },
+        { title: 'Boutique & Tailoring', desc: 'Churidar stitching, kurtis, set mundu, and kids wear. Post new designs on Instagram and let customers order sizes directly from your store.' },
+        { title: 'Handmade Jewellery & Crafts', desc: 'Resin art, terracotta, thread bangles, and gift hampers. Good photos and a store link do the selling while you make the next piece.' },
+        { title: 'Plants & Terrace Garden', desc: 'Indoor plants, grow bags, seeds, and organic vegetables for local buyers. Use delivery zones to limit orders to your panchayat or district.' },
+        { title: 'Reselling From Home', desc: 'Sell sarees, cosmetics, or home products sourced from a supplier. Add their catalogue to your own store and keep the full margin.' },
+      ],
+    },
     faqs: [
+      { q: 'What is the best home based business in Kerala to start with low investment?', a: 'The easiest are the ones that use skills you already have: a home bakery, pickles and snacks, tailoring, handmade crafts, or reselling. Start with a few products, share your Kerala Sellers store link on WhatsApp and Instagram, and add more as orders grow. Plans start at ₹99/month with no commission.' },
       { q: 'Veetil ninnu business online aakkan enthu cheyyanam?', a: 'Register on Kerala Sellers with your phone number, add your shop name and logo, upload your products with photos and prices, and share your store link on Instagram and WhatsApp. That is all. Setup takes 10 minutes.' },
       { q: 'Can direct sellers and resellers in Kerala use Kerala Sellers?', a: 'Yes. Kerala Sellers is built for direct sellers, resellers, and home entrepreneurs across Kerala. You can upload products, share your store link in WhatsApp groups and Instagram, and take online payments with zero marketplace commission.' },
       { q: 'I am a home baker — can I take pre-orders and limit quantities?', a: 'Yes. You can set available quantities per product, disable ordering when you are fully booked, and accept custom order notes from customers.' },
@@ -242,10 +256,127 @@ export const FOR_PAGES = {
       { q: 'What happens if a customer orders and I cannot fulfil it?', a: 'You can cancel orders from your dashboard and initiate a refund through Razorpay. It is best to set accurate stock quantities to avoid this — but the option is there.' },
     ],
     links: [
+      { href: '/for/resellers', label: 'Resellers & Dropshipping' },
       { href: '/for/small-businesses', label: 'Small Businesses' },
       { href: '/for/whatsapp-sellers', label: 'WhatsApp Sellers' },
-      { href: '/features/online-store-builder', label: 'Store Builder' },
+      { href: '/ml/veetu-business', label: 'വീട്ടിൽ നിന്ന് ബിസിനസ്' },
       { href: '/sell-online-kerala', label: 'Sell Online in Kerala' },
+      { href: '/register/seller', label: 'Start Free' },
+    ],
+  },
+
+  resellers: {
+    slug: 'resellers',
+    meta: {
+      title: 'Online Reseller Store & Dropshipping Kerala | Kerala Sellers',
+      description: 'Start reselling online in Kerala with your own store link. Add supplier products, set your margin, take UPI orders and keep 100% of profit. From ₹99/month.',
+    },
+    hero: {
+      badge: '🔁 For Resellers',
+      h1: ['Your Own Online Reseller Store ', 'in Kerala'],
+      sub: 'Stop forwarding supplier photos one by one. Put every product you resell into your own branded store, set your own price, and let customers order and pay from a single link.',
+      pills: ['✓ Your price, your margin', '✓ One link for all products', '✓ UPI checkout', '✓ 0% commission'],
+    },
+    stats: [
+      { n: 'Trusted', l: 'By Kerala Resellers' },
+      { n: '0%', l: 'Commission' },
+      { n: '10 min', l: 'Setup' },
+      { n: '₹99', l: 'Plans From / Month' },
+    ],
+    problems: [
+      { emoji: '😩', problem: 'Forwarding the same supplier photos to every WhatsApp group and answering "price?" again and again', solution: 'Add products once with your selling price. Share one store link that shows every item, price, and size.' },
+      { emoji: '💸', problem: 'Reseller apps take a cut of every order and decide your margin for you', solution: 'You set the price. Kerala Sellers charges a flat monthly plan with 0% commission on what you sell.' },
+      { emoji: '😵', problem: 'Losing track of who ordered what, who paid, and what you still need to order from the supplier', solution: 'Every order lands in one dashboard with customer, items, and payment status, so placing supplier orders is easy.' },
+      { emoji: '📦', problem: 'Selling items the supplier has already run out of', solution: 'Mark stock per product. When an item is out, it shows unavailable on your store automatically.' },
+      { emoji: '🌐', problem: 'Customers see you as a forwarder, not a real shop', solution: 'Your own store name, logo, and link make your reselling business look like a proper brand.' },
+    ],
+    features: [
+      { emoji: '🛍️', title: 'Your Own Branded Store', desc: 'A store link like keralasellers.in/shop/yourname with your logo, so customers buy from you, not from the supplier.' },
+      { emoji: '💰', title: 'Set Your Own Margin', desc: 'Add the supplier product with your selling price. Change prices any time for offers and festival sales.' },
+      { emoji: '🧾', title: 'Orders Ready for Your Supplier', desc: 'See exactly which items, sizes, and quantities were ordered so you can place one clean order with your supplier.' },
+      { emoji: '💳', title: 'Online Payments Before You Buy', desc: 'Customers pay by UPI, card, or net banking at checkout, so you do not spend your own money on unpaid orders.' },
+      { emoji: '📲', title: 'Share Anywhere', desc: 'Post the link in WhatsApp groups, Status, Instagram bio, and Facebook. Every share sends buyers to the same store.' },
+    ],
+    guide: {
+      eyebrow: 'HOW TO START RESELLING',
+      title: 'Start a Reselling Business in Kerala in 4 Steps',
+      lead: 'A simple path for beginners who want to resell sarees, cosmetics, home products, or electronics without a shop.',
+      items: [
+        { title: '1. Pick a Niche You Know', desc: 'Choose products your friends and followers already ask about, such as sarees, kids wear, kitchen items, or skincare.' },
+        { title: '2. Find a Reliable Supplier', desc: 'Work with a wholesaler or manufacturer who confirms stock quickly and ships on time. Kerala Sellers does not supply products.' },
+        { title: '3. Build Your Store', desc: 'Register free, add the products with your own photos and prices, and connect payments. It takes about 10 minutes.' },
+        { title: '4. Share and Grow', desc: 'Share your link in WhatsApp groups and Instagram every day. Repeat customers come back to the same store instead of your DMs.' },
+      ],
+    },
+    faqs: [
+      { q: 'Can I start reselling in Kerala with no investment?', a: 'Registration on Kerala Sellers is free, and your store goes live on plans from ₹99/month. Because customers pay online before you order from your supplier, you do not need to hold stock or spend money upfront.' },
+      { q: 'Does Kerala Sellers provide products or dropshipping suppliers?', a: 'No. Kerala Sellers gives you the store, payments, and order management. You choose your own supplier and decide what to sell, which keeps your margin and your customers with you.' },
+      { q: 'How is this different from reseller apps like Meesho?', a: 'Reseller apps own the customer and control the margin. With Kerala Sellers you have your own branded store, set your own prices, and pay a flat monthly fee with 0% commission.' },
+      { q: 'Can I do dropshipping in Kerala with Kerala Sellers?', a: 'Yes, if your supplier can ship directly to your customer. Take the order and payment on your store, then pass the delivery details to your supplier. You stay in control of pricing and customer communication.' },
+      { q: 'Do I need GST to resell online?', a: 'No GST number is needed to sign up. Whether you need GST depends on your turnover and what you sell, so check with a tax professional as your business grows.' },
+    ],
+    links: [
+      { href: '/for/home-businesses', label: 'Home Based Business' },
+      { href: '/for/whatsapp-sellers', label: 'WhatsApp Sellers' },
+      { href: '/for/instagram-sellers', label: 'Instagram Sellers' },
+      { href: '/sell-online-kerala', label: 'Sell Online in Kerala' },
+      { href: '/register/seller', label: 'Start Free' },
+    ],
+  },
+
+  'list-your-business-kerala': {
+    slug: 'list-your-business-kerala',
+    meta: {
+      title: 'List Your Business Online in Kerala | Kerala Sellers',
+      description: 'Submit your business online in Kerala: free sign-up, your own shop page, a place in the Kerala shops directory, and online orders. Live from ₹99/month.',
+    },
+    hero: {
+      badge: '📍 For Kerala Businesses',
+      h1: ['List Your Business Online ', 'in Kerala'],
+      sub: 'Get your Kerala business in front of buyers with more than a listing. Kerala Sellers gives you a shop page with your products, prices, contact details, and online ordering, all at one link.',
+      pills: ['✓ Free sign-up', '✓ Your own shop page', '✓ Kerala shops directory', '✓ Online orders & UPI'],
+    },
+    stats: [
+      { n: 'Free', l: 'Registration' },
+      { n: '0%', l: 'Commission' },
+      { n: '10 min', l: 'Setup' },
+      { n: '14', l: 'Districts Served' },
+    ],
+    problems: [
+      { emoji: '😩', problem: 'Business directories only show your phone number, so customers still have to call to ask what you sell', solution: 'Your shop page shows every product with photos and prices, so customers know what you sell before they call.' },
+      { emoji: '💸', problem: 'Paying for a website you cannot update yourself', solution: 'Update products, prices, and stock from your phone. No developer, hosting, or one-time website bill.' },
+      { emoji: '😵', problem: 'Customers find you online but cannot order or pay', solution: 'Buyers add to cart and pay by UPI, card, or net banking. Orders reach your dashboard instantly.' },
+      { emoji: '🌐', problem: 'Your business is hard to share — there is no single link to send', solution: 'One link for WhatsApp, Instagram, Google Business Profile, and visiting cards.' },
+    ],
+    features: [
+      { emoji: '🏪', title: 'Your Business Shop Page', desc: 'A page at keralasellers.in/shop/yourname with your logo, banner, description, products, and contact options.' },
+      { emoji: '📍', title: 'Listed in the Kerala Shops Directory', desc: 'Live shops appear in the Kerala Sellers shops directory so local buyers can discover you.' },
+      { emoji: '🛒', title: 'Online Orders and Payments', desc: 'Accept orders with UPI, cards, net banking, or cash on delivery, with 0% commission.' },
+      { emoji: '🧾', title: 'Billing for Walk-in Customers', desc: 'Use the same app for counter billing with a Bluetooth thermal printer, and keep stock in sync.' },
+      { emoji: '🔎', title: 'Search-Friendly Shop Page', desc: 'Each live shop page has its own title, description, and structured data so it can show up in Google search.' },
+    ],
+    guide: {
+      eyebrow: 'HOW TO LIST YOUR BUSINESS',
+      title: 'Submit Your Business Online in Kerala in 4 Steps',
+      lead: 'Everything happens on your phone. Most businesses finish in about 10 minutes.',
+      items: [
+        { title: '1. Register Free', desc: 'Sign up as a seller with your phone number and business name. No GST or registration certificate is needed to start.' },
+        { title: '2. Add Your Details', desc: 'Upload your logo and banner, write a short description, and add your WhatsApp number and address.' },
+        { title: '3. Add Products', desc: 'List what you sell with photos and prices. Start with your best sellers and add more later.' },
+        { title: '4. Go Live and Share', desc: 'Pick a plan from ₹99/month to publish your shop, then share the link on WhatsApp, Instagram, and your Google Business Profile.' },
+      ],
+    },
+    faqs: [
+      { q: 'Can I add my business online in Kerala for free?', a: 'Registration is free, and you can set up your shop page, products, and details at no cost. To publish the shop and accept orders, choose a plan starting at ₹99/month with 0% commission.' },
+      { q: 'Is this the same as a Google Business Profile listing?', a: 'No, and you should use both. Google Business Profile shows your location on Maps. Your Kerala Sellers shop page shows your products and takes orders. Add your shop link to your Google profile so searchers can order directly.' },
+      { q: 'Which businesses can list on Kerala Sellers?', a: 'Shops and sellers who sell products: retail stores, boutiques, bakeries, home businesses, resellers, and Instagram or WhatsApp sellers across all 14 districts of Kerala.' },
+      { q: 'Do I need GST or a trade licence to list my business?', a: 'No documents are needed to sign up. Follow the licences your business type needs, such as FSSAI for food, as you grow.' },
+    ],
+    links: [
+      { href: '/shop', label: 'Kerala Shops Directory' },
+      { href: '/for/small-businesses', label: 'Small Businesses' },
+      { href: '/for/home-businesses', label: 'Home Based Business' },
+      { href: '/features/online-store-builder', label: 'Store Builder' },
       { href: '/register/seller', label: 'Start Free' },
     ],
   },

@@ -40,6 +40,11 @@ const nextConfig = {
         destination: '/features',
         permanent: true,
       },
+      {
+        source: '/sell-online',
+        destination: '/sell-online-kerala',
+        permanent: true,
+      },
     ];
   },
 };

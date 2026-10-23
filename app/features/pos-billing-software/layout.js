@@ -163,9 +163,9 @@ function PosBillingJsonLd() {
 }
 
 export const metadata = {
-  title: 'Billing Software for Shops & POS Machine in Kerala | Kerala Sellers',
+  title: 'POS & Billing Software for Shops in Kerala | Kerala Sellers',
   description:
-    'Turn your phone into a POS billing machine. GST & non-GST billing software for retail shops in Kerala with Bluetooth thermal printer support. ₹3,499 billing kit.',
+    'Billing software for shops in Kerala: turn your phone into a POS machine, print Bluetooth thermal bills, share on WhatsApp and sync stock. ₹3,499 kit.',
   keywords: [
     'billing software Kerala',
     'billing software for shops',

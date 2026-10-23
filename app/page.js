@@ -4,9 +4,9 @@ import { BRAND } from './lib/brand';
 const HOME_URL = `${BRAND.url}/`;
 
 export const metadata = {
-  title: 'Kerala Sellers – Online Store & Billing Software from ₹99/Month',
+  title: 'Kerala Sellers: Online Store & Billing App from ₹99/mo',
   description:
-    'Create your own online store from ₹99/month. Manage products, inventory, billing, POS, and orders with Kerala Sellers. An affordable business solution for Kerala\'s small businesses.',
+    'Sellers in Kerala: launch your own online store from ₹99/month with 0% commission. Billing, POS, stock and WhatsApp orders in one app.',
   alternates: {
     canonical: HOME_URL,
     languages: {
