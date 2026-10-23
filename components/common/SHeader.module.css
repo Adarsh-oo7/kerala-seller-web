@@ -1,10 +1,10 @@
 .sheader {
-  --glassy-white: rgba(255, 255, 255, 0.9);
-  --glassy-white-dark: rgba(255, 255, 255, 0.95);
-  --glassy-border: rgba(200, 200, 200, 0.4);
+  --glassy-white: rgba(253, 255, 240, 0.95);
+  --glassy-white-dark: rgba(253, 255, 240, 0.98);
+  --glassy-border: rgba(23, 94, 84, 0.15);
   --glassy-text: #1a4845;
   --glassy-text-muted: #059669;
-  --glassy-shadow: 0 6px 24px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
+  --glassy-shadow: 0 4px 20px rgba(23, 94, 84, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
   --glassy-accent: #059669;
   --glassy-accent-light: #93c5fd;
   --glassy-radius: 12px;
@@ -36,8 +36,8 @@
 
 .sheader.scrolled {
   background: var(--glassy-white-dark);
-  box-shadow: var(--glassy-shadow);
-  border-bottom-color: rgba(200, 200, 200, 0.7);
+  box-shadow: 0 4px 14px rgba(23, 94, 84, 0.08);
+  border-bottom-color: rgba(23, 94, 84, 0.15);
 }
 
 .sheader.hideHeader {

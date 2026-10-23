@@ -31,6 +31,14 @@
 }
 
 
+.banner-slider-container {
+    background-color: #FDFFF0 !important;
+}
+
+.banner-slides-wrapper {
+    background-color: #FDFFF0 !important;
+}
+
 .shopslugproducts-container {
     display: grid !important;
     gap: 12px !important;
@@ -82,7 +90,7 @@
     }
 
     .banner-slider-container {
-        margin-top: 110px !important;
+        margin-top: 125px !important;
     }
 }
 
@@ -135,7 +143,7 @@
 
 @media (max-width: 576px) {
     .banner-slider-container {
-        margin-top: 100px !important;
+        margin-top: 115px !important;
     }
 
 
@@ -219,7 +227,7 @@
     }
 
     .banner-slider-container {
-        margin-top: 60px !important;
+        margin-top: 85px !important;
     }
 
     .shopshopslugfiltercontainer {

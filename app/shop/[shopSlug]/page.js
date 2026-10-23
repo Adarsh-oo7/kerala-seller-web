@@ -1175,7 +1175,8 @@ const styles = {
     fontWeight: '500'
   },
   mainWrapper: {
-    paddingTop: '10px',
+    paddingTop: '0px',
+    backgroundColor: '#FDFFF0',
   },
   sliderContainer: {
     position: 'relative',
@@ -1183,21 +1184,22 @@ const styles = {
     maxWidth: '1200px',
     marginLeft: 'auto',
     marginRight: 'auto',
-    marginTop: '85px',
+    marginTop: '135px',
     marginBottom: '8px',
     overflow: 'hidden',
     padding: '0 16px',
     boxSizing: 'border-box',
+    backgroundColor: '#FDFFF0',
   },
   slidesWrapper: {
     position: 'relative',
     width: '100%',
     aspectRatio: '16 / 6',
-    maxHeight: '280px',
+    maxHeight: '340px',
     minHeight: '140px',
     borderRadius: '12px',
     overflow: 'hidden',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#FDFFF0',
   },
   slide: {
     position: 'absolute',
@@ -1205,19 +1207,22 @@ const styles = {
     left: 0,
     width: '100%',
     height: '100%',
+    backgroundColor: '#FDFFF0',
   },
   bannerContainer: {
     position: 'relative',
     width: '100%',
     height: '100%',
     overflow: 'hidden',
+    backgroundColor: '#FDFFF0',
   },
   bannerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    bottom: 0
+    bottom: 0,
+    backgroundColor: '#FDFFF0',
   },
   bannerImage: {
     width: '100%',
@@ -1229,7 +1234,7 @@ const styles = {
   bannerFallback: {
     width: '100%',
     height: '100%',
-    background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)'
+    backgroundColor: '#FDFFF0',
   },
   fallbackPattern: {
     width: '100%',
