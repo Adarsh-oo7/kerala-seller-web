@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -91,15 +91,20 @@ export default function SettingsPage() {
   const router = useRouter();
 
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('accessToken');
+    if (typeof window === 'undefined') return null;
+    const token = localStorage.getItem('accessToken') ||
+      localStorage.getItem('access_token') ||
+      localStorage.getItem('sellerAccessToken');
     if (!token) { router.push('/login/seller'); return null; }
     return { Authorization: `Bearer ${token}` };
   }, [router]);
 
   const fetchPredefinedBanners = useCallback(async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/predefined-banners/`);
-      setPredefinedBanners(response.data.filter(b => b.is_active));
+      const response = await axios.get(`${API_BASE_URL}/api/predefined-banners/`, { timeout: 15000 });
+      if (Array.isArray(response.data)) {
+        setPredefinedBanners(response.data.filter(b => b.is_active));
+      }
     } catch (error) {
       console.error('Error fetching banners:', error);
     }
@@ -110,7 +115,7 @@ export default function SettingsPage() {
     if (!headers) return;
     try {
       setIsLoading(true);
-      const response = await axios.get(API_URL, { headers });
+      const response = await axios.get(API_URL, { headers, timeout: 25000 });
       if (response.data.store_profile) {
         setStore((prev) => ({ ...prev, ...response.data.store_profile }));
         setCurrentLogoUrl(response.data.store_profile.logo_url);
@@ -124,10 +129,15 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error('Error fetching store profile:', error);
+      if (error.response?.status === 401) {
+        router.push('/login/seller');
+      } else {
+        setErrorMessage('Unable to sync latest store settings from server. You can still make updates and save.');
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [getAuthHeaders]);
+  }, [getAuthHeaders, router]);
 
   useEffect(() => {
     fetchStoreProfile();

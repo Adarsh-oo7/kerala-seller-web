@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -73,6 +73,7 @@ export default function DashboardLayout({ children }) {
   const hasInitialized = useRef(false);
   const isLoggingOut = useRef(false); // âœ… CRITICAL: Prevent logout loops
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
 
   const [notificationCounts, setNotificationCounts] = useState({
@@ -84,12 +85,27 @@ export default function DashboardLayout({ children }) {
 
   const can = (code) => canUseTool(permissions, code, isOwner);
 
-  // âœ… FIXED: Better auth headers with validation
+  // Read initial seller name from cached data so the header is never empty
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('sellerInfo') || localStorage.getItem('userInfo');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const name = parsed?.name || parsed?.store_profile?.name || parsed?.shop_name || parsed?.business_name;
+        if (name) setSellerName(name);
+      }
+    } catch (_) {}
+  }, []);
+
+  // ✅ Resilient auth headers supporting all token variations
   const getAuthHeaders = useCallback(() => {
-    if (isLoggingOut.current) return null; // Don't try to get headers if logging out
+    if (isLoggingOut.current) return null;
 
     try {
-      const token = localStorage.getItem('accessToken');
+      if (typeof window === 'undefined') return null;
+      const token = localStorage.getItem('accessToken') ||
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('sellerAccessToken');
       if (!token || token === 'null' || token === 'undefined') {
         console.log('No valid auth token found');
         return null;
@@ -101,9 +117,9 @@ export default function DashboardLayout({ children }) {
     }
   }, []);
 
-  // âœ… FIXED: Fetch notification counts with better error handling
+  // ✅ Fetch notification counts with timeout and error tolerance
   const fetchNotificationCounts = useCallback(async () => {
-    if (isLoggingOut.current) return; // Don't fetch if logging out
+    if (isLoggingOut.current) return;
 
     const headers = getAuthHeaders();
     if (!headers) return;
@@ -111,13 +127,13 @@ export default function DashboardLayout({ children }) {
     try {
       const response = await axios.get(NOTIFICATIONS_API_URL, {
         headers,
-        timeout: 8000 // 8 second timeout
+        timeout: 15000
       });
 
-      if (!isLoggingOut.current) { // Only update if not logging out
+      if (!isLoggingOut.current) {
         setNotificationCounts(prev => ({
           ...prev,
-          notifications: response.data.unread_count || 0
+          notifications: response.data?.unread_count || 0
         }));
       }
     } catch (error) {
@@ -127,7 +143,7 @@ export default function DashboardLayout({ children }) {
     }
   }, [getAuthHeaders]);
 
-  // âœ… FIXED: Dashboard data fetching with proper cleanup
+  // ✅ Resilient dashboard data fetching - never blocks settings page
   const fetchDashboardData = useCallback(async () => {
     if (hasInitialized.current || isLoggingOut.current) return;
 
@@ -148,27 +164,53 @@ export default function DashboardLayout({ children }) {
     try {
       console.log('Fetching dashboard data...');
 
-      // Fetch profile data with timeout
-      const profileRes = await axios.get(PROFILE_API_URL, {
-        headers,
-        timeout: 12000 // 12 second timeout
-      });
+      // 1. Profile data with resilient timeout
+      let profileRes = null;
+      try {
+        profileRes = await axios.get(PROFILE_API_URL, {
+          headers,
+          timeout: 25000
+        });
+      } catch (profErr) {
+        if (profErr.response?.status === 401) {
+          console.log('Authentication failed on profile check, logging out');
+          handleLogout();
+          return;
+        }
+        console.warn('Profile fetch non-fatal error (will use fallback):', profErr.message);
+      }
 
-      // Only proceed if not logging out
       if (isLoggingOut.current) return;
 
-      console.log('Profile data received successfully');
+      if (profileRes?.data) {
+        console.log('Profile data received successfully');
+        const name = profileRes.data.seller?.name ||
+          profileRes.data.store_profile?.name ||
+          profileRes.data.name ||
+          sellerName ||
+          'Seller';
 
-      // Handle seller name from multiple possible response structures
-      const name = profileRes.data.seller?.name ||
-        profileRes.data.store_profile?.name ||
-        profileRes.data.name ||
-        'Seller';
+        setSellerName(name);
 
-      setSellerName(name);
+        try {
+          const existing = JSON.parse(localStorage.getItem('sellerInfo') || '{}');
+          localStorage.setItem('sellerInfo', JSON.stringify({ ...existing, name }));
+        } catch (_) {}
 
+        // Profile completion check
+        const isComplete = profileRes.data.is_profile_complete ||
+          (profileRes.data.store_profile && profileRes.data.store_profile.is_profile_complete);
+        const isOnSettingsPage = pathname === '/dashboard/seller/settings';
+
+        if (!isComplete && !isOnSettingsPage && !isLoggingOut.current) {
+          console.log('Profile incomplete, redirecting to settings');
+          router.replace('/dashboard/seller/settings?setup=true');
+        }
+      }
+
+      // 2. Staff / permissions check (optional)
       try {
-        const me = await axios.get(`${API_BASE_URL}/user/staff/me/`, { headers, timeout: 8000 });
+        const me = await axios.get(`${API_BASE_URL}/user/staff/me/`, { headers, timeout: 15000 });
         if (!isLoggingOut.current) {
           const owner = me.data.is_owner !== false;
           setIsOwner(owner);
@@ -181,36 +223,27 @@ export default function DashboardLayout({ children }) {
         }
       }
 
-      // Try to fetch dashboard data (optional)
+      // 3. Dashboard analytics (optional)
       try {
         const dashRes = await axios.get(DASHBOARD_API_URL, {
           headers,
-          timeout: 8000
+          timeout: 15000
         });
 
-        if (dashRes.data.analytics && !isLoggingOut.current) {
-          setNotificationCounts({
+        if (dashRes.data?.analytics && !isLoggingOut.current) {
+          setNotificationCounts(prev => ({
+            ...prev,
             orders: dashRes.data.analytics.new_orders_count || 0,
-            notifications: dashRes.data.analytics.unread_notifications_count || 0,
-          });
+            notifications: dashRes.data.analytics.unread_notifications_count || prev.notifications,
+          }));
         }
       } catch (dashError) {
         console.warn('Dashboard API failed (non-critical):', dashError.message);
       }
 
-      // Fetch notification counts separately
+      // 4. Notifications count (optional)
       if (!isLoggingOut.current) {
         fetchNotificationCounts();
-      }
-
-      // Profile completion check
-      const isComplete = profileRes.data.is_profile_complete ||
-        (profileRes.data.store_profile && profileRes.data.store_profile.is_profile_complete);
-      const isOnSettingsPage = pathname === '/dashboard/seller/settings';
-
-      if (!isComplete && !isOnSettingsPage && !isLoggingOut.current) {
-        console.log('Profile incomplete, redirecting to settings');
-        router.replace('/dashboard/seller/settings?setup=true');
       }
 
     } catch (error) {
@@ -219,8 +252,20 @@ export default function DashboardLayout({ children }) {
       if (error.response?.status === 401) {
         console.log('Authentication failed, logging out');
         handleLogout();
-      } else if (!isLoggingOut.current) {
-        if (error.code === 'ECONNABORTED') {
+        return;
+      }
+
+      const isOnSettingsPage = pathname === '/dashboard/seller/settings';
+      const hasCachedSeller = typeof window !== 'undefined' && (localStorage.getItem('sellerInfo') || localStorage.getItem('accessToken'));
+
+      // If user is already on settings or has cached auth, do not crash the page shell!
+      if (isOnSettingsPage || hasCachedSeller) {
+        console.warn('Dashboard shell network issue; letting page render.');
+        return;
+      }
+
+      if (!isLoggingOut.current) {
+        if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
           setError('Connection timeout. Please check your internet connection and try again.');
         } else if (error.request) {
           setError('Unable to connect to server. Please check your connection.');
@@ -233,46 +278,51 @@ export default function DashboardLayout({ children }) {
         setIsLoading(false);
       }
     }
-  }, [getAuthHeaders, pathname, router, fetchNotificationCounts]);
+  }, [getAuthHeaders, pathname, router, fetchNotificationCounts, sellerName]);
 
-  // âœ… CRITICAL FIX: Proper logout handling to prevent infinite loops
+  // ✅ Comprehensive logout handling
   const handleLogout = useCallback(() => {
     if (isLoggingOut.current) {
       console.log('Logout already in progress, ignoring');
       return;
     }
 
-    console.log(' Starting logout process...');
+    console.log('Starting logout process...');
     isLoggingOut.current = true;
     hasInitialized.current = false;
 
     try {
-      // Clear all auth data
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('sellerInfo');
-      localStorage.removeItem('refreshToken');
+      [
+        'accessToken',
+        'access_token',
+        'sellerAccessToken',
+        'refreshToken',
+        'refresh_token',
+        'sellerInfo',
+        'userInfo',
+        'rememberSeller',
+        'authToken'
+      ].forEach(k => {
+        try { localStorage.removeItem(k); } catch (_) {}
+        try { sessionStorage.removeItem(k); } catch (_) {}
+      });
 
-      // Clear component state
       setSellerName('');
       setNotificationCounts({ orders: 0, notifications: 0 });
       setError('');
       setIsLoading(false);
 
-      console.log(' Cleared all data, performing hard redirect...');
-
-      // Use window.location for hard redirect to break any React routing loops
       setTimeout(() => {
         window.location.href = '/login/seller';
-      }, 100); // Small delay to ensure state is cleared
+      }, 100);
 
     } catch (error) {
       console.error('Logout error:', error);
-      // Emergency fallback
-      window.location.reload();
+      window.location.href = '/login/seller';
     }
   }, []);
 
-  // âœ… FIXED: Notification updates with cleanup
+  // ✅ Notification periodic updates
   useEffect(() => {
     if (isLoggingOut.current) return;
 
@@ -280,54 +330,48 @@ export default function DashboardLayout({ children }) {
       if (!isLoggingOut.current) {
         fetchNotificationCounts();
       }
-    }, 30000); // Every 30 seconds
+    }, 30000);
 
     return () => {
       clearInterval(interval);
     };
   }, [fetchNotificationCounts]);
 
-  // âœ… FIXED: Initialize data with proper cleanup
+  // ✅ Route change handler: initialize once, do not re-fetch & wipe UI on every navigation
   useEffect(() => {
     if (!isLoggingOut.current) {
-      hasInitialized.current = false;
-      fetchDashboardData();
-    }
-
-    // Cleanup function
-    return () => {
-      if (isLoggingOut.current) {
-        hasInitialized.current = false;
+      if (!hasInitialized.current) {
+        fetchDashboardData();
+      } else {
+        fetchNotificationCounts();
       }
-    };
-  }, [pathname, fetchDashboardData]);
+    }
+  }, [pathname, fetchDashboardData, fetchNotificationCounts]);
 
-  // âœ… NEW: Reset logout flag on component mount
   useEffect(() => {
     isLoggingOut.current = false;
-
-    return () => {
-      // Don't reset on unmount if logging out
-    };
   }, []);
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth <= 767) {
+      const mobile = window.innerWidth <= 767;
+      setIsMobile(mobile);
+      if (mobile) {
         setIsSidebarOpen(false);
       } else {
         setIsSidebarOpen(true);
       }
     };
 
-    handleResize(); // Run on mount
+    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const hasCachedAuth = typeof window !== 'undefined' && (localStorage.getItem('sellerInfo') || localStorage.getItem('accessToken') || localStorage.getItem('access_token'));
 
-  // Show loading only if not logging out
-  if (isLoading && !isLoggingOut.current) {
+  // Show loading only if not logging out and we don't even have cached auth or seller name
+  if (isLoading && !isLoggingOut.current && !sellerName && !hasCachedAuth && pathname !== '/dashboard/seller/settings') {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
@@ -336,8 +380,8 @@ export default function DashboardLayout({ children }) {
     );
   }
 
-  // Show error only if not logging out
-  if (error && !isLoggingOut.current) {
+  // Show full-page error ONLY if error is set AND we are NOT on settings AND we have no cached auth
+  if (error && !isLoggingOut.current && pathname !== '/dashboard/seller/settings' && !hasCachedAuth) {
     return (
       <div style={styles.errorContainer}>
         <h2>Something went wrong</h2>
@@ -417,7 +461,7 @@ export default function DashboardLayout({ children }) {
           ...styles.sidebar,
           transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 0.3s ease',
-          position: window.innerWidth <= 767 ? 'fixed' : 'fixed',
+          position: 'fixed',
           left: 0,
           top: 0,
           height: '100%',
@@ -430,14 +474,14 @@ export default function DashboardLayout({ children }) {
           <div className='dashboardlayoutlogocontainer' style={styles.logoContainer}>
             <Store size={24} color="#ffd67dff" />
             <h2 className='dashboardlayoutlogotext' style={styles.logoText}>Seller Panel</h2>
-            {/* âœ… Close Icon (only visible on mobile) */}
-            {window.innerWidth <= 767 && (
+            {/* ✅ Close Icon (only visible on mobile) */}
+            {isMobile && (
               <button
                 onClick={() => setIsSidebarOpen(false)}
                 style={styles.closeButton}
                 aria-label="Close Sidebar"
               >
-                âœ•
+                ✕
               </button>
             )}
           </div>
@@ -563,7 +607,7 @@ export default function DashboardLayout({ children }) {
         </div>
       </div>
 
-      {window.innerWidth <= 767 && isSidebarOpen && (
+      {isMobile && isSidebarOpen && (
         <div
           onClick={() => setIsSidebarOpen(false)}
           style={{
@@ -585,7 +629,7 @@ export default function DashboardLayout({ children }) {
       className='dashboardlayoutmaincontwrap'
         style={{
           ...styles.mainContentWrapper,
-          marginLeft: window.innerWidth < 767 ? 0 : '230px',
+          marginLeft: isMobile ? 0 : '230px',
           transition: 'margin-left 0.3s ease',
           width: '100%',
         }}
@@ -598,6 +642,41 @@ export default function DashboardLayout({ children }) {
         />
         <StorefrontBanner />
         <main style={styles.mainContent}>
+          {error && (
+            <div style={{
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '8px',
+              padding: '10px 16px',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px'
+            }}>
+              <span style={{ color: '#991b1b', fontSize: '13px', fontWeight: 500 }}>{error}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  hasInitialized.current = false;
+                  setError('');
+                  fetchDashboardData();
+                }}
+                style={{
+                  background: '#dc2626',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '5px 14px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
           {children}
         </main>
       </div>

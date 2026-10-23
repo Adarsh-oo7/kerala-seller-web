@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -90,7 +90,10 @@ export default function AdvancedSettingsPage() {
   const router = useRouter();
 
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('accessToken');
+    if (typeof window === 'undefined') return null;
+    const token = localStorage.getItem('accessToken') ||
+      localStorage.getItem('access_token') ||
+      localStorage.getItem('sellerAccessToken');
     if (!token) {
       router.push('/login/seller');
       return null;
