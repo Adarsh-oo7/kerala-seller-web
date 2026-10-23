@@ -349,22 +349,24 @@ function EnhancedStoreBanner({ store, shopSlug }) {
                 style={{
                   position: 'absolute',
                   top: '50%',
-                  left: '10px',
+                  left: '12px',
                   transform: 'translateY(-50%)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  backgroundColor: 'rgba(23, 94, 84, 0.85)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: '50%',
-                  width: '32px',
-                  height: '32px',
+                  width: '36px',
+                  height: '36px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
                   zIndex: 3,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  transition: 'all 0.2s ease',
                 }}
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={22} />
               </button>
               <button
                 type="button"
@@ -373,34 +375,37 @@ function EnhancedStoreBanner({ store, shopSlug }) {
                 style={{
                   position: 'absolute',
                   top: '50%',
-                  right: '10px',
+                  right: '12px',
                   transform: 'translateY(-50%)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  backgroundColor: 'rgba(23, 94, 84, 0.85)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: '50%',
-                  width: '32px',
-                  height: '32px',
+                  width: '36px',
+                  height: '36px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
                   zIndex: 3,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  transition: 'all 0.2s ease',
                 }}
               >
-                <ChevronRight size={20} />
+                <ChevronRight size={22} />
               </button>
               <div
                 style={{
                   position: 'absolute',
-                  bottom: '10px',
+                  bottom: '12px',
                   left: '50%',
                   transform: 'translateX(-50%)',
                   display: 'flex',
                   gap: '6px',
                   zIndex: 3,
-                  backgroundColor: 'rgba(0,0,0,0.3)',
-                  padding: '4px 8px',
+                  backgroundColor: 'rgba(23, 94, 84, 0.2)',
+                  backdropFilter: 'blur(4px)',
+                  padding: '4px 10px',
                   borderRadius: '12px',
                 }}
               >
@@ -411,10 +416,10 @@ function EnhancedStoreBanner({ store, shopSlug }) {
                     onClick={() => goToSlide(idx)}
                     aria-label={`Go to slide ${idx + 1}`}
                     style={{
-                      width: idx === currentSlide ? '18px' : '6px',
+                      width: idx === currentSlide ? '20px' : '6px',
                       height: '6px',
                       borderRadius: '3px',
-                      backgroundColor: idx === currentSlide ? '#f59e0b' : 'rgba(255,255,255,0.7)',
+                      backgroundColor: idx === currentSlide ? '#175E54' : 'rgba(23, 94, 84, 0.4)',
                       border: 'none',
                       padding: 0,
                       cursor: 'pointer',
@@ -1184,7 +1189,7 @@ const styles = {
     maxWidth: '1200px',
     marginLeft: 'auto',
     marginRight: 'auto',
-    marginTop: '135px',
+    marginTop: '160px',
     marginBottom: '8px',
     overflow: 'hidden',
     padding: '0 16px',

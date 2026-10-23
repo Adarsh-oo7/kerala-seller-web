@@ -33,9 +33,32 @@
 
 .banner-slider-container {
     background-color: #FDFFF0 !important;
+    margin-top: 160px !important;
+}
+
+@media (min-width: 1200px) {
+    .banner-slider-container {
+        margin-top: 165px !important;
+    }
 }
 
 .banner-slides-wrapper {
+    background-color: #FDFFF0 !important;
+}
+
+.banner-slide {
+    background-color: #FDFFF0 !important;
+}
+
+.enhanced-banner-container {
+    background-color: #FDFFF0 !important;
+}
+
+.banner-background {
+    background-color: #FDFFF0 !important;
+}
+
+.banner-image {
     background-color: #FDFFF0 !important;
 }
 
@@ -51,6 +74,10 @@
 
 
 @media (max-width: 992px) {
+    .banner-slider-container {
+        margin-top: 140px !important;
+    }
+
     .shopslugproducts-container {
         gap: 12px !important;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
