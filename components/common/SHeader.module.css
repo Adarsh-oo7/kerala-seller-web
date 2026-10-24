@@ -1,7 +1,7 @@
 .sheader {
-  --glassy-white: rgba(253, 255, 240, 0.95);
-  --glassy-white-dark: rgba(253, 255, 240, 0.98);
-  --glassy-border: rgba(23, 94, 84, 0.15);
+  --glassy-white: #FDFFF0;
+  --glassy-white-dark: #FDFFF0;
+  --glassy-border: rgba(23, 94, 84, 0.12);
   --glassy-text: #1a4845;
   --glassy-text-muted: #059669;
   --glassy-shadow: 0 4px 20px rgba(23, 94, 84, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
@@ -16,7 +16,7 @@
   /* adjust to your header's actual height */
 
 
-  background: var(--glassy-white);
+  background: #FDFFF0;
   backdrop-filter: blur(var(--blur-amount));
   -webkit-backdrop-filter: blur(var(--blur-amount));
   border-bottom: 1px solid var(--glassy-border);
@@ -35,7 +35,7 @@
 }
 
 .sheader.scrolled {
-  background: var(--glassy-white-dark);
+  background: #FDFFF0;
   box-shadow: 0 4px 14px rgba(23, 94, 84, 0.08);
   border-bottom-color: rgba(23, 94, 84, 0.15);
 }
@@ -160,7 +160,7 @@
 .mainHeader {
   padding: clamp(5px, 1.2vw, 8px) 0;
   background: #FDFFF0;
-  border-bottom: 1px solid #eee;
+  border-bottom: none;
 }
 
 .mainHeader .container {

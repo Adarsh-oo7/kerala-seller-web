@@ -31,15 +31,14 @@
 }
 
 
-.banner-slider-container {
+.enhanced-page-container {
     background-color: #FDFFF0 !important;
-    margin-top: 96px !important;
+    display: flow-root !important;
 }
 
-@media (min-width: 1200px) {
-    .banner-slider-container {
-        margin-top: 98px !important;
-    }
+.banner-slider-container {
+    background-color: #FDFFF0 !important;
+    margin-top: 86px !important;
 }
 
 .banner-slides-wrapper {
@@ -61,7 +60,55 @@
 .banner-image {
     background-color: #FDFFF0 !important;
     object-fit: contain !important;
-    object-position: center !important;
+    object-position: center center !important;
+}
+
+/* ✅ PC Screen specific styling: Fix whitespace and prevent top cropping */
+@media (min-width: 1024px) {
+    .enhanced-page-container {
+        background-color: #FDFFF0 !important;
+        display: flow-root !important;
+    }
+
+    .banner-slider-container {
+        background-color: #FDFFF0 !important;
+        margin-top: 86px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .banner-slides-wrapper {
+        aspect-ratio: 16 / 6.6 !important;
+        max-height: 480px !important;
+        min-height: 240px !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        background-color: #FDFFF0 !important;
+    }
+
+    .banner-slide {
+        background-color: #FDFFF0 !important;
+        height: 100% !important;
+    }
+
+    .enhanced-banner-container {
+        background-color: #FDFFF0 !important;
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
+    .banner-background {
+        background-color: #FDFFF0 !important;
+        height: 100% !important;
+    }
+
+    .banner-image {
+        background-color: #FDFFF0 !important;
+        object-fit: contain !important;
+        object-position: center center !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+    }
 }
 
 .shopslugproducts-container {

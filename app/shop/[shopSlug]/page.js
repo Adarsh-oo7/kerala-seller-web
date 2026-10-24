@@ -1111,6 +1111,7 @@ const styles = {
   pageContainer: {
     minHeight: '100vh',
     backgroundColor: '#FDFFF0',
+    display: 'flow-root',
   },
   container: {
     maxWidth: '1200px',
@@ -1189,7 +1190,7 @@ const styles = {
     maxWidth: '1200px',
     marginLeft: 'auto',
     marginRight: 'auto',
-    marginTop: '98px',
+    marginTop: '88px',
     marginBottom: '8px',
     overflow: 'hidden',
     padding: '0 16px',
@@ -1199,8 +1200,8 @@ const styles = {
   slidesWrapper: {
     position: 'relative',
     width: '100%',
-    aspectRatio: '16 / 6',
-    maxHeight: '440px',
+    aspectRatio: '16 / 6.6',
+    maxHeight: '480px',
     minHeight: '140px',
     borderRadius: '12px',
     overflow: 'hidden',
@@ -1233,8 +1234,9 @@ const styles = {
     width: '100%',
     height: '100%',
     objectFit: 'contain',
-    objectPosition: 'center',
-    display: 'block'
+    objectPosition: 'center center',
+    display: 'block',
+    backgroundColor: '#FDFFF0',
   },
   bannerFallback: {
     width: '100%',
