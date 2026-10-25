@@ -96,9 +96,9 @@ export default function Footer() {
               </a>
             </li>
             <li>
-              <a href={BRAND.profiles.prebook} target="_blank" rel="noopener noreferrer me">
-                Pre-book a Store
-              </a>
+              <Link href="/sell-online-kerala">
+                Sell Online in Kerala
+              </Link>
             </li>
           </ul>
         </nav>

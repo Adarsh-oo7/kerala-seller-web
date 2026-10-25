@@ -1,6 +1,6 @@
 import { BRAND } from './lib/brand';
 
-const CONTENT_UPDATED = new Date('2026-10-20');
+const CONTENT_UPDATED = new Date('2026-10-24');
 const LEGAL_UPDATED = new Date('2026-09-01');
 
 export default function sitemap() {

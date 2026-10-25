@@ -4,9 +4,19 @@ import { BRAND } from './lib/brand';
 const HOME_URL = `${BRAND.url}/`;
 
 export const metadata = {
-  title: 'Kerala Sellers: Online Store & Billing App from ₹99/mo',
+  title: 'Kerala Sellers: Online Store, Marketplace & Billing App from ₹99/mo',
   description:
-    'Sellers in Kerala: launch your own online store from ₹99/month with 0% commission. Billing, POS, stock and WhatsApp orders in one app.',
+    'Sellers in Kerala: start your online business in Kerala from ₹99/month with 0% commission. Launch your own store link, take WhatsApp orders, manage inventory & POS billing.',
+  keywords: [
+    'Kerala Sellers',
+    'online business in kerala',
+    'sellers in kerala',
+    'sell online in kerala',
+    'kerala marketplace',
+    'direct selling kerala',
+    'online store builder kerala',
+    'billing software kerala',
+  ],
   alternates: {
     canonical: HOME_URL,
     languages: {
@@ -18,7 +28,7 @@ export const metadata = {
   openGraph: {
     title: 'Kerala Sellers — Sell Online in Kerala, Zero Commission',
     description:
-      'Already taking orders in DMs? Get a Kerala store link, let customers add to cart, and sell across Kerala without marketplace commission.',
+      'Start your online business in Kerala: own store link, take orders on WhatsApp & Instagram, inventory sync and POS billing with 0% commission.',
     url: HOME_URL,
     siteName: BRAND.name,
     type: 'website',
@@ -34,8 +44,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Sell Online in Kerala | Kerala Sellers',
-    description: 'Own store for Instagram & WhatsApp sellers. 0% commission.',
+    title: 'Kerala Sellers — Online Store & Business in Kerala',
+    description: 'Own store for Instagram & WhatsApp sellers. 0% commission from ₹99/month.',
   },
   robots: { index: true, follow: true },
 };

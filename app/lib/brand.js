@@ -51,7 +51,6 @@ export const BRAND_SAME_AS = [
   BRAND.profiles.instagramAlt,
   BRAND.profiles.facebook,
   BRAND.profiles.youtube,
-  BRAND.profiles.prebook,
   BRAND.parent.url,
   BRAND.developer.portfolio,
 ];

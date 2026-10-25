@@ -203,15 +203,15 @@ export const FOR_PAGES = {
   'home-businesses': {
     slug: 'home-businesses',
     meta: {
-      title: 'Home Based Business in Kerala: Start Selling from Home',
+      title: 'Home Based Business in Kerala & Direct Selling for Beginners',
       description:
-        'Start a home based business in Kerala with your own store link: home bakery, pickles, boutique or crafts. Take UPI orders from ₹99/month, 0% commission.',
+        'Start a home based business or direct selling in Kerala with your own store link. Perfect for beginners: home bakery, tailoring, reselling & crafts. 0% commission, from ₹99/mo.',
     },
     hero: {
-      badge: '🏠 For Home Businesses',
+      badge: '🏠 For Home Businesses & Direct Selling',
       h1: ['Start a Home Based Business ', 'in Kerala'],
-      sub: 'Running a home bakery, making pickles, stitching clothes, or selling handmade goods? Kerala Sellers gives your home business a professional online store without renting a shop, building a website, or paying platform commission.',
-      pills: ['✓ Sell from home', '✓ UPI payments', '✓ 0% commission', '✓ Local delivery zones'],
+      sub: 'Running a home bakery, direct selling, tailoring, or selling handmade goods? Kerala Sellers gives your home business a professional online store without renting a shop, building a website, or paying platform commission.',
+      pills: ['✓ Sell from home', '✓ Direct selling beginners', '✓ UPI payments', '✓ 0% commission'],
     },
     stats: [
       { n: 'Trusted', l: 'By Home Sellers' },
